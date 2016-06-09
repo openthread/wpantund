@@ -1,0 +1,162 @@
+/*
+ *
+ * Copyright (c) 2016 Nest Labs, Inc.
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *    Description:
+ *      This file contains the enumeration of the properties that can be
+ *      gotten or set via the "get_prop()" and "set_prop()" methods.
+ *
+ */
+
+#ifndef wpantund_wpan_properties_h
+#define wpantund_wpan_properties_h
+
+
+#define kWPANTUNDProperty_ConfigNCPSocketPath              "Config:NCP:SocketPath"
+#define kWPANTUNDProperty_ConfigNCPSocketBaud              "Config:NCP:SocketBaud"
+#define kWPANTUNDProperty_ConfigNCPDriverName              "Config:NCP:DriverName"
+#define kWPANTUNDProperty_ConfigNCPHardResetPath           "Config:NCP:HardResetPath"
+#define kWPANTUNDProperty_ConfigNCPPowerPath               "Config:NCP:PowerPath"
+#define kWPANTUNDProperty_ConfigNCPReliabilityLayer        "Config:NCP:ReliabilityLayer"
+#define kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand    "Config:NCP:FirmwareCheckCommand"
+#define kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand  "Config:NCP:FirmwareUpgradeCommand"
+#define kWPANTUNDProperty_ConfigTUNInterfaceName           "Config:TUN:InterfaceName"
+#define kWPANTUNDProperty_ConfigDaemonPIDFile              "Config:Daemon:PIDFile"
+#define kWPANTUNDProperty_ConfigDaemonPrivDropToUser       "Config:Daemon:PrivDropToUser"
+#define kWPANTUNDProperty_ConfigDaemonChroot               "Config:Daemon:Chroot"
+
+#define kWPANTUNDProperty_DaemonVersion                   "Daemon:Version"
+#define kWPANTUNDProperty_DaemonEnabled                   "Daemon:Enabled"
+#define kWPANTUNDProperty_DaemonSyslogMask                "Daemon:SyslogMask"
+#define kWPANTUNDProperty_DaemonTerminateOnFault          "Daemon:TerminateOnFault"
+#define kWPANTUNDProperty_DaemonReadyForHostSleep         "Daemon:ReadyForHostSleep"
+#define kWPANTUNDProperty_DaemonAutoAssociateAfterReset   "Daemon:AutoAssociateAfterReset"
+#define kWPANTUNDProperty_DaemonAutoFirmwareUpdate        "Daemon:AutoFirmwareUpdate"
+#define kWPANTUNDProperty_DaemonAutoDeepSleep             "Daemon:AutoDeepSleep"
+#define kWPANTUNDProperty_DaemonFaultReason               "Daemon:FaultReason"
+
+#define kWPANTUNDProperty_NCPVersion             "NCP:Version"
+#define kWPANTUNDProperty_NCPState               "NCP:State"
+#define kWPANTUNDProperty_NCPHardwareAddress     "NCP:HardwareAddress"
+#define kWPANTUNDProperty_NCPExtendedAddress     "NCP:ExtendedAddress"
+#define kWPANTUNDProperty_NCPChannel             "NCP:Channel"
+#define kWPANTUNDProperty_NCPFrequency           "NCP:Frequency"
+#define kWPANTUNDProperty_NCPTXPower             "NCP:TXPower"
+#define kWPANTUNDProperty_NCPTXPowerLimit        "NCP:TXPowerLimit"
+#define kWPANTUNDProperty_NCPCCAThreshold        "NCP:CCAThreshold"
+#define kWPANTUNDProperty_NCPChannelMask         "NCP:ChannelMask"
+#define kWPANTUNDProperty_NCPSleepyPollInterval  "NCP:SleepyPollInterval"
+#define kWPANTUNDProperty_NCPRSSI                "NCP:RSSI"
+
+#define kWPANTUNDProperty_NetworkName            "Network:Name"
+#define kWPANTUNDProperty_NetworkXPANID          "Network:XPANID"
+#define kWPANTUNDProperty_NetworkPANID           "Network:PANID"
+#define kWPANTUNDProperty_NetworkNodeType        "Network:NodeType"
+#define kWPANTUNDProperty_NetworkKey             "Network:Key"
+#define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
+#define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
+
+#define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
+#define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
+#define kWPANTUNDProperty_IPv6MeshLocalPrefix    "IPv6:MeshLocalPrefix"
+#define kWPANTUNDProperty_IPv6AllAddresses       "IPv6:AllAddresses"
+
+#define kWPANTUNDProperty_ThreadLeaderAddress     "Thread:Leader:Address"
+#define kWPANTUNDProperty_ThreadLeaderRouterID    "Thread:Leader:RouterID"
+#define kWPANTUNDProperty_ThreadLeaderWeight      "Thread:Leader:Weight"
+#define kWPANTUNDProperty_ThreadLeaderLocalWeight "Thread:Leader:LocalWeight"
+#define kWPANTUNDProperty_ThreadNetworkData       "Thread:NetworkData"
+#define kWPANTUNDProperty_ThreadNetworkDataVersion       "Thread:NetworkDataVersion"
+#define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
+#define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
+
+#define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
+
+
+#define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
+#define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"
+#define kWPANTUNDProperty_NestLabs_NCPTransmitHookActive       "com.nestlabs.internal:NCP:TransmitHookActive"
+#define kWPANTUNDProperty_NestLabs_LegacyPreferInterface       "com.nestlabs.internal:Legacy:PreferInterface"
+#define kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress      "com.nestlabs.internal:Legacy:MeshLocalAddress"
+#define kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix       "com.nestlabs.internal:Legacy:MeshLocalPrefix"
+#define kWPANTUNDProperty_NestLabs_LegacyEnabled               "com.nestlabs.internal:Legacy:Enabled"
+#define kWPANTUNDProperty_NestLabs_NetworkWakeData             "com.nestlabs.internal:NetworkWake:Data"
+#define kWPANTUNDProperty_NestLabs_NetworkWakeRemaining        "com.nestlabs.internal:NetworkWake:Remaining"
+#define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist        "com.nestlabs.internal:NetworkWake:Blacklist"
+#define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower  "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
+#define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake       "com.nestlabs.internal:Hack:AlwaysResetToWake"
+
+#define kWPANTUNDProperty_Stat_Prefix                "Stat:"
+#define kWPANTUNDProperty_StatRX                     "Stat:RX"
+#define kWPANTUNDProperty_StatTX                     "Stat:TX"
+#define kWPANTUNDProperty_StatRXHistory              "Stat:RX:History"
+#define kWPANTUNDProperty_StatTXHistory              "Stat:TX:History"
+#define kWPANTUNDProperty_StatHistory                "Stat:History"
+#define kWPANTUNDProperty_StatNCP                    "Stat:NCP"
+#define kWPANTUNDProperty_StatBlockingHostSleep      "Stat:BlockingHostSleep"
+#define kWPANTUNDProperty_StatNode                   "Stat:Node"
+#define kWPANTUNDProperty_StatNodeHistory            "Stat:Node:History"
+#define kWPANTUNDProperty_StatNodeHistoryID          "Stat:Node:History:"
+#define kWPANTUNDProperty_StatShort                  "Stat:Short"
+#define kWPANTUNDProperty_StatLong                   "Stat:Long"
+#define kWPANTUNDProperty_StatAutoLog                "Stat:AutoLog"
+#define kWPANTUNDProperty_StatAutoLogState           "Stat:AutoLog:State"
+#define kWPANTUNDProperty_StatAutoLogPeriod          "Stat:AutoLog:Period"
+#define kWPANTUNDProperty_StatAutoLogLogLevel        "Stat:AutoLog:LogLevel"
+#define kWPANTUNDProperty_StatUserLogRequestLogLevel "Stat:UserRequest:LogLevel"
+#define kWPANTUNDProperty_StatLinkQuality            "Stat:LinkQuality"
+#define kWPANTUNDProperty_StatLinkQualityLong        "Stat:LinkQuality:Long"
+#define kWPANTUNDProperty_StatLinkQualityShort       "Stat:LinkQuality:Short"
+#define kWPANTUNDProperty_StatLinkQualityPeriod      "Stat:LinkQuality:Period"
+#define kWPANTUNDProperty_StatHelp                   "Stat:Help"
+
+// ----------------------------------------------------------------------------
+
+#define kWPANTUNDNodeType_Unknown          "unknown"
+#define kWPANTUNDNodeType_Router           "router"
+#define kWPANTUNDNodeType_EndDevice        "end-device"
+#define kWPANTUNDNodeType_SleepyEndDevice  "sleepy-end-device"
+#define kWPANTUNDNodeType_NestLurker       "nl-lurker"
+#define kWPANTUNDNodeType_Commissioner     "commissioner"
+#define kWPANTUNDNodeType_Leader           "leader"
+
+// ----------------------------------------------------------------------------
+
+// When querying the value of the association state property,
+// the returned value will be a human-readable string. Compare
+// it with one of the constants below to get the exact meaning.
+#define kWPANTUNDStateUninitialized            "uninitialized"
+#define kWPANTUNDStateFault                    "uninitialized:fault"
+#define kWPANTUNDStateUpgrading                "uninitialized:upgrading"
+#define kWPANTUNDStateDeepSleep                "offline:deep-sleep"
+#define kWPANTUNDStateOffline                  "offline"
+#define kWPANTUNDStateCommissioned             "offline:commissioned"
+#define kWPANTUNDStateAssociating              "associating"
+#define kWPANTUNDStateCredentialsNeeded        "associating:credentials-needed"
+#define kWPANTUNDStateAssociated               "associated"
+#define kWPANTUNDStateIsolated                 "associated:no-parent"
+#define kWPANTUNDStateNetWake_Asleep           "associated:netwake-asleep"
+#define kWPANTUNDStateNetWake_Waking           "associated:netwake-waking"
+
+// ----------------------------------------------------------------------------
+
+// Values of  the property kWPANTUNDProperty_StatAutoLogState
+#define kWPANTUNDStatAutoLogState_Disabled          "disabled"
+#define kWPANTUNDStatAutoLogState_Long              "long"
+#define kWPANTUNDStatAutoLogState_Short             "short"
+
+
+#endif

@@ -1,0 +1,759 @@
+/*
+ *
+ * Copyright (c) 2016 Nest Labs, Inc.
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#define _GNU_SOURCE 1
+
+#include "assert-macros.h"
+
+#include <stdio.h>
+#include "socket-utils.h"
+#include <ctype.h>
+#include <syslog.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+#include <ctype.h>
+
+#if HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
+
+#if HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
+#if HAVE_PTY_H
+#include <pty.h>
+#endif
+
+#if HAVE_UTIL_H
+#include <util.h>
+#endif
+
+#if !defined(HAVE_PTSNAME) && __APPLE__
+#define HAVE_PTSNAME 1
+#endif
+
+#if !HAVE_GETDTABLESIZE
+#define getdtablesize()     (int)sysconf(_SC_OPEN_MAX)
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK          O_NDELAY
+#endif
+
+#include <poll.h>
+
+int
+fd_has_error(int fd)
+{
+	const int flags = (POLLPRI|POLLRDBAND|POLLERR|POLLHUP|POLLNVAL);
+	struct pollfd pollfd = { fd, flags, 0 };
+	int count = poll(&pollfd, 1, 0);
+
+	if (count<0) {
+		return -errno;
+	} else if (count > 0) {
+		if (pollfd.revents&POLLHUP) {
+			return -EPIPE;
+		}
+
+		if (pollfd.revents&(POLLRDBAND|POLLPRI)) {
+			return -EPIPE;
+		}
+
+		if (pollfd.revents&POLLNVAL) {
+			return -EINVAL;
+		}
+
+		if (pollfd.revents&POLLERR) {
+			return -EIO;
+		}
+	}
+	return 0;
+}
+
+int gSocketWrapperBaud = 115200;
+
+bool
+socket_name_is_system_command(const char* socket_name)
+{
+	return strncmp(socket_name,SOCKET_SYSTEM_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_COMMAND_PREFIX)) == 0
+	    || strncmp(socket_name,SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)) == 0
+	    || strncmp(socket_name,SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)) == 0
+	;
+}
+
+bool
+socket_name_is_port(const char* socket_name)
+{
+	// It's a port if the string is just a number.
+	while (*socket_name) {
+		if (!isdigit(*socket_name++))
+			return false;
+	}
+
+	return true;
+}
+
+bool
+socket_name_is_inet(const char* socket_name)
+{
+	// It's an inet address if it Contains no slashes
+	do {
+		if (*socket_name == '/') {
+			return false;
+		}
+	} while (*++socket_name);
+	return !socket_name_is_port(socket_name) && !socket_name_is_system_command(socket_name);
+}
+
+bool
+socket_name_is_device(const char* socket_name)
+{
+	return !socket_name_is_system_command(socket_name) && !socket_name_is_inet(socket_name);
+}
+
+int
+lookup_sockaddr_from_host_and_port(
+    struct sockaddr_in6* outaddr, const char* host, const char* port
+    )
+{
+	int ret = 0;
+	struct addrinfo hint = {
+	};
+
+	hint.ai_flags = AI_ADDRCONFIG | AI_V4MAPPED | AI_ALL;
+	hint.ai_family = AF_INET6;
+
+	struct addrinfo *results = NULL;
+	struct addrinfo *iter = NULL;
+
+	if (!port)
+		port = "4951";
+
+	if (!host)
+		host = "::1";
+
+	syslog(LOG_INFO, "Looking up [%s]:%s", host, port);
+
+	if (isdigit(port[0]) && strcmp(host, "::1") == 0) {
+		// Special case to avoid calling getaddrinfo() when
+		// we really don't need to.
+		memset(outaddr, 0, sizeof(struct sockaddr_in6));
+		outaddr->sin6_family = AF_INET6;
+		outaddr->sin6_addr.s6_addr[15] = 1;
+		outaddr->sin6_port = htons(atoi(port));
+	} else if (isdigit(port[0]) && inet_addr(host) != 0) {
+		in_addr_t v4addr = inet_addr(host);
+		memset(outaddr, 0, sizeof(struct sockaddr_in6));
+		outaddr->sin6_family = AF_INET6;
+		outaddr->sin6_addr.s6_addr[10] = 0xFF;
+		outaddr->sin6_addr.s6_addr[11] = 0xFF;
+		outaddr->sin6_port = htons(atoi(port));
+		memcpy(outaddr->sin6_addr.s6_addr + 12, &v4addr, sizeof(v4addr));
+		outaddr->sin6_port = htons(atoi(port));
+	} else {
+		int error = getaddrinfo(host, port, &hint, &results);
+
+		require_action_string(
+		    !error,
+		    bail,
+		    ret = -1,
+		    gai_strerror(error)
+		    );
+
+		for (iter = results;
+		     iter && (iter->ai_family != AF_INET6);
+		     iter = iter->ai_next) ;
+
+		require_action(NULL != iter, bail, ret = -1);
+
+		memcpy(outaddr, iter->ai_addr, iter->ai_addrlen);
+	}
+
+bail:
+	if (results)
+		freeaddrinfo(results);
+
+	return ret;
+}
+
+#if HAVE_FORKPTY
+static int
+diagnose_forkpty_problem()
+{
+	int ret = -1;
+	// COM-S-7530: Do some more diagnostics on the situation, because
+	// sort of failure is weird. We step through some of the same sorts of
+	// things that forkpty would do so that we can see where we are failing.
+	int pty_master_fd = -1;
+	int pty_slave_fd = -1;
+	do {
+		if( access( "/dev/ptmx", F_OK ) < 0 ) {
+			syslog(LOG_WARNING, "Call to access(\"/dev/ptmx\",F_OK) failed: %s (%d)", strerror(errno), errno);
+			perror("access(\"/dev/ptmx\",F_OK)");
+		}
+
+		if( access( "/dev/ptmx", R_OK|W_OK ) < 0 ) {
+			syslog(LOG_WARNING, "Call to access(\"/dev/ptmx\",R_OK|W_OK) failed: %s (%d)", strerror(errno), errno);
+			perror("access(\"/dev/ptmx\",R_OK|W_OK)");
+		}
+
+		pty_master_fd = posix_openpt(O_NOCTTY | O_RDWR);
+
+		if (pty_master_fd < 0) {
+			syslog(LOG_CRIT, "Call to posix_openpt() failed: %s (%d)", strerror(errno), errno);
+			perror("posix_openpt(O_NOCTTY | O_RDWR)");
+			break;
+		}
+
+		if (grantpt(pty_master_fd) < 0) {
+			syslog(LOG_CRIT, "Call to grantpt() failed: %s (%d)", strerror(errno), errno);
+			perror("grantpt");
+		}
+
+		if (unlockpt(pty_master_fd) < 0) {
+			syslog(LOG_CRIT, "Call to unlockpt() failed: %s (%d)", strerror(errno), errno);
+			perror("unlockpt");
+		}
+
+#if HAVE_PTSNAME
+		if (NULL == ptsname(pty_master_fd)) {
+			syslog(LOG_CRIT, "Call to ptsname() failed: %s (%d)", strerror(errno), errno);
+			perror("ptsname");
+			break;
+		}
+
+		pty_slave_fd = open(ptsname(pty_master_fd), O_RDWR | O_NOCTTY);
+
+		if (pty_slave_fd < 0) {
+			syslog(LOG_CRIT, "Call to open(\"%s\",O_RDWR|O_NOCTTY) failed: %s (%d)", ptsname(pty_master_fd), strerror(errno), errno);
+			perror("open(ptsname(pty_master_fd),O_RDWR|O_NOCTTY)");
+			break;
+		}
+#endif
+
+		ret = 0;
+	} while(0);
+	close(pty_master_fd);
+	close(pty_slave_fd);
+	return ret;
+}
+
+static int
+open_system_socket_forkpty(const char* command)
+{
+	int ret_fd = -1;
+	int stderr_copy_fd;
+	pid_t pid;
+	struct termios tios = { .c_cflag = CS8|HUPCL|CREAD|CLOCAL };
+
+	cfmakeraw(&tios);
+
+	// Duplicate stderr so that we can hook it back up in the forked process.
+	stderr_copy_fd = dup(STDERR_FILENO);
+	if (stderr_copy_fd < 0) {
+		syslog(LOG_ERR, "Call to dup() failed: %s (%d)", strerror(errno), errno);
+		goto cleanup_and_fail;
+	}
+
+	pid = forkpty(&ret_fd, NULL, &tios, NULL);
+	if (pid < 0) {
+		syslog(LOG_ERR, "Call to forkpty() failed: %s (%d)", strerror(errno), errno);
+
+		if (0 == diagnose_forkpty_problem()) {
+			syslog(LOG_CRIT, "FORKPTY() FAILED BUT NOTHING WAS OBVIOUSLY WRONG!!!");
+		}
+
+		goto cleanup_and_fail;
+	}
+
+	// Check to see if we are the forked process or not.
+	if (0 == pid) {
+		// We are the forked process.
+		const int dtablesize = getdtablesize();
+		int i;
+
+		// Re-instate our original stderr.
+		dup2(stderr_copy_fd, STDERR_FILENO);
+
+		syslog(LOG_DEBUG, "Forked!");
+
+		// Re-instate our original stderr (clobbered by login_tty)
+		dup2(stderr_copy_fd, STDERR_FILENO);
+
+		// Set the shell environment variable if it isn't set already.
+		setenv("SHELL", "/bin/sh", 0);
+
+		// Close all file descriptors larger than STDERR_FILENO.
+		for (i = (STDERR_FILENO + 1); i < dtablesize; i++) {
+			close(i);
+		}
+
+		syslog(LOG_NOTICE,"About to exec \"%s\"",command);
+
+		execl(getenv("SHELL"),getenv("SHELL"),"-c",command,NULL);
+
+		syslog(LOG_ERR,"Failed for fork and exec of \"%s\": %s (%d)", command, strerror(errno), errno);
+
+		_exit(errno);
+	}
+
+	// Clean up our copy of stderr
+	close(stderr_copy_fd);
+
+#if HAVE_PTSNAME
+	// See http://stackoverflow.com/questions/3486491/
+	close(open(ptsname(ret_fd), O_RDWR | O_NOCTTY));
+#endif
+
+	return ret_fd;
+
+cleanup_and_fail:
+	{
+		int prevErrno = errno;
+
+		close(ret_fd);
+		close(stderr_copy_fd);
+
+		errno = prevErrno;
+	}
+	return -1;
+}
+#endif // HAVE_FORKPTY
+
+#ifdef PF_UNIX
+
+int
+fork_unixdomain_socket(int* fd_pointer)
+{
+	int fd[2] = { -1, -1 };
+	int i;
+	pid_t pid = -1;
+
+	if (socketpair(PF_UNIX, SOCK_STREAM, 0, fd) < 0) {
+		syslog(LOG_ERR, "Call to socketpair() failed: %s (%d)", strerror(errno), errno);
+		goto bail;
+	}
+
+	pid = fork();
+	if (pid < 0) {
+		syslog(LOG_ERR, "Call to fork() failed: %s (%d)", strerror(errno), errno);
+		goto bail;
+	}
+
+	// Check to see if we are the forked process or not.
+	if (0 == pid) {
+		const int dtablesize = getdtablesize();
+		// We are the forked process.
+
+		close(fd[0]);
+
+		dup2(fd[1], STDIN_FILENO);
+		dup2(fd[1], STDOUT_FILENO);
+
+		syslog(LOG_DEBUG, "Forked!");
+
+        // Close all file descriptors larger than STDERR_FILENO.
+        for (i = (STDERR_FILENO + 1); i < dtablesize; i++) {
+            close(i);
+		}
+
+		*fd_pointer = STDIN_FILENO;
+	} else {
+		close(fd[1]);
+		*fd_pointer = fd[0];
+	}
+
+	fd[0] = -1;
+	fd[1] = -1;
+
+bail:
+
+	{
+		int prevErrno = errno;
+		if (fd[0] < 0) {
+			close(fd[0]);
+		}
+		if (fd[1] < 0) {
+			close(fd[1]);
+		}
+		errno = prevErrno;
+	}
+
+	return pid;
+}
+
+static int
+open_system_socket_unix_domain(const char* command)
+{
+	int fd = -1;
+	int status = 0;
+	pid_t pid = -1;
+
+	pid = fork_unixdomain_socket(&fd);
+
+	if (pid < 0) {
+		syslog(LOG_ERR, "Call to fork() failed: %s (%d)", strerror(errno), errno);
+		goto cleanup_and_fail;
+	}
+
+	// Check to see if we are the forked process or not.
+	if (0 == pid) {
+		// Double fork to avoid leaking zombie processes.
+		pid = fork();
+		if (pid < 0) {
+			syslog(LOG_ERR, "Call to fork() failed: %s (%d)", strerror(errno), errno);
+
+			_exit(errno);
+		}
+
+		if (0 == pid)
+		{
+			// Set the shell environment variable if it isn't set already.
+			setenv("SHELL","/bin/sh",0);
+
+			syslog(LOG_NOTICE, "About to exec \"%s\"", command);
+
+			execl(getenv("SHELL"), getenv("SHELL"),"-c", command, NULL);
+
+			syslog(LOG_ERR, "Failed for fork and exec of \"%s\": %s (%d)", command, strerror(errno), errno);
+
+			_exit(EXIT_FAILURE);
+		}
+
+		_exit(EXIT_SUCCESS);
+	}
+
+	// Wait for the first fork to return, and place the return value in errno
+	if (waitpid(pid, &status, 0) < 0) {
+		syslog(LOG_ERR, "Call to waitpid() failed: %s (%d)", strerror(errno), errno);
+	}
+
+	if (0 != WEXITSTATUS(status)) {
+		// If this has happened then the double fork failed. Clean up
+		// and pass this status along to the caller as errno.
+
+		syslog(LOG_ERR, "Child process failed: %s (%d)", strerror(WEXITSTATUS(status)), WEXITSTATUS(status));
+
+		close(fd);
+		fd = -1;
+
+		errno = WEXITSTATUS(status);
+	}
+
+	return fd;
+
+cleanup_and_fail:
+
+	if (fd >= 0) {
+		int prevErrno = errno;
+
+		close(fd);
+
+		errno = prevErrno;
+	}
+
+	return -1;
+}
+#endif // PF_UNIX
+
+static int
+open_system_socket(const char* command)
+{
+	int ret_fd = -1;
+
+#if HAVE_FORKPTY
+	ret_fd = open_system_socket_forkpty(command);
+#endif
+
+#if defined(PF_UNIX)
+	// Fall back to unix-domain socket-based mechanism:
+	if (ret_fd < 0) {
+		ret_fd = open_system_socket_unix_domain(command);
+	}
+#endif
+
+#if !HAVE_FORKPTY && !defined(PF_UNIX)
+	assert_printf("%s","Process pipe sockets are not supported in current configuration");
+	errno = ENOTSUP;
+#endif
+
+	return ret_fd;
+}
+
+int
+open_serial_socket(const char* socket_name)
+{
+	int fd = -1;
+	char* host = NULL; // Needs to be freed if set
+	const char* port = NULL;
+	char* options = strchr(socket_name, ',');
+	char* filename = strchr(socket_name, ':');
+	bool socket_name_is_well_formed = true; // True if socket has type name and options
+	enum {
+		SOCKET_TYPE_UNKNOWN,
+		SOCKET_TYPE_SYSTEM,
+		SOCKET_TYPE_SYSTEM_FORKPTY,
+		SOCKET_TYPE_SYSTEM_SOCKETPAIR,
+		SOCKET_TYPE_FD,
+		SOCKET_TYPE_TCP,
+		SOCKET_TYPE_FILE
+	} socket_type = SOCKET_TYPE_UNKNOWN;
+
+	// Move past the colon, if there was one.
+	if (NULL != filename) {
+		filename++;
+	} else {
+		filename = "";
+	}
+
+	if (strncasecmp(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_SYSTEM;
+	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_SYSTEM_FORKPTY;
+	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_SYSTEM_SOCKETPAIR;
+	} else if (strncasecmp(socket_name, SOCKET_FD_COMMAND_PREFIX, sizeof(SOCKET_FD_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_FD;
+	} else if (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_FILE;
+	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SOCKET_TYPE_FILE;
+	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
+		socket_type = SOCKET_TYPE_TCP;
+		filename = (char*)socket_name;
+		options = NULL;
+		socket_name_is_well_formed = false;
+	} else if (socket_name_is_device(socket_name)) {
+		socket_type = SOCKET_TYPE_FILE;
+		filename = (char*)socket_name;
+		options = ",default";
+		socket_name_is_well_formed = false;
+	}
+
+	filename = strdup(filename);
+
+	if (NULL == filename) {
+		perror("strdup");
+		syslog(LOG_ERR, "strdup failed. \"%s\" (%d)", strerror(errno), errno);
+		goto bail;
+	}
+
+	// Make sure we zero terminate the file name before
+	// any options. (this is why we needed to strdup)
+	if (socket_name_is_well_formed && (NULL != options)) {
+		const char* ptr = strchr(socket_name, ':');
+		if (NULL == ptr) {
+			ptr = socket_name;
+		} else {
+			ptr++;
+		}
+		filename[options-ptr] = 0;
+	}
+
+	if (SOCKET_TYPE_SYSTEM == socket_type) {
+		fd = open_system_socket(filename);
+#if HAVE_FORKPTY
+	} else if (SOCKET_TYPE_SYSTEM_FORKPTY == socket_type) {
+		fd = open_system_socket_forkpty(filename);
+#endif
+	} else if (SOCKET_TYPE_SYSTEM_SOCKETPAIR == socket_type) {
+		fd = open_system_socket_unix_domain(filename);
+	} else if (SOCKET_TYPE_FD == socket_type) {
+		fd = dup((int)strtol(filename, NULL, 0));
+	} else if (SOCKET_TYPE_FILE == socket_type) {
+		fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
+
+		if (fd >= 0) {
+			fcntl(fd, F_SETFL, O_NONBLOCK);
+			tcflush(fd, TCIOFLUSH);
+		}
+	} else if (SOCKET_TYPE_TCP == socket_type) {
+		struct sockaddr_in6 addr;
+
+		if (socket_name_is_port(socket_name)) {
+			port = socket_name;
+		} else {
+			ssize_t i;
+			if (socket_name[0] == '[') {
+				host = strdup(socket_name + 1);
+			} else {
+				host = strdup(socket_name);
+			}
+			for (i = strlen(host) - 1; i >= 0; --i) {
+				if (host[i] == ':' && port == NULL) {
+					host[i] = 0;
+					port = host + i + 1;
+					continue;
+				}
+				if (host[i] == ']') {
+					host[i] = 0;
+					break;
+				}
+				if (!isdigit(host[i]))
+					break;
+			}
+		}
+
+		if (0 != lookup_sockaddr_from_host_and_port(&addr, host, port)) {
+			syslog(LOG_ERR, "Unable to lookup \"%s\"", socket_name);
+			goto bail;
+		}
+
+		fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+		if (fd < 0) {
+			syslog(LOG_ERR, "Unable to open socket. \"%s\" (%d)", strerror(errno), errno);
+			goto bail;
+		}
+
+		if (0 != connect(fd, (struct sockaddr*)&addr, sizeof(addr))) {
+			syslog(LOG_ERR, "Call to connect() failed. \"%s\" (%d)", strerror(errno), errno);
+			close(fd);
+			fd = -1;
+			goto bail;
+		}
+	} else {
+		syslog(LOG_ERR, "I don't know how to open \"%s\" (socket type %d)", socket_name, (int)socket_type);
+	}
+
+	if (fd < 0) {
+		syslog(LOG_ERR, "Unable to open socket. \"%s\" (%d) (filename = %s, type = %d)", strerror(errno), errno, filename, (int)socket_type);
+		goto bail;
+	}
+
+	// Configure the socket.
+	{
+		int flags = fcntl(fd, F_GETFL);
+		int i;
+		struct termios tios;
+		fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+#ifdef SO_NOSIGPIPE
+		int set = 0;
+		setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
+#endif
+
+#define FETCH_TERMIOS() do { if(0 != tcgetattr(fd, &tios)) { \
+			/* perror("tcgetattr"); */ \
+			syslog(LOG_DEBUG, "tcgetattr() failed. \"%s\" (%d)", strerror(errno), errno); \
+		} } while(0)
+
+#define COMMIT_TERMIOS() do { if(0 != tcsetattr(fd, TCSANOW, &tios)) { \
+			/* perror("tcsetattr"); */ \
+			syslog(LOG_DEBUG, "tcsetattr() failed. \"%s\" (%d)", strerror(errno), errno); \
+		} } while(0)
+
+		// Parse the options, if any
+		for (; NULL != options; options = strchr(options+1, ',')) {
+			if (strncasecmp(options, ",b", 2) == 0 && isdigit(options[2])) {
+				// Change Baud rate
+				FETCH_TERMIOS();
+				cfsetspeed(&tios, strtol(options+2,NULL,10));
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",default", strlen(",default")) == 0) {
+				FETCH_TERMIOS();
+				for (i=0; i < NCCS; i++) {
+					tios.c_cc[i] = _POSIX_VDISABLE;
+				}
+
+				tios.c_cflag = (CS8|HUPCL|CREAD|CLOCAL);
+				tios.c_iflag = 0;
+				tios.c_oflag = 0;
+				tios.c_lflag = 0;
+
+				cfmakeraw(&tios);
+				cfsetspeed(&tios, gSocketWrapperBaud);
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",raw", 4) == 0) {
+				// Raw mode
+				FETCH_TERMIOS();
+				cfmakeraw(&tios);
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",clocal=", 8) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				if (options[1] == '1') {
+					tios.c_cflag |= CLOCAL;
+				} else if (options[1] == '0') {
+					tios.c_cflag &= ~CLOCAL;
+				}
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",ixoff=", 6) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				if (options[1] == '1') {
+					tios.c_iflag |= IXOFF;
+				} else if (options[1] == '0') {
+					tios.c_iflag &= ~IXOFF;
+				}
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",ixon=", 6) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				if (options[1] == '1') {
+					tios.c_iflag |= IXON;
+				} else if (options[1] == '0') {
+					tios.c_iflag &= ~IXON;
+				}
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",ixany=", 6) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				if (options[1] == '1') {
+					tios.c_iflag |= IXANY;
+				} else if (options[1] == '0') {
+					tios.c_iflag &= ~IXANY;
+				}
+				COMMIT_TERMIOS();
+			} else if (strncasecmp(options, ",crtscts=", 9) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				// Hardware flow control
+				if (options[1] == '1') {
+					syslog(LOG_DEBUG, "Using hardware flow control for serial socket.");
+					tios.c_cflag |= CRTSCTS;
+				} else if (options[1] == '0') {
+					tios.c_cflag &= ~CRTSCTS;
+				}
+				COMMIT_TERMIOS();
+			} else {
+				syslog(LOG_ERR, "Unknown option (%s)", options);
+			}
+		}
+	}
+bail:
+	free(filename);
+	free(host);
+	return fd;
+}
