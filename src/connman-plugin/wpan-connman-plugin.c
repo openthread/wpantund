@@ -25,6 +25,7 @@
 #include "assert-macros.h"
 #include <errno.h>
 #include <net/if.h>
+#include <arpa/inet.h>
 
 #define _GNU_SOURCE 1
 #include <stdio.h>
@@ -196,6 +197,33 @@ string_to_ncp_state(const char* new_state, ncp_state_t ncp_state) {
 		ncp_state = NCP_STATE_UNINITIALIZED;
 	}
 	return ncp_state;
+}
+
+static void
+parse_prefix_string(const char *prefix_cstr, uint8_t *prefix)
+{
+	uint8_t bytes[16];
+	char str[INET6_ADDRSTRLEN + 10];
+	char *p;
+
+	memset(prefix, 0, 8);
+	memset(bytes, 0, sizeof(bytes));
+
+	// Create a copy of the prefix string so we can modify it.
+	strcpy(str, prefix_cstr);
+
+	// Search for "/64" and remove it from the str.
+	p = strchr(str, '/');
+	if (p != NULL) {
+		*p = 0;
+	}
+
+	// Parse the str as an ipv6 address.
+	if (inet_pton(AF_INET6, str, bytes) > 0)
+	{
+		// If successful, copy the first 8 bytes.
+		memcpy(prefix, bytes, 8);
+	}
 }
 
 static int
@@ -472,13 +500,23 @@ parse_network_info_from_iter(
 			if (value != NULL && nelements == 8)
 				memcpy(network_info->hwaddr, value, 8);
 		} else if (strcmp(key, kWPANTUNDProperty_IPv6MeshLocalPrefix) == 0) {
-			DBusMessageIter array_iter;
-			dbus_message_iter_recurse(&value_iter, &array_iter);
-			const uint8_t* value = NULL;
-			int nelements = 0;
-			dbus_message_iter_get_fixed_array(&array_iter, &value, &nelements);
-			if (value != NULL && nelements == 8) {
-				memcpy(network_info->prefix, value, 8);
+			int value_dbus_type = dbus_message_iter_get_arg_type(&value_iter);
+			if (value_dbus_type == DBUS_TYPE_STRING) {
+				const char *prefix_cstr = NULL;
+				dbus_message_iter_get_basic(&value_iter, &prefix_cstr);
+				parse_prefix_string(prefix_cstr, network_info->prefix);
+			} else if (value_dbus_type == DBUS_TYPE_ARRAY) {
+				DBusMessageIter array_iter;
+				dbus_message_iter_recurse(&value_iter, &array_iter);
+				const uint8_t *value = NULL;
+				int nelements = 0;
+				dbus_message_iter_get_fixed_array(&array_iter, &value, &nelements);
+				if (value != NULL && nelements == 8) {
+					memcpy(network_info->prefix, value, 8);
+				}
+			} else {
+				DBG("Unexpected dbus type %c for %s", value_dbus_type, kWPANTUNDProperty_IPv6MeshLocalPrefix);
+				memset(network_info->prefix, 0 , sizeof(network_info->prefix));
 			}
 		} else if (strcmp(key, "RSSI") == 0) {
 			int8_t rssi;
