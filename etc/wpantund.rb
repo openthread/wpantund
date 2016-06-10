@@ -27,6 +27,7 @@ class Wpantund < Formula
 
   devel do
     url 'https://github.com/openthread/wpantund.git', :using => :git, :tag => 'full/latest-unstable'
+    version 'latest-unstable'
   end
 
   depends_on 'pkg-config' => :build
