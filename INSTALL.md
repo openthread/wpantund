@@ -20,24 +20,42 @@ Installing `wpantund` on Ubuntu
 
 Open up a terminal and perform the following commands:
 
-    sudo apt-get update
-    # Install runtine-dependent packages (libreadline is optional)
-    sudo apt-get install dbus libreadline
-    # Install build-dependent packages (libreadline-dev is optional)
-    sudo apt-get install gcc g++ libdbus-1-dev libboost-dev libreadline-dev
+	sudo apt-get update
+
+	# Install runtine-dependent packages (libreadline is optional)
+	sudo apt-get install dbus libreadline
+
+	# Install build-dependent packages (libreadline-dev is optional)
+	sudo apt-get install gcc g++ libdbus-1-dev libboost-dev libreadline-dev
 
 ### 2. Configure and build the project ###
 
 If the `configure` script is not already present in the root directory
 of your `wpantund` sources (which it should be if you got these
-sources from a tarball), you will need to *bootstrap* the project by
-doing the following:
+sources from a tarball), you will need to either grab one of the `full/*`
+tags from the official git repository or run the bootstrap script.
+
+#### 2.1. Grabbing a full tag from Git ####
+
+The most likely thing you want to build is the latest stable release.
+In that case, all you need to do is checkout the tag `full/latest-release`:
+
+    git checkout full/latest-release
+
+And you should then be ready to build configure. Jump to section 2.3.
+
+#### 2.2. Running the bootstrap script  ####
+
+Alternatively, you can *bootstrap* the project directly by doing the
+following:
 
     sudo apt-get install libtool autoconf autoconf-archive
     ./bootstrap.sh
 
-If the `configure` script is already present, then you can just do the
-following:
+#### 2.3. Running the configure script  ####
+
+If the `configure` script is present, run it and them start the make
+process:
 
     ./configure --sysconfdir=/etc
     make
@@ -63,7 +81,7 @@ Installing `wpantund` on OS X
 -----------------------------
 
 Installing `wpantund` on OS X is largely similar to the process above,
-except things are complicated by the fact that we depend on DBus---and
+except things are complicated by the fact that we depend on D-Bus—and
 there is no native package manager for OS X. These instructions assume
 that you are using [Homebrew][2] as your package manager.
 
@@ -75,22 +93,24 @@ as:
 
     brew update
     brew install ./etc/wpantund.rb
+
+    # Start the D-Bus daemon
     sudo cp "$(brew --repository)"/Cellar/d-bus/*/org.freedesktop.dbus-session.plist /Library/LaunchDaemons/
     sudo launchctl load -w /Library/LaunchDaemons/org.freedesktop.dbus-session.plist
 
-(the last two commands are for setting DBus up to launch properly at
+(the last two commands are for setting D-Bus up to launch properly at
 startup)
 
 PRO-TIP: Use `brew install wpantund --HEAD` if you want the latest
 bleeding-edge version of wpantund!
 
-However, if you want to build `wpantund` manually, the procedure
-described below allows you to manually set up the `wpantund`
-dependencies so that the build can run without a hitch.
+However, **if you want to build `wpantund` manually**, the procedure
+described below allows you to manually set up the `wpantund` dependencies
+so that the build can run without a hitch.
 
 ### 1. Install Xcode ###
 
-Go [here][http://itunes.apple.com/us/app/xcode/id497799835?ls=1&mt=12]
+Go [here](http://itunes.apple.com/us/app/xcode/id497799835?ls=1&mt=12)
 and install [Xcode](https://developer.apple.com/xcode/) if you haven't
 already.
 
@@ -102,17 +122,17 @@ the following command:
 
 ### 2. Install Homebrew ###
 
-Homebrew is a package management system for OS X. While it is possible
-to install wpantund and its dependencies manually, using homebrew
-makes this process much easier. If you don't already have it installed
-on your mac, you can install it using the following instructions
-(taken from go/homebrew):
+[Homebrew](http://brew.sh/) is a package management system for OS X. While
+it is possible to install wpantund's dependencies manually, using
+homebrew makes this process much easier. If you don't already have it
+installed on your Mac, you can install it to your home directory using
+the following instructions:
 
     cd ~
     mkdir homebrew && curl -L https://github.com/mxcl/homebrew/tarball/master | tar xz --strip 1 -C homebrew
     mkdir ~/bin
 
-Create the file ~/.bash\_profile with the following contents (tweak to
+Create the file `~/.bash_profile` with the following contents (tweak to
 your preference if you know what you're doing):
 
     # Global stuff
@@ -124,15 +144,23 @@ your preference if you know what you're doing):
 
 Then close and reopen your terminal window.
 
+Alternatively, you can follow the instructions at <http://brew.sh/>, which
+installs to the prefix `/usr/local` instead of `~/homebrew`.
+
 ### 2. Install and Setup `wpantund` dependencies ###
 
 We need a few dependencies in order to be able to build and use
 wpantund. The following commands will get us up and running:
 
-    brew install autoconf automake libtool
-    brew install pkg-config boost d-bus
-    sudo cp "$(brew --repository)"/Cellar/d-bus/*/org.freedesktop.dbus-session.plist /Library/LaunchDaemons/
-    sudo launchctl load -w /Library/LaunchDaemons/org.freedesktop.dbus-session.plist
+	brew install pkg-config
+	brew install autoconf-archive
+	brew install libtool
+	brew install boost
+	brew install d-bus
+
+	# Start the D-Bus daemon
+	sudo cp "$(brew --repository)"/Cellar/d-bus/*/org.freedesktop.dbus-session.plist /Library/LaunchDaemons/
+	sudo launchctl load -w /Library/LaunchDaemons/org.freedesktop.dbus-session.plist
 
 ### 3. Configure and build ###
 
@@ -152,7 +180,7 @@ configuration file to tell the daemon how to communicate with the NCP.
 You do this by editing the `wpantund.conf` file, which (if you
 followed the directions above) should now be at `/etc/wpantund.conf`.
 
-This file is, by default, filled only with comments---which describe
+This file is, by default, filled only with comments—which describe
 all of the important configuration options that you might need to set
 in order to make wpantund usable. Read them over and then uncomment
 and update the appropriate configuration properties.
