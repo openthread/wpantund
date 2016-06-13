@@ -3,9 +3,10 @@ wpantund, Userspace WPAN Network Daemon
 
 `wpantund` is a user-space network interface driver/daemon that
 provides a native IPv6 network interface to a low-power wireless
-**Network Co-Processor** (or *NCP*). It was written and developed by
-Nest to support [Thread](http://threadgroup.org)
-connectivity on uUnix-like operating systems and make the support more straightforward.
+**Network Co-Processor** (or *NCP*). It was written and developed 
+by Nest for two reasons: to support [Thread](http://threadgroup.org) 
+connectivity on Unix-like operating systems, and to make the support 
+more straightforward.
 
 `wpantund` is designed to marshall all access to the NCP ensuring
 that it always remains in a consistent and well-defined state.
