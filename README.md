@@ -16,42 +16,42 @@ This is not an official Google product.
 
 `wpantund` provides:
 
- *  ... a native IPv6 interface to an NCP.
- *  ... a command line interface (`wpanctl`) for managing and
+ *  ...a native IPv6 interface to an NCP.
+ *  ...a command line interface (`wpanctl`) for managing and
     configuring the NCP.
- *  ... a DBus API for managing and configuring the NCP.
- *  ... a way to reliably manage the power state of the NCP.
- *  ... a uniform mechanism for handling NCP firmware updates.
+ *  ...a DBus API for managing and configuring the NCP.
+ *  ...a way to reliably manage the power state of the NCP.
+ *  ...a uniform mechanism for handling NCP firmware updates.
 
 The architecture and design of `wpantund` has been motivated by the
 following design goals (in no particular order):
 
- *  Portability across unix-like operating systems (currently supports
+ *  Portability across unix-like operating systems (Currently supports
     Linux and OS X. BSD support should be fairly trivial to add)
  *  Require few runtime dependencies (DBus, with boost needed when
     building)
  *  Single-threaded architecture, with heavy use of asynchronous I/O
  *  Power efficiency (0% CPU usage when idle)
  *  Allow management interface to be used by multiple independent
-    applications simultaneously
+    applications simultaneously.
  *  Allow multiple instances of `wpantund` to gracefully co-exist on a
-    single machine
- *  Modular, plugin-based architecture (all details for communicating
+    single machine.
+ *  Modular, plugin-based architecture (All details for communicating
     with a specific NCP stack are implemented as plugins)
 
-The following NCP plugins are provided:
+Currently, the following NCP plugins are included:
 
 *   `src/ncp-spinel`: Supports NCPs that communicate using the [Spinel NCP
-    Protocol][1], used by NCPs running [OpenThread][2]
+    Protocol][1], used by NCPs running [OpenThread][2].
 *   `src/ncp-dummy`: A dummy NCP plug-in implementation meant to be the
-    starting point for implementing new NCP plug-ins
+    starting point for implementing new NCP plug-ins.
 
 [1]: ./third_party/openthread/src/ncp/PROTOCOL.md
 [2]: https://github.com/openthread/openthread/
 
 ## License ##
 
-`wpantund` is open-source software released under the [Apache License,
+`wpantund` is open-source software, released under the [Apache License,
 Version 2.0][3]. See the file [`LICENSE`][4] for more information.
 
 Unless required by applicable law or agreed to in writing, software
@@ -76,14 +76,14 @@ asynchronous stream socket, which could be any of the following:
 
  *  A real serial port (UART) connected to the NCP (preferably with
     hardware flow control)
- *  The stdin and stdout from a subprocess (for supporting SPI
+ *  The stdin and stdout from a subprocess (For supporting SPI
     interfaces using a translator program, or debugging virtual
     stacks)
- *  A TCP socket (for debugging, not recommended for production)
+ *  A TCP socket (For debugging, not recommended for production)
 
 Unlike a dial-up modem, NCPs often have a rich management interface
-for performing operations, such as forming a network, joining a 
-network, scanning for nearby networks, etc. To perform these operations,
+for performing operations like forming a network, joining a network,
+scanning for nearby networks, etc. To perform these operations,
 `wpantund` includes a command line utility called `wpanctl`.
 Applications that need to directly configure the network interface can
 also communicate directly with `wpantund` using its DBus API.
@@ -119,8 +119,8 @@ available configuration parameters, see the [included example][5]).
     # Use a CCA Threshold of -70db
     NCP:CCAThreshold              "-70"
 
-When up and running, you can use `wpanctl` to check the status of the
-interface and perform various management operations, for example, to
+When up and running, `wpanctl` can be used to check the status of the
+interface and perform various management operations. For example, to
 check the general status of an interface:
 
     $ sudo wpanctl status
@@ -142,7 +142,7 @@ hardware address. From here we can easily form a new network:
     Successfully formed!
     $
 
-Now if we check the status, we will see a lot more information:
+And now if we check the status, we will see a lot more information:
 
     $ sudo wpanctl status
     wpan0 => [
