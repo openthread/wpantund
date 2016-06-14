@@ -76,6 +76,7 @@
 #if ASSERT_MACROS_SQUELCH
  #define assert_printf(fmt, ...) do { } while (0)
  #define check_string(c, s)   do { } while (0)
+ #define check_noerr(c)   do { } while (0)
  #define require_action_string(c, l, a, s) \
 	do { if (!(c)) { \
 		ASSERT_REQUIRE_FAILURE_HOOK; \
@@ -114,6 +115,13 @@
 		assert_printf("Check Failed (%s)", s); \
 		ASSERT_REQUIRE_FAILURE_HOOK; \
 	} } while (0)
+ #define check_noerr(c) \
+	do { \
+		int ASSERT_MACROS_c = (int)c; \
+		if (ASSERT_MACROS_c != 0) { \
+		assert_printf("Check Failed (error %d)", ASSERT_MACROS_c); \
+		ASSERT_REQUIRE_FAILURE_HOOK; \
+	} } while (0)
  #define require_action_string(c, l, a, s) \
 	do { if (!(c)) { \
 		assert_printf("Requirement Failed (%s)", s); \
@@ -127,7 +135,6 @@
 #if !defined(__cplusplus)
  #define check(c)   __ASSERT_MACROS_check(c)
 #endif
- #define check_noerr(c)   __ASSERT_MACROS_check((c) == 0)
  #define require_quiet(c, l)   do { if (!(c)) goto l; } while (0)
  #define require(c, l)   require_action_string(c, l, {}, # c)
 
