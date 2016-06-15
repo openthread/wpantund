@@ -335,10 +335,15 @@ bail:
 bool
 TunnelIPv6Interface::set_realm_local_address(const struct in6_addr *addr, int prefixlen)
 {
-	bool ret = false;
+	if (addr == NULL) {
+		static const struct in6_addr any_addr = {};
+		addr = &any_addr;
+	}
 
 	if (is_online() && (mRealmLocalAddress != *addr)) {
-		require(ret = add_address(addr, prefixlen), bail);
+		if (!IN6_IS_ADDR_UNSPECIFIED(addr)) {
+			add_address(addr, prefixlen);
+		}
 
 		if (!IN6_IS_ADDR_UNSPECIFIED(&mRealmLocalAddress)) {
 			remove_address(&mRealmLocalAddress, mRealmLocalPrefixSize);
@@ -348,10 +353,7 @@ TunnelIPv6Interface::set_realm_local_address(const struct in6_addr *addr, int pr
 	mRealmLocalAddress = *addr;
 	mRealmLocalPrefixSize = prefixlen;
 
-	ret = true;
-
-bail:
-	return ret;
+	return true;
 }
 
 const struct in6_addr&
@@ -372,19 +374,17 @@ TunnelIPv6Interface::remove_address(const struct in6_addr *addr, int prefixlen)
 	   mInterfaceName.c_str()
 	);
 
-	mAddresses.erase(*addr);
-
 	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
 
-	require_action(!IN6_IS_ADDR_LINKLOCAL(addr), bail, mLastError = EINVAL);
+	mAddresses.erase(*addr);
+
+	if (mRealmLocalAddress == *addr) {
+		memset(mRealmLocalAddress.s6_addr, 0, sizeof(mRealmLocalAddress));
+	}
 
 	if (tunnel_remove_address(mFDRead, addr->s6_addr) != 0) {
 		mLastError = errno;
 		goto bail;
-	}
-
-	if (mRealmLocalAddress == *addr) {
-		memset(mRealmLocalAddress.s6_addr, 0, sizeof(mRealmLocalAddress));
 	}
 
 	ret = true;

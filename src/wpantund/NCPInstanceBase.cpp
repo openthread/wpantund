@@ -624,7 +624,17 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 		// We are transitioning out of a state where we are disconnected
 		// from the NCP. This requires a hard reset.
 		set_ncp_power(true);
-		hard_reset_ncp();
+
+		if (mResetFD >= 0) {
+			// If we have a way to hard reset the NCP,
+			// then do it. We do the check above to make
+			// sure that we don't end up calling mSerialAdapter->reset()
+			// twice.
+			hard_reset_ncp();
+		}
+
+		mSerialAdapter->reset();
+
 		PT_INIT(&mControlPT);
 	}
 
@@ -784,8 +794,8 @@ NCPInstanceBase::ncp_is_misbehaving()
 {
 	mFailureCount++;
 	hard_reset_ncp();
-	reinitialize_ncp();
 	reset_tasks();
+	reinitialize_ncp();
 
 	if (mFailureCount >= mFailureThreshold) {
 		change_ncp_state(FAULT);
