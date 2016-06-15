@@ -842,15 +842,13 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 	if (ncp_state_is_associated(new_ncp_state)
 	 && !ncp_state_is_associated(old_ncp_state)
 	) {
-		if (!buffer_is_nonzero(mNCPV6Prefix, 8)) {
-			start_new_task(boost::shared_ptr<SpinelNCPTask>(
-				new SpinelNCPTaskSendCommand(
-					this,
-					NilReturn(),
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_ML_PREFIX)
-				)
-			));
-		}
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskSendCommand(
+				this,
+				NilReturn(),
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_ML_ADDR)
+			)
+		));
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
@@ -870,13 +868,6 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 				this,
 				NilReturn(),
 				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_LADDR)
-			)
-		));
-		start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
-				this,
-				NilReturn(),
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_ROLE)
 			)
 		));
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
