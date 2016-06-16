@@ -3,43 +3,44 @@ wpantund, Userspace WPAN Network Daemon
 
 `wpantund` is a user-space network interface driver/daemon that
 provides a native IPv6 network interface to a low-power wireless
-**Network Co-Processor** (or *NCP*). It was written and developed by
-Nest Labs to make supporting [Thread](http://threadgroup.org)
-connectivity on unix-like operating systems more straightforward.
+**Network Co-Processor** (or *NCP*). It was written and developed 
+by Nest for two reasons: to support [Thread](http://threadgroup.org) 
+connectivity on Unix-like operating systems, and to make the support 
+more straightforward.
 
-`wpantund` is designed to marshall all access to the NCP, ensuring
-that it always remains in a consistent, well-defined state.
+`wpantund` is designed to marshall all access to the NCP ensuring
+that it always remains in a consistent and well-defined state.
 
 This is not an official Google product.
 
-## Feature and Architecture Summary ##
+## Feature and architecture summary ##
 
 `wpantund` provides:
 
- *  ...a native IPv6 interface to an NCP.
- *  ...a command line interface (`wpanctl`) for managing and
+ *  Native IPv6 interface to an NCP.
+ *  Command line interface (`wpanctl`) for managing and
     configuring the NCP.
- *  ...a DBus API for managing and configuring the NCP.
- *  ...a way to reliably manage the power state of the NCP.
- *  ...a uniform mechanism for handling NCP firmware updates.
+ *  DBus API for managing and configuring the NCP.
+ *  Method to reliably manage the power state of the NCP.
+ *  Uniform mechanism for handling NCP firmware updates.
 
 The architecture and design of `wpantund` has been motivated by the
-following design goals (in no particular order):
+following design goals (in no specific order):
 
- *  Portability across unix-like operating systems (Currently supports
+ *  Portability across Unix-like operating systems (currently supports
     Linux and OS X. BSD support should be fairly trivial to add)
- *  Require few runtime dependencies (DBus, with boost needed when
+ *  Requires few runtime dependencies (DBus, with boost needed when
     building)
  *  Single-threaded architecture, with heavy use of asynchronous I/O
  *  Power efficiency (0% CPU usage when idle)
- *  Allow management interface to be used by multiple independent
+ *  Allows management interface to be used by multiple independent
     applications simultaneously.
- *  Allow multiple instances of `wpantund` to gracefully co-exist on a
+ *  Allows multiple instances of `wpantund` to gracefully co-exist on a
     single machine.
- *  Modular, plugin-based architecture (All details for communicating
+ *  Modular plugin-based architecture (all details for communicating
     with a specific NCP stack are implemented as plugins)
 
-Currently, the following NCP plugins are included:
+The following NCP plugins are included:
 
 *   `src/ncp-spinel`: Supports NCPs that communicate using the [Spinel NCP
     Protocol][1], used by NCPs running [OpenThread][2].
@@ -51,7 +52,7 @@ Currently, the following NCP plugins are included:
 
 ## License ##
 
-`wpantund` is open-source software, released under the [Apache License,
+`wpantund` is open-source software released under the [Apache License,
 Version 2.0][3]. See the file [`LICENSE`][4] for more information.
 
 Unless required by applicable law or agreed to in writing, software
@@ -63,11 +64,11 @@ limitations under the License.
 [3]: http://www.apache.org/licenses/LICENSE-2.0
 [4]: ./LICENSE
 
-## Conceptual Overview ##
+## Conceptual overview ##
 
 `wpantund` is conceptually similar in purpose to the point-to-point
 daemon (`pppd`, commonly used on unix platforms to provide network
-connectivity via a dial-up modems)---except that instead of
+connectivity via a dial-up modems) except that instead of
 communicating with a dial-up modem, `wpantund` is communicating with
 an NCP.
 
@@ -76,30 +77,30 @@ asynchronous stream socket, which could be any of the following:
 
  *  A real serial port (UART) connected to the NCP (preferably with
     hardware flow control)
- *  The stdin and stdout from a subprocess (For supporting SPI
-    interfaces using a translator program, or debugging virtual
+ *  The stdin and stdout from a subprocess (for supporting SPI
+    interfaces using a translator program or debugging virtual
     stacks)
- *  A TCP socket (For debugging, not recommended for production)
+ *  A TCP socket (for debugging, not recommended for production)
 
 Unlike a dial-up modem, NCPs often have a rich management interface
-for performing operations like forming a network, joining a network,
-scanning for nearby networks, etc. To perform these operations,
+for performing operations such as forming a network, joining a network,
+scanning for nearby networks, and so on. To perform these operations,
 `wpantund` includes a command line utility called `wpanctl`.
 Applications that need to directly configure the network interface can
 also communicate directly with `wpantund` using its DBus API.
 
 To expose a native IPv6 network interface to the host operating
 system, `wpantund` uses the `tun` driver on Linux and the `utun`
-driver on OS X. On Linux, the default name for this interface is
+driver on OS X. On Linux, the default name for the interface is
 `wpan0`. On OS X, the default name is `utun0`.
 
-## Usage Overview ##
+## Usage overview ##
 
 The behavior of `wpantund` is determined by its configuration
-parameters, which may be specified in a configuration file (typically
+parameters, which can be specified in a configuration file (typically
 `/etc/wpantund.conf`) or at the command line. A typical configuration
-file might look like this: (For a more thorough explanation of
-available configuration parameters, see the [included example][5]).
+file might look like that shown below. For a more thorough explanation of
+available configuration parameters, see the [included example][5].
 
     # Try to name the network interface `wpan0`.
     # If not possible, a different name will be used.
@@ -120,7 +121,7 @@ available configuration parameters, see the [included example][5]).
     NCP:CCAThreshold              "-70"
 
 When up and running, `wpanctl` can be used to check the status of the
-interface and perform various management operations. For example, to
+interface and perform various management operations, for example, to
 check the general status of an interface:
 
     $ sudo wpanctl status
@@ -133,8 +134,8 @@ check the general status of an interface:
         "NCP:HardwareAddress" => [F1D92A82C8D8FE43]
     ]
 
-Here we see that the NCP is in the `offline` state, along with a few
-additional bits of information like the version of the NCP and it's
+Here we see that the NCP is in the `offline` state along with a few
+additional bits of information, such as the version of the NCP and its
 hardware address. From here we can easily form a new network:
 
     $ sudo wpanctl form "wpantund-testnet"
@@ -142,7 +143,7 @@ hardware address. From here we can easily form a new network:
     Successfully formed!
     $
 
-And now if we check the status, we will see a lot more information:
+Now if we check the status, we will see more information:
 
     $ sudo wpanctl status
     wpan0 => [
@@ -167,11 +168,11 @@ And now if we check the status, we will see a lot more information:
         inet6 fd09:717a:ef22::9a5d:5d1e:5527:5fc8 prefixlen 64
 
 If compiled with `libreadline` or `libedit`, `wpanctl` supports an
-interactive console, which is very convenient. All commands support
-online help: simply type `help` to get a list of supported commands,
+interactive console, which is convenient to use. All commands support
+online help: type `help` to get a list of supported commands,
 or add `-h` to a command to get help with that specific command.
 
-See the wiki for more information: <https://github.com/openthread/wpantund/wiki>
+For more information, see the wiki: <https://github.com/openthread/wpantund/wiki>
 
 [5]: ./src/wpantund/wpantund.conf
 
@@ -181,15 +182,15 @@ Submit bugs and feature requests to [issue tracker][6]. We use the
 following mailing lists for discussion and announcements:
 
  *  [wpantund-announce](https://groups.google.com/forum/#!forum/wpantund-announce)
-    \- Official Anouncements About `wpantund`
+    \- Official Anouncements about `wpantund`
  *  [wpantund-users](https://groups.google.com/forum/#!forum/wpantund-users)
-    \- `wpantund` User Discussion Group
+    \- `wpantund` User discussion group
  *  [wpantund-devel](https://groups.google.com/forum/#!forum/wpantund-devel)
-    \- `wpantund` Developer Discussion Group
+    \- `wpantund` Developer discussion group
 
 [6]: https://github.com/openthread/wpantund/issues
 
-## Authors and Contributors ##
+## Authors and contributors ##
 
 The following people have significantly contributed to the design
 and development of `wpantund`:
