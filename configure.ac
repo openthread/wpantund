@@ -159,7 +159,7 @@ AC_HEADER_TIME
 
 AC_CHECK_HEADERS([unistd.h errno.h stdbool.h], [], [AC_MSG_ERROR(["Missing a required header."])])
 
-AC_CHECK_HEADERS([sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h])
+AC_CHECK_HEADERS([sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h sys/prctl.h])
 
 AC_C_CONST
 AC_TYPE_SIZE_T

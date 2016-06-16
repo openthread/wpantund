@@ -41,6 +41,7 @@ bool socket_name_is_inet(const char* socket_name);
 bool socket_name_is_device(const char* socket_name);
 int lookup_sockaddr_from_host_and_port( struct sockaddr_in6* outaddr, const char* host, const char* port);
 int open_serial_socket(const char* socket_name);
+int close_serial_socket(int fd);
 int fd_has_error(int fd);
 
 int fork_unixdomain_socket(int* fd_pointer);
