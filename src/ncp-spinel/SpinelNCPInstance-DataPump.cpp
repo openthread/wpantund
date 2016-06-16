@@ -232,6 +232,8 @@ SpinelNCPInstance::ncp_to_driver_pump()
 				mInboundFrameHDLCCRC = hdlc_crc16(mInboundFrameHDLCCRC, mInboundFrame[mInboundFrameSize-2]);
 			}
 
+			require(mInboundFrameSize >= sizeof(mInboundFrame), on_error);
+
 			mInboundFrame[mInboundFrameSize++] = byte;
 
 		} while(true);
