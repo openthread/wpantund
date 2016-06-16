@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
+#include <signal.h>
 
 #if HAVE_SYS_UN_H
 #include <sys/un.h>
@@ -58,6 +59,11 @@
 #include <util.h>
 #endif
 
+#if HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
+
+
 #if !defined(HAVE_PTSNAME) && __APPLE__
 #define HAVE_PTSNAME 1
 #endif
@@ -71,6 +77,102 @@
 #endif
 
 #include <poll.h>
+
+static struct {
+	int fd;
+	pid_t pid;
+} gSystemSocketTable[5];
+
+static void
+system_socket_table_close_alarm_(int sig)
+{
+	syslog(LOG_ERR, "Unable to terminate child!");
+	exit(EXIT_FAILURE);
+}
+
+static void
+system_socket_table_atexit_(void)
+{
+	int i;
+
+	for (i = 0; i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0]); i++) {
+		if (gSystemSocketTable[i].pid != 0) {
+			kill(gSystemSocketTable[i].pid, SIGTERM);
+		}
+	}
+}
+
+static void
+system_socket_table_add_(int fd, pid_t pid)
+{
+	static bool did_init = false;
+	int i;
+
+	if (!did_init) {
+		atexit(&system_socket_table_atexit_);
+		did_init = true;
+	}
+
+	for (i = 0; i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0]); i++) {
+		if (gSystemSocketTable[i].pid == 0) {
+			break;
+		}
+	}
+
+	// If we have more than 5 of these types of sockets
+	// open, then there is likely a serious problem going
+	// on that we should immediately deal with.
+	assert(i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0]));
+
+	if (i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0])) {
+		gSystemSocketTable[i].fd = fd;
+		gSystemSocketTable[i].pid = pid;
+	}
+}
+
+int
+close_serial_socket(int fd)
+{
+	int i;
+	int ret;
+	for (i = 0; i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0]); i++) {
+		if ( gSystemSocketTable[i].fd == fd
+		  && gSystemSocketTable[i].pid != 0
+		) {
+			break;
+		}
+	}
+
+	ret = close(fd);
+
+	if (i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0])) {
+		// Set up a watchdog timer in case things go sour.
+		void (*prev_alarm_handler)(int) = signal(SIGALRM, &system_socket_table_close_alarm_);
+		unsigned int prev_alarm_remaining = alarm(5);
+		pid_t pid = gSystemSocketTable[i].pid;
+		int x = 0;
+
+		kill(pid, SIGTERM);
+
+		do {
+			errno = 0;
+			pid = waitpid(gSystemSocketTable[i].pid, &x, 0);
+		} while ((pid == -1) && (errno == EINTR));
+
+		if (pid == -1) {
+			perror(strerror(errno));
+			syslog(LOG_ERR, "Failed waiting for death of PID %d: %s", gSystemSocketTable[i].pid, strerror(errno));
+		}
+
+		alarm(prev_alarm_remaining);
+		signal(SIGALRM, prev_alarm_handler);
+
+		gSystemSocketTable[i].pid = 0;
+		gSystemSocketTable[i].fd = -1;
+	}
+
+	return ret;
+}
 
 int
 fd_has_error(int fd)
@@ -117,8 +219,9 @@ socket_name_is_port(const char* socket_name)
 {
 	// It's a port if the string is just a number.
 	while (*socket_name) {
-		if (!isdigit(*socket_name++))
+		if (!isdigit(*socket_name++)) {
 			return false;
+		}
 	}
 
 	return true;
@@ -157,11 +260,13 @@ lookup_sockaddr_from_host_and_port(
 	struct addrinfo *results = NULL;
 	struct addrinfo *iter = NULL;
 
-	if (!port)
+	if (!port) {
 		port = "4951";
+	}
 
-	if (!host)
+	if (!host) {
 		host = "::1";
+	}
 
 	syslog(LOG_INFO, "Looking up [%s]:%s", host, port);
 
@@ -303,6 +408,10 @@ open_system_socket_forkpty(const char* command)
 		const int dtablesize = getdtablesize();
 		int i;
 
+#if defined(_LINUX_PRCTL_H)
+		prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
 		// Re-instate our original stderr.
 		dup2(stderr_copy_fd, STDERR_FILENO);
 
@@ -335,6 +444,8 @@ open_system_socket_forkpty(const char* command)
 	// See http://stackoverflow.com/questions/3486491/
 	close(open(ptsname(ret_fd), O_RDWR | O_NOCTTY));
 #endif
+
+	system_socket_table_add_(ret_fd, pid);
 
 	return ret_fd;
 
@@ -376,6 +487,10 @@ fork_unixdomain_socket(int* fd_pointer)
 		const int dtablesize = getdtablesize();
 		// We are the forked process.
 
+#if defined(_LINUX_PRCTL_H)
+		prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
 		close(fd[0]);
 
 		dup2(fd[1], STDIN_FILENO);
@@ -401,10 +516,10 @@ bail:
 
 	{
 		int prevErrno = errno;
-		if (fd[0] < 0) {
+		if (fd[0] >= 0) {
 			close(fd[0]);
 		}
-		if (fd[1] < 0) {
+		if (fd[1] >= 0) {
 			close(fd[1]);
 		}
 		errno = prevErrno;
@@ -417,7 +532,6 @@ static int
 open_system_socket_unix_domain(const char* command)
 {
 	int fd = -1;
-	int status = 0;
 	pid_t pid = -1;
 
 	pid = fork_unixdomain_socket(&fd);
@@ -429,47 +543,19 @@ open_system_socket_unix_domain(const char* command)
 
 	// Check to see if we are the forked process or not.
 	if (0 == pid) {
-		// Double fork to avoid leaking zombie processes.
-		pid = fork();
-		if (pid < 0) {
-			syslog(LOG_ERR, "Call to fork() failed: %s (%d)", strerror(errno), errno);
+		// Set the shell environment variable if it isn't set already.
+		setenv("SHELL","/bin/sh",0);
 
-			_exit(errno);
-		}
+		syslog(LOG_NOTICE, "About to exec \"%s\"", command);
 
-		if (0 == pid)
-		{
-			// Set the shell environment variable if it isn't set already.
-			setenv("SHELL","/bin/sh",0);
+		execl(getenv("SHELL"), getenv("SHELL"),"-c", command, NULL);
 
-			syslog(LOG_NOTICE, "About to exec \"%s\"", command);
+		syslog(LOG_ERR, "Failed for fork and exec of \"%s\": %s (%d)", command, strerror(errno), errno);
 
-			execl(getenv("SHELL"), getenv("SHELL"),"-c", command, NULL);
-
-			syslog(LOG_ERR, "Failed for fork and exec of \"%s\": %s (%d)", command, strerror(errno), errno);
-
-			_exit(EXIT_FAILURE);
-		}
-
-		_exit(EXIT_SUCCESS);
+		_exit(EXIT_FAILURE);
 	}
 
-	// Wait for the first fork to return, and place the return value in errno
-	if (waitpid(pid, &status, 0) < 0) {
-		syslog(LOG_ERR, "Call to waitpid() failed: %s (%d)", strerror(errno), errno);
-	}
-
-	if (0 != WEXITSTATUS(status)) {
-		// If this has happened then the double fork failed. Clean up
-		// and pass this status along to the caller as errno.
-
-		syslog(LOG_ERR, "Child process failed: %s (%d)", strerror(WEXITSTATUS(status)), WEXITSTATUS(status));
-
-		close(fd);
-		fd = -1;
-
-		errno = WEXITSTATUS(status);
-	}
+	system_socket_table_add_(fd, pid);
 
 	return fd;
 
@@ -665,12 +751,10 @@ open_serial_socket(const char* socket_name)
 #endif
 
 #define FETCH_TERMIOS() do { if(0 != tcgetattr(fd, &tios)) { \
-			/* perror("tcgetattr"); */ \
 			syslog(LOG_DEBUG, "tcgetattr() failed. \"%s\" (%d)", strerror(errno), errno); \
 		} } while(0)
 
 #define COMMIT_TERMIOS() do { if(0 != tcsetattr(fd, TCSANOW, &tios)) { \
-			/* perror("tcsetattr"); */ \
 			syslog(LOG_DEBUG, "tcsetattr() failed. \"%s\" (%d)", strerror(errno), errno); \
 		} } while(0)
 

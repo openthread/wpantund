@@ -65,6 +65,11 @@ SuperSocket::SuperSocket(const std::string& path)
 	}
 }
 
+SuperSocket::~SuperSocket()
+{
+	SuperSocket::hibernate();
+}
+
 boost::shared_ptr<SocketWrapper>
 SuperSocket::create(const std::string& path)
 {
@@ -74,14 +79,12 @@ SuperSocket::create(const std::string& path)
 int
 SuperSocket::hibernate(void)
 {
-	syslog(LOG_DEBUG, "SuperSocket::hibernate()");
-
 	if (mFDRead >= 0) {
 		// Unlock the FD.
 		IGNORE_RETURN_VALUE(flock(mFDRead, LOCK_UN));
 
 		// Close the existing FD.
-		IGNORE_RETURN_VALUE(close(mFDRead));
+		IGNORE_RETURN_VALUE(close_serial_socket(mFDRead));
 	}
 
 	mFDRead = -1;
@@ -95,16 +98,13 @@ SuperSocket::reset()
 {
 	syslog(LOG_DEBUG, "SuperSocket::reset()");
 
-	// Unlock the FD.
-	IGNORE_RETURN_VALUE(flock(mFDRead, LOCK_UN));
-
-	// Close the existing FD.
-	IGNORE_RETURN_VALUE(close(mFDRead));
+	SuperSocket::hibernate();
 
 	// Sleep for 200ms to wait for things to settle down.
 	usleep(MSEC_PER_SEC * 200);
 
 	mFDRead = mFDWrite = open_serial_socket(mPath.c_str());
+
 	if (mFDRead < 0) {
 		// Unable to reopen socket...!
 		syslog(LOG_ERR, "SuperSocket::Reset: Unable to reopen socket <%s>, errno=%d (%s)", mPath.c_str(), errno, strerror(errno));

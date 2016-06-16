@@ -33,6 +33,8 @@ protected:
 	SuperSocket(const std::string& path);
 
 public:
+	virtual ~SuperSocket();
+
 	static boost::shared_ptr<SocketWrapper> create(const std::string& path);
 
 	virtual void reset();
