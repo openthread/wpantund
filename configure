@@ -728,7 +728,9 @@ build
 LIBTOOL
 CODE_COVERAGE_RULES
 CODE_COVERAGE_LDFLAGS
+CODE_COVERAGE_CXXFLAGS
 CODE_COVERAGE_CFLAGS
+CODE_COVERAGE_CPPFLAGS
 GENHTML
 LCOV
 GCOV
@@ -736,6 +738,9 @@ CODE_COVERAGE_ENABLED
 CODE_COVERAGE_ENABLED_FALSE
 CODE_COVERAGE_ENABLED_TRUE
 SED
+MAINT
+MAINTAINER_MODE_FALSE
+MAINTAINER_MODE_TRUE
 AM_BACKSLASH
 AM_DEFAULT_VERBOSITY
 AM_DEFAULT_V
@@ -806,6 +811,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_silent_rules
+enable_maintainer_mode
 with_gcov
 enable_code_coverage
 enable_shared
@@ -1473,6 +1479,9 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-silent-rules   less verbose build output (undo: "make V=1")
   --disable-silent-rules  verbose build output (undo: "make V=0")
+  --enable-maintainer-mode
+                          enable make rules and dependencies not useful (and
+                          sometimes confusing) to the casual installer
   --enable-code-coverage  Whether to enable code coverage support
   --enable-shared[=PKGS]  build shared libraries [default=yes]
   --enable-static[=PKGS]  build static libraries [default=yes]
@@ -2601,7 +2610,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00
+SOURCE_VERSION=0.07.00-20-gce58e43
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
@@ -3224,6 +3233,30 @@ END
 fi
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5
+$as_echo_n "checking whether to enable maintainer-specific portions of Makefiles... " >&6; }
+    # Check whether --enable-maintainer-mode was given.
+if test "${enable_maintainer_mode+set}" = set; then :
+  enableval=$enable_maintainer_mode; USE_MAINTAINER_MODE=$enableval
+else
+  USE_MAINTAINER_MODE=no
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_MAINTAINER_MODE" >&5
+$as_echo "$USE_MAINTAINER_MODE" >&6; }
+   if test $USE_MAINTAINER_MODE = yes; then
+  MAINTAINER_MODE_TRUE=
+  MAINTAINER_MODE_FALSE='#'
+else
+  MAINTAINER_MODE_TRUE='#'
+  MAINTAINER_MODE_FALSE=
+fi
+
+  MAINT=$MAINTAINER_MODE_TRUE
+
+
+
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
   enableval=$enable_silent_rules;
@@ -3476,7 +3509,7 @@ fi
 fi
 
 		# List of supported lcov versions.
-		lcov_version_list="1.6 1.7 1.8 1.9 1.10 1.11"
+		lcov_version_list="1.6 1.7 1.8 1.9 1.10 1.11 1.12"
 
 		# Extract the first word of "lcov", so it can be a program name with args.
 set dummy lcov; ac_word=$2
@@ -3594,8 +3627,12 @@ fi
 
 fi
 
-				CODE_COVERAGE_CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
+				CODE_COVERAGE_CPPFLAGS="-DNDEBUG"
+		CODE_COVERAGE_CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
+		CODE_COVERAGE_CXXFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
 		CODE_COVERAGE_LDFLAGS="-lgcov"
+
+
 
 
 
@@ -3607,6 +3644,7 @@ CODE_COVERAGE_RULES='
 #
 # Optional:
 #  - CODE_COVERAGE_DIRECTORY: Top-level directory for code coverage reporting.
+#    Multiple directories may be specified, separated by whitespace.
 #    (Default: $(top_builddir))
 #  - CODE_COVERAGE_OUTPUT_FILE: Filename and path for the .info file generated
 #    by lcov for code coverage. (Default:
@@ -3614,13 +3652,26 @@ CODE_COVERAGE_RULES='
 #  - CODE_COVERAGE_OUTPUT_DIRECTORY: Directory for generated code coverage
 #    reports to be created. (Default:
 #    $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage)
+#  - CODE_COVERAGE_BRANCH_COVERAGE: Set to 1 to enforce branch coverage,
+#    set to 0 to disable it and leave empty to stay with the default.
+#    (Default: empty)
+#  - CODE_COVERAGE_LCOV_SHOPTS_DEFAULT: Extra options shared between both lcov
+#    instances. (Default: based on $CODE_COVERAGE_BRANCH_COVERAGE)
+#  - CODE_COVERAGE_LCOV_SHOPTS: Extra options to shared between both lcov
+#    instances. (Default: $CODE_COVERAGE_LCOV_SHOPTS_DEFAULT)
 #  - CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH: --gcov-tool pathtogcov
-#  - CODE_COVERAGE_LCOV_OPTIONS_DEFAULT: Extra options to pass to the lcov instance.
-#    (Default: $CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH)
-#  - CODE_COVERAGE_LCOV_OPTIONS: Extra options to pass to the lcov instance.
-#    (Default: $CODE_COVERAGE_LCOV_OPTIONS_DEFAULT)
+#  - CODE_COVERAGE_LCOV_OPTIONS_DEFAULT: Extra options to pass to the
+#    collecting lcov instance. (Default: $CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH)
+#  - CODE_COVERAGE_LCOV_OPTIONS: Extra options to pass to the collecting lcov
+#    instance. (Default: $CODE_COVERAGE_LCOV_OPTIONS_DEFAULT)
+#  - CODE_COVERAGE_LCOV_RMOPTS_DEFAULT: Extra options to pass to the filtering
+#    lcov instance. (Default: empty)
+#  - CODE_COVERAGE_LCOV_RMOPTS: Extra options to pass to the filtering lcov
+#    instance. (Default: $CODE_COVERAGE_LCOV_RMOPTS_DEFAULT)
+#  - CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT: Extra options to pass to the
+#    genhtml instance. (Default: based on $CODE_COVERAGE_BRANCH_COVERAGE)
 #  - CODE_COVERAGE_GENHTML_OPTIONS: Extra options to pass to the genhtml
-#    instance. (Default: empty)
+#    instance. (Default: $CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT)
 #  - CODE_COVERAGE_IGNORE_PATTERN: Extra glob pattern of files to ignore
 #
 # The generated report will be titled using the $(PACKAGE_NAME) and
@@ -3631,21 +3682,44 @@ CODE_COVERAGE_RULES='
 CODE_COVERAGE_DIRECTORY ?= $(top_builddir)
 CODE_COVERAGE_OUTPUT_FILE ?= $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage.info
 CODE_COVERAGE_OUTPUT_DIRECTORY ?= $(PACKAGE_NAME)-$(PACKAGE_VERSION)-coverage
+CODE_COVERAGE_BRANCH_COVERAGE ?=
+CODE_COVERAGE_LCOV_SHOPTS_DEFAULT ?= $(if $(CODE_COVERAGE_BRANCH_COVERAGE),\
+--rc lcov_branch_coverage=$(CODE_COVERAGE_BRANCH_COVERAGE))
+CODE_COVERAGE_LCOV_SHOPTS ?= $(CODE_COVERAGE_LCOV_SHOPTS_DEFAULT)
 CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH ?= --gcov-tool "$(GCOV)"
 CODE_COVERAGE_LCOV_OPTIONS_DEFAULT ?= $(CODE_COVERAGE_LCOV_OPTIONS_GCOVPATH)
 CODE_COVERAGE_LCOV_OPTIONS ?= $(CODE_COVERAGE_LCOV_OPTIONS_DEFAULT)
-CODE_COVERAGE_GENHTML_OPTIONS ?=
+CODE_COVERAGE_LCOV_RMOPTS_DEFAULT ?=
+CODE_COVERAGE_LCOV_RMOPTS ?= $(CODE_COVERAGE_LCOV_RMOPTS_DEFAULT)
+CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT ?=\
+$(if $(CODE_COVERAGE_BRANCH_COVERAGE),\
+--rc genhtml_branch_coverage=$(CODE_COVERAGE_BRANCH_COVERAGE))
+CODE_COVERAGE_GENHTML_OPTIONS ?= $(CODE_COVERAGE_GENHTML_OPTIONS_DEFAULTS)
 CODE_COVERAGE_IGNORE_PATTERN ?=
 
+code_coverage_v_lcov_cap = $(code_coverage_v_lcov_cap_$(V))
+code_coverage_v_lcov_cap_ = $(code_coverage_v_lcov_cap_$(AM_DEFAULT_VERBOSITY))
+code_coverage_v_lcov_cap_0 = @echo "  LCOV   --capture"\
+ $(CODE_COVERAGE_OUTPUT_FILE);
+code_coverage_v_lcov_ign = $(code_coverage_v_lcov_ign_$(V))
+code_coverage_v_lcov_ign_ = $(code_coverage_v_lcov_ign_$(AM_DEFAULT_VERBOSITY))
+code_coverage_v_lcov_ign_0 = @echo "  LCOV   --remove /tmp/*"\
+ $(CODE_COVERAGE_IGNORE_PATTERN);
+code_coverage_v_genhtml = $(code_coverage_v_genhtml_$(V))
+code_coverage_v_genhtml_ = $(code_coverage_v_genhtml_$(AM_DEFAULT_VERBOSITY))
+code_coverage_v_genhtml_0 = @echo "  GEN   " $(CODE_COVERAGE_OUTPUT_DIRECTORY);
 code_coverage_quiet = $(code_coverage_quiet_$(V))
 code_coverage_quiet_ = $(code_coverage_quiet_$(AM_DEFAULT_VERBOSITY))
 code_coverage_quiet_0 = --quiet
 
+# sanitizes the test-name: replaces with underscores: dashes and dots
+code_coverage_sanitize = $(subst -,_,$(subst .,_,$(1)))
+
 # Use recursive makes in order to ignore errors during check
 check-code-coverage:
 ifeq ($(CODE_COVERAGE_ENABLED),yes)
-	-$(MAKE) $(AM_MAKEFLAGS) -k check
-	$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
+	-$(A''M_V_at)$(MAKE) $(AM_MAKEFLAGS) -k check
+	$(A''M_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
 else
 	@echo "Need to reconfigure with --enable-code-coverage"
 endif
@@ -3653,10 +3727,10 @@ endif
 # Capture code coverage data
 code-coverage-capture: code-coverage-capture-hook
 ifeq ($(CODE_COVERAGE_ENABLED),yes)
-	$(LCOV) $(code_coverage_quiet) --directory $(CODE_COVERAGE_DIRECTORY) --capture --output-file "$(CODE_COVERAGE_OUTPUT_FILE).tmp" --test-name "$(PACKAGE_NAME)-$(PACKAGE_VERSION)" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_OPTIONS)
-	$(LCOV) $(code_coverage_quiet) --directory $(CODE_COVERAGE_DIRECTORY) --remove "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)"
+	$(code_coverage_v_lcov_cap)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --capture --output-file "$(CODE_COVERAGE_OUTPUT_FILE).tmp" --test-name "$(call code_coverage_sanitize,$(PACKAGE_NAME)-$(PACKAGE_VERSION))" --no-checksum --compat-libtool $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_OPTIONS)
+	$(code_coverage_v_lcov_ign)$(LCOV) $(code_coverage_quiet) $(addprefix --directory ,$(CODE_COVERAGE_DIRECTORY)) --remove "$(CODE_COVERAGE_OUTPUT_FILE).tmp" "/tmp/*" $(CODE_COVERAGE_IGNORE_PATTERN) --output-file "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_LCOV_SHOPTS) $(CODE_COVERAGE_LCOV_RMOPTS)
 	-@rm -f $(CODE_COVERAGE_OUTPUT_FILE).tmp
-	LANG=C $(GENHTML) $(code_coverage_quiet) --prefix $(CODE_COVERAGE_DIRECTORY) --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "$(PACKAGE_NAME)-$(PACKAGE_VERSION) Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS)
+	$(code_coverage_v_genhtml)LANG=C $(GENHTML) $(code_coverage_quiet) $(addprefix --prefix ,$(CODE_COVERAGE_DIRECTORY)) --output-directory "$(CODE_COVERAGE_OUTPUT_DIRECTORY)" --title "$(PACKAGE_NAME)-$(PACKAGE_VERSION) Code Coverage" --legend --show-details "$(CODE_COVERAGE_OUTPUT_FILE)" $(CODE_COVERAGE_GENHTML_OPTIONS)
 	@echo "file://$(abs_builddir)/$(CODE_COVERAGE_OUTPUT_DIRECTORY)/index.html"
 else
 	@echo "Need to reconfigure with --enable-code-coverage"
@@ -3676,8 +3750,8 @@ endif
 GITIGNOREFILES ?=
 GITIGNOREFILES += $(CODE_COVERAGE_OUTPUT_FILE) $(CODE_COVERAGE_OUTPUT_DIRECTORY)
 
-DISTCHECK_CONFIGURE_FLAGS ?=
-DISTCHECK_CONFIGURE_FLAGS += --disable-code-coverage
+A''M_DISTCHECK_CONFIGURE_FLAGS ?=
+A''M_DISTCHECK_CONFIGURE_FLAGS += --disable-code-coverage
 
 .PHONY: check-code-coverage code-coverage-capture code-coverage-capture-hook code-coverage-clean
 '
@@ -18000,7 +18074,7 @@ fi
 done
 
 
-for ac_header in sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h
+for ac_header in sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h sys/prctl.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -19670,6 +19744,10 @@ else
   am__EXEEXT_FALSE=
 fi
 
+if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
+  as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${CODE_COVERAGE_ENABLED_TRUE}" && test -z "${CODE_COVERAGE_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"CODE_COVERAGE_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
