@@ -173,7 +173,7 @@ dnl This should only pick it up if necessary.
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
 
-AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlcat stpncpy vsnprintf vsprintf snprintf getdtablesize])
+AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlcat stpncpy vsnprintf vsprintf snprintf getdtablesize getloadavg])
 
 NL_DEBUG
 NL_CHECK_DBUS

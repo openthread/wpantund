@@ -781,28 +781,31 @@ main(int argc, char * argv[])
 
 		// Identify conditions where we are burning too much CPU.
 		if (cms_timeout == 0) {
+			double loadavg[3] = {-1.0, -1.0, -1.0};
+
+#if HAVE_GETLOADAVG
+			getloadavg(loadavg, 3);
+#endif
+
 			switch (++zero_cms_in_a_row_count) {
-			case 10:
-				syslog(LOG_WARNING, "BUG: Main loop is thrashing!");
+			case 20:
+				syslog(LOG_INFO, "BUG: Main loop is thrashing! (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
 				break;
 
 			case 200:
-				syslog(LOG_ERR, "BUG: Main loop is still thrashing! Slowing things down.");
+				syslog(LOG_WARNING, "BUG: Main loop is still thrashing! Slowing things down. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
 				break;
 
 			case 1000:
-				syslog(LOG_CRIT, "BUG: Main loop had over 1000 iterations in a row with a zero timeout! Terminating.");
+				syslog(LOG_CRIT, "BUG: Main loop had over 1000 iterations in a row with a zero timeout! Terminating. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
 				gRet = ERRORCODE_UNKNOWN;
 				break;
-
-			default:
-				if (zero_cms_in_a_row_count > 200) {
-					// If the past 200 iterations have had a zero timeout,
-					// start using a minimum timeout of 10ms, so that we
-					// don't bring the rest of the system to a grinding halt.
-					cms_timeout = 10;
-				}
-				break;
+			}
+			if (zero_cms_in_a_row_count > 200) {
+				// If the past 200 iterations have had a zero timeout,
+				// start using a minimum timeout of 10ms, so that we
+				// don't bring the rest of the system to a grinding halt.
+				cms_timeout = 10;
 			}
 		} else {
 			zero_cms_in_a_row_count = 0;
