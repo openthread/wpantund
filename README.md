@@ -39,6 +39,8 @@ following design goals (in no specific order):
  *  Modular, plugin-based architecture (all details for communicating
     with a specific NCP stack are implemented as plugins)
 
+Note that Windows is not currently supported, but patches are welcome.
+
 The following NCP plugins are provided:
 
 *   `src/ncp-spinel`: Supports NCPs that communicate using the [Spinel NCP
