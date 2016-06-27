@@ -207,14 +207,17 @@ NCPInstanceBase::process_event_helper(int event)
 // ----------------------------------------------------------------------------
 // MARK: -
 
-void
+wpantund_status_t
 NCPInstanceBase::set_ncp_version_string(const std::string& version_string)
 {
+	wpantund_status_t status = kWPANTUNDStatus_Ok;
+
 	if (version_string != mNCPVersionString) {
 		if (!mNCPVersionString.empty()) {
 			// The previous version string isn't empty!
 			syslog(LOG_ERR, "Illegal NCP version change! (Previously \"%s\")", mNCPVersionString.c_str());
 			ncp_is_misbehaving();
+			status = kWPANTUNDStatus_InvalidArgument;
 		} else {
 			mNCPVersionString = version_string;
 
@@ -227,6 +230,7 @@ NCPInstanceBase::set_ncp_version_string(const std::string& version_string)
 			}
 		}
 	}
+	return status;
 }
 
 std::set<std::string>
