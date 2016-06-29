@@ -614,7 +614,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_IPV6_LL_ADDR) {
-		spinel_ipv6addr_t *addr = NULL;
+		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
 		if (addr) {
 			memcpy(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress));
@@ -622,7 +622,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_IPV6_ML_ADDR) {
-		spinel_ipv6addr_t *addr = NULL;
+		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
 		if (addr
 		 && buffer_is_nonzero(addr->s6_addr, 8)
@@ -634,7 +634,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_IPV6_ML_PREFIX) {
-		spinel_ipv6addr_t *addr = NULL;
+		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
 		if (addr
 		 && buffer_is_nonzero(addr->s6_addr, 8)
@@ -804,7 +804,7 @@ void
 SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
-			spinel_ipv6addr_t *addr = NULL;
+			struct in6_addr *addr = NULL;
 			uint8_t prefix_len = 0;
 			uint32_t valid_lifetime = 0xFFFFFFFF;
 			uint32_t preferred_lifetime = 0xFFFFFFFF;

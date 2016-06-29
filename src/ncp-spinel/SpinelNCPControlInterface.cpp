@@ -183,7 +183,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
     const static int kDefaultRouteFlag = 1 << 1;
     const static int kDhcpFlag = 1 << 3; (void)kDhcpFlag;
 
-	spinel_ipv6addr_t addr = {};
+	struct in6_addr addr = {};
 	uint8_t flags = 0;
 
 	if (!prefix) {
@@ -255,7 +255,7 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 	ExternalRoutePriority priority, CallbackWithStatus cb)
 {
     const static int kPreferenceOffset = 6;
-	spinel_ipv6addr_t addr = {};
+	struct in6_addr addr = {};
 	uint8_t flags = 0;
 
 	switch (priority) {
@@ -298,7 +298,7 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 void
 SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route_prefix_len, int domain_id, CallbackWithStatus cb)
 {
-	spinel_ipv6addr_t addr = {};
+	struct in6_addr addr = {};
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskSendCommand(
