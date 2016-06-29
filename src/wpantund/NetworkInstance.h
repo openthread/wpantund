@@ -38,13 +38,15 @@ struct NetworkId {
 	get_xpanid_as_uint64() const
 	{
 		union {
-			uint64_t ret;
+			uint64_t val;
 			uint8_t data[8];
-		};
+		} x;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		memcpyrev(data, xpanid, 8);
+		memcpyrev(x.data, xpanid, 8);
+#else
+		memcpy(x.data, xpanid, 8);
 #endif
-		return ret;
+		return x.val;
 	}
 
 	void
@@ -57,6 +59,8 @@ struct NetworkId {
 		x.val = _xpanid;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		memcpyrev(xpanid, x.data, 8);
+#else
+		memcpy(xpanid, x.data, 8);
 #endif
 	}
 
