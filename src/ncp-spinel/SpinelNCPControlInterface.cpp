@@ -300,6 +300,13 @@ SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route
 {
 	struct in6_addr addr = {};
 
+	if (route_prefix_len > sizeof(addr)) {
+		cb(kWPANTUNDStatus_InvalidArgument);
+		return;
+	}
+
+	memcpy(addr.s6_addr, route, route_prefix_len);
+
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskSendCommand(
 			mNCPInstance,
