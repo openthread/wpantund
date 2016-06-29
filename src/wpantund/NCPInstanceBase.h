@@ -212,7 +212,7 @@ public:
 	    const boost::any& value = boost::any()
 	);
 
-	void set_ncp_version_string(const std::string& version_string);
+	wpantund_status_t set_ncp_version_string(const std::string& version_string);
 
 protected:
 	// ========================================================================
