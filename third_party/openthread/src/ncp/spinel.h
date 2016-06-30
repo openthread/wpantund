@@ -28,22 +28,30 @@
 #ifndef SPINEL_HEADER_INCLUDED
 #define SPINEL_HEADER_INCLUDED 1
 
-#include <stdio.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-
-__BEGIN_DECLS
 
 // ----------------------------------------------------------------------------
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-# if defined(__GNUC__) && !SPINEL_EMBEDDED
+
+# if defined(__GNUC__)
 #  define SPINEL_API_EXTERN              extern __attribute__ ((visibility ("default")))
 #  define SPINEL_API_NONNULL_ALL         __attribute__((nonnull))
 #  define SPINEL_API_WARN_UNUSED_RESULT  __attribute__((warn_unused_result))
 # endif // ifdef __GNUC__
+
+# if !defined(__BEGIN_DECLS) || !defined(__END_DECLS)
+#  if defined(__cplusplus)
+#   define __BEGIN_DECLS   extern "C" {
+#   define __END_DECLS     }
+#  else // if defined(__cplusplus)
+#   define __BEGIN_DECLS
+#   define __END_DECLS
+#  endif // else defined(__cplusplus)
+# endif // if !defined(__BEGIN_DECLS) || !defined(__END_DECLS)
+
 #endif // ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 #ifndef SPINEL_API_EXTERN
@@ -66,6 +74,8 @@ __BEGIN_DECLS
 #define SPINEL_FRAME_MAX_SIZE                   1300
 
 // ----------------------------------------------------------------------------
+
+__BEGIN_DECLS
 
 typedef enum
 {
@@ -149,9 +159,19 @@ enum
 
 enum
 {
-    SPINEL_PHY_MODE_NORMAL       = 0, ///< Normal PHY filtering is in place.
-    SPINEL_PHY_MODE_PROMISCUOUS  = 1, ///< All PHY packets matching network are passed up the stack.
-    SPINEL_PHY_MODE_MONITOR      = 2, ///< All decoded PHY packets are passed up the stack.
+    SPINEL_MAC_FILTER_MODE_NORMAL      = 0, ///< Normal MAC filtering is in place.
+    SPINEL_MAC_FILTER_MODE_PROMISCUOUS = 1, ///< All MAC packets matching network are passed up the stack.
+    SPINEL_MAC_FILTER_MODE_MONITOR     = 2, ///< All decoded MAC packets are passed up the stack.
+
+    /// 802.15.4's definition of "Promiscuous" mode.
+    /** 802.15.4 defines promiscuous mode to be what
+     *  is generally considered to be "Monitor" mode.
+     *  This definition will hopefully help people who
+     *  are familiar with the 802.15.4 spec from being
+     *  confused about what they need to set this
+     *  property to in order to get the desired behavior.
+     */
+    SPINEL_MAC_FILTER_MODE_15_4_PROMISCUOUS = SPINEL_MAC_FILTER_MODE_MONITOR,
 };
 
 typedef struct
@@ -169,7 +189,11 @@ typedef struct
     uint8_t bytes[6];
 } spinel_eui48_t;
 
-typedef struct in6_addr spinel_ipv6addr_t;
+typedef struct
+{
+    uint8_t bytes[16];
+} spinel_ipv6addr_t;
+
 typedef int spinel_ssize_t;
 typedef unsigned int spinel_size_t;
 typedef uint8_t spinel_tid_t;
@@ -215,19 +239,19 @@ enum
     SPINEL_CAP_HBO                   = 3,
     SPINEL_CAP_POWER_SAVE            = 4,
 
-    SPINEL_CAP_802_15_4__BEGIN       = 16,
-    SPINEL_CAP_802_15_4_2003         = (SPINEL_CAP_802_15_4__BEGIN + 0),
-    SPINEL_CAP_802_15_4_2006         = (SPINEL_CAP_802_15_4__BEGIN + 1),
-    SPINEL_CAP_802_15_4_2011         = (SPINEL_CAP_802_15_4__BEGIN + 2),
-    SPINEL_CAP_802_15_4_PIB          = (SPINEL_CAP_802_15_4__BEGIN + 5),
+    SPINEL_CAP_802_15_4__BEGIN        = 16,
+    SPINEL_CAP_802_15_4_2003          = (SPINEL_CAP_802_15_4__BEGIN + 0),
+    SPINEL_CAP_802_15_4_2006          = (SPINEL_CAP_802_15_4__BEGIN + 1),
+    SPINEL_CAP_802_15_4_2011          = (SPINEL_CAP_802_15_4__BEGIN + 2),
+    SPINEL_CAP_802_15_4_PIB           = (SPINEL_CAP_802_15_4__BEGIN + 5),
     SPINEL_CAP_802_15_4_2450MHZ_OQPSK = (SPINEL_CAP_802_15_4__BEGIN + 8),
-    SPINEL_CAP_802_15_4_915MHZ_OQPSK = (SPINEL_CAP_802_15_4__BEGIN + 9),
-    SPINEL_CAP_802_15_4_868MHZ_OQPSK = (SPINEL_CAP_802_15_4__BEGIN + 10),
-    SPINEL_CAP_802_15_4_915MHZ_BPSK  = (SPINEL_CAP_802_15_4__BEGIN + 11),
-    SPINEL_CAP_802_15_4_868MHZ_BPSK  = (SPINEL_CAP_802_15_4__BEGIN + 12),
-    SPINEL_CAP_802_15_4_915MHZ_ASK   = (SPINEL_CAP_802_15_4__BEGIN + 13),
-    SPINEL_CAP_802_15_4_868MHZ_ASK   = (SPINEL_CAP_802_15_4__BEGIN + 14),
-    SPINEL_CAP_802_15_4__END         = 32,
+    SPINEL_CAP_802_15_4_915MHZ_OQPSK  = (SPINEL_CAP_802_15_4__BEGIN + 9),
+    SPINEL_CAP_802_15_4_868MHZ_OQPSK  = (SPINEL_CAP_802_15_4__BEGIN + 10),
+    SPINEL_CAP_802_15_4_915MHZ_BPSK   = (SPINEL_CAP_802_15_4__BEGIN + 11),
+    SPINEL_CAP_802_15_4_868MHZ_BPSK   = (SPINEL_CAP_802_15_4__BEGIN + 12),
+    SPINEL_CAP_802_15_4_915MHZ_ASK    = (SPINEL_CAP_802_15_4__BEGIN + 13),
+    SPINEL_CAP_802_15_4_868MHZ_ASK    = (SPINEL_CAP_802_15_4__BEGIN + 14),
+    SPINEL_CAP_802_15_4__END          = 32,
 
     SPINEL_CAP_ROLE__BEGIN           = 48,
     SPINEL_CAP_ROLE_ROUTER           = (SPINEL_CAP_ROLE__BEGIN + 0),
@@ -274,19 +298,19 @@ typedef enum
     SPINEL_PROP_PHY_CCA_THRESHOLD       = SPINEL_PROP_PHY__BEGIN + 4, ///< dBm [c]
     SPINEL_PROP_PHY_TX_POWER            = SPINEL_PROP_PHY__BEGIN + 5, ///< [c]
     SPINEL_PROP_PHY_RSSI                = SPINEL_PROP_PHY__BEGIN + 6, ///< dBm [c]
-    SPINEL_PROP_PHY_RAW_STREAM_ENABLED  = SPINEL_PROP_PHY__BEGIN + 7, ///< [C]
-    SPINEL_PROP_PHY_MODE                = SPINEL_PROP_PHY__BEGIN + 8, ///< [C]
     SPINEL_PROP_PHY__END                = 0x30,
 
-    SPINEL_PROP_MAC__BEGIN           = 0x30,
-    SPINEL_PROP_MAC_SCAN_STATE       = SPINEL_PROP_MAC__BEGIN + 0, ///< [C]
-    SPINEL_PROP_MAC_SCAN_MASK        = SPINEL_PROP_MAC__BEGIN + 1, ///< [A(C)]
-    SPINEL_PROP_MAC_SCAN_PERIOD      = SPINEL_PROP_MAC__BEGIN + 2, ///< ms-per-channel [S]
-    SPINEL_PROP_MAC_SCAN_BEACON      = SPINEL_PROP_MAC__BEGIN + 3, ///< chan,rssi,(laddr,saddr,panid,lqi),(proto,xtra) [CcT(ESSC.)T(i).]
-    SPINEL_PROP_MAC_15_4_LADDR       = SPINEL_PROP_MAC__BEGIN + 4, ///< [E]
-    SPINEL_PROP_MAC_15_4_SADDR       = SPINEL_PROP_MAC__BEGIN + 5, ///< [S]
-    SPINEL_PROP_MAC_15_4_PANID       = SPINEL_PROP_MAC__BEGIN + 6, ///< [S]
-    SPINEL_PROP_MAC__END             = 0x40,
+    SPINEL_PROP_MAC__BEGIN             = 0x30,
+    SPINEL_PROP_MAC_SCAN_STATE         = SPINEL_PROP_MAC__BEGIN + 0, ///< [C]
+    SPINEL_PROP_MAC_SCAN_MASK          = SPINEL_PROP_MAC__BEGIN + 1, ///< [A(C)]
+    SPINEL_PROP_MAC_SCAN_PERIOD        = SPINEL_PROP_MAC__BEGIN + 2, ///< ms-per-channel [S]
+    SPINEL_PROP_MAC_SCAN_BEACON        = SPINEL_PROP_MAC__BEGIN + 3, ///< chan,rssi,(laddr,saddr,panid,lqi),(proto,xtra) [CcT(ESSC.)T(i).]
+    SPINEL_PROP_MAC_15_4_LADDR         = SPINEL_PROP_MAC__BEGIN + 4, ///< [E]
+    SPINEL_PROP_MAC_15_4_SADDR         = SPINEL_PROP_MAC__BEGIN + 5, ///< [S]
+    SPINEL_PROP_MAC_15_4_PANID         = SPINEL_PROP_MAC__BEGIN + 6, ///< [S]
+    SPINEL_PROP_MAC_RAW_STREAM_ENABLED = SPINEL_PROP_MAC__BEGIN + 7, ///< [C]
+    SPINEL_PROP_MAC_FILTER_MODE        = SPINEL_PROP_MAC__BEGIN + 8, ///< [C]
+    SPINEL_PROP_MAC__END               = 0x40,
 
     SPINEL_PROP_NET__BEGIN           = 0x40,
     SPINEL_PROP_NET_SAVED            = SPINEL_PROP_NET__BEGIN + 0, ///< [b]
@@ -340,6 +364,13 @@ typedef enum
     // Individual registers are fetched using
     // `SPINEL_PROP_15_4_PIB__BEGIN+[PIB_IDENTIFIER]`
     // Only supported if SPINEL_CAP_15_4_PIB is set.
+    //
+    // For brevity, the entire 802.15.4 PIB space is
+    // not defined here, but a few choice attributes
+    // are defined for illustration and convenience.
+    SPINEL_PROP_15_4_PIB_PHY_CHANNELS_SUPPORTED = SPINEL_PROP_15_4_PIB__BEGIN + 0x01, ///< [A(L)]
+    SPINEL_PROP_15_4_PIB_MAC_PROMISCUOUS_MODE   = SPINEL_PROP_15_4_PIB__BEGIN + 0x51, ///< [b]
+    SPINEL_PROP_15_4_PIB_MAC_SECURITY_ENABLED   = SPINEL_PROP_15_4_PIB__BEGIN + 0x5d, ///< [b]
     SPINEL_PROP_15_4_PIB__END       = 1280,
 
     SPINEL_PROP_NEST__BEGIN         = 15296,

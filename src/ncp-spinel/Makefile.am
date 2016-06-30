@@ -33,7 +33,7 @@ DISTCLEANFILES = \
 EXTRA_DIST =                                         \
 	../../third_party/openthread/CONTRIBUTING.md     \
 	../../third_party/openthread/LICENSE             \
-	../../third_party/openthread/README              \
+	../../third_party/openthread/NOTICE              \
 	../../third_party/openthread/README.google       \
 	../../third_party/openthread/README.md           \
 	../../third_party/openthread/src/ncp/PROTOCOL.md \

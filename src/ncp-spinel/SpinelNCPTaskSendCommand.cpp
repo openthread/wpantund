@@ -125,7 +125,7 @@ spinel_iter_to_any(spinel_datatype_iter_t *iter)
 
 	case SPINEL_DATATYPE_IPv6ADDR_C:
 		{
-			const spinel_ipv6addr_t *val(NULL);
+			struct in6_addr *val = NULL;
 			status = spinel_datatype_iter_unpack(iter, &val);
 			require_noerr(status, bail);
 			ret = in6_addr_to_string(*val);
