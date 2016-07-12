@@ -103,6 +103,8 @@ public:
 
 	NCPState get_ncp_state()const;
 
+	bool is_state_change_valid(NCPState new_ncp_state)const;
+
 	//! Handles transitioning from state-to-state.
 	/*! This is the ONLY WAY to change mNCPState. */
 	void change_ncp_state(NCPState new_ncp_state);
