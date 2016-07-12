@@ -595,22 +595,48 @@ NCPInstanceBase::get_ncp_state()const
 	return mNCPState;
 }
 
+bool
+NCPInstanceBase::is_state_change_valid(NCPState new_ncp_state)const
+{
+	// Add any invalid state transitions here so that
+	// bugs can be more quickly identified and corrected.
+
+	if (ncp_state_is_detached_from_ncp(get_ncp_state())) {
+		return new_ncp_state == UNINITIALIZED;
+	}
+
+	return true;
+}
+
 void
 NCPInstanceBase::change_ncp_state(NCPState new_ncp_state)
 {
 	NCPState old_ncp_state = mNCPState;
-	mNCPState = new_ncp_state;
 
-	if (old_ncp_state != mNCPState) {
-		syslog(
-			LOG_NOTICE,
-		   "State change: \"%s\" -> \"%s\"",
-		   ncp_state_to_string(old_ncp_state).c_str(),
-		   ncp_state_to_string(mNCPState).c_str()
-		);
+	if (old_ncp_state != new_ncp_state) {
+		if (!is_state_change_valid(new_ncp_state)) {
+			syslog(
+				LOG_WARNING,
+				"BUG: Invalid state change: \"%s\" -> \"%s\"",
+				ncp_state_to_string(old_ncp_state).c_str(),
+				ncp_state_to_string(new_ncp_state).c_str()
+			);
 
-		// Sanity checks for invalid state transitions.
-		__ASSERT_MACROS_check(!(ncp_state_is_commissioned(old_ncp_state) && ncp_state_is_joining(mNCPState)));
+			if (ncp_state_is_detached_from_ncp(get_ncp_state())) {
+				// If the state was detached, do not allow the
+				// state change to continue.
+				return;
+			}
+		} else {
+			syslog(
+				LOG_NOTICE,
+				"State change: \"%s\" -> \"%s\"",
+				ncp_state_to_string(old_ncp_state).c_str(),
+				ncp_state_to_string(new_ncp_state).c_str()
+			);
+		}
+
+		mNCPState = new_ncp_state;
 
 		handle_ncp_state_change(new_ncp_state, old_ncp_state);
 	}
