@@ -35,19 +35,30 @@ static const arg_list_item_t scan_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
 	{'c', "channel", "channel", "Set the desired channel"},
+	{'e', "energy", NULL, "Perform an energy scan"},
 	{0}
 };
 
 int gScannedNetworkCount = 0;
 struct wpan_network_info_s gScannedNetworks[SCANNED_NET_BUFFER_SIZE];
 
+static bool sEnergyScan;
+
 static void
 print_scan_header(void)
 {
+	if (sEnergyScan) {
+		printf("    Ch | RSSI\n");
+		printf("   ----+-------\n");
+
+		return;
+	}
+
 	printf(
 		"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
 	printf(
 		"---+----------+--------------------+--------+----+------------------+------------------+------\n");
+
 }
 
 static DBusHandlerResult
@@ -110,6 +121,46 @@ bail:
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
+static DBusHandlerResult
+dbus_energy_scan_handler(
+    DBusConnection *connection,
+    DBusMessage *   message,
+    void *          user_data
+) {
+	DBusMessageIter iter;
+	int ret;
+	int16_t channel;
+	int8_t maxRssi;
+
+	if (!dbus_message_is_signal(message, WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_SIGNAL_ENERGY_SCAN_RESULT)) {
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	}
+
+	dbus_message_iter_init(message, &iter);
+
+	ret = parse_energy_scan_result_from_iter(&channel, &maxRssi, &iter);
+
+	require_noerr(ret, bail);
+
+	printf("  %4d | %4d\n", channel, maxRssi);
+
+bail:
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static DBusHandlerResult
+dbus_signal_handler(
+    DBusConnection *connection,
+    DBusMessage *   message,
+    void *          user_data
+) {
+	if (sEnergyScan) {
+		return dbus_energy_scan_handler(connection, message, user_data);
+	}
+
+	return dbus_beacon_handler(connection, message, user_data);
+}
+
 static const char gDBusObjectManagerMatchString[] =
 	"type='signal'"
 //	",interface='" WPANTUND_DBUS_APIv1_INTERFACE "'"
@@ -131,16 +182,19 @@ int tool_cmd_scan(int argc, char *argv[])
 
 	dbus_error_init(&error);
 
+	sEnergyScan = false;
+
 	while (1) {
 		static struct option long_options[] = {
 			{"help", no_argument, 0, 'h'},
 			{"timeout", required_argument, 0, 't'},
 			{"channel", required_argument, 0, 'c'},
+			{"energy", no_argument, 0, 'e'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hc:t:", long_options,
+		c = getopt_long(argc, argv, "hc:t:e", long_options,
 				&option_index);
 
 		if (c == -1)
@@ -159,6 +213,10 @@ int tool_cmd_scan(int argc, char *argv[])
 
 		case 'c':
 			channel_mask = strtomask_uint32(optarg);
+			break;
+
+		case 'e':
+			sEnergyScan = true;
 			break;
 		}
 	}
@@ -200,7 +258,7 @@ int tool_cmd_scan(int argc, char *argv[])
 
 	require_string(error.name == NULL, bail, error.message);
 
-	dbus_connection_add_filter(connection, &dbus_beacon_handler, NULL, NULL);
+	dbus_connection_add_filter(connection, &dbus_signal_handler, NULL, NULL);
 
 	{
 		char path[DBUS_MAXIMUM_NAME_LENGTH+1];
@@ -224,7 +282,7 @@ int tool_cmd_scan(int argc, char *argv[])
 			interface_dbus_name,
 			path,
 			WPANTUND_DBUS_APIv1_INTERFACE,
-			WPANTUND_IF_CMD_NET_SCAN_START
+			sEnergyScan? WPANTUND_IF_CMD_ENERGY_SCAN_START : WPANTUND_IF_CMD_NET_SCAN_START
 		);
 
 		dbus_message_append_args(
@@ -235,7 +293,9 @@ int tool_cmd_scan(int argc, char *argv[])
 
 		print_scan_header();
 
-		gScannedNetworkCount = 0;
+		if (!sEnergyScan) {
+			gScannedNetworkCount = 0;
+		}
 
 		if(!dbus_connection_send_with_reply(
 		    connection,
@@ -296,7 +356,7 @@ bail:
 
 	if (connection) {
 		dbus_bus_remove_match(connection, gDBusObjectManagerMatchString, NULL);
-		dbus_connection_remove_filter(connection,&dbus_beacon_handler,NULL);
+		dbus_connection_remove_filter(connection,&dbus_signal_handler,NULL);
 		dbus_connection_unref(connection);
 	}
 

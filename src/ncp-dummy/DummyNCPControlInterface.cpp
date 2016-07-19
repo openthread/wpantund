@@ -176,6 +176,20 @@ DummyNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Start network scan
 }
 
+void
+DummyNCPControlInterface::energyscan_start(
+    const ValueMap& options,
+    CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::energyscan_stop(CallbackWithStatus cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
 std::string
 DummyNCPControlInterface::get_name() {
 	return mNCPInstance->get_name();

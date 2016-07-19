@@ -30,6 +30,7 @@
 #include <boost/function.hpp>
 
 #include "NetworkInstance.h"
+#include "NCPTypes.h"
 #include "Data.h"
 #include "time-utils.h"
 
@@ -69,12 +70,16 @@ private:
 	void CallbackWithStatusArg1_Helper(int ret, const boost::any& value, DBusMessage *original_message);
 
 	void status_response_helper(int ret, NCPControlInterface* interface, DBusMessage *original_message);
-	void scan_response_helper(int ret, DBusMessage *original_message);
+
+	// TODO: Remove these...
+	//void scan_response_helper(int ret, DBusMessage *original_message);
+	//void energy_scan_response_helper(int ret, DBusMessage *original_message);
 
 	// ------------------------------------------------------------------------
 
 	void property_changed(NCPControlInterface* interface,const std::string& key, const boost::any& value);
 	void received_beacon(NCPControlInterface* interface, const WPAN::NetworkInstance& network);
+	void received_energy_scan_result(NCPControlInterface* interface, const EnergyScanResultEntry& energy_scan_result);
 
 	// ------------------------------------------------------------------------
 
@@ -147,6 +152,16 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_energy_scan_start_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_energy_scan_stop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_data_poll_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
@@ -165,7 +180,6 @@ private:
 
 	DBusConnection *mConnection;
 	std::map<std::string, boost::function<interface_handler_cb> > mInterfaceCallbackTable;
-
 }; // class DBusIPCAPI_v1
 
 }; // namespace nl

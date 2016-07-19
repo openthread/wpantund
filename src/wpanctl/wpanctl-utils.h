@@ -71,6 +71,7 @@ struct wpan_network_info_s {
 const char* wpantund_status_to_cstr(int status);
 void print_error_diagnosis(int error);
 int parse_network_info_from_iter(struct wpan_network_info_s *network_info, DBusMessageIter *iter);
+int parse_energy_scan_result_from_iter(int16_t *channel, int8_t *maxRssi, DBusMessageIter *iter);
 int lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name);
 void dump_info_from_iter(FILE* file, DBusMessageIter *iter, int indent, bool bare, bool indentFirstLine);
 uint16_t node_type_str2int(const char *node_type);
