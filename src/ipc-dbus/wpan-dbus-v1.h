@@ -65,6 +65,10 @@
 #define WPANTUND_IF_CMD_NET_SCAN_STOP         "NetScanStop"
 #define WPANTUND_IF_SIGNAL_NET_SCAN_BEACON    "NetScanBeacon"
 
+#define WPANTUND_IF_CMD_ENERGY_SCAN_START     "EnergyScanStart"
+#define WPANTUND_IF_CMD_ENERGY_SCAN_STOP      "EnergyScanStop"
+#define WPANTUND_IF_SIGNAL_ENERGY_SCAN_RESULT "EnergyScanResult"
+
 #define WPANTUND_IF_CMD_PROP_GET              "PropGet"
 #define WPANTUND_IF_CMD_PROP_SET              "PropSet"
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"

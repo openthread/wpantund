@@ -402,6 +402,20 @@ SpinelNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Start network scan
 }
 
+void
+SpinelNCPControlInterface::energyscan_start(
+    const ValueMap& options,
+    CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+SpinelNCPControlInterface::energyscan_stop(CallbackWithStatus cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
 std::string
 SpinelNCPControlInterface::get_name() {
 	return mNCPInstance->get_name();

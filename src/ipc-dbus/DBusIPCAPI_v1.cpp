@@ -38,7 +38,6 @@
 #include "wpan-error.h"
 
 #include "NCPControlInterface.h"
-#include "NCPTypes.h"
 #include "assert-macros.h"
 
 #include "DBUSHelpers.h"
@@ -85,6 +84,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_HOST_DID_WAKE, interface_host_did_wake_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_STOP, interface_net_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_START, interface_net_scan_start_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_STOP, interface_energy_scan_stop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_START, interface_energy_scan_start_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_get_prop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_set_prop_handler);
@@ -136,6 +137,15 @@ DBusIPCAPI_v1::add_interface(NCPControlInterface* interface)
 	interface->mOnNetScanBeacon.connect(
 	    boost::bind(
 			&DBusIPCAPI_v1::received_beacon,
+			this,
+			interface,
+			_1
+		)
+	);
+
+	interface->mOnEnergyScanResult.connect(
+		boost::bind(
+			&DBusIPCAPI_v1::received_energy_scan_result,
 			this,
 			interface,
 			_1
@@ -286,6 +296,54 @@ DBusIPCAPI_v1::received_beacon(NCPControlInterface* interface, const WPAN::Netwo
 
 	dbus_message_unref(signal);
 }
+
+static void
+ipc_append_energy_scan_result_dict(
+    DBusMessageIter *iter, const EnergyScanResultEntry& energy_scan_result
+    )
+{
+	uint16_t channel = energy_scan_result.mChannel;
+	int16_t maxRssi = static_cast<int16_t>(energy_scan_result.mMaxRssi);
+	DBusMessageIter dict;
+
+	dbus_message_iter_open_container(
+	    iter,
+	    DBUS_TYPE_ARRAY,
+	    DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+	    DBUS_TYPE_STRING_AS_STRING
+	    DBUS_TYPE_VARIANT_AS_STRING
+	    DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+	    &dict
+	    );
+
+	append_dict_entry(&dict, kWPANTUNDProperty_NCPChannel, DBUS_TYPE_INT16, &channel);
+	append_dict_entry(&dict, "RSSI", DBUS_TYPE_BYTE, &maxRssi);
+
+	dbus_message_iter_close_container(iter, &dict);
+}
+
+void
+DBusIPCAPI_v1::received_energy_scan_result(NCPControlInterface* interface,
+                                          const EnergyScanResultEntry& energy_scan_result)
+{
+	DBusMessageIter iter;
+	DBusMessage* signal;
+
+	signal = dbus_message_new_signal(
+		path_for_iface(interface).c_str(),
+		WPANTUND_DBUS_APIv1_INTERFACE,
+		WPANTUND_IF_SIGNAL_ENERGY_SCAN_RESULT
+    );
+
+	dbus_message_iter_init_append(signal, &iter);
+
+	ipc_append_energy_scan_result_dict(&iter, energy_scan_result);
+
+	dbus_connection_send(mConnection, signal, NULL);
+
+	dbus_message_unref(signal);
+}
+
 void
 DBusIPCAPI_v1::property_changed(NCPControlInterface* interface,const std::string& key, const boost::any& value)
 {
@@ -677,6 +735,21 @@ DBusIPCAPI_v1::interface_net_scan_stop_handler(
 	return ret;
 }
 
+DBusHandlerResult
+DBusIPCAPI_v1::interface_energy_scan_stop_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	interface->energyscan_stop(boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+									 this, _1, message));
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
 
 DBusHandlerResult
 DBusIPCAPI_v1::interface_get_prop_handler(
@@ -783,6 +856,41 @@ DBusIPCAPI_v1::interface_net_scan_start_handler(
 	}
 
 	interface->netscan_start(
+		options,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_energy_scan_start_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	ValueMap options;
+	NCPControlInterface::ChannelMask channel_mask = 0;
+
+	dbus_message_ref(message);
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_INVALID
+	);
+
+	if (channel_mask) {
+		options[kWPANTUNDProperty_NCPChannelMask] = channel_mask;
+	}
+
+	interface->energyscan_start(
 		options,
 		boost::bind(
 			&DBusIPCAPI_v1::CallbackWithStatus_Helper,

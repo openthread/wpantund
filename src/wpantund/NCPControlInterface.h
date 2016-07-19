@@ -38,6 +38,7 @@
 #include "time-utils.h"
 
 #include "NetworkInstance.h"
+#include "NCPTypes.h"
 #include <cstring>
 #include "IPv6PacketMatcher.h"
 #include "Data.h"
@@ -150,6 +151,15 @@ public:
 
 	boost::signals2::signal<void(const WPAN::NetworkInstance&)> mOnNetScanBeacon;
 
+public:
+	// ========================================================================
+	// EnergyScan-related Member Functions
+
+	virtual void energyscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn()) = 0;
+
+	virtual void energyscan_stop(CallbackWithStatus cb = NilReturn()) = 0;
+
+	boost::signals2::signal<void(const EnergyScanResultEntry&)> mOnEnergyScanResult;
 
 public:
 	// ========================================================================

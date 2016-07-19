@@ -62,6 +62,9 @@ public:
 	virtual void netscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn());
 	virtual void netscan_stop(CallbackWithStatus cb = NilReturn());
 
+	virtual void energyscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn());
+	virtual void energyscan_stop(CallbackWithStatus cb = NilReturn());
+
 	virtual void begin_net_wake(uint8_t data, uint32_t flags, CallbackWithStatus cb = NilReturn());
 	virtual void reset(CallbackWithStatus cb = NilReturn());
 	virtual void permit_join(

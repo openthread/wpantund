@@ -74,6 +74,13 @@ struct GlobalAddressEntry {
 	std::string get_description() const;
 };
 
+struct EnergyScanResultEntry
+{
+	uint8_t mChannel;
+	int8_t 	mMaxRssi;
+};
+
+
 std::string address_flags_to_string(uint8_t flags);
 
 bool ncp_state_is_sleeping(NCPState x);

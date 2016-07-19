@@ -249,6 +249,77 @@ bail:
 	return ret;
 }
 
+int parse_energy_scan_result_from_iter(int16_t *channel, int8_t *maxRssi, DBusMessageIter *iter)
+{
+	int ret = 0;
+	DBusMessageIter outer_iter;
+	DBusMessageIter dict_iter;
+
+	if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_ARRAY) {
+		dbus_message_iter_recurse(iter, &outer_iter);
+		iter = &outer_iter;
+	}
+
+	*channel = 0;
+	*maxRssi = 0;
+
+	for (;
+	     dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID;
+	     dbus_message_iter_next(iter)) {
+		DBusMessageIter value_iter;
+		char* key;
+
+		if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_DICT_ENTRY) {
+			fprintf(stderr,
+			        "error: Bad type for energy scan result (%c)\n",
+			        dbus_message_iter_get_arg_type(iter));
+			ret = ERRORCODE_UNKNOWN;
+			goto bail;
+		}
+
+		dbus_message_iter_recurse(iter, &dict_iter);
+
+		if (dbus_message_iter_get_arg_type(&dict_iter) != DBUS_TYPE_STRING) {
+			fprintf(stderr,
+			        "error: Bad type for energy scan result (%c)\n",
+			        dbus_message_iter_get_arg_type(&dict_iter));
+			ret = ERRORCODE_UNKNOWN;
+			goto bail;
+		}
+
+		// Get the key
+		dbus_message_iter_get_basic(&dict_iter, &key);
+		dbus_message_iter_next(&dict_iter);
+
+		if (dbus_message_iter_get_arg_type(&dict_iter) != DBUS_TYPE_VARIANT) {
+			fprintf(stderr,
+			        "error: Bad type for energy scan result (%c)\n",
+			        dbus_message_iter_get_arg_type(&dict_iter));
+			ret = ERRORCODE_UNKNOWN;
+			goto bail;
+		}
+
+		dbus_message_iter_recurse(&dict_iter, &value_iter);
+
+		if (strcmp(key, kWPANTUNDProperty_NCPChannel) == 0) {
+			dbus_message_iter_get_basic(&value_iter, channel);
+		} else if (strcmp(key, "RSSI") == 0) {
+			dbus_message_iter_get_basic(&value_iter, maxRssi);
+		} else {
+#if DEBUG
+			fprintf(stderr,
+			        "info: %s -> (%c)\n",
+			        key,
+			        dbus_message_iter_get_arg_type(&value_iter));
+#endif
+		}
+	}
+
+bail:
+	if (ret) fprintf(stderr, "Energy scan result parse failed.\n");
+	return ret;
+}
+
 int
 lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 {
