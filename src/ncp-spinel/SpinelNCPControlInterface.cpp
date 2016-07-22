@@ -50,6 +50,7 @@
 #include "SpinelNCPTaskForm.h"
 #include "SpinelNCPTaskLeave.h"
 #include "SpinelNCPTaskScan.h"
+#include "SpinelNCPTaskChangeNetData.h"
 #include "SpinelNCPTaskSendCommand.h"
 
 using namespace nl;
@@ -209,7 +210,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 
 	if (validLifetime == 0) {
 		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
+			new SpinelNCPTaskChangeNetData(
 				mNCPInstance,
 				boost::bind(cb,_1),
 				SpinelPackData(
@@ -229,7 +230,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 		));
 	} else {
 		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
+			new SpinelNCPTaskChangeNetData(
 				mNCPInstance,
 				boost::bind(cb,_1),
 				SpinelPackData(
@@ -275,7 +276,7 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 	memcpy(addr.s6_addr, route, route_prefix_len);
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
+		new SpinelNCPTaskChangeNetData(
 			mNCPInstance,
 			boost::bind(cb,_1),
 			SpinelPackData(
@@ -308,7 +309,7 @@ SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route
 	memcpy(addr.s6_addr, route, route_prefix_len);
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
+		new SpinelNCPTaskChangeNetData(
 			mNCPInstance,
 			boost::bind(cb,_1),
 			SpinelPackData(

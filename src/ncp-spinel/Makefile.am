@@ -55,6 +55,8 @@ NCP_SOURCES = \
 	SpinelNCPInstance-Protothreads.cpp \
 	SpinelNCPTask.cpp \
 	SpinelNCPTask.h \
+	SpinelNCPTaskChangeNetData.cpp \
+	SpinelNCPTaskChangeNetData.h \
 	SpinelNCPTaskDeepSleep.cpp \
 	SpinelNCPTaskDeepSleep.h \
 	SpinelNCPTaskForm.cpp \
