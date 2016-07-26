@@ -37,6 +37,7 @@
 #define kWPANTUNDProperty_ConfigDaemonPIDFile              "Config:Daemon:PIDFile"
 #define kWPANTUNDProperty_ConfigDaemonPrivDropToUser       "Config:Daemon:PrivDropToUser"
 #define kWPANTUNDProperty_ConfigDaemonChroot               "Config:Daemon:Chroot"
+#define kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand "Config:Daemon:NetworkRetainCommand"
 
 #define kWPANTUNDProperty_DaemonVersion                   "Daemon:Version"
 #define kWPANTUNDProperty_DaemonEnabled                   "Daemon:Enabled"

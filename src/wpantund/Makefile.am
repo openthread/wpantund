@@ -67,6 +67,8 @@ wpantund_SOURCES = \
 	NCPInstanceBase-AsyncIO.cpp \
 	NCPTypes.h \
 	NCPTypes.cpp \
+	NetworkRetain.h \
+	NetworkRetain.cpp \
 	../util/IPv6PacketMatcher.cpp \
 	../util/tunnel.c \
 	../util/config-file.c \
