@@ -247,9 +247,9 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		{
 			uint16_t frame_crc = (mInboundFrame[mInboundFrameSize]|(mInboundFrame[mInboundFrameSize+1]<<8));
 			if (mInboundFrameHDLCCRC != frame_crc) {
-				syslog(LOG_ERR, "[NCP->]: Frame CRC Mismatch: Calc:0x%04X != Frame:0x%04X", mInboundFrameHDLCCRC, frame_crc);
+				syslog(LOG_ERR, "[NCP->]: Frame CRC Mismatch: Calc:0x%04X != Frame:0x%04X, Garbage on line?", mInboundFrameHDLCCRC, frame_crc);
+				continue;
 			}
-			require(mInboundFrameHDLCCRC == frame_crc, on_error);
 		}
 
 #endif
