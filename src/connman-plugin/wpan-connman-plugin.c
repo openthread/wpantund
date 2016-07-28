@@ -1182,10 +1182,37 @@ lowpan_device_leave(struct connman_device *device)
 		dbus_message_unref(message);
 }
 
+static void
+lowpan_device_reset(struct connman_device *device)
+{
+	DBusMessage *message = NULL;
+	char dbus_path[DBUS_MAXIMUM_NAME_LENGTH];
+
+	snprintf(dbus_path,
+	         sizeof(dbus_path),
+	         "%s/%s",
+	         WPAN_TUNNEL_DBUS_PATH,
+	         connman_device_get_ident(device));
+
+	message = dbus_message_new_method_call(
+	    WPAN_TUNNEL_DBUS_NAME,
+	    dbus_path,
+	    WPAN_TUNNEL_DBUS_INTERFACE,
+	    WPAN_IFACE_CMD_RESET
+	    );
+
+	dbus_connection_send(connection, message, NULL);
+
+	if(message)
+		dbus_message_unref(message);
+}
+
+
 static int
 lowpan_network_disconnect(struct connman_network *network, bool user_initiated)
 {
 	int ret = -EINVAL;
+	bool should_reset = false;
 	struct connman_device* device = connman_network_get_device(network);
 	struct lowpan_device_s *device_info =
 	    (struct lowpan_device_s *)connman_device_get_data(device);
@@ -1212,6 +1239,9 @@ lowpan_network_disconnect(struct connman_network *network, bool user_initiated)
 	switch(device_info->ncp_state) {
 	case NCP_STATE_ASSOCIATING:
 	case NCP_STATE_CREDENTIALS_NEEDED:
+		should_reset = true;
+		break;
+
 	case NCP_STATE_OFFLINE:
 		user_initiated = TRUE;
 		break;
@@ -1221,6 +1251,8 @@ lowpan_network_disconnect(struct connman_network *network, bool user_initiated)
 
 	if (user_initiated) {
 		lowpan_device_leave(device);
+	} else if (should_reset) {
+		lowpan_device_reset(device);
 	}
 
 	ret = 0;
