@@ -87,7 +87,7 @@ static void
 system_socket_table_close_alarm_(int sig)
 {
 	syslog(LOG_ERR, "Unable to terminate child!");
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 static void
@@ -131,7 +131,7 @@ system_socket_table_add_(int fd, pid_t pid)
 }
 
 int
-close_serial_socket(int fd)
+close_super_socket(int fd)
 {
 	int i;
 	int ret;
@@ -205,7 +205,7 @@ fd_has_error(int fd)
 
 int gSocketWrapperBaud = 115200;
 
-bool
+static bool
 socket_name_is_system_command(const char* socket_name)
 {
 	return strncmp(socket_name,SOCKET_SYSTEM_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_COMMAND_PREFIX)) == 0
@@ -214,7 +214,7 @@ socket_name_is_system_command(const char* socket_name)
 	;
 }
 
-bool
+static bool
 socket_name_is_port(const char* socket_name)
 {
 	// It's a port if the string is just a number.
@@ -227,7 +227,7 @@ socket_name_is_port(const char* socket_name)
 	return true;
 }
 
-bool
+static bool
 socket_name_is_inet(const char* socket_name)
 {
 	// It's an inet address if it Contains no slashes
@@ -598,7 +598,32 @@ open_system_socket(const char* command)
 }
 
 int
-open_serial_socket(const char* socket_name)
+get_super_socket_type_from_path(const char* socket_name)
+{
+	int socket_type = SUPER_SOCKET_TYPE_UNKNOWN;
+
+	if (strncasecmp(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_SYSTEM;
+	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_SYSTEM_FORKPTY;
+	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_SYSTEM_SOCKETPAIR;
+	} else if (strncasecmp(socket_name, SOCKET_FD_COMMAND_PREFIX, sizeof(SOCKET_FD_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_FD;
+	} else if (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_DEVICE;
+	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_DEVICE;
+	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
+		socket_type = SUPER_SOCKET_TYPE_TCP;
+	} else if (socket_name_is_device(socket_name)) {
+		socket_type = SUPER_SOCKET_TYPE_DEVICE;
+	}
+	return socket_type;
+}
+
+int
+open_super_socket(const char* socket_name)
 {
 	int fd = -1;
 	char* host = NULL; // Needs to be freed if set
@@ -606,15 +631,7 @@ open_serial_socket(const char* socket_name)
 	char* options = strchr(socket_name, ',');
 	char* filename = strchr(socket_name, ':');
 	bool socket_name_is_well_formed = true; // True if socket has type name and options
-	enum {
-		SOCKET_TYPE_UNKNOWN,
-		SOCKET_TYPE_SYSTEM,
-		SOCKET_TYPE_SYSTEM_FORKPTY,
-		SOCKET_TYPE_SYSTEM_SOCKETPAIR,
-		SOCKET_TYPE_FD,
-		SOCKET_TYPE_TCP,
-		SOCKET_TYPE_FILE
-	} socket_type = SOCKET_TYPE_UNKNOWN;
+	int socket_type = get_super_socket_type_from_path(socket_name);
 
 	// Move past the colon, if there was one.
 	if (NULL != filename) {
@@ -623,28 +640,23 @@ open_serial_socket(const char* socket_name)
 		filename = "";
 	}
 
-	if (strncasecmp(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_SYSTEM;
-	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_SYSTEM_FORKPTY;
-	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_SYSTEM_SOCKETPAIR;
-	} else if (strncasecmp(socket_name, SOCKET_FD_COMMAND_PREFIX, sizeof(SOCKET_FD_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_FD;
-	} else if (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_FILE;
-	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
-		socket_type = SOCKET_TYPE_FILE;
-	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
-		socket_type = SOCKET_TYPE_TCP;
-		filename = (char*)socket_name;
-		options = NULL;
+	if (socket_type == SUPER_SOCKET_TYPE_DEVICE) {
+		socket_name_is_well_formed =
+			(strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0)
+			|| (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0);
+	}
+
+	if (socket_type == SUPER_SOCKET_TYPE_TCP) {
 		socket_name_is_well_formed = false;
-	} else if (socket_name_is_device(socket_name)) {
-		socket_type = SOCKET_TYPE_FILE;
+	}
+
+	if (!socket_name_is_well_formed) {
 		filename = (char*)socket_name;
-		options = ",default";
-		socket_name_is_well_formed = false;
+		if (socket_type == SUPER_SOCKET_TYPE_DEVICE) {
+			options = ",default";
+		} else {
+			options = NULL;
+		}
 	}
 
 	filename = strdup(filename);
@@ -667,24 +679,24 @@ open_serial_socket(const char* socket_name)
 		filename[options-ptr] = 0;
 	}
 
-	if (SOCKET_TYPE_SYSTEM == socket_type) {
+	if (SUPER_SOCKET_TYPE_SYSTEM == socket_type) {
 		fd = open_system_socket(filename);
 #if HAVE_FORKPTY
-	} else if (SOCKET_TYPE_SYSTEM_FORKPTY == socket_type) {
+	} else if (SUPER_SOCKET_TYPE_SYSTEM_FORKPTY == socket_type) {
 		fd = open_system_socket_forkpty(filename);
 #endif
-	} else if (SOCKET_TYPE_SYSTEM_SOCKETPAIR == socket_type) {
+	} else if (SUPER_SOCKET_TYPE_SYSTEM_SOCKETPAIR == socket_type) {
 		fd = open_system_socket_unix_domain(filename);
-	} else if (SOCKET_TYPE_FD == socket_type) {
+	} else if (SUPER_SOCKET_TYPE_FD == socket_type) {
 		fd = dup((int)strtol(filename, NULL, 0));
-	} else if (SOCKET_TYPE_FILE == socket_type) {
+	} else if (SUPER_SOCKET_TYPE_DEVICE == socket_type) {
 		fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
 
 		if (fd >= 0) {
 			fcntl(fd, F_SETFL, O_NONBLOCK);
 			tcflush(fd, TCIOFLUSH);
 		}
-	} else if (SOCKET_TYPE_TCP == socket_type) {
+	} else if (SUPER_SOCKET_TYPE_TCP == socket_type) {
 		struct sockaddr_in6 addr;
 
 		if (socket_name_is_port(socket_name)) {

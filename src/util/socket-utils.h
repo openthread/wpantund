@@ -35,14 +35,23 @@
 
 __BEGIN_DECLS
 extern int gSocketWrapperBaud;
-bool socket_name_is_system_command(const char* socket_name);
-bool socket_name_is_port(const char* socket_name);
-bool socket_name_is_inet(const char* socket_name);
 bool socket_name_is_device(const char* socket_name);
 int lookup_sockaddr_from_host_and_port( struct sockaddr_in6* outaddr, const char* host, const char* port);
-int open_serial_socket(const char* socket_name);
-int close_serial_socket(int fd);
+int open_super_socket(const char* socket_name);
+int close_super_socket(int fd);
 int fd_has_error(int fd);
+
+enum {
+	SUPER_SOCKET_TYPE_UNKNOWN,
+	SUPER_SOCKET_TYPE_SYSTEM,
+	SUPER_SOCKET_TYPE_SYSTEM_FORKPTY,
+	SUPER_SOCKET_TYPE_SYSTEM_SOCKETPAIR,
+	SUPER_SOCKET_TYPE_FD,
+	SUPER_SOCKET_TYPE_TCP,
+	SUPER_SOCKET_TYPE_DEVICE
+};
+
+int get_super_socket_type_from_path(const char* path);
 
 int fork_unixdomain_socket(int* fd_pointer);
 

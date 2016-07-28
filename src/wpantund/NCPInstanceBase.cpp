@@ -83,10 +83,10 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 		for(iter = settings.begin(); iter != settings.end(); iter++) {
 			if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPHardResetPath)) {
-				mResetFD = open_serial_socket(iter->second.c_str());
+				mResetFD = open_super_socket(iter->second.c_str());
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPPowerPath)) {
-				mPowerFD = open_serial_socket(iter->second.c_str());
+				mPowerFD = open_super_socket(iter->second.c_str());
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPSocketPath)) {
 				mRawSerialAdapter = SuperSocket::create(iter->second);

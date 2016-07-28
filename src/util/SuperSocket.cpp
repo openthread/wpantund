@@ -43,7 +43,7 @@ using namespace nl;
 SuperSocket::SuperSocket(const std::string& path)
 	:UnixSocket(-1, false), mPath(path)
 {
-	int fd = open_serial_socket(path.c_str());
+	int fd = open_super_socket(path.c_str());
 
 	mFDRead = mFDWrite = fd;
 
@@ -84,7 +84,7 @@ SuperSocket::hibernate(void)
 		IGNORE_RETURN_VALUE(flock(mFDRead, LOCK_UN));
 
 		// Close the existing FD.
-		IGNORE_RETURN_VALUE(close_serial_socket(mFDRead));
+		IGNORE_RETURN_VALUE(close_super_socket(mFDRead));
 	}
 
 	mFDRead = -1;
@@ -103,7 +103,7 @@ SuperSocket::reset()
 	// Sleep for 200ms to wait for things to settle down.
 	usleep(MSEC_PER_SEC * 200);
 
-	mFDRead = mFDWrite = open_serial_socket(mPath.c_str());
+	mFDRead = mFDWrite = open_super_socket(mPath.c_str());
 
 	if (mFDRead < 0) {
 		// Unable to reopen socket...!

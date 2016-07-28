@@ -269,7 +269,7 @@ signal_critical(int sig, siginfo_t * info, void * ucontext)
 
 	free(stack_symbols);
 
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 /* ------------------------------------------------------------------------- */
