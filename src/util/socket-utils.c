@@ -86,7 +86,11 @@ static struct {
 static void
 system_socket_table_close_alarm_(int sig)
 {
-	syslog(LOG_ERR, "Unable to terminate child!");
+	static const char message[] = "\nclose_super_socket: Unable to terminate child\n";
+
+	// Can't use syslog here, write to stderr instead.
+	(void)write(STDERR_FILENO, message, sizeof(message) - 1);
+
 	_exit(EXIT_FAILURE);
 }
 
@@ -161,7 +165,6 @@ close_super_socket(int fd)
 
 		if (pid == -1) {
 			perror(strerror(errno));
-			syslog(LOG_ERR, "Failed waiting for death of PID %d: %s", gSystemSocketTable[i].pid, strerror(errno));
 		}
 
 		alarm(prev_alarm_remaining);
