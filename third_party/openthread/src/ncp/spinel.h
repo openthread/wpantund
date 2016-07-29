@@ -93,12 +93,12 @@ typedef enum
     SPINEL_STATUS_IN_PROGRESS       = 10, ///< This operation is in progress.
     SPINEL_STATUS_NOMEM             = 11, ///< Operation prevented due to memory pressure.
     SPINEL_STATUS_BUSY              = 12, ///< The device is currently performing an mutually exclusive operation
-    SPINEL_STATUS_PROP_NOT_FOUND    = 12, ///< The given property is not recognized.
     SPINEL_STATUS_DROPPED           = 14, ///< A/The packet was dropped.
     SPINEL_STATUS_EMPTY             = 15, ///< The result of the operation is empty.
     SPINEL_STATUS_CMD_TOO_BIG       = 16, ///< The command was too large to fit in the internal buffer.
     SPINEL_STATUS_NO_ACK            = 17, ///< The packet was not acknowledged.
     SPINEL_STATUS_CCA_FAILURE       = 18, ///< The packet was not sent due to a CCA failure.
+    SPINEL_STATUS_PROP_NOT_FOUND    = 19, ///< The given property is not recognized.
 
     SPINEL_STATUS_RESET__BEGIN      = 112,
     SPINEL_STATUS_RESET_POWER_ON    = SPINEL_STATUS_RESET__BEGIN + 0,
@@ -108,8 +108,9 @@ typedef enum
     SPINEL_STATUS_RESET_CRASH       = SPINEL_STATUS_RESET__BEGIN + 4,
     SPINEL_STATUS_RESET_ASSERT      = SPINEL_STATUS_RESET__BEGIN + 5,
     SPINEL_STATUS_RESET_OTHER       = SPINEL_STATUS_RESET__BEGIN + 6,
+    SPINEL_STATUS_RESET_UNKNOWN     = SPINEL_STATUS_RESET__BEGIN + 7,
+    SPINEL_STATUS_RESET_WATCHDOG    = SPINEL_STATUS_RESET__BEGIN + 8,
     SPINEL_STATUS_RESET__END        = 128,
-
 
     SPINEL_STATUS_VENDOR__BEGIN     = 15360,
     SPINEL_STATUS_VENDOR__END       = 16384,
@@ -622,6 +623,8 @@ SPINEL_API_EXTERN const char *spinel_next_packed_datatype(const char *pack_forma
 // ----------------------------------------------------------------------------
 
 SPINEL_API_EXTERN const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key);
+
+SPINEL_API_EXTERN const char *spinel_status_to_cstr(spinel_status_t status);
 
 // ----------------------------------------------------------------------------
 

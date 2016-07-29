@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM gcc
+FROM ubuntu:trusty
 
 ENV CONNMAN_INCLUDE_ARCHIVE=https://gist.github.com/darconeous/d1d9bc39e0758e45a1d7/raw/ef9b01ac378a9b2e92031c846c4f6b5f94abab53/connman-include.tar.bz2
 

@@ -416,7 +416,7 @@ SpinelNCPInstance::get_property(
 	}
 
 		// Check to see if the counter name is an integer.
-		cntr_key = strtol(key.c_str()+sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1, NULL, 0);
+		cntr_key = (int)strtol(key.c_str()+(int)sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1, NULL, 0);
 
 		if ( (cntr_key > 0)
 		  && (cntr_key < SPINEL_PROP_CNTR__END-SPINEL_PROP_CNTR__BEGIN)
@@ -619,7 +619,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_status_t status = SPINEL_STATUS_OK;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
 		if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
-			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%d)", status);
+			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
 			process_event(EVENT_NCP_RESET, status);
 			if (!mResetIsExpected && (mDriverState == NORMAL_OPERATION)) {
 				wpantund_status_t wstatus = kWPANTUNDStatus_NCP_Reset;

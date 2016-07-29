@@ -165,8 +165,13 @@ static sig_t gPreviousHandlerForSIGTERM;
 static void
 signal_SIGINT(int sig)
 {
+	static const char message[] = "\nCaught SIGINT!\n";
+
 	gRet = ERRORCODE_INTERRUPT;
-	syslog(LOG_NOTICE, "Caught SIGINT!");
+
+	// Can't use syslog() because it isn't async signal safe.
+	// So we write to stderr
+	(void)write(STDERR_FILENO, message, sizeof(message)-1);
 
 	// Restore the previous handler so that if we end up getting
 	// this signal again we peform the system default action.
@@ -177,8 +182,13 @@ signal_SIGINT(int sig)
 static void
 signal_SIGTERM(int sig)
 {
+	static const char message[] = "\nCaught SIGTERM!\n";
+
 	gRet = ERRORCODE_QUIT;
-	syslog(LOG_NOTICE, "Caught SIGTERM!");
+
+	// Can't use syslog() because it isn't async signal safe.
+	// So we write to stderr
+	(void)write(STDERR_FILENO, message, sizeof(message)-1);
 
 	// Restore the previous handler so that if we end up getting
 	// this signal again we peform the system default action.
@@ -189,8 +199,13 @@ signal_SIGTERM(int sig)
 static void
 signal_SIGHUP(int sig)
 {
+	static const char message[] = "\nCaught SIGHUP!\n";
+
 	gRet = ERRORCODE_SIGHUP;
-	syslog(LOG_NOTICE, "Caught SIGHUP!");
+
+	// Can't use syslog() because it isn't async signal safe.
+	// So we write to stderr
+	(void)write(STDERR_FILENO, message, sizeof(message)-1);
 
 	// We don't restore the "previous handler"
 	// because we always want to let the main
@@ -202,6 +217,16 @@ signal_critical(int sig, siginfo_t * info, void * ucontext)
 {
 	// This is the last hurah for this process.
 	// We dump the stack, because that's all we can do.
+
+	// We call some functions here which aren't async-signal-safe,
+	// but this function isn't really useful without those calls.
+	// Since we are making a gamble (and we deadlock if we loose),
+	// we are going to set up a two-second watchdog to make sure
+	// we end up terminating like we should. The choice of a two
+	// second timeout is entirely arbitrary, and may be changed
+	// if needs warrant.
+	alarm(2);
+	signal(SIGALRM, SIG_DFL);
 
 #if WPANTUND_BACKTRACE
 	void *stack_mem[FAULT_BACKTRACE_STACK_DEPTH];
@@ -269,7 +294,7 @@ signal_critical(int sig, siginfo_t * info, void * ucontext)
 
 	free(stack_symbols);
 
-	exit(EXIT_FAILURE);
+	_exit(EXIT_FAILURE);
 }
 
 /* ------------------------------------------------------------------------- */

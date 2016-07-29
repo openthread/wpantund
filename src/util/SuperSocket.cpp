@@ -43,7 +43,7 @@ using namespace nl;
 SuperSocket::SuperSocket(const std::string& path)
 	:UnixSocket(-1, false), mPath(path)
 {
-	int fd = open_serial_socket(path.c_str());
+	int fd = open_super_socket(path.c_str());
 
 	mFDRead = mFDWrite = fd;
 
@@ -52,14 +52,16 @@ SuperSocket::SuperSocket(const std::string& path)
 		throw std::runtime_error("Unable to open socket");
 	}
 
-	// Lock the file descriptor. It does not make sense to allow someone else
-	// to use this file descriptor at the same time, or to use the device
-	// while someone else is using it.
-	if (flock(fd, LOCK_EX|LOCK_NB) < 0) {
+	// Lock the file descriptor if it is to a device. It does not make sense
+	// to allow someone else to use this file descriptor at the same time,
+	// or to use the device while someone else is using it.
+	if ( (SUPER_SOCKET_TYPE_DEVICE == get_super_socket_type_from_path(path.c_str()))
+	  && (flock(fd, LOCK_EX|LOCK_NB) < 0)
+	) {
 		// The only error we care about is EWOULDBLOCK. EINVAL is fine,
 		// it just means this file descriptor doesn't support locking.
 		if (EWOULDBLOCK == errno) {
-			syslog(LOG_ERR, "Socket is locked by another process");
+			syslog(LOG_ERR, "Socket \"%s\" is locked by another process", path.c_str());
 			throw std::runtime_error("Socket is locked by another process");
 		}
 	}
@@ -84,7 +86,7 @@ SuperSocket::hibernate(void)
 		IGNORE_RETURN_VALUE(flock(mFDRead, LOCK_UN));
 
 		// Close the existing FD.
-		IGNORE_RETURN_VALUE(close_serial_socket(mFDRead));
+		IGNORE_RETURN_VALUE(close_super_socket(mFDRead));
 	}
 
 	mFDRead = -1;
@@ -103,7 +105,7 @@ SuperSocket::reset()
 	// Sleep for 200ms to wait for things to settle down.
 	usleep(MSEC_PER_SEC * 200);
 
-	mFDRead = mFDWrite = open_serial_socket(mPath.c_str());
+	mFDRead = mFDWrite = open_super_socket(mPath.c_str());
 
 	if (mFDRead < 0) {
 		// Unable to reopen socket...!
@@ -114,7 +116,9 @@ SuperSocket::reset()
 	// Lock the file descriptor. It does not make sense to allow someone else
 	// to use this file descriptor at the same time, or to use the device
 	// while someone else is using it.
-	if (flock(mFDRead, LOCK_EX|LOCK_NB) < 0) {
+	if ( (SUPER_SOCKET_TYPE_DEVICE == get_super_socket_type_from_path(mPath.c_str()))
+	  && (flock(mFDRead, LOCK_EX|LOCK_NB) < 0)
+	) {
 		// The only error we care about is EWOULDBLOCK. EINVAL is fine,
 		// it just means this file descriptor doesn't support locking.
 		if (EWOULDBLOCK == errno) {
