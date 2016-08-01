@@ -30,4 +30,6 @@
 #define BUSY_DEBOUNCE_TIME_IN_MS         200
 #define MAX_INSOMNIA_TIME_IN_MS                 (MSEC_PER_SEC * 60 * 3)
 
+#define NCP_DEBUG_LINE_LENGTH_MAX		400
+
 #endif

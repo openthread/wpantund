@@ -820,6 +820,34 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
 		}
 
+	} else if (key == SPINEL_PROP_STREAM_DEBUG) {
+		static char linebuffer[NCP_DEBUG_LINE_LENGTH_MAX + 1];
+		static int linepos = 0;
+		while (value_data_len--) {
+			char nextchar = *value_data_ptr++;
+
+			if (nextchar == 0) {
+				nextchar = '#';
+			}
+
+			if ((nextchar != '\n') && (nextchar != '\r')) {
+				linebuffer[linepos++] = nextchar;
+			}
+
+			if ( (linepos != 0)
+			  && ( (nextchar == '\n')
+			    || (nextchar == '\r')
+			    || (linepos >= (sizeof(linebuffer) - 1))
+			  )
+			)
+			{
+				// flush.
+				linebuffer[linepos] = 0;
+				syslog(LOG_INFO, "NCP => %s\n", linebuffer);
+				linepos = 0;
+			}
+		}
+
 	} else if (key == SPINEL_PROP_NET_ROLE) {
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
