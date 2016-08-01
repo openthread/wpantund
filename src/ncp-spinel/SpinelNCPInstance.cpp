@@ -460,7 +460,7 @@ SpinelNCPInstance::get_property(
 					cb,
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, cntr_key),
 					NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT32_S
 				)
 			));
 		} else {

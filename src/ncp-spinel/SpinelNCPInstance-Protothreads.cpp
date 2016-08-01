@@ -403,7 +403,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				status = peek_ncp_callback_status(event, args);
 
 				if (status != 0) {
-					syslog(LOG_WARNING, "Error fetching property %d from NCP: %d", keys_to_fetch[mSubPTIndex], status);
+					syslog(LOG_WARNING, "Unsuccessful fetching property \"%s\" from NCP: \"%s\" (%d)", spinel_prop_key_to_cstr(keys_to_fetch[mSubPTIndex]), spinel_status_to_cstr(static_cast<spinel_status_t>(status)), status);
 				}
 			}
 

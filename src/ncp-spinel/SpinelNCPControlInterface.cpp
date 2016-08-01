@@ -121,6 +121,9 @@ SpinelNCPControlInterface::attach(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::reset(CallbackWithStatus cb)
 {
+	if (mNCPInstance->get_ncp_state() == FAULT) {
+		mNCPInstance->change_ncp_state(UNINITIALIZED);
+	}
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskSendCommand(
 			mNCPInstance,
