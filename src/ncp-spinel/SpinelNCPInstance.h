@@ -154,6 +154,8 @@ public:
 
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);
 
+	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
+
 private:
 	SpinelNCPControlInterface mControlInterface;
 

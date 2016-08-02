@@ -247,7 +247,41 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		{
 			uint16_t frame_crc = (mInboundFrame[mInboundFrameSize]|(mInboundFrame[mInboundFrameSize+1]<<8));
 			if (mInboundFrameHDLCCRC != frame_crc) {
+
+				int i;
+				static const uint8_t kAsciiCR = 13;
+				static const uint8_t kAsciiBEL = 7;
+
 				syslog(LOG_ERR, "[NCP->]: Frame CRC Mismatch: Calc:0x%04X != Frame:0x%04X, Garbage on line?", mInboundFrameHDLCCRC, frame_crc);
+
+				// This frame might be an ASCII backtrace, so we check to
+				// see if all of the characters are ascii characters, and if
+				// so we dump out this packet directly to syslog.
+
+				mInboundFrameSize += 2;
+
+				for (i = 0; i < mInboundFrameSize; i++) {
+					// Acceptable control codes
+					if (mInboundFrame[i] >= kAsciiBEL && mInboundFrame[i] <= kAsciiCR) {
+						continue;
+					}
+					// NUL characters are OK.
+					if (mInboundFrame[i] == 0) {
+						continue;
+					}
+					// Acceptable characters
+					if (mInboundFrame[i] >= 32 && mInboundFrame[i] <= 127) {
+						continue;
+					}
+
+					syslog(LOG_ERR, "[NCP->]: Garbage is not ASCII ([%d]=%d)", i, mInboundFrame[i]);
+					break;
+				}
+
+				if (i == mInboundFrameSize) {
+					handle_ncp_log(mInboundFrame, mInboundFrameSize);
+				}
+
 				continue;
 			}
 		}
