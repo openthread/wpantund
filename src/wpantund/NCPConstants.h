@@ -27,6 +27,8 @@
 #define NCP_FORM_TIMEOUT						60 // seconds
 #define NCP_JOIN_TIMEOUT						30 // seconds
 
+#define NCP_NETWORK_KEY_SIZE         16
+
 #define BUSY_DEBOUNCE_TIME_IN_MS         200
 #define MAX_INSOMNIA_TIME_IN_MS                 (MSEC_PER_SEC * 60 * 3)
 

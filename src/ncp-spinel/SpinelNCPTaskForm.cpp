@@ -28,6 +28,7 @@
 #include "SpinelNCPInstance.h"
 #include "any-to.h"
 #include "spinel-extra.h"
+#include "sec-random.h"
 
 using namespace nl;
 using namespace nl::wpantund;
@@ -38,6 +39,52 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	const ValueMap& options
 ):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
 {
+	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
+		uint16_t panid;
+
+		sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+
+		mOptions[kWPANTUNDProperty_NetworkPANID] = panid;
+	}
+
+	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
+		uint64_t xpanid;
+
+		sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
+
+		mOptions[kWPANTUNDProperty_NetworkXPANID] = xpanid;
+	}
+
+
+	if (!mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
+		union {
+			uint64_t xpanid;
+			uint8_t bytes[1];
+		} x = { any_to_uint64((mOptions[kWPANTUNDProperty_NetworkXPANID])) };
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		reverse_bytes(x.bytes, sizeof(x.xpanid));
+#endif
+
+		// Default ML Prefix to be derived from XPANID.
+		struct in6_addr mesh_local_prefix = {{{
+			0xfd, x.bytes[0], x.bytes[1], x.bytes[2], x.bytes[3], x.bytes[4], 0, 0
+		}}};
+
+		mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress] = mesh_local_prefix;
+	}
+
+	if (!mOptions.count(kWPANTUNDProperty_NetworkKey)) {
+		uint8_t net_key[NCP_NETWORK_KEY_SIZE];
+
+		sec_random_fill(net_key, sizeof(net_key));
+
+		mOptions[kWPANTUNDProperty_NetworkKey] = Data(net_key, sizeof(net_key));
+	}
+
+	if (!mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
+		mOptions[kWPANTUNDProperty_NetworkKeyIndex] = 1;
+	}
 }
 
 void
@@ -99,6 +146,9 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
+
+	// TODO: We should do a scan to make sure we pick a good channel
+	//       and don't have a panid collision.
 
 	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		mNextCommand = SpinelPackData(
@@ -249,8 +299,6 @@ on_error:
 	}
 
 	syslog(LOG_ERR, "Form failed: %d", ret);
-
-	//mInstance->reinitialize_ncp();
 
 	finish(ret);
 
