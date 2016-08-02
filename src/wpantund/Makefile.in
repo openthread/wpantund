@@ -147,7 +147,7 @@ am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) \
 	wpantund-SuperSocket.$(OBJEXT) wpantund-EventHandler.$(OBJEXT) \
 	wpantund-TunnelIPv6Interface.$(OBJEXT) \
 	wpantund-ValueMap.$(OBJEXT) wpantund-Timer.$(OBJEXT) \
-	wpantund-version.$(OBJEXT)
+	wpantund-sec-random.$(OBJEXT) wpantund-version.$(OBJEXT)
 wpantund_OBJECTS = $(am_wpantund_OBJECTS)
 am__DEPENDENCIES_1 =
 @STATIC_LINK_NCP_PLUGIN_FALSE@am__DEPENDENCIES_2 =  \
@@ -458,8 +458,8 @@ wpantund_SOURCES = wpantund.cpp wpantund.h IPCServer.h NCPConstants.h \
 	../util/SocketWrapper.cpp ../util/SocketAdapter.cpp \
 	../util/UnixSocket.cpp ../util/SuperSocket.cpp \
 	../util/EventHandler.cpp ../util/TunnelIPv6Interface.cpp \
-	../util/ValueMap.cpp ../util/Timer.cpp $(NULL) \
-	$(top_builddir)/$(subdir)/version.c
+	../util/ValueMap.cpp ../util/Timer.cpp ../util/sec-random.c \
+	$(NULL) $(top_builddir)/$(subdir)/version.c
 wpantund_LDADD = $(DBUS_LIBS) ../ipc-dbus/libwpantund-dbus.la \
 	$(am__append_1) $(am__append_2)
 @STATIC_LINK_NCP_PLUGIN_FALSE@wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
@@ -588,6 +588,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-any-to.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-config-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-nlpt-select.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-sec-random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-socket-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-string-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-time-utils.Po@am__quote@
@@ -699,6 +700,20 @@ wpantund-nlpt-select.obj: ../util/nlpt-select.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/nlpt-select.c' object='wpantund-nlpt-select.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
+
+wpantund-sec-random.o: ../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.o -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-sec-random.Tpo $(DEPDIR)/wpantund-sec-random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund-sec-random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+
+wpantund-sec-random.obj: ../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.obj -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-sec-random.Tpo $(DEPDIR)/wpantund-sec-random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund-sec-random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
 
 wpantund-version.o: $(top_builddir)/$(subdir)/version.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-version.o -MD -MP -MF $(DEPDIR)/wpantund-version.Tpo -c -o wpantund-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
