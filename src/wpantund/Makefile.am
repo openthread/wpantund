@@ -84,6 +84,7 @@ wpantund_SOURCES = \
 	../util/TunnelIPv6Interface.cpp \
 	../util/ValueMap.cpp \
 	../util/Timer.cpp \
+	../util/sec-random.c \
 	$(NULL)
 
 wpantund_LDADD =  $(DBUS_LIBS)

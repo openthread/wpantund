@@ -78,6 +78,7 @@
 #include <algorithm>
 
 #include "any-to.h"
+#include "sec-random.h"
 
 #if HAVE_PWD_H
 #include <pwd.h>
@@ -704,6 +705,11 @@ main(int argc, char * argv[])
 	} catch(std::exception x) {
 		syslog(LOG_ERR, "Exception thrown while starting up, \"%s\"",x.what());
 		ncp_instance = NULL;
+		goto bail;
+	}
+
+	if (sec_random_init() < 0) {
+		syslog(LOG_ERR, "Call to sec_random_init() failed, errno=%d \"%s\"", errno, strerror(errno));
 		goto bail;
 	}
 

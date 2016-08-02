@@ -61,6 +61,8 @@ EXTRA_DIST = \
 	ObjectPool.h \
 	Timer.h \
 	Timer.cpp \
+	sec-random.h \
+	sec-random.c \
 	$(NULL)
 
 DISTCLEANFILES = \

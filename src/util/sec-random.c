@@ -17,21 +17,38 @@
  *
  */
 
-#ifndef wpantund_NCPConstants_h
-#define wpantund_NCPConstants_h
 
-#define NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT    5  // seconds
-#define NCP_DEFAULT_COMMAND_SEND_TIMEOUT        5  // seconds
-#define NCP_TICKLE_TIMEOUT                      60 // seconds
-#define NCP_DEEP_SLEEP_TICKLE_TIMEOUT          (60*70) // Seventy minutes
-#define NCP_FORM_TIMEOUT						60 // seconds
-#define NCP_JOIN_TIMEOUT						30 // seconds
-
-#define NCP_NETWORK_KEY_SIZE         16
-
-#define BUSY_DEBOUNCE_TIME_IN_MS         200
-#define MAX_INSOMNIA_TIME_IN_MS                 (MSEC_PER_SEC * 60 * 3)
-
-#define NCP_DEBUG_LINE_LENGTH_MAX		400
-
+#if HAVE_CONFIG_H
+#include <config.h>
 #endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "sec-random.h"
+
+static FILE* gSecRandomFile;
+
+int
+sec_random_init(void)
+{
+	if (gSecRandomFile == NULL) {
+		gSecRandomFile = fopen("/dev/random", "r");
+
+		if (gSecRandomFile == NULL) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int
+sec_random_fill(uint8_t* buffer, int length)
+{
+	int ret = sec_random_init();
+
+	if (ret >= 0) {
+		ret = (int)fread(buffer, length, 1, gSecRandomFile);
+	}
+
+	return ret;
+}
