@@ -32,7 +32,13 @@ int
 sec_random_init(void)
 {
 	if (gSecRandomFile == NULL) {
-		gSecRandomFile = fopen("/dev/random", "r");
+		const char* random_source_filename = getenv("SEC_RANDOM_SOURCE_FILE");
+
+		if (!random_source_filename) {
+			random_source_filename = "/dev/urandom";
+		}
+
+		gSecRandomFile = fopen(random_source_filename, "r");
 
 		if (gSecRandomFile == NULL) {
 			return -1;
