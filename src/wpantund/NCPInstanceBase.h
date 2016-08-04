@@ -113,6 +113,10 @@ public:
 
 	virtual void ncp_is_misbehaving();
 
+	virtual void set_initializing_ncp(bool x);
+
+	virtual bool is_initializing_ncp()const;
+
 public:
 	// ========================================================================
 	// MARK: Network Interface Methods
@@ -247,6 +251,7 @@ protected:
 
 private:
 	NCPState mNCPState;
+	bool mIsInitializingNCP;
 
 protected:
 	uint8_t mNCPHardwareAddress[8];

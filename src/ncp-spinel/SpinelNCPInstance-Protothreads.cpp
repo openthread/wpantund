@@ -273,6 +273,8 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 	syslog(LOG_INFO, "Initializing NCP");
 
+	set_initializing_ncp(true);
+
 	change_ncp_state(UNINITIALIZED);
 
 	set_ncp_power(true);
@@ -431,6 +433,7 @@ on_error:
 
 	mFailureCount = 0;
 	mResetIsExpected = false;
+	set_initializing_ncp(false);
 	mDriverState = NORMAL_OPERATION;
 
 	syslog(LOG_NOTICE, "Finished initializing NCP");
