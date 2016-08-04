@@ -99,6 +99,9 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand)) {
 				mFirmwareUpgrade.set_firmware_upgrade_command(iter->second);
+
+			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)) {
+				mAutoUpdateFirmware = any_to_bool(boost::any(iter->second));
 			}
 		}
 	}
@@ -173,6 +176,7 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigTUNInterfaceName)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand)
+		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand);
 }
 

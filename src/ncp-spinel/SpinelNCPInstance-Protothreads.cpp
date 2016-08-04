@@ -236,7 +236,7 @@ SpinelNCPInstance::vprocess_offline(int event, va_list args)
 int
 SpinelNCPInstance::vprocess_init(int event, va_list args)
 {
-	int status;
+	int status = 0;
 
 	if (event == EVENT_NCP_RESET) {
 		if (mDriverState == INITIALIZING) {
@@ -309,7 +309,10 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 			EH_EXIT();
 		}
 
-		if (mAutoUpdateFirmware && (mFailureCount > (mFailureThreshold - 1)) && can_upgrade_firmware()) {
+		if ( mAutoUpdateFirmware
+		  && (mFailureCount > (mFailureThreshold - 1))
+		  && can_upgrade_firmware()
+		) {
 			syslog(LOG_ALERT, "The NCP is misbehaving: Attempting a firmware update");
 			upgrade_firmware();
 			EH_RESTART();
@@ -420,7 +423,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 on_error:
 		if (status) {
-			syslog(LOG_ERR, "Error from NCP: %d", status);
+			syslog(LOG_ERR, "Initialization error: %d", status);
 		}
 		EH_SLEEP_FOR(0.5);
 		mFailureCount++;
