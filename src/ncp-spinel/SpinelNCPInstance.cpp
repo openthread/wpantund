@@ -122,6 +122,22 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
 	mDefaultChannelMask = 0x07FFF800;
+
+	if (!settings.empty()) {
+		int status;
+		Settings::const_iterator iter;
+
+		for(iter = settings.begin(); iter != settings.end(); iter++) {
+			if (!NCPInstanceBase::setup_property_supported_by_class(iter->first)) {
+				status = static_cast<NCPControlInterface&>(get_control_interface())
+					.set_property(iter->first, iter->second);
+
+				if (status != 0) {
+					syslog(LOG_WARNING, "Attempt to set property \"%s\" failed with err %d", iter->first.c_str(), status);
+				}
+			}
+		}
+	}
 }
 
 SpinelNCPInstance::~SpinelNCPInstance()
@@ -727,7 +743,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
 		if (value && (mCurrentNetworkInstance.name != value)) {
 			mCurrentNetworkInstance.name = value;
-			syslog(LOG_WARNING, "Network Name: %s", mCurrentNetworkInstance.name.c_str());
 			signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
 		}
 

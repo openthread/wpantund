@@ -67,6 +67,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mAutoUpdateFirmware = false;
 	mAutoResume = true;
 	mAutoDeepSleep = false;
+	mIsInitializingNCP = false;
 	mNCPState = UNINITIALIZED;
 	mNodeType = UNKNOWN;
 	mFailureCount = 0;
@@ -99,6 +100,9 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand)) {
 				mFirmwareUpgrade.set_firmware_upgrade_command(iter->second);
+
+			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)) {
+				mAutoUpdateFirmware = any_to_bool(boost::any(iter->second));
 			}
 		}
 	}
@@ -173,6 +177,7 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigTUNInterfaceName)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand)
+		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand);
 }
 
@@ -396,7 +401,11 @@ NCPInstanceBase::get_property(
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPState)) {
-		cb(0, boost::any(ncp_state_to_string(get_ncp_state())));
+		if (is_initializing_ncp()) {
+			cb(0, boost::any(std::string(kWPANTUNDStateUninitialized)));
+		} else {
+			cb(0, boost::any(ncp_state_to_string(get_ncp_state())));
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkNodeType)) {
 		cb(0, boost::any(node_type_to_string(mNodeType)));
@@ -589,6 +598,30 @@ NCPInstanceBase::signal_property_changed(
 // ----------------------------------------------------------------------------
 // MARK: -
 
+void
+NCPInstanceBase::set_initializing_ncp(bool x)
+{
+	if (mIsInitializingNCP != x) {
+		mIsInitializingNCP = x;
+
+		if (mIsInitializingNCP) {
+			change_ncp_state(UNINITIALIZED);
+			set_ncp_power(true);
+		} else if ( (get_ncp_state() != UNINITIALIZED)
+		         && (get_ncp_state() != FAULT)
+		         && (get_ncp_state() != UPGRADING)
+		) {
+			handle_ncp_state_change(get_ncp_state(), UNINITIALIZED);
+		}
+	}
+}
+
+bool
+NCPInstanceBase::is_initializing_ncp() const
+{
+	return mIsInitializingNCP;
+}
+
 NCPState
 NCPInstanceBase::get_ncp_state()const
 {
@@ -638,7 +671,13 @@ NCPInstanceBase::change_ncp_state(NCPState new_ncp_state)
 
 		mNCPState = new_ncp_state;
 
-		handle_ncp_state_change(new_ncp_state, old_ncp_state);
+		if ( !mIsInitializingNCP
+		  || (new_ncp_state == UNINITIALIZED)
+		  || (new_ncp_state == FAULT)
+		  || (new_ncp_state == UPGRADING)
+		) {
+			handle_ncp_state_change(new_ncp_state, old_ncp_state);
+		}
 	}
 }
 
