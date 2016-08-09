@@ -103,6 +103,9 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)) {
 				mAutoUpdateFirmware = any_to_bool(boost::any(iter->second));
+
+			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand)) {
+				mNetworkRetain.set_network_retain_command(iter->second);
 			}
 		}
 	}
@@ -178,7 +181,8 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)
-		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand);
+		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand)
+		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand);
 }
 
 NCPInstanceBase::~NCPInstanceBase()
@@ -774,11 +778,12 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 		set_online(false);
 	}
 
-
 	// We don't announce transitions to the "UNITIALIZED" state.
 	if (UNINITIALIZED != new_ncp_state) {
 		signal_property_changed(kWPANTUNDProperty_NCPState, ncp_state_to_string(new_ncp_state));
 	}
+
+	mNetworkRetain.handle_ncp_state_change(new_ncp_state, old_ncp_state);
 }
 
 void

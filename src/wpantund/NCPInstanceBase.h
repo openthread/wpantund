@@ -27,6 +27,7 @@
 #include "EventHandler.h"
 #include "NCPTypes.h"
 #include "StatCollector.h"
+#include "NetworkRetain.h"
 #include "RunawayResetBackoffManager.h"
 
 namespace nl {
@@ -299,6 +300,8 @@ private:
 	cms_t mLastChangedBusy;
 
 	FirmwareUpgrade mFirmwareUpgrade;
+
+	NetworkRetain mNetworkRetain;
 
 	StatCollector mStatCollector;  // Statistic collector
 }; // class NCPInstance
