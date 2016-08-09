@@ -715,6 +715,8 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 		// from the NCP. For this we use the hibernate command.
 		mSerialAdapter->hibernate();
 		PT_INIT(&mControlPT);
+		NLPT_INIT(&mDriverToNCPPumpPT);
+		NLPT_INIT(&mNCPToDriverPumpPT);
 		mFailureCount = 0;
 
 		if (new_ncp_state == FAULT) {
