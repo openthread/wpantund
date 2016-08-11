@@ -447,7 +447,9 @@ SpinelNCPControlInterface::get_property(
     const std::string& in_key, CallbackWithStatusArg1 cb
     )
 {
-	syslog(LOG_INFO, "get_property: key: \"%s\"", in_key.c_str());
+	if (!mNCPInstance->is_initializing_ncp()) {
+		syslog(LOG_INFO, "get_property: key: \"%s\"", in_key.c_str());
+	}
 	mNCPInstance->get_property(in_key, cb);
 }
 

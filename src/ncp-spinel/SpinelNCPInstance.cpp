@@ -241,8 +241,6 @@ SpinelNCPInstance::get_property(
 	const std::string& key,
 	CallbackWithStatusArg1 cb
 ) {
-	syslog(LOG_INFO, "get_property: key: \"%s\"", key.c_str());
-
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)) {
 		cb(0, boost::any(std::string("spinel")));
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
