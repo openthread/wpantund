@@ -405,7 +405,9 @@ NCPInstanceBase::get_property(
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPState)) {
-		if (is_initializing_ncp()) {
+		if ( is_initializing_ncp()
+		  && !ncp_state_is_detached_from_ncp(get_ncp_state())
+		) {
 			cb(0, boost::any(std::string(kWPANTUNDStateUninitialized)));
 		} else {
 			cb(0, boost::any(ncp_state_to_string(get_ncp_state())));
