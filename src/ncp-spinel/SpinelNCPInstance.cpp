@@ -64,7 +64,7 @@ SpinelNCPInstance::handle_ncp_log(const uint8_t* data_ptr, int data_len)
         {
             // flush.
             linebuffer[linepos] = 0;
-            syslog(LOG_INFO, "NCP => %s\n", linebuffer);
+            syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
             linepos = 0;
         }
     }
@@ -903,16 +903,25 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		bool is_assisting = (value_data_len != 0);
 		uint16_t assisting_port(0);
 
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &assisting_port);
-
 		if (is_assisting != get_current_network_instance().joinable) {
 			mCurrentNetworkInstance.joinable = is_assisting;
 			signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
-			if (is_assisting) {
-				syslog(LOG_NOTICE, "Network is joinable, assisting on port %d", assisting_port);
-			} else {
-				syslog(LOG_NOTICE, "Network is no longer joinable");
+		}
+
+		if (is_assisting) {
+			int i;
+			syslog(LOG_NOTICE, "Network is joinable");
+			while (value_data_len > 0) {
+				i = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &assisting_port);
+				if (i <= 0) {
+					break;
+				}
+				syslog(LOG_NOTICE, "Assisting on port %d", assisting_port);
+				value_data_ptr += i;
+				value_data_len -= i;
 			}
+		} else {
+			syslog(LOG_NOTICE, "Network is not joinable");
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {

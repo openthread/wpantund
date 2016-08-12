@@ -166,7 +166,14 @@ NCPInstanceBase::set_commissioniner(
     int seconds, uint8_t traffic_type, in_port_t traffic_port
     )
 {
+	int ret = kWPANTUNDStatus_Ok;
+
 	mCommissioningRule.clear();
+
+	if ((seconds > 0) && (traffic_port == 0)) {
+		ret = kWPANTUNDStatus_InvalidArgument;
+		goto bail;
+	}
 
 	if (seconds > 0 && traffic_port) {
 		mCommissioningExpiration = time_get_monotonic() + seconds;
@@ -182,7 +189,8 @@ NCPInstanceBase::set_commissioniner(
 		mInsecureFirewall.clear();
 	}
 
-	return 0;
+bail:
+	return ret;
 }
 
 

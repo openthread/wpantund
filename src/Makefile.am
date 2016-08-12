@@ -22,6 +22,7 @@ SUBDIRS =                \
 	connman-plugin       \
 	@PLUGIN_SUBDIRS@     \
 	wpantund             \
+	scripts              \
 	$(NULL)
 
 DISTCLEANFILES =         \

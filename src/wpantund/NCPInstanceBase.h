@@ -249,6 +249,7 @@ protected:
 	bool mAutoResume;
 	bool mAutoDeepSleep;
 	int mAutoDeepSleepTimeout; // In seconds
+	uint16_t mCommissionerPort;
 
 private:
 	NCPState mNCPState;

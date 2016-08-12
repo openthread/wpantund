@@ -397,6 +397,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				SPINEL_PROP_NET_XPANID,
 				SPINEL_PROP_IPV6_LL_ADDR,
 				SPINEL_PROP_IPV6_ML_ADDR,
+				SPINEL_PROP_THREAD_ASSISTING_PORTS,
 			};
 
 			for (mSubPTIndex = 0; mSubPTIndex < sizeof(keys_to_fetch)/sizeof(keys_to_fetch[0]); mSubPTIndex++) {
