@@ -150,6 +150,45 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	// TODO: We should do a scan to make sure we pick a good channel
 	//       and don't have a panid collision.
 
+	if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_PHY_CHAN,
+			any_to_int(mOptions[kWPANTUNDProperty_NCPChannel])
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+
+	} else if (mOptions.count(kWPANTUNDProperty_NCPChannelMask)) {
+		{
+			// Randomly pick a channel from the given channel mask for now.
+			// TODO: as stated above, we should scan and pick a quiet channel.
+			int mask(any_to_int(mOptions[kWPANTUNDProperty_NCPChannelMask]));
+			uint8_t channel;
+
+			do {
+				sec_random_fill(&channel, 1);
+				channel = (channel % 32);
+			} while (0 == ((1 << channel) & mask));
+
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+				SPINEL_PROP_PHY_CHAN,
+				channel
+			);
+		}
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+	}
+
 	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
