@@ -867,36 +867,41 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 
+		if ( ncp_state_is_joining(get_ncp_state())
+		  && (value != SPINEL_NET_ROLE_DETACHED)
+		) {
+			change_ncp_state(ASSOCIATED);
+		}
+
 		if (value == SPINEL_NET_ROLE_CHILD) {
 			if (mNodeType != END_DEVICE) {
 				mNodeType = END_DEVICE;
 				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
 			}
+
 		} else if (value == SPINEL_NET_ROLE_ROUTER) {
 			if (mNodeType != ROUTER) {
 				mNodeType = ROUTER;
 				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
 			}
+
 		} else if (value == SPINEL_NET_ROLE_LEADER) {
 			if (mNodeType != LEADER) {
 				mNodeType = LEADER;
 				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
 			}
 		}
-	} else if (key == SPINEL_PROP_NET_STATE) {
-		uint8_t value;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 
-		if (value == SPINEL_NET_STATE_OFFLINE) {
-			change_ncp_state(OFFLINE);
-		} else if (value == SPINEL_NET_STATE_DETACHED) {
-			change_ncp_state(COMMISSIONED);
-		} else if (value == SPINEL_NET_STATE_ATTACHING) {
-			change_ncp_state(ASSOCIATING);
-		} else if (value == SPINEL_NET_STATE_ATTACHED) {
-			if (!ncp_state_is_associated(get_ncp_state())) {
-				change_ncp_state(ASSOCIATED);
+	} else if (key == SPINEL_PROP_NET_STACK_UP) {
+		bool is_stack_up;
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
+
+		if (is_stack_up) {
+			if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
+				change_ncp_state(ASSOCIATING);
 			}
+		} else {
+			change_ncp_state(OFFLINE);
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {

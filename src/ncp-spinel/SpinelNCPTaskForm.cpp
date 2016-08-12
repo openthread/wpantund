@@ -306,11 +306,24 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 	}
 
-	// Now we can try associating
+	// Now bring up the network by bringing up the interface and the stack.
+
 	mNextCommand = SpinelPackData(
-		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-		SPINEL_PROP_NET_STATE,
-		SPINEL_NET_STATE_ATTACHED
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		true
+	);
+
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	ret = mNextCommandRet;
+
+	require_noerr(ret, on_error);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		true
 	);
 
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
