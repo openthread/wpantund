@@ -20,6 +20,7 @@
 #ifndef __wpantund__SpinelNCPTaskChangeNetData__
 #define __wpantund__SpinelNCPTaskChangeNetData__
 
+#include <list>
 #include "SpinelNCPTask.h"
 #include "SpinelNCPInstance.h"
 #include "ValueMap.h"
@@ -40,10 +41,18 @@ public:
 		int timeout = NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT
 	);
 
+	SpinelNCPTaskChangeNetData(
+		SpinelNCPInstance* instance,
+		CallbackWithStatusArg1 cb,
+		const std::list<Data>& change_net_data_commands,
+		int timeout = NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT
+	);
+
 	virtual int vprocess_event(int event, va_list args);
 
 private:
-	Data mChangeNetDataCommand;
+	std::list<Data> mChangeNetDataCommands;
+	std::list<Data>::const_iterator mCommandIter;
 	int mRetVal;
 };
 

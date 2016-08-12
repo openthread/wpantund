@@ -148,6 +148,13 @@ typedef enum
     SPINEL_POWER_STATE_ONLINE     = 4,
 } spinel_power_state_t;
 
+enum {
+	SPINEL_NET_FLAG_CONFIGURE       = 0x04,
+	SPINEL_NET_FLAG_DHCP            = 0x08,
+	SPINEL_NET_FLAG_SLAAC_VALID     = 0x10,
+	SPINEL_NET_FLAG_SLAAC_PREFERRED = 0x20,
+};
+
 enum
 {
     SPINEL_PROTOCOL_TYPE_ZIGBEE    = 1,

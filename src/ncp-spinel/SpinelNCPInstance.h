@@ -134,6 +134,9 @@ protected:
 	void handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state);
 
+	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
+	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
+
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 

@@ -33,6 +33,7 @@
 #include "SpinelNCPTask.h"
 #include "SpinelNCPTaskWake.h"
 #include "SpinelNCPTaskSendCommand.h"
+#include "SpinelNCPTaskChangeNetData.h"
 #include "any-to.h"
 #include "spinel-extra.h"
 
@@ -1132,4 +1133,85 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 	}
 
 	process_event(EVENT_NCP(command), cmd_data_ptr[0], cmd_data_ptr, cmd_data_len);
+}
+
+void
+SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len)
+{
+	if (!is_address_known(addr) && !IN6_IS_ADDR_LINKLOCAL(&addr)) {
+		uint8_t flags = SPINEL_NET_FLAG_CONFIGURE
+		              | SPINEL_NET_FLAG_DHCP
+		              | SPINEL_NET_FLAG_SLAAC_VALID
+		              | SPINEL_NET_FLAG_SLAAC_PREFERRED;
+		std::list<Data> commands;
+
+		NCPInstanceBase::address_was_added(addr, prefix_len);
+
+		commands.push_back(
+			SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_IPv6ADDR_S   // Address
+					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
+					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
+					SPINEL_DATATYPE_UINT8_S      // Flags
+				),
+				SPINEL_PROP_IPV6_ADDRESS_TABLE,
+				&addr,
+				prefix_len,
+				UINT32_MAX,
+				UINT32_MAX,
+				flags
+			)
+		);
+
+		commands.push_back(
+			SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_IPv6ADDR_S   // Address
+					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_BOOL_S       // Stable?
+					SPINEL_DATATYPE_UINT8_S      // Flags
+				),
+				SPINEL_PROP_THREAD_ON_MESH_NETS,
+				&addr,
+				prefix_len,
+				false,
+				flags
+			)
+		);
+
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskChangeNetData(
+				this,
+				NilReturn(),
+				commands
+			)
+		));
+	}
+}
+
+void
+SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_len)
+{
+	if (is_address_known(addr)) {
+		NCPInstanceBase::address_was_removed(addr, prefix_len);
+
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskChangeNetData(
+				this,
+				NilReturn(),
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+						SPINEL_DATATYPE_IPv6ADDR_S   // Address
+						SPINEL_DATATYPE_UINT8_S      // Prefix
+					),
+					SPINEL_PROP_IPV6_ADDRESS_TABLE,
+					&addr,
+					prefix_len
+				)
+			)
+		));
+
+	}
 }
