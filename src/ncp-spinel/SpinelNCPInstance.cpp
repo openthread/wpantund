@@ -64,7 +64,7 @@ SpinelNCPInstance::handle_ncp_log(const uint8_t* data_ptr, int data_len)
         {
             // flush.
             linebuffer[linepos] = 0;
-            syslog(LOG_INFO, "NCP => %s\n", linebuffer);
+            syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
             linepos = 0;
         }
     }
