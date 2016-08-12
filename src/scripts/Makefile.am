@@ -20,6 +20,10 @@ DISTCLEANFILES = \
 	Makefile \
 	$(NULL)
 
+EXTRA_DIST = \
+	wpanretain.sh \
+	$(NULL)
+
 pkgdata_DATA = \
 	wpanretain.sh \
 	$(NULL)
