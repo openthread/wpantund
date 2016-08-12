@@ -846,6 +846,33 @@ open_super_socket(const char* socket_name)
 					tios.c_cflag &= ~CRTSCTS;
 				}
 				COMMIT_TERMIOS();
+
+#ifdef CCTS_OFLOW
+			} else if (strncasecmp(options, ",ccts_oflow=", 12) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				// Hardware output flow control
+				if (options[1] == '1') {
+					syslog(LOG_DEBUG, "Using hardware output flow control for serial socket.");
+					tios.c_cflag |= CCTS_OFLOW;
+				} else if (options[1] == '0') {
+					tios.c_cflag &= ~CCTS_OFLOW;
+				}
+				COMMIT_TERMIOS();
+#endif
+#ifdef CRTS_IFLOW
+			} else if (strncasecmp(options, ",crts_iflow=", 12) == 0) {
+				FETCH_TERMIOS();
+				options = strchr(options,'=');
+				// Hardware input flow control
+				if (options[1] == '1') {
+					syslog(LOG_DEBUG, "Using hardware input flow control for serial socket.");
+					tios.c_cflag |= CRTS_IFLOW;
+				} else if (options[1] == '0') {
+					tios.c_cflag &= ~CRTS_IFLOW;
+				}
+				COMMIT_TERMIOS();
+#endif
 			} else {
 				syslog(LOG_ERR, "Unknown option (%s)", options);
 			}
