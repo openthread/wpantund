@@ -54,9 +54,18 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
 	mNextCommand = SpinelPackData(
-		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-		SPINEL_PROP_NET_STATE,
-		SPINEL_NET_STATE_OFFLINE
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		false
 	);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;

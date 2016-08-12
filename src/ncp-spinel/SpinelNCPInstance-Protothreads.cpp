@@ -363,7 +363,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 		if (get_ncp_state() == UNINITIALIZED) {
 			// Get the thread state
 			CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
-			GetInstance(this)->mOutboundBufferLen = spinel_cmd_prop_value_get(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), SPINEL_PROP_NET_STATE);
+			GetInstance(this)->mOutboundBufferLen = spinel_cmd_prop_value_get(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), SPINEL_PROP_NET_STACK_UP);
 			CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
 
 			CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
@@ -398,6 +398,9 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				SPINEL_PROP_IPV6_LL_ADDR,
 				SPINEL_PROP_IPV6_ML_ADDR,
 				SPINEL_PROP_THREAD_ASSISTING_PORTS,
+				SPINEL_PROP_NET_IF_UP,
+				SPINEL_PROP_NET_STACK_UP,
+				SPINEL_PROP_NET_ROLE,
 			};
 
 			for (mSubPTIndex = 0; mSubPTIndex < sizeof(keys_to_fetch)/sizeof(keys_to_fetch[0]); mSubPTIndex++) {

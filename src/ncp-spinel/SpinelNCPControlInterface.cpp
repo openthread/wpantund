@@ -112,8 +112,15 @@ SpinelNCPControlInterface::attach(CallbackWithStatus cb)
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskSendCommand(
 			mNCPInstance,
+			NilReturn(),
+			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_NET_IF_UP, true)
+		)
+	));
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskSendCommand(
+			mNCPInstance,
 			boost::bind(cb,_1),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_NET_STATE, SPINEL_NET_STATE_ATTACHED)
+			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_NET_STACK_UP, true)
 		)
 	));
 }

@@ -71,7 +71,7 @@
 #endif
 
 #if defined(errno) && SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR
-#error SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR is set but errno is already defined.
+#error "SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR is set but errno is already defined."
 #endif
 
 // Work-around for platforms that don't implement the `errno` variable.
@@ -88,6 +88,20 @@ static int spinel_errno_workaround_;
 #define assert_printf(fmt, ...) \
     fprintf(stderr, __FILE__ ":%d: " fmt "\n", __LINE__, __VA_ARGS__)
 #endif // else SPINEL_PLATFORM_DOESNT_IMPLEMENT_FPRINTF
+#endif
+
+#if !HAVE_STRNLEN
+// Provide a working strnlen if the platform doesn't have one.
+static size_t spinel_strnlen_(const char *s, size_t maxlen)
+{
+    size_t ret;
+    for (ret = 0; (ret < maxlen) && (s[ret] != 0); ret++)
+    {
+        // Empty loop.
+    }
+    return ret;
+}
+#define strnlen spinel_strnlen_
 #endif
 
 #ifndef require_action
@@ -127,7 +141,7 @@ spinel_packed_uint_decode(const uint8_t *bytes, spinel_size_t len, unsigned int 
             break;
         }
 
-        value |= ((bytes[0] & 0x7F) << i);
+        value |= (unsigned int)((bytes[0] & 0x7F) << i);
         i += 7;
         ret += sizeof(uint8_t);
         bytes += sizeof(uint8_t);
@@ -146,7 +160,7 @@ spinel_packed_uint_decode(const uint8_t *bytes, spinel_size_t len, unsigned int 
 spinel_ssize_t
 spinel_packed_uint_size(unsigned int value)
 {
-    spinel_size_t ret;
+    spinel_ssize_t ret;
 
     if (value < (1 << 7))
     {
@@ -177,9 +191,9 @@ spinel_packed_uint_encode(uint8_t *bytes, spinel_size_t len, unsigned int value)
 {
     const spinel_ssize_t encoded_size = spinel_packed_uint_size(value);
 
-    if (len >= encoded_size)
+    if ((spinel_ssize_t)len >= encoded_size)
     {
-        spinel_size_t i;
+        spinel_ssize_t i;
 
         for (i = 0; i != encoded_size - 1; ++i)
         {
@@ -278,7 +292,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
 
             if (arg_ptr)
             {
-                *arg_ptr = ((data_ptr[1] << 8) | data_ptr[0]);
+                *arg_ptr = (uint16_t)((data_ptr[1] << 8) | data_ptr[0]);
             }
 
             ret += sizeof(uint16_t);
@@ -295,7 +309,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
 
             if (arg_ptr)
             {
-                *arg_ptr = ((data_ptr[3] << 24) | (data_ptr[2] << 16) | (data_ptr[1] << 8) | data_ptr[0]);
+                *arg_ptr = (uint32_t)((data_ptr[3] << 24) | (data_ptr[2] << 16) | (data_ptr[1] << 8) | data_ptr[0]);
             }
 
             ret += sizeof(uint32_t);
@@ -359,11 +373,11 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
 
             require(pui_len > 0, bail);
 
-            require(pui_len <= data_len, bail);
+            require(pui_len <= (spinel_ssize_t)data_len, bail);
 
             ret += pui_len;
             data_ptr += pui_len;
-            data_len -= pui_len;
+            data_len -= (spinel_size_t)pui_len;
             break;
         }
 
@@ -405,11 +419,11 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
             }
             else
             {
-                block_len = data_len;
+                block_len = (uint16_t)data_len;
                 pui_len = 0;
             }
 
-            require_action(data_len >= (block_len + pui_len), bail, (ret = -1, errno = EOVERFLOW));
+            require_action((spinel_ssize_t)data_len >= (block_len + pui_len), bail, (ret = -1, errno = EOVERFLOW));
 
             if (NULL != block_ptr_ptr)
             {
@@ -432,7 +446,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
         {
             spinel_ssize_t pui_len = 0;
             uint16_t block_len = 0;
-            unsigned int actual_len = 0;
+            spinel_ssize_t actual_len = 0;
             const uint8_t *block_ptr = data_ptr;
             char nextformat = *spinel_next_packed_datatype(pack_format);
 
@@ -446,15 +460,15 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
             }
             else
             {
-                block_len = data_len;
+                block_len = (uint16_t)data_len;
                 pui_len = 0;
             }
 
-            require_action(data_len >= (block_len + pui_len), bail, (ret = -1, errno = EOVERFLOW));
+            require_action((spinel_ssize_t)data_len >= (block_len + pui_len), bail, (ret = -1, errno = EOVERFLOW));
 
             actual_len = spinel_datatype_vunpack_(block_ptr, block_len, pack_format + 2, args);
 
-            require_action((int)actual_len > -1, bail, (ret = -1, errno = EOVERFLOW));
+            require_action(actual_len > -1, bail, (ret = -1, errno = EOVERFLOW));
 
             if (pui_len)
             {
@@ -462,7 +476,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
             }
             else
             {
-                block_len = actual_len;
+                block_len = (uint16_t)actual_len;
             }
 
             ret += block_len;
@@ -578,8 +592,8 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
 
             if (data_len_max >= sizeof(uint16_t))
             {
-                data_ptr[1] = (arg >> 8);
-                data_ptr[0] = (arg >> 0);
+                data_ptr[1] = (arg >> 8) & 0xff;
+                data_ptr[0] = (arg >> 0) & 0xff;
                 data_ptr += sizeof(uint16_t);
                 data_len_max -= sizeof(uint16_t);
             }
@@ -599,10 +613,10 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
 
             if (data_len_max >= sizeof(uint32_t))
             {
-                data_ptr[3] = (arg >> 24);
-                data_ptr[2] = (arg >> 16);
-                data_ptr[1] = (arg >> 8);
-                data_ptr[0] = (arg >> 0);
+                data_ptr[3] = (arg >> 24) & 0xff;
+                data_ptr[2] = (arg >> 16) & 0xff;
+                data_ptr[1] = (arg >> 8) & 0xff;
+                data_ptr[0] = (arg >> 0) & 0xff;
                 data_ptr += sizeof(uint32_t);
                 data_len_max -= sizeof(uint32_t);
             }
@@ -677,10 +691,10 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
             spinel_ssize_t encoded_size = spinel_packed_uint_encode(data_ptr, data_len_max, arg);
             ret += encoded_size;
 
-            if (data_len_max >= encoded_size)
+            if ((spinel_ssize_t)data_len_max >= encoded_size)
             {
                 data_ptr += encoded_size;
-                data_len_max -= encoded_size;
+                data_len_max -= (spinel_size_t)encoded_size;
             }
             else
             {
@@ -735,12 +749,12 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
                 require_action(size_len > 0, bail, {ret = -1; errno = EINVAL;});
             }
 
-            ret += size_len + data_size_arg;
+            ret += (spinel_size_t)size_len + data_size_arg;
 
-            if (data_len_max >= size_len + data_size_arg)
+            if (data_len_max >= (spinel_size_t)size_len + data_size_arg)
             {
                 data_ptr += size_len;
-                data_len_max -= size_len;
+                data_len_max -= (spinel_size_t)size_len;
 
                 memcpy(data_ptr, arg, data_size_arg);
 
@@ -779,15 +793,15 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
 
             ret += size_len + struct_len;
 
-            if (struct_len + size_len <= data_len_max)
+            if (struct_len + size_len <= (spinel_ssize_t)data_len_max)
             {
                 data_ptr += size_len;
-                data_len_max -= size_len;
+                data_len_max -= (spinel_size_t)size_len;
 
                 struct_len = spinel_datatype_vpack_(data_ptr, data_len_max, pack_format + 2, args);
 
                 data_ptr += struct_len;
-                data_len_max -= struct_len;
+                data_len_max -= (spinel_size_t)struct_len;
             }
             else
             {
@@ -984,12 +998,12 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_NET_SAVED";
         break;
 
-    case SPINEL_PROP_NET_ENABLED:
-        ret = "PROP_NET_ENABLED";
+    case SPINEL_PROP_NET_IF_UP:
+        ret = "PROP_NET_IF_UP";
         break;
 
-    case SPINEL_PROP_NET_STATE:
-        ret = "PROP_NET_STATE";
+    case SPINEL_PROP_NET_STACK_UP:
+        ret = "PROP_NET_STACK_UP";
         break;
 
     case SPINEL_PROP_NET_ROLE:
@@ -1092,6 +1106,30 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE";
         break;
 
+    case SPINEL_PROP_MAC_WHITELIST:
+        ret = "PROP_MAC_WHITELIST";
+        break;
+
+    case SPINEL_PROP_MAC_WHITELIST_ENABLED:
+        ret = "PROP_MAC_WHITELIST_ENABLED";
+        break;
+
+    case SPINEL_PROP_THREAD_MODE:
+        ret = "PROP_THREAD_MODE";
+        break;
+
+    case SPINEL_PROP_THREAD_CHILD_TIMEOUT:
+        ret = "PROP_THREAD_CHILD_TIMEOUT";
+        break;
+
+    case SPINEL_PROP_THREAD_ROUTER_UPGRADE_THRESHOLD:
+        ret = "PROP_THREAD_ROUTER_UPGRADE_THRESHOLD";
+        break;
+
+    case SPINEL_PROP_THREAD_CONTEXT_REUSE_DELAY:
+        ret = "PROP_THREAD_CONTEXT_REUSE_DELAY";
+        break;
+
     default:
         break;
     }
@@ -1179,6 +1217,14 @@ const char *spinel_status_to_cstr(spinel_status_t status)
 
     case SPINEL_STATUS_CCA_FAILURE:
         ret = "STATUS_CCA_FAILURE";
+        break;
+
+    case SPINEL_STATUS_ALREADY:
+        ret = "STATUS_ALREADY";
+        break;
+
+    case SPINEL_STATUS_ITEM_NOT_FOUND:
+        ret = "STATUS_ITEM_NOT_FOUND";
         break;
 
     case SPINEL_STATUS_RESET_POWER_ON:
@@ -1285,7 +1331,7 @@ main(void)
 
         if (l != 0xDEADBEEF)
         {
-            printf("error: l != 0xDEADBEEF; (0x%08X)\n", l);
+            printf("error: l != 0xDEADBEEF; (0x%08X)\n", (unsigned int)l);
             goto bail;
         }
 
@@ -1345,7 +1391,7 @@ main(void)
 
         if (l != 0xDEADBEEF)
         {
-            printf("error: l != 0xDEADBEEF; (0x%08X)\n", l);
+            printf("error: l != 0xDEADBEEF; (0x%08X)\n", (unsigned int)l);
             goto bail;
         }
 
