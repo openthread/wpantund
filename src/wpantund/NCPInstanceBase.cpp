@@ -73,6 +73,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mFailureCount = 0;
 	mFailureThreshold = 3;
 	mAutoDeepSleepTimeout = 10;
+	mCommissionerPort = 5684;
 
 	memset(mNCPMeshLocalAddress.s6_addr, 0, sizeof(mNCPMeshLocalAddress));
 	memset(mNCPLinkLocalAddress.s6_addr, 0, sizeof(mNCPLinkLocalAddress));
@@ -287,6 +288,8 @@ NCPInstanceBase::get_supported_property_keys() const
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
 
+	properties.insert(kWPANTUNDProperty_NestLabs_NetworkPassthruPort);
+
 	return properties;
 }
 
@@ -359,6 +362,9 @@ NCPInstanceBase::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonTerminateOnFault)) {
 		cb(0, boost::any(mTerminateOnFault));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkPassthruPort)) {
+		cb(0, boost::any(mCommissionerPort));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPHardwareAddress)) {
 		cb(0, boost::any(nl::Data(mNCPHardwareAddress, sizeof(mNCPHardwareAddress))));
@@ -493,6 +499,10 @@ NCPInstanceBase::set_property(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonAutoAssociateAfterReset)) {
 			mAutoResume = any_to_bool(value);
+			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkPassthruPort)) {
+			mCommissionerPort = static_cast<uint16_t>(any_to_int(value));
 			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)) {

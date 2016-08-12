@@ -348,6 +348,12 @@ SpinelNCPControlInterface::permit_join(
 		goto bail;
 	}
 
+	if (traffic_port == 0) {
+		// If no port was explicitly set, default to the discovered
+		// "Commissioner Port"  (“:MC”).
+		traffic_port = htons(mNCPInstance->mCommissionerPort);
+	}
+
 	ret = mNCPInstance->set_commissioniner(seconds, traffic_type, traffic_port);
 
 	require_noerr(ret, bail);
