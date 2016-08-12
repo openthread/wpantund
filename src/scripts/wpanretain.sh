@@ -1,4 +1,5 @@
-#
+#! /bin/sh
+
 # Copyright (c) 2016 Nest Labs, Inc.
 # All rights reserved.
 #
@@ -16,7 +17,7 @@
 #
 
 
-function display_usage()
+display_usage ()
 {
 	echo "Thread Network Retain - Save/Recall thread network info"
 	echo ""
@@ -73,10 +74,11 @@ new_type=
 new_keyindex=
 
 # Populate the new network info variables by reading the values from wpanctl
-function get_new_network_info_from_wpantund()
+get_new_network_info_from_wpantund ()
 {
-	val=$($wpanctl_command get $WPANTUND_PROP_NAME)
-	new_name=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
+	val=$($wpanctl_command get -v $WPANTUND_PROP_NAME)
+	val=${val#\"}
+	new_name=${val%\"}
 
 	val=$($wpanctl_command get $WPANTUND_PROP_KEY)
 	val=${val#*\[}
@@ -86,7 +88,7 @@ function get_new_network_info_from_wpantund()
 	new_panid=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
 
 	val=$($wpanctl_command get $WPANTUND_PROP_XPANID)
-	new_xpanid=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
+	new_xpanid=$(echo "$val" | sed -e 's/.*=[[:space:]]*0x//')
 
 	val=$($wpanctl_command get $WPANTUND_PROP_CHANNEL)
 	new_channel=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
@@ -102,7 +104,7 @@ function get_new_network_info_from_wpantund()
 	new_keyindex=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
 }
 
-function restore_network_info_on_wpantund()
+restore_network_info_on_wpantund ()
 {
 	$wpanctl_command set $WPANTUND_PROP_NAME $cur_name
 	$wpanctl_command set $WPANTUND_PROP_KEY -d $cur_key
@@ -116,7 +118,7 @@ function restore_network_info_on_wpantund()
 	$wpanctl_command attach
 }
 
-function verify_cur_info()
+verify_cur_info ()
 {
 	if [ -z "$cur_name" ] ||		\
 	   [ -z "$cur_key" ] || 		\
@@ -133,7 +135,7 @@ function verify_cur_info()
 	return 0
 }
 
-function verify_new_info()
+verify_new_info ()
 {
 
 	if [ -z "$new_name" ] ||		\
@@ -151,7 +153,7 @@ function verify_new_info()
 	return 0
 }
 
-function is_new_info_same_as_cur_info()
+is_new_info_same_as_cur_info ()
 {
 	if [ "$cur_name" != "$new_name" ] || \
 	   [ "$cur_key" != "$new_key" ] || \
@@ -170,7 +172,7 @@ function is_new_info_same_as_cur_info()
 
 # Reads and parses the network info from a file and populate old network info variables
 #     First arg ($1) is the file name
-function read_cur_network_info_from_file()
+read_cur_network_info_from_file ()
 {
 	if [ -r $1 ]; then
 
@@ -208,13 +210,15 @@ function read_cur_network_info_from_file()
 }
 
 # Writes the new info into a given file name (first arg should be filename)
-function write_new_info_to_file()
+write_new_info_to_file ()
 {
 	fname=$1
 
 	if [ -e $fname ]; then
 		rm $fname > /dev/null 2>&1
 	fi
+
+	mkdir -p $(dirname "$fname")
 
 	# Write all the contents to the file
 
@@ -232,7 +236,7 @@ function write_new_info_to_file()
 }
 
 # For test and debugging only
-function display_cur_network_info()
+display_cur_network_info ()
 {
 	echo "cur_name is"  $cur_name
 	echo "cur_key is"  $cur_key
@@ -245,7 +249,7 @@ function display_cur_network_info()
 }
 
 # For test and debugging only
-function display_new_network_info()
+display_new_network_info ()
 {
 	echo "new_name is"  $new_name
 	echo "new_key is"  $new_key
@@ -257,7 +261,7 @@ function display_new_network_info()
 	echo "new_keyindex is"  $new_keyindex
 }
 
-function save_network_info()
+save_network_info ()
 {
 	get_new_network_info_from_wpantund
 
@@ -292,7 +296,7 @@ function save_network_info()
 	fi
 }
 
-function erase_network_info()
+erase_network_info ()
 {
 	if [ -e $primary_file_name ]; then
 		rm $primary_file_name
@@ -305,7 +309,7 @@ function erase_network_info()
 	echo "Successfully erased network data in \"$primary_file_name\" and \"$secondary_file_name\"".
 }
 
-function recall_network_info()
+recall_network_info ()
 {
 	read_cur_network_info_from_file $primary_file_name
 
