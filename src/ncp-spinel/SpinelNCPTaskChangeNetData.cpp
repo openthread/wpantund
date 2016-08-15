@@ -34,10 +34,22 @@ using namespace nl::wpantund;
 nl::wpantund::SpinelNCPTaskChangeNetData::SpinelNCPTaskChangeNetData(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
+	const std::list<Data>& change_net_data_commands,
+	int timeout
+):	SpinelNCPTask(instance, cb), mChangeNetDataCommands(change_net_data_commands)
+{
+	mNextCommandTimeout = timeout;
+	mRetVal = kWPANTUNDStatus_Failure;
+}
+
+nl::wpantund::SpinelNCPTaskChangeNetData::SpinelNCPTaskChangeNetData(
+	SpinelNCPInstance* instance,
+	CallbackWithStatusArg1 cb,
 	const Data& change_net_data_command,
 	int timeout
-):	SpinelNCPTask(instance, cb), mChangeNetDataCommand(change_net_data_command)
+):	SpinelNCPTask(instance, cb)
 {
+	mChangeNetDataCommands.push_back(change_net_data_command);
 	mNextCommandTimeout = timeout;
 	mRetVal = kWPANTUNDStatus_Failure;
 }
@@ -67,16 +79,24 @@ nl::wpantund::SpinelNCPTaskChangeNetData::vprocess_event(int event, va_list args
 
 	mRetVal = mNextCommandRet;
 
+	mCommandIter = mChangeNetDataCommands.begin();
+
 	// In case of BUSY error status (meaning the `ALLOW_LOCAL_NET_DATA_CHANGE`
 	// was already true), allow the operation to proceed.
 
-	require((mRetVal == SPINEL_STATUS_OK) || (mRetVal == SPINEL_STATUS_BUSY), on_error);
+	require((mRetVal == kWPANTUNDStatus_Ok) || (mRetVal == kWPANTUNDStatus_Busy), on_error);
 
-	mNextCommand = mChangeNetDataCommand;
+	mRetVal = kWPANTUNDStatus_Ok;
 
-	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	while ( (mRetVal == kWPANTUNDStatus_Ok)
+	     && (mChangeNetDataCommands.end() != mCommandIter)
+	) {
+		mNextCommand = *mCommandIter++;
 
-	mRetVal = mNextCommandRet;
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		mRetVal = mNextCommandRet;
+	}
 
 	// Even in case of failure we proceed to set ALLOW_LOCAL_NET_DATA_CHANGE
 	// to `false`. The error status is checked after this. It is stored in

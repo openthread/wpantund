@@ -94,6 +94,21 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
 
+	if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_PHY_CHAN,
+			any_to_int(mOptions[kWPANTUNDProperty_NCPChannel])
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+
+	}
+
 	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
