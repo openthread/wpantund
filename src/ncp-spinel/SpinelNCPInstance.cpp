@@ -781,7 +781,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
 		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
 		std::map<struct in6_addr, GlobalAddressEntry> global_addresses(mGlobalAddresses);
-		clear_nonpermanent_global_addresses();
 
 		while(value_data_len > 0) {
 			const uint8_t *entry_ptr = NULL;
