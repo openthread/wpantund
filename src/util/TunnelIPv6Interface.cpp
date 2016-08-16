@@ -46,7 +46,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 	mInterfaceName(interface_name),
 	mLastError(0),
 	mNetlinkFD(-1),
-	mHardwareAddress(),
+	mMACAddress(),
 	mRealmLocalAddress(),
 	mRealmLocalPrefixSize(64)
 {
@@ -246,7 +246,7 @@ TunnelIPv6Interface::set_online(bool online)
 		require_action((ret = tunnel_bring_online(mFDRead)) == 0, bail, mLastError = errno);
 		require_action(tunnel_is_online(mFDRead), bail, mLastError = errno);
 
-		(void)tunnel_set_hw_address(mFDRead, mHardwareAddress);
+		(void)tunnel_set_hw_address(mFDRead, mMACAddress);
 
 		require_action_string(tunnel_is_online(mFDRead), bail, mLastError = errno, "Tunnel went offline unexpectedly!");
 
@@ -282,18 +282,18 @@ TunnelIPv6Interface::reset(void)
 	mAddresses.clear();
 
 	set_online(false);
-	set_hardware_address(mHardwareAddress);
+	set_mac_address(mMACAddress);
 }
 
 bool
-TunnelIPv6Interface::set_hardware_address(const uint8_t addr[8])
+TunnelIPv6Interface::set_mac_address(const uint8_t addr[8])
 {
 	bool ret = false;
 
-	if (memcmp(mHardwareAddress, addr, sizeof(mHardwareAddress)) != 0) {
+	if (memcmp(mMACAddress, addr, sizeof(mMACAddress)) != 0) {
 		require_noerr(tunnel_set_hw_address(mFDRead, addr), bail);
 
-		memcpy(mHardwareAddress, addr, sizeof(mHardwareAddress));
+		memcpy(mMACAddress, addr, sizeof(mMACAddress));
 	}
 
 	ret = true;
@@ -302,9 +302,9 @@ bail:
 }
 
 const uint8_t*
-TunnelIPv6Interface::get_hardware_address(void)const
+TunnelIPv6Interface::get_mac_address(void)const
 {
-	return mHardwareAddress;
+	return mMACAddress;
 }
 
 bool

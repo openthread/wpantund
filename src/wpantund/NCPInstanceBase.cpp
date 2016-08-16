@@ -78,7 +78,8 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	memset(mNCPMeshLocalAddress.s6_addr, 0, sizeof(mNCPMeshLocalAddress));
 	memset(mNCPLinkLocalAddress.s6_addr, 0, sizeof(mNCPLinkLocalAddress));
 	memset(mNCPV6LegacyPrefix, 0, sizeof(mNCPV6LegacyPrefix));
-	memset(mNCPHardwareAddress, 0, sizeof(mNCPHardwareAddress));
+	memset(mMACAddress, 0, sizeof(mMACAddress));
+	memset(mMACHardwareAddress, 0, sizeof(mMACHardwareAddress));
 
 	if (!settings.empty()) {
 		Settings::const_iterator iter;
@@ -279,6 +280,8 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_NCPCCAThreshold);
 	properties.insert(kWPANTUNDProperty_NCPTXPower);
 
+	properties.insert(kWPANTUNDProperty_NCPMACAddress);
+
 	properties.insert(kWPANTUNDProperty_NetworkIsCommissioned);
 
 	properties.insert(kWPANTUNDProperty_ConfigTUNInterfaceName);
@@ -366,8 +369,11 @@ NCPInstanceBase::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkPassthruPort)) {
 		cb(0, boost::any(mCommissionerPort));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPMACAddress)) {
+		cb(0, boost::any(nl::Data(mMACAddress, sizeof(mMACAddress))));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPHardwareAddress)) {
-		cb(0, boost::any(nl::Data(mNCPHardwareAddress, sizeof(mNCPHardwareAddress))));
+		cb(0, boost::any(nl::Data(mMACHardwareAddress, sizeof(mMACHardwareAddress))));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
 		if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
@@ -403,7 +409,7 @@ NCPInstanceBase::get_property(
 
 		if ((mLegacyInterfaceEnabled || mNodeTypeSupportsLegacy) && buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))) {
 			memcpy(&legacy_addr, mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix));
-			memcpy(&legacy_addr.s6_addr[8], mNCPHardwareAddress, sizeof(mNCPHardwareAddress));
+			memcpy(&legacy_addr.s6_addr[8], mMACAddress, sizeof(mMACAddress));
 			legacy_addr.s6_addr[8] ^= 0x02; // Flip the private-use bit on the hardware address.
 			cb(0, boost::any(in6_addr_to_string(legacy_addr)));
 		} else {

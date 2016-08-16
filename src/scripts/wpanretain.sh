@@ -51,7 +51,7 @@ WPANTUND_PROP_KEY="Network:Key"
 WPANTUND_PROP_PANID="Network:PANID"
 WPANTUND_PROP_XPANID="Network:XPANID"
 WPANTUND_PROP_CHANNEL="NCP:Channel"
-WPANTUND_PROP_HWADDR="NCP:HardwareAddress"
+WPANTUND_PROP_MACADDR="NCP:MACAddress"
 WPANTUND_PROP_NODE_TYPE="Network:NodeType"
 WPANTUND_PROP_KEY_INDEX="Network:KeyIndex"
 
@@ -60,7 +60,7 @@ cur_key=
 cur_panid=
 cur_xpanid=
 cur_channel=
-cur_hwaddr=SOMETHING
+cur_macaddr=SOMETHING
 cur_type=
 cur_keyindex=
 
@@ -69,7 +69,7 @@ new_key=
 new_panid=
 new_xpanid=
 new_channel=
-new_hwaddr=
+new_macaddr=
 new_type=
 new_keyindex=
 
@@ -93,9 +93,9 @@ get_new_network_info_from_wpantund ()
 	val=$($wpanctl_command get $WPANTUND_PROP_CHANNEL)
 	new_channel=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
 
-	val=$($wpanctl_command get $WPANTUND_PROP_HWADDR)
+	val=$($wpanctl_command get $WPANTUND_PROP_MACADDR)
 	val=${val#*\[}
-	new_hwaddr=${val%\]*}
+	new_macaddr=${val%\]*}
 
 	val=$($wpanctl_command get $WPANTUND_PROP_NODE_TYPE)
 	new_type=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
@@ -106,12 +106,12 @@ get_new_network_info_from_wpantund ()
 
 restore_network_info_on_wpantund ()
 {
+	$wpanctl_command set $WPANTUND_PROP_MACADDR $cur_macaddr
 	$wpanctl_command set $WPANTUND_PROP_NAME $cur_name
 	$wpanctl_command set $WPANTUND_PROP_KEY -d $cur_key
 	$wpanctl_command set $WPANTUND_PROP_PANID $cur_panid
 	$wpanctl_command set $WPANTUND_PROP_XPANID -d $cur_xpanid
 	$wpanctl_command set $WPANTUND_PROP_CHANNEL $cur_channel
-	$wpanctl_command set $WPANTUND_PROP_HWADDR $cur_hwaddr
 	$wpanctl_command set $WPANTUND_PROP_NODE_TYPE $cur_type
 	$wpanctl_command set $WPANTUND_PROP_KEY_INDEX $cur_keyindex
 
@@ -125,7 +125,7 @@ verify_cur_info ()
 	   [ -z "$cur_panid" ] || 		\
 	   [ -z "$cur_xpanid" ] ||		\
 	   [ -z "$cur_channel" ] || 	\
-	   [ -z "$cur_hwaddr" ] || 		\
+	   [ -z "$cur_macaddr" ] || 		\
 	   [ -z "$cur_type" ] ||		\
 	   [ -z "$cur_keyindex" ]
 	then
@@ -143,7 +143,7 @@ verify_new_info ()
 	   [ -z "$new_panid" ] || 		\
 	   [ -z "$new_xpanid" ] ||		\
 	   [ -z "$new_channel" ] || 	\
-	   [ -z "$new_hwaddr" ] || 		\
+	   [ -z "$new_macaddr" ] || 		\
 	   [ -z "$new_type" ] ||		\
 	   [ -z "$new_keyindex" ]
 	then
@@ -160,7 +160,7 @@ is_new_info_same_as_cur_info ()
 	   [ "$cur_panid" != "$new_panid" ] || \
 	   [ "$cur_xpanid" != "$new_xpanid" ] || \
 	   [ "$cur_channel" != "$new_channel" ] || \
-	   [ "$cur_hwaddr" != "$new_hwaddr" ] || \
+	   [ "$cur_macaddr" != "$new_macaddr" ] || \
 	   [ "$cur_type" != "$new_type" ] || \
 	   [ "$cur_keyindex" != "$new_keyindex" ]
 	then
@@ -194,8 +194,8 @@ read_cur_network_info_from_file ()
 			$WPANTUND_PROP_CHANNEL)
 			  cur_channel=$value
 			  ;;
-			$WPANTUND_PROP_HWADDR)
-	          cur_hwaddr=$value
+			$WPANTUND_PROP_MACADDR)
+	          cur_macaddr=$value
 	          ;;
 	        $WPANTUND_PROP_NODE_TYPE)
 	          cur_type=$value
@@ -227,7 +227,7 @@ write_new_info_to_file ()
 	echo "${WPANTUND_PROP_PANID} = $new_panid" >> $fname
 	echo "${WPANTUND_PROP_XPANID} = $new_xpanid" >> $fname
 	echo "${WPANTUND_PROP_CHANNEL} = $new_channel" >> $fname
-	echo "${WPANTUND_PROP_HWADDR} = $new_hwaddr" >> $fname
+	echo "${WPANTUND_PROP_MACADDR} = $new_macaddr" >> $fname
 	echo "${WPANTUND_PROP_NODE_TYPE} = $new_type" >> $fname
 	echo "${WPANTUND_PROP_KEY_INDEX} = $new_keyindex" >> $fname
 
@@ -243,7 +243,7 @@ display_cur_network_info ()
 	echo "cur_panid is" $cur_panid
 	echo "cur_xpanid is" $cur_xpanid
 	echo "cur_channel is" $cur_channel
-	echo "cur_hwaddr is" $cur_hwaddr
+	echo "cur_macaddr is" $cur_macaddr
 	echo "cur_type is" $cur_type
 	echo "cur_keyindex is"  $cur_keyindex
 }
@@ -256,7 +256,7 @@ display_new_network_info ()
 	echo "new_panid is" $new_panid
 	echo "new_xpanid is" $new_xpanid
 	echo "new_channel is" $new_channel
-	echo "new_hwaddr is" $new_hwaddr
+	echo "new_macaddr is" $new_macaddr
 	echo "new_type is" $new_type
 	echo "new_keyindex is"  $new_keyindex
 }

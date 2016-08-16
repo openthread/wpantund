@@ -53,6 +53,7 @@
 #define kWPANTUNDProperty_NCPState               "NCP:State"
 #define kWPANTUNDProperty_NCPHardwareAddress     "NCP:HardwareAddress"
 #define kWPANTUNDProperty_NCPExtendedAddress     "NCP:ExtendedAddress"
+#define kWPANTUNDProperty_NCPMACAddress          "NCP:MACAddress"
 #define kWPANTUNDProperty_NCPChannel             "NCP:Channel"
 #define kWPANTUNDProperty_NCPFrequency           "NCP:Frequency"
 #define kWPANTUNDProperty_NCPTXPower             "NCP:TXPower"

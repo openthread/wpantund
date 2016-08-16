@@ -338,6 +338,13 @@ typedef enum
     /** Format: `b`
      */
     SPINEL_PROP_MAC_WHITELIST_ENABLED  = SPINEL_PROP_MAC_EXT__BEGIN + 1,
+
+    /// MAC Extended Address
+    /** Format: `E`
+	 *
+	 *  Specified by Thread. Randomly-chosen, but non-volatile EUI-64.
+     */
+    SPINEL_PROP_MAC_EXTENDED_ADDR      = SPINEL_PROP_MAC_EXT__BEGIN + 2,
     SPINEL_PROP_MAC_EXT__END           = 0x1400,
 
     SPINEL_PROP_NET__BEGIN           = 0x40,
