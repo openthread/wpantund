@@ -1080,7 +1080,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_is(key, value_data_ptr, value_data_len);
 		}
@@ -1101,7 +1101,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_INSERTED(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_INSERTED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_inserted(key, value_data_ptr, value_data_len);
 		}
@@ -1122,7 +1122,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_REMOVED(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_REMOVED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_removed(key, value_data_ptr, value_data_len);
 		}

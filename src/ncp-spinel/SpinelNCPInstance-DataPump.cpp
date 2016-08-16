@@ -362,23 +362,23 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_GET) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_GET(%s) len=%d", spinel_prop_key_to_cstr(key), mOutboundBufferLen);
+				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_GET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_SET) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_SET(%s)", spinel_prop_key_to_cstr(key));
+				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_SET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_INSERT) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_INSERT(%s)", spinel_prop_key_to_cstr(key));
+				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_INSERT(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_REMOVE) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_SET(%s)", spinel_prop_key_to_cstr(key));
+				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_REMOVE(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_NOOP) {
-				syslog(LOG_INFO, "[->NCP] CMD_NOOP");
+				syslog(LOG_INFO, "[->NCP] CMD_NOOP tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_RESET) {
-				syslog(LOG_INFO, "[->NCP] CMD_RESET");
+				syslog(LOG_INFO, "[->NCP] CMD_RESET tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			}
 		} else {
 			// There is an IPv6 packet waiting on one of the tunnel interfaces.
