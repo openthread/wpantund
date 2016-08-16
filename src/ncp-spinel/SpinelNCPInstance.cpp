@@ -583,15 +583,20 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 			Data network_key = any_to_data(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
+				mNetworkKey = network_key;
+				if (mNetworkKeyIndex == 0) {
+					mNetworkKeyIndex = 1;
+				}
+			}
+
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_MASTER_KEY, network_key.data(), network_key.size())
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPMACAddress)) {
 			Data eui64_value = any_to_data(value);
@@ -893,9 +898,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_NET_MASTER_KEY) {
 		nl::Data network_key(value_data_ptr, value_data_len);
-		if (network_key != mNetworkKey) {
-			mNetworkKey = network_key;
-			signal_property_changed(kWPANTUNDProperty_NetworkKey, mNetworkKey);
+		if (ncp_state_is_joining_or_joined(get_ncp_state())) {
+			if (network_key != mNetworkKey) {
+				mNetworkKey = network_key;
+				signal_property_changed(kWPANTUNDProperty_NetworkKey, mNetworkKey);
+			}
 		}
 
 	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE) {

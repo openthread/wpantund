@@ -74,16 +74,18 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 		mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress] = mesh_local_prefix;
 	}
 
-	if (!mOptions.count(kWPANTUNDProperty_NetworkKey)) {
-		uint8_t net_key[NCP_NETWORK_KEY_SIZE];
+	if (instance->mNetworkKey.empty()) {
+		if (!mOptions.count(kWPANTUNDProperty_NetworkKey)) {
+			uint8_t net_key[NCP_NETWORK_KEY_SIZE];
 
-		sec_random_fill(net_key, sizeof(net_key));
+			sec_random_fill(net_key, sizeof(net_key));
 
-		mOptions[kWPANTUNDProperty_NetworkKey] = Data(net_key, sizeof(net_key));
-	}
+			mOptions[kWPANTUNDProperty_NetworkKey] = Data(net_key, sizeof(net_key));
+		}
 
-	if (!mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
-		mOptions[kWPANTUNDProperty_NetworkKeyIndex] = 1;
+		if (!mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
+			mOptions[kWPANTUNDProperty_NetworkKeyIndex] = 1;
+		}
 	}
 }
 
