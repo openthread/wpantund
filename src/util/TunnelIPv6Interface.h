@@ -50,9 +50,9 @@ public:
 	bool is_online(void);
 	int set_online(bool isOnline);
 
-	bool set_hardware_address(const uint8_t addr[8]);
+	bool set_mac_address(const uint8_t addr[8]);
 
-	const uint8_t* get_hardware_address(void)const;
+	const uint8_t* get_mac_address(void)const;
 
 	bool set_realm_local_address(const struct in6_addr *addr, int prefixlen = 64);
 
@@ -85,7 +85,7 @@ private:
 
 	int mNetlinkFD;
 
-	uint8_t mHardwareAddress[8];
+	uint8_t mMACAddress[8];
 	struct in6_addr mRealmLocalAddress;
 	int mRealmLocalPrefixSize;
 	std::set<struct in6_addr> mAddresses;

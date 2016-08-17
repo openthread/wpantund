@@ -215,7 +215,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 
 	memcpy(addr.s6_addr, prefix, 8);
 
-	memcpy(addr.s6_addr + 8, mNCPInstance->mNCPHardwareAddress, 8);
+	memcpy(addr.s6_addr + 8, mNCPInstance->mMACAddress, 8);
 	addr.s6_addr[8] ^= 0x02; // flip the private-use bit on the hardware address.
 
 	if (validLifetime == 0) {

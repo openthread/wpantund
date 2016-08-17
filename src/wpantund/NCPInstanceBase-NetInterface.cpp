@@ -52,32 +52,59 @@ NCPInstanceBase::set_online(bool x)
 }
 
 int
-NCPInstanceBase::set_hardware_address(const uint8_t x[8])
+NCPInstanceBase::set_mac_address(const uint8_t x[8])
 {
 	int ret;
 
-	memcpy(mNCPHardwareAddress, x, sizeof(mNCPHardwareAddress));
+	memcpy(mMACAddress, x, sizeof(mMACAddress));
 
 	syslog(
 		LOG_INFO,
-		"NCP Status: HardwareAddr:      %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
-		mNCPHardwareAddress[0],mNCPHardwareAddress[1],mNCPHardwareAddress[2],mNCPHardwareAddress[3],
-		mNCPHardwareAddress[4],mNCPHardwareAddress[5],mNCPHardwareAddress[6],mNCPHardwareAddress[7]
+		"NCP Status: MACAddr:           %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+		mMACAddress[0],mMACAddress[1],mMACAddress[2],mMACAddress[3],
+		mMACAddress[4],mMACAddress[5],mMACAddress[6],mMACAddress[7]
+	);
+
+	if ((x[0] & 1) == 1) {
+		syslog(LOG_ERR,"MAC ADDRESS IS INVALID, MULTICAST BIT IS SET!");
+	}
+
+	signal_property_changed(kWPANTUNDProperty_NCPMACAddress, Data(mMACAddress, sizeof(mMACAddress)));
+
+	ret = mPrimaryInterface->set_mac_address(x);
+
+	if (static_cast<bool>(mLegacyInterface)) {
+		mLegacyInterface->set_mac_address(x);
+	}
+
+	if (!buffer_is_nonzero(mMACHardwareAddress, sizeof(mMACHardwareAddress))) {
+		set_mac_hardware_address(x);
+	}
+
+	return ret;
+}
+
+void
+NCPInstanceBase::set_mac_hardware_address(const uint8_t x[8])
+{
+	memcpy(mMACHardwareAddress, x, sizeof(mMACHardwareAddress));
+
+	syslog(
+		LOG_INFO,
+		"NCP Status: MACHardwareAddr:   %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+		mMACHardwareAddress[0],mMACHardwareAddress[1],mMACHardwareAddress[2],mMACHardwareAddress[3],
+		mMACHardwareAddress[4],mMACHardwareAddress[5],mMACHardwareAddress[6],mMACHardwareAddress[7]
 	);
 
 	if ((x[0] & 1) == 1) {
 		syslog(LOG_ERR,"HARDWARE ADDRESS IS INVALID, MULTICAST BIT IS SET!");
 	}
 
-	signal_property_changed(kWPANTUNDProperty_NCPHardwareAddress, Data(mNCPHardwareAddress, sizeof(mNCPHardwareAddress)));
-
-	ret = mPrimaryInterface->set_hardware_address(x);
+	signal_property_changed(kWPANTUNDProperty_NCPHardwareAddress, Data(mMACHardwareAddress, sizeof(mMACHardwareAddress)));
 
 	if (static_cast<bool>(mLegacyInterface)) {
-		mLegacyInterface->set_hardware_address(x);
+		mLegacyInterface->set_mac_address(x);
 	}
-
-	return ret;
 }
 
 void
@@ -95,7 +122,7 @@ NCPInstanceBase::enable_legacy_interface(void)
 {
 	if (!static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(mPrimaryInterface->get_interface_name()+"-L"));
-		mLegacyInterface->set_hardware_address(mPrimaryInterface->get_hardware_address());
+		mLegacyInterface->set_mac_address(mPrimaryInterface->get_mac_address());
 	}
 }
 

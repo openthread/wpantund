@@ -151,7 +151,7 @@ echo "Executing '$COMMAND' as $USERNAME"
 
 CMD="docker run \
   -v=$PROJECT_DIR:$SRC_DIR \
-  -w='$SRC_DIR' \
+  -w=$SRC_DIR \
   --hostname=`hostname`\
   --rm \
   $OTHER_OPTS \

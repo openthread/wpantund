@@ -124,7 +124,9 @@ public:
 
 	int set_online(bool x);
 
-	int set_hardware_address(const uint8_t addr[8]);
+	int set_mac_address(const uint8_t addr[8]);
+
+	void set_mac_hardware_address(const uint8_t addr[8]);
 
 	void reset_interface(void);
 
@@ -256,7 +258,11 @@ private:
 	bool mIsInitializingNCP;
 
 protected:
-	uint8_t mNCPHardwareAddress[8];
+	//! This is set to the currently used MAC address (EUI64).
+	uint8_t mMACAddress[8];
+
+	//! This is set to the manufacturer-assigned permanent EUI64 address.
+	uint8_t mMACHardwareAddress[8];
 	union {
 		uint8_t mNCPV6Prefix[8];
 		struct in6_addr mNCPMeshLocalAddress;

@@ -167,6 +167,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPChannel);
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
+	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 
 	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_0)) {
 		properties.insert(kWPANTUNDProperty_ThreadLeaderAddress);
@@ -268,6 +269,7 @@ SpinelNCPInstance::get_property(
 		))) {
 			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
 		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
@@ -280,6 +282,18 @@ SpinelNCPInstance::get_property(
 		))) {
 			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
 		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskSendCommand(
+				this,
+				cb,
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_EXTENDED_ADDR),
+				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+				SPINEL_DATATYPE_EUI64_S
+			)
+		));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
@@ -578,6 +592,45 @@ SpinelNCPInstance::set_property(
 			))) {
 				cb(kWPANTUNDStatus_InvalidForCurrentState);
 			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPMACAddress)) {
+			Data eui64_value = any_to_data(value);
+
+			if (eui64_value.size() == sizeof(spinel_eui64_t)) {
+				start_new_task(boost::shared_ptr<SpinelNCPTask>(
+					new SpinelNCPTaskSendCommand(
+						this,
+						boost::bind(cb,_1),
+						SpinelPackData(
+							SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_EUI64_S),
+							SPINEL_PROP_MAC_15_4_LADDR,
+							eui64_value.data()
+						)
+					)
+				));
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
+			Data eui64_value = any_to_data(value);
+
+			if (eui64_value.size() == sizeof(spinel_eui64_t)) {
+				start_new_task(boost::shared_ptr<SpinelNCPTask>(
+					new SpinelNCPTaskSendCommand(
+						this,
+						boost::bind(cb,_1),
+						SpinelPackData(
+							SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_EUI64_S),
+							SPINEL_PROP_MAC_EXTENDED_ADDR,
+							eui64_value.data()
+						)
+					)
+				));
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
 			Data xpanid = any_to_data(value);
 
@@ -806,11 +859,20 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				update_global_address(iter->first, 0, 0, 0);
 			}
 		}
+
 	} else if (key == SPINEL_PROP_HWADDR) {
 		nl::Data hwaddr(value_data_ptr, value_data_len);
-		if (value_data_len == sizeof(mNCPHardwareAddress)) {
-			if (0 != memcmp(value_data_ptr, mNCPHardwareAddress, sizeof(mNCPHardwareAddress))) {
-				set_hardware_address(value_data_ptr);
+		if (value_data_len == sizeof(mMACHardwareAddress)) {
+			if (0 != memcmp(value_data_ptr, mMACHardwareAddress, sizeof(mMACHardwareAddress))) {
+				set_mac_hardware_address(value_data_ptr);
+			}
+		}
+
+	} else if (key == SPINEL_PROP_MAC_15_4_LADDR) {
+		nl::Data hwaddr(value_data_ptr, value_data_len);
+		if (value_data_len == sizeof(mMACAddress)) {
+			if (0 != memcmp(value_data_ptr, mMACAddress, sizeof(mMACAddress))) {
+				set_mac_address(value_data_ptr);
 			}
 		}
 
@@ -1080,7 +1142,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_is(key, value_data_ptr, value_data_len);
 		}
@@ -1101,7 +1163,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_INSERTED(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_INSERTED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_inserted(key, value_data_ptr, value_data_len);
 		}
@@ -1122,7 +1184,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_REMOVED(%s)", spinel_prop_key_to_cstr(key));
+			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_REMOVED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
 
 			return handle_ncp_spinel_value_removed(key, value_data_ptr, value_data_len);
 		}
