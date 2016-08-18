@@ -205,6 +205,15 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_SECURITY");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_BAD_FCS");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_OTHER");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_SEC_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_INSEC_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_DROPPED");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_IP_SEC_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_IP_INSEC_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_IP_DROPPED");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_SPINEL_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_ERR");
 	}
 
 	return properties;
@@ -506,6 +515,15 @@ SpinelNCPInstance::get_property(
 		CNTR_KEY(RX_ERR_SECURITY)
 		CNTR_KEY(RX_ERR_BAD_FCS)
 		CNTR_KEY(RX_ERR_OTHER)
+		CNTR_KEY(TX_IP_SEC_TOTAL)
+		CNTR_KEY(TX_IP_INSEC_TOTAL)
+		CNTR_KEY(TX_IP_DROPPED)
+		CNTR_KEY(RX_IP_SEC_TOTAL)
+		CNTR_KEY(RX_IP_INSEC_TOTAL)
+		CNTR_KEY(RX_IP_DROPPED)
+		CNTR_KEY(TX_SPINEL_TOTAL)
+		CNTR_KEY(RX_SPINEL_TOTAL)
+		CNTR_KEY(RX_SPINEL_ERR)
 
 #undef CNTR_KEY
 
