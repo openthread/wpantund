@@ -17,15 +17,15 @@
  *
  */
 
-#ifndef wpantund_NCPMfgInterface_h
-#define wpantund_NCPMfgInterface_h
+#ifndef wpantund_NCPMfgInterface_v0_h
+#define wpantund_NCPMfgInterface_v0_h
 
 #include "NCPControlInterface.h"
 
 namespace nl {
 namespace wpantund {
 
-class NCPMfgInterface {
+class NCPMfgInterface_v0 {
 public:
 	virtual void mfg_start(CallbackWithStatus cb) { }
 
