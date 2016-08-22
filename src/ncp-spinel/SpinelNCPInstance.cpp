@@ -455,7 +455,7 @@ SpinelNCPInstance::get_property(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_ML_ADDR),
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_LL_ADDR),
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
 			)
@@ -727,6 +727,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				case SPINEL_STATUS_RESET_CRASH:
 				case SPINEL_STATUS_RESET_FAULT:
 				case SPINEL_STATUS_RESET_ASSERT:
+				case SPINEL_STATUS_RESET_WATCHDOG:
 				case SPINEL_STATUS_RESET_OTHER:
 					wstatus = kWPANTUNDStatus_NCP_Crashed;
 					break;
@@ -754,7 +755,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if (interface_type != SPINEL_PROTOCOL_TYPE_THREAD) {
 			syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol type (%d)", interface_type);
 			change_ncp_state(FAULT);
-			// TODO: Possible firmware update
 		}
 
 
@@ -766,7 +766,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if (protocol_version_major != SPINEL_PROTOCOL_VERSION_THREAD_MAJOR) {
 			syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol version (NCP:%d, wpantund:%d)", protocol_version_major, SPINEL_PROTOCOL_VERSION_THREAD_MAJOR);
 			change_ncp_state(FAULT);
-			// TODO: Possible firmware update
 		}
 
 		if (protocol_version_minor != SPINEL_PROTOCOL_VERSION_THREAD_MINOR) {
