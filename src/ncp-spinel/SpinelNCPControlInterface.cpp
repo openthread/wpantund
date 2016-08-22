@@ -188,12 +188,6 @@ SpinelNCPControlInterface::data_poll(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefix[8], uint32_t preferredLifetime, uint32_t validLifetime, CallbackWithStatus cb)
 {
-    const static int kPreferredFlag = 1 << 5;
-    const static int kValidFlag = 1 << 4;
-    const static int kConfigureFlag = 1 << 2; (void)kConfigureFlag;
-    const static int kDefaultRouteFlag = 1 << 1;
-    const static int kDhcpFlag = 1 << 3; (void)kDhcpFlag;
-
 	struct in6_addr addr = {};
 	uint8_t flags = 0;
 
@@ -208,15 +202,13 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 	}
 
 	if (defaultRoute) {
-		flags |= kDefaultRouteFlag;
+		flags |= SPINEL_NET_FLAG_DEFAULT_ROUTE;
 	}
 
-	flags |= kPreferredFlag | kValidFlag;
+	flags |= SPINEL_NET_FLAG_PREFERRED | SPINEL_NET_FLAG_SLAAC | SPINEL_NET_FLAG_ON_MESH;
 
 	memcpy(addr.s6_addr, prefix, 8);
 
-	memcpy(addr.s6_addr + 8, mNCPInstance->mMACAddress, 8);
-	addr.s6_addr[8] ^= 0x02; // flip the private-use bit on the hardware address.
 
 	if (validLifetime == 0) {
 		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(

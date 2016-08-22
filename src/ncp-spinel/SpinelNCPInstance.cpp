@@ -841,7 +841,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
 		std::map<struct in6_addr, GlobalAddressEntry> global_addresses(mGlobalAddresses);
 
-		while(value_data_len > 0) {
+		while (value_data_len > 0) {
 			const uint8_t *entry_ptr = NULL;
 			spinel_size_t entry_len = 0;
 			spinel_ssize_t len = 0;
@@ -973,6 +973,34 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			change_ncp_state(OFFLINE);
 		}
 
+	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		while (value_data_len > 0) {
+			spinel_ssize_t len = 0;
+			struct in6_addr *addr = NULL;
+			uint8_t prefix_len = 0;
+			bool stable;
+			uint8_t flags = 0;
+
+			len = spinel_datatype_unpack(
+				value_data_ptr,
+				value_data_len,
+				"T(6CbC).",
+				&addr,
+				&prefix_len,
+				&stable,
+				&flags
+			);
+
+			if (len < 1) {
+				break;
+			}
+
+			refresh_on_mesh_prefix(addr, prefix_len, stable, flags);
+
+			value_data_ptr += len;
+			value_data_len -= len;
+		}
+
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
 		uint16_t assisting_port(0);
@@ -1033,6 +1061,46 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 }
 
 void
+SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags)
+{
+	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
+	  && !lookup_address_for_prefix(NULL, *addr, prefix_len)
+	) {
+		std::list<Data> commands;
+
+		// Calculate the lower 64-bits of the SLAAC address.
+		memcpy(addr->s6_addr + 8, mMACAddress, 8);
+		addr->s6_addr[8] ^= 0x02; // flip the private-use bit on the hardware address.
+
+		syslog(LOG_NOTICE, "Adding a new address %s/%d", in6_addr_to_string(*addr).c_str(), prefix_len);
+
+		commands.push_back(
+			SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_IPv6ADDR_S   // Address
+					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
+					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
+				),
+				SPINEL_PROP_IPV6_ADDRESS_TABLE,
+				addr,
+				prefix_len,
+				UINT32_MAX,
+				UINT32_MAX
+			)
+		);
+
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskChangeNetData(
+				this,
+				NilReturn(),
+				commands
+			)
+		));
+	}
+}
+
+void
 SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
@@ -1060,8 +1128,27 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 					update_global_address(*addr, valid_lifetime, preferred_lifetime, 0);
 				}
 			}
-	}
+	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		struct in6_addr *addr = NULL;
+		uint8_t prefix_len = 0;
+		bool stable;
+		uint8_t flags = 0;
+		static const char flag_lookup[] = "ppPSDCRM";
 
+		spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			"6CbC",
+			&addr,
+			&prefix_len,
+			&stable,
+			&flags
+		);
+
+		syslog(LOG_NOTICE, "On-Mesh Network Added: %s/%d flags:%s", in6_addr_to_string(*addr).c_str(), prefix_len, flags_to_string(flags, flag_lookup).c_str());
+
+		refresh_on_mesh_prefix(addr, prefix_len, stable, flags);
+	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
 }
@@ -1074,6 +1161,13 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 	if (ncp_state_is_associated(new_ncp_state)
 	 && !ncp_state_is_associated(old_ncp_state)
 	) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskSendCommand(
+				this,
+				NilReturn(),
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_LADDR)
+			)
+		));
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
@@ -1093,13 +1187,6 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 				this,
 				NilReturn(),
 				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_PANID)
-			)
-		));
-		start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
-				this,
-				NilReturn(),
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_LADDR)
 			)
 		));
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -1208,10 +1295,9 @@ void
 SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len)
 {
 	if (!is_address_known(addr) && !IN6_IS_ADDR_LINKLOCAL(&addr)) {
-		uint8_t flags = SPINEL_NET_FLAG_CONFIGURE
-		              | SPINEL_NET_FLAG_DHCP
-		              | SPINEL_NET_FLAG_SLAAC_VALID
-		              | SPINEL_NET_FLAG_SLAAC_PREFERRED;
+		uint8_t flags = SPINEL_NET_FLAG_SLAAC
+					  | SPINEL_NET_FLAG_ON_MESH
+		              | SPINEL_NET_FLAG_PREFERRED;
 		std::list<Data> commands;
 
 		NCPInstanceBase::address_was_added(addr, prefix_len);
@@ -1220,17 +1306,15 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 			SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT8_S      // Prefix Length
 					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
 					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
-					SPINEL_DATATYPE_UINT8_S      // Flags
 				),
 				SPINEL_PROP_IPV6_ADDRESS_TABLE,
 				&addr,
 				prefix_len,
 				UINT32_MAX,
-				UINT32_MAX,
-				flags
+				UINT32_MAX
 			)
 		);
 
@@ -1238,7 +1322,7 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 			SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT8_S      // Prefix Length
 					SPINEL_DATATYPE_BOOL_S       // Stable?
 					SPINEL_DATATYPE_UINT8_S      // Flags
 				),
