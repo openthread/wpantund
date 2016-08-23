@@ -22,6 +22,7 @@
 
 #include "NCPInstance.h"
 #include "NCPControlInterface.h"
+#include "NCPMfgInterface_v1.h"
 #include "nlpt.h"
 #include "Callbacks.h"
 #include "EventHandler.h"
@@ -36,7 +37,7 @@ namespace wpantund {
 
 class SpinelNCPInstance;
 
-class SpinelNCPControlInterface : public NCPControlInterface {
+class SpinelNCPControlInterface : public NCPControlInterface, public NCPMfgInterface_v1 {
 public:
 	friend class SpinelNCPInstance;
 
@@ -92,6 +93,9 @@ public:
 	virtual std::string get_name();
 
 	virtual NCPInstance& get_ncp_instance(void);
+
+	/******************* NCPMfgInterface_v1 ********************/
+	virtual void mfg(const std::string& mfg_command, CallbackWithStatusArg1 cb = NilReturn());
 
 private:
 

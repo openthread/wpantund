@@ -38,6 +38,7 @@
 #include "wpan-error.h"
 
 #include "NCPControlInterface.h"
+#include "NCPMfgInterface_v1.h"
 #include "assert-macros.h"
 
 #include "DBUSHelpers.h"
@@ -86,6 +87,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_START, interface_net_scan_start_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_STOP, interface_energy_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_START, interface_energy_scan_start_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MFG, interface_mfg_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_get_prop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_set_prop_handler);
@@ -752,6 +755,44 @@ DBusIPCAPI_v1::interface_energy_scan_stop_handler(
 }
 
 DBusHandlerResult
+DBusIPCAPI_v1::interface_mfg_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	NCPMfgInterface_v1* mfg_interface(dynamic_cast<NCPMfgInterface_v1*>(interface));
+
+	const char *mfg_command_cstr = "";
+	std::string mfg_command;
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_STRING, &mfg_command_cstr,
+		DBUS_TYPE_INVALID
+	);
+
+	mfg_command = mfg_command_cstr;
+
+	dbus_message_ref(message);
+
+	mfg_interface->mfg(
+		mfg_command,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatusArg1_Helper,
+			this,
+			_1,
+			_2,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
 DBusIPCAPI_v1::interface_get_prop_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
@@ -1057,7 +1098,8 @@ DBusIPCAPI_v1::message_handler(
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	if ((dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_METHOD_CALL)
-		&& dbus_message_has_interface(message, WPANTUND_DBUS_APIv1_INTERFACE)
+		&& (dbus_message_has_interface(message, WPANTUND_DBUS_APIv1_INTERFACE)
+			|| dbus_message_has_interface(message, WPANTUND_DBUS_NLAPIv1_INTERFACE))
 		&& mInterfaceCallbackTable.count(dbus_message_get_member(message))
 	) {
 		try {

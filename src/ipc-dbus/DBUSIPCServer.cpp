@@ -37,7 +37,6 @@
 #endif
 #include <string.h>
 #include "NCPControlInterface.h"
-#include "NCPMfgInterface.h"
 #include "assert-macros.h"
 
 #include <boost/bind.hpp>

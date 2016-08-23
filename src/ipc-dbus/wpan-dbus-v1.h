@@ -81,4 +81,6 @@
 #define WPANTUND_IF_CMD_PERMIT_JOIN           "PermitJoin"
 #define WPANTUND_IF_CMD_NETWORK_WAKE_BEGIN    "NetworkWakeBegin"
 
+#define WPANTUND_IF_CMD_MFG                   "Mfg"
+
 #endif
