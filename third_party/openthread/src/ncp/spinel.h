@@ -335,7 +335,7 @@ typedef enum
      * Structure Parameters:
      *
      * * `E`: EUI64 address of node
-     * * `c`: Optional fixed RSSI. -127 means not set.
+     * * `c`: Optional fixed RSSI. 127 means not set.
      */
     SPINEL_PROP_MAC_WHITELIST          = SPINEL_PROP_MAC_EXT__BEGIN + 0,
 
@@ -346,8 +346,8 @@ typedef enum
 
     /// MAC Extended Address
     /** Format: `E`
-	 *
-	 *  Specified by Thread. Randomly-chosen, but non-volatile EUI-64.
+     *
+     *  Specified by Thread. Randomly-chosen, but non-volatile EUI-64.
      */
     SPINEL_PROP_MAC_EXTENDED_ADDR      = SPINEL_PROP_MAC_EXT__BEGIN + 2,
     SPINEL_PROP_MAC_EXT__END           = 0x1400,
@@ -421,6 +421,13 @@ typedef enum
      */
     SPINEL_PROP_THREAD_CONTEXT_REUSE_DELAY
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 3,
+
+    /// Thread Network ID Timeout
+    /** Format: `C`
+     */
+    SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 4,
+
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
     SPINEL_PROP_IPV6__BEGIN          = 0x60,
@@ -598,9 +605,46 @@ typedef enum
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_ERR_OTHER      = SPINEL_PROP_CNTR__BEGIN + 113,
 
+    /// The total number of secure transmitted IP messages.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_IP_SEC_TOTAL   = SPINEL_PROP_CNTR__BEGIN + 200,
+
+    /// The total number of insecure transmitted IP messages.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_IP_INSEC_TOTAL = SPINEL_PROP_CNTR__BEGIN + 201,
+
+    /// The number of dropped (not transmitted) IP messages.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_IP_DROPPED     = SPINEL_PROP_CNTR__BEGIN + 202,
+
+    /// The total number of secure received IP message.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_IP_SEC_TOTAL   = SPINEL_PROP_CNTR__BEGIN + 203,
+
+    /// The total number of insecure received IP message.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_IP_INSEC_TOTAL = SPINEL_PROP_CNTR__BEGIN + 204,
+
+    /// The number of dropped received IP messages.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_IP_DROPPED     = SPINEL_PROP_CNTR__BEGIN + 205,
+
+    /// The number of transmitted spinel frames.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_SPINEL_TOTAL   = SPINEL_PROP_CNTR__BEGIN + 300,
+
+    /// The number of received spinel frames.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_SPINEL_TOTAL   = SPINEL_PROP_CNTR__BEGIN + 301,
+
+    /// The number of received spinel frames with error.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_SPINEL_ERR     = SPINEL_PROP_CNTR__BEGIN + 302,
+
     SPINEL_PROP_CNTR__END       = 2048,
 
     SPINEL_PROP_NEST__BEGIN         = 15296,
+    SPINEL_PROP_NEST_STREAM_MFG     = SPINEL_PROP_NEST__BEGIN + 0,
     SPINEL_PROP_NEST__END           = 15360,
 
     SPINEL_PROP_VENDOR__BEGIN       = 15360,

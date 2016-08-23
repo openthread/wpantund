@@ -430,6 +430,26 @@ SpinelNCPControlInterface::get_name() {
 	return mNCPInstance->get_name();
 }
 
+void
+SpinelNCPControlInterface::mfg(
+    const std::string& mfg_command,
+    CallbackWithStatusArg1 cb
+) {
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskSendCommand(
+			mNCPInstance,
+			cb,
+			SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S),
+				SPINEL_PROP_NEST_STREAM_MFG,
+				mfg_command.c_str()
+			),
+			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+			SPINEL_DATATYPE_UTF8_S
+		)
+	));
+}
+
 const WPAN::NetworkInstance&
 SpinelNCPControlInterface::get_current_network_instance()const
 {

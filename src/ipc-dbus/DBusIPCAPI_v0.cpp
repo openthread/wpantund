@@ -36,7 +36,7 @@
 
 #include "NCPControlInterface.h"
 #include "NCPTypes.h"
-#include "NCPMfgInterface.h"
+#include "NCPMfgInterface_v0.h"
 #include "assert-macros.h"
 
 #include "DBUSHelpers.h"
@@ -993,7 +993,7 @@ DBusIPCAPI_v0::interface_mfg_finish_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1021,7 +1021,7 @@ DBusIPCAPI_v0::interface_mfg_begin_test_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1056,7 +1056,7 @@ DBusIPCAPI_v0::interface_mfg_end_test_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	int16_t test_type = 0;
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1083,7 +1083,7 @@ DBusIPCAPI_v0::interface_mfg_tx_packet_handler(
 	const uint8_t *packet_data = NULL;
 	int packet_length = 0;
 	int16_t repeat = 1;
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1134,7 +1134,7 @@ DBusIPCAPI_v0::interface_mfg_clockmon_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1173,7 +1173,7 @@ DBusIPCAPI_v0::interface_mfg_gpio_set_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1214,7 +1214,7 @@ DBusIPCAPI_v0::interface_mfg_gpio_get_handler(
 	DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1252,7 +1252,7 @@ DBusIPCAPI_v0::interface_mfg_channelcal_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1291,7 +1291,7 @@ DBusIPCAPI_v0::interface_mfg_channelcal_get_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	if (mfg_interface) {
 		dbus_message_ref(message);
@@ -1420,7 +1420,7 @@ DBusIPCAPI_v0::add_interface(NCPControlInterface* interface)
 	std::pair<NCPControlInterface*, DBusIPCAPI_v0*> *cb_data =
 	    new std::pair<NCPControlInterface*, DBusIPCAPI_v0*>(interface, this);
 
-	NCPMfgInterface* mfg_interface(dynamic_cast<NCPMfgInterface*>(interface));
+	NCPMfgInterface_v0* mfg_interface(dynamic_cast<NCPMfgInterface_v0*>(interface));
 
 	require(dbus_connection_register_object_path(
 	            mConnection,

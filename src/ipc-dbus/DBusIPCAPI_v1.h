@@ -172,6 +172,11 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_mfg_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 private:
 	typedef DBusHandlerResult (interface_handler_cb)(
 		NCPControlInterface*,

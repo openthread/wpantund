@@ -171,6 +171,14 @@ DummyNCPControlInterface::netscan_start(
 }
 
 void
+DummyNCPControlInterface::mfg(
+    const std::string& mfg_command,
+    CallbackWithStatusArg1 cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented, 0); // TODO: Start mfg run
+}
+
+void
 DummyNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 {
 	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Start network scan

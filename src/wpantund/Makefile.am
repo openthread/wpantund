@@ -53,7 +53,8 @@ wpantund_SOURCES = \
 	NCPInstance.h \
 	NCPInstanceBase.cpp \
 	NCPInstanceBase.h \
-	NCPMfgInterface.h \
+	NCPMfgInterface_v0.h \
+	NCPMfgInterface_v1.h \
 	NetworkInstance.h \
 	NCPConstants.h \
 	FirmwareUpgrade.h \
