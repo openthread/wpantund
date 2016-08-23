@@ -80,8 +80,9 @@ struct EnergyScanResultEntry
 	int8_t 	mMaxRssi;
 };
 
-
 std::string address_flags_to_string(uint8_t flags);
+
+std::string flags_to_string(uint8_t flags, const char flag_lookup[8] = "76543210");
 
 bool ncp_state_is_sleeping(NCPState x);
 

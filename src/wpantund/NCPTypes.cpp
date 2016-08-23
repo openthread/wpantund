@@ -297,6 +297,28 @@ nl::wpantund::address_flags_to_string(uint8_t flags)
 	return ret;
 }
 
+std::string
+nl::wpantund::flags_to_string(uint8_t flags, const char flag_lookup[8])
+{
+	std::string ret;
+	int i;
+	if (flag_lookup == NULL) {
+		flag_lookup = "76543210";
+	}
+	for (i = 7; i >= 0 ; --i) {
+		uint8_t mask = (1<<i);
+		if (i == 3) {
+			ret += ' ';
+		}
+		if (!(mask & flags)) {
+			ret += '-';
+			continue;
+		}
+		ret += flag_lookup[7-i];
+	}
+	return ret;
+}
+
 NCPState
 nl::wpantund::string_to_ncp_state(const std::string& state_string)
 {
