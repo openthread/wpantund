@@ -63,59 +63,51 @@ NCPInstanceBase::set_online(bool x)
 	return ret;
 }
 
-int
+void
 NCPInstanceBase::set_mac_address(const uint8_t x[8])
 {
-	int ret;
+	if (0 != memcmp(x, mMACAddress, sizeof(mMACAddress))) {
+		memcpy(mMACAddress, x, sizeof(mMACAddress));
 
-	memcpy(mMACAddress, x, sizeof(mMACAddress));
+		syslog(
+			LOG_INFO,
+			"NCP Status: MACAddr:           %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+			mMACAddress[0],mMACAddress[1],mMACAddress[2],mMACAddress[3],
+			mMACAddress[4],mMACAddress[5],mMACAddress[6],mMACAddress[7]
+		);
 
-	syslog(
-		LOG_INFO,
-		"NCP Status: MACAddr:           %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
-		mMACAddress[0],mMACAddress[1],mMACAddress[2],mMACAddress[3],
-		mMACAddress[4],mMACAddress[5],mMACAddress[6],mMACAddress[7]
-	);
+		if ((x[0] & 1) == 1) {
+			syslog(LOG_WARNING,"MAC ADDRESS IS INVALID, MULTICAST BIT IS SET!");
+		}
 
-	if ((x[0] & 1) == 1) {
-		syslog(LOG_ERR,"MAC ADDRESS IS INVALID, MULTICAST BIT IS SET!");
-	}
+		signal_property_changed(kWPANTUNDProperty_NCPMACAddress, Data(mMACAddress, sizeof(mMACAddress)));
 
-	signal_property_changed(kWPANTUNDProperty_NCPMACAddress, Data(mMACAddress, sizeof(mMACAddress)));
-
-	ret = mPrimaryInterface->set_mac_address(x);
-
-	if (static_cast<bool>(mLegacyInterface)) {
-		mLegacyInterface->set_mac_address(x);
 	}
 
 	if (!buffer_is_nonzero(mMACHardwareAddress, sizeof(mMACHardwareAddress))) {
 		set_mac_hardware_address(x);
 	}
-
-	return ret;
 }
 
 void
 NCPInstanceBase::set_mac_hardware_address(const uint8_t x[8])
 {
-	memcpy(mMACHardwareAddress, x, sizeof(mMACHardwareAddress));
+	if (0 != memcmp(x, mMACHardwareAddress, sizeof(mMACHardwareAddress))) {
+		memcpy(mMACHardwareAddress, x, sizeof(mMACHardwareAddress));
 
-	syslog(
-		LOG_INFO,
-		"NCP Status: MACHardwareAddr:   %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
-		mMACHardwareAddress[0],mMACHardwareAddress[1],mMACHardwareAddress[2],mMACHardwareAddress[3],
-		mMACHardwareAddress[4],mMACHardwareAddress[5],mMACHardwareAddress[6],mMACHardwareAddress[7]
-	);
+		syslog(
+			LOG_INFO,
+			"NCP Status: MACHardwareAddr:   %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+			mMACHardwareAddress[0],mMACHardwareAddress[1],mMACHardwareAddress[2],mMACHardwareAddress[3],
+			mMACHardwareAddress[4],mMACHardwareAddress[5],mMACHardwareAddress[6],mMACHardwareAddress[7]
+		);
 
-	if ((x[0] & 1) == 1) {
-		syslog(LOG_ERR,"HARDWARE ADDRESS IS INVALID, MULTICAST BIT IS SET!");
-	}
+		if ((x[0] & 1) == 1) {
+			syslog(LOG_WARNING,"HARDWARE ADDRESS IS INVALID, MULTICAST BIT IS SET!");
+		}
 
-	signal_property_changed(kWPANTUNDProperty_NCPHardwareAddress, Data(mMACHardwareAddress, sizeof(mMACHardwareAddress)));
+		signal_property_changed(kWPANTUNDProperty_NCPHardwareAddress, Data(mMACHardwareAddress, sizeof(mMACHardwareAddress)));
 
-	if (static_cast<bool>(mLegacyInterface)) {
-		mLegacyInterface->set_mac_address(x);
 	}
 }
 
@@ -134,7 +126,6 @@ NCPInstanceBase::enable_legacy_interface(void)
 {
 	if (!static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(mPrimaryInterface->get_interface_name()+"-L"));
-		mLegacyInterface->set_mac_address(mPrimaryInterface->get_mac_address());
 	}
 }
 

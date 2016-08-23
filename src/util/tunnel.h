@@ -41,8 +41,6 @@ extern int tunnel_get_name(
     int fd, char* name, int maxlen);
 extern int tunnel_set_mtu(
     int fd, uint16_t mtu);
-extern int tunnel_set_hw_address(
-    int fd, const uint8_t addr[8]);
 extern int tunnel_add_address(
     int fd, const uint8_t addr[16], int prefixlen);
 extern int tunnel_remove_address(

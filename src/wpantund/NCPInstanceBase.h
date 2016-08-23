@@ -124,7 +124,7 @@ public:
 
 	int set_online(bool x);
 
-	int set_mac_address(const uint8_t addr[8]);
+	void set_mac_address(const uint8_t addr[8]);
 
 	void set_mac_hardware_address(const uint8_t addr[8]);
 
@@ -136,7 +136,9 @@ public:
 	// ========================================================================
 	// MARK: Global Address Management
 
-	void update_global_address(const struct in6_addr &address, uint32_t valid_lifetime, uint32_t preferred_lifetime, uint8_t flags);
+
+	void add_address(const struct in6_addr &address, uint8_t prefix = 64, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX);
+	void remove_address(const struct in6_addr &address);
 
 	void refresh_global_addresses();
 

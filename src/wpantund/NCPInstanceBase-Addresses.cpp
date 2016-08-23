@@ -88,53 +88,49 @@ NCPInstanceBase::restore_global_addresses()
 			address_was_added(iter->first, 64);
 		}
 		mGlobalAddresses.insert(*iter);
+
 		mPrimaryInterface->add_address(&iter->first);
 	}
 }
 
 void
-NCPInstanceBase::update_global_address(const struct in6_addr& address, uint32_t valid_lifetime, uint32_t preferred_lifetime, uint8_t flags)
+NCPInstanceBase::add_address(const struct in6_addr &address, uint8_t prefix, uint32_t valid_lifetime, uint32_t preferred_lifetime)
 {
-	if (0 == memcmp(address.s6_addr, mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
-		// wut. This address is with our mesh local prefix. Ignore it.
+	GlobalAddressEntry entry = GlobalAddressEntry();
 
+	if (mGlobalAddresses.count(address)) {
+		syslog(LOG_INFO, "Updating IPv6 Address...");
+		entry = mGlobalAddresses[address];
 	} else {
-		if (valid_lifetime == 0) {
-			syslog(LOG_INFO, "Removing Global IPv6 Address...");
-			mGlobalAddresses.erase(address);
-			mPrimaryInterface->remove_address(&address);
-
-		} else {
-
-			GlobalAddressEntry entry = GlobalAddressEntry();
-
-			if (mGlobalAddresses.count(address)) {
-				syslog(LOG_INFO, "Updating Global IPv6 Address...");
-				entry = mGlobalAddresses[address];
-			} else {
-				syslog(LOG_INFO, "Adding Global IPv6 Address...");
-				mPrimaryInterface->add_address(&address);
-			}
-
-			entry.mValidLifetime = valid_lifetime;
-			entry.mPreferredLifetime = preferred_lifetime;
-			entry.mFlags = flags;
-			entry.mValidLifetimeExpiration = time_get_monotonic() + entry.mValidLifetime;
-			entry.mPreferredLifetimeExpiration = time_get_monotonic() + entry.mPreferredLifetime;
-
-			mGlobalAddresses[address] = entry;
-		}
+		syslog(LOG_INFO, "Adding IPv6 Address...");
+		mPrimaryInterface->add_address(&address);
 	}
+
+	entry.mValidLifetime = valid_lifetime;
+	entry.mPreferredLifetime = preferred_lifetime;
+	entry.mValidLifetimeExpiration = ((valid_lifetime == UINT32_MAX)
+		? TIME_DISTANT_FUTURE
+		: time_get_monotonic() + valid_lifetime
+	);
+	entry.mPreferredLifetimeExpiration = ((valid_lifetime == UINT32_MAX)
+		? TIME_DISTANT_FUTURE
+		: time_get_monotonic() + preferred_lifetime
+	);
+
+	mGlobalAddresses[address] = entry;
+}
+
+void
+NCPInstanceBase::remove_address(const struct in6_addr &address)
+{
+	mGlobalAddresses.erase(address);
+	mPrimaryInterface->remove_address(&address);
 }
 
 bool
 NCPInstanceBase::is_address_known(const struct in6_addr &address)
 {
 	bool ret(mGlobalAddresses.count(address) != 0);
-
-	if (!ret) {
-		ret = (mPrimaryInterface->get_realm_local_address() == address);
-	}
 
 	return ret;
 }
