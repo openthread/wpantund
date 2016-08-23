@@ -189,10 +189,11 @@ void
 SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefix[8], uint32_t preferredLifetime, uint32_t validLifetime, CallbackWithStatus cb)
 {
     const static int kPreferredFlag = 1 << 5;
-    const static int kValidFlag = 1 << 4;
+    const static int kSlaacFlag = 1 << 4;
+    const static int kDhcpFlag = 1 << 3; (void)kDhcpFlag;
     const static int kConfigureFlag = 1 << 2; (void)kConfigureFlag;
     const static int kDefaultRouteFlag = 1 << 1;
-    const static int kDhcpFlag = 1 << 3; (void)kDhcpFlag;
+    const static int kOnMeshFlag = 1 << 0;
 
 	struct in6_addr addr = {};
 	uint8_t flags = 0;
@@ -211,7 +212,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 		flags |= kDefaultRouteFlag;
 	}
 
-	flags |= kPreferredFlag | kValidFlag;
+	flags |= kPreferredFlag | kSlaacFlag | kOnMeshFlag;
 
 	memcpy(addr.s6_addr, prefix, 8);
 
