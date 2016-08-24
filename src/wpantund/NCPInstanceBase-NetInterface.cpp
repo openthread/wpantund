@@ -44,8 +44,20 @@ NCPInstanceBase::set_online(bool x)
 
 	restore_global_addresses();
 
+	if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+		add_address(mNCPLinkLocalAddress);
+	}
+
 	if ((ret == 0) && static_cast<bool>(mLegacyInterface)) {
-		ret = mLegacyInterface->set_online(x && mNodeTypeSupportsLegacy);
+		if (x && mNodeTypeSupportsLegacy) {
+			ret = mLegacyInterface->set_online(true);
+
+			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+				mLegacyInterface->add_address(&mNCPLinkLocalAddress);
+			}
+		} else {
+			ret = mLegacyInterface->set_online(false);
+		}
 	}
 
 	return ret;

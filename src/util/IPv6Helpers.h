@@ -48,34 +48,16 @@ operator<(const struct in6_addr &lhs, const struct in6_addr &rhs)
 	return memcmp(lhs.s6_addr, rhs.s6_addr, sizeof(struct in6_addr)) < 0;
 }
 
-static inline std::string
-in6_addr_to_string(const struct in6_addr &addr) {
-	char address_string[INET6_ADDRSTRLEN] = "::";
-	inet_ntop(AF_INET6, (const void *)&addr, address_string, sizeof(address_string));
-	return std::string(address_string);
-}
-
-static inline void
-in6_addr_apply_mask(struct in6_addr &address, uint8_t mask)
-{
-	if (mask > 128) {
-		mask = 128;
-	}
-
-	memset(
-		(void*)(address.s6_addr + ((mask + 7) / 8)),
-		0,
-		16 - ((mask + 7) / 8)
-	);
-
-	if (mask % 8) {
-		address.s6_addr[mask / 8] &= ~(0xFF >> (mask % 8));
-	}
-}
-
 static inline bool
 is_valid_ipv6_packet(const uint8_t* packet, ssize_t len) {
 	return (len > MINIMUM_IPV6_PACKET_SIZE)
 		&& (packet[0] & 0xF0) == 0x60; // IPv6 Version
 }
+
+std::string in6_addr_to_string(const struct in6_addr &addr);
+
+struct in6_addr make_slaac_addr_from_eui64(const uint8_t prefix[8], const uint8_t eui64[8]);
+
+void in6_addr_apply_mask(struct in6_addr &address, uint8_t mask);
+
 #endif

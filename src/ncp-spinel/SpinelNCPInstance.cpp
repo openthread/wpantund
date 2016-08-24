@@ -1060,29 +1060,26 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 }
 
 void
-SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags)
+SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags)
 {
 	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
 	  && !lookup_address_for_prefix(NULL, *addr, prefix_len)
 	) {
 		std::list<Data> commands;
+		struct in6_addr addr = make_slaac_addr_from_eui64(prefix->s6_addr, mMACAddress);
 
-		// Calculate the lower 64-bits of the SLAAC address.
-		memcpy(addr->s6_addr + 8, mMACAddress, 8);
-		addr->s6_addr[8] ^= 0x02; // flip the private-use bit on the hardware address.
-
-		syslog(LOG_NOTICE, "Adding a new address %s/%d", in6_addr_to_string(*addr).c_str(), prefix_len);
+		syslog(LOG_NOTICE, "Pushing a new address %s/%d to the NCP", in6_addr_to_string(addr).c_str(), prefix_len);
 
 		commands.push_back(
 			SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT8_S      // Prefix Length
 					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
 					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
 				),
 				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				addr,
+				&addr,
 				prefix_len,
 				UINT32_MAX,
 				UINT32_MAX
