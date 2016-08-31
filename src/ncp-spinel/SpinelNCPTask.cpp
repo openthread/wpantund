@@ -87,7 +87,7 @@ SpinelNCPTask::vprocess_send_command(int event, va_list args)
 	mNextCommandRet = peek_ncp_callback_status(event, args);
 
 	if (mNextCommandRet) {
-		mNextCommandRet = WPANTUND_NCPERROR_TO_STATUS(mNextCommandRet);
+		mNextCommandRet = spinel_status_to_wpantund_status(mNextCommandRet);
 	}
 
 	EH_EXIT();
