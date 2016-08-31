@@ -329,33 +329,6 @@ tunnel_set_mtu(
 #define SIOCSIFLLADDR SIOCSIFHWADDR
 #endif
 
-int
-tunnel_set_hw_address(
-    int fd, const uint8_t addr[8]
-    )
-{
-	int ret = -1;
-	bool was_online = tunnel_is_online(fd);
-
-	uint8_t ll_addr[16] = { 0xFE, 0x80 };
-
-	memcpy(ll_addr + 8, addr, 8);
-
-	ll_addr[8] = ll_addr[8] ^ 0x02;
-
-	tunnel_remove_address(fd, ll_addr);
-	ret = tunnel_add_address(fd, ll_addr, 10);
-
-	if (ret) {
-		if (errno == EALREADY)
-			ret = 0;
-	}
-
-	if (!was_online && tunnel_is_online(fd))
-		tunnel_bring_offline(fd);
-
-	return ret;
-}
 
 static inline void
 apply_mask(

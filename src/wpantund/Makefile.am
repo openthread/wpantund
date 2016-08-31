@@ -71,6 +71,7 @@ wpantund_SOURCES = \
 	NetworkRetain.h \
 	NetworkRetain.cpp \
 	../util/IPv6PacketMatcher.cpp \
+	../util/IPv6Helpers.cpp \
 	../util/tunnel.c \
 	../util/config-file.c \
 	../util/socket-utils.c \

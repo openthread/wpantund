@@ -823,8 +823,19 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_IPV6_LL_ADDR) {
 		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr) {
+		if ( NULL != addr
+		  && (0 != memcmp(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress)))
+		) {
+			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+				remove_address(mNCPLinkLocalAddress);
+			}
+
 			memcpy(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress));
+
+			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+				add_address(mNCPLinkLocalAddress);
+			}
+
 			signal_property_changed(kWPANTUNDProperty_IPv6LinkLocalAddress, in6_addr_to_string(*addr));
 		}
 
@@ -835,9 +846,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
 		) {
+			remove_address(mNCPMeshLocalAddress);
 			memcpy(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress));
 			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
-			mPrimaryInterface->set_realm_local_address(addr);
+			add_address(mNCPMeshLocalAddress);
 		}
 
 	} else if (key == SPINEL_PROP_IPV6_ML_PREFIX) {
@@ -847,6 +859,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
 		) {
+			remove_address(mNCPMeshLocalAddress);
 			memcpy(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix));
 			struct in6_addr prefix_addr (mNCPMeshLocalAddress);
 			// Zero out the lower 64 bits.
@@ -878,24 +891,20 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		// the list.
 		for (iter = global_addresses.begin(); iter!= global_addresses.end(); ++iter) {
 			if (!iter->second.mUserAdded) {
-				update_global_address(iter->first, 0, 0, 0);
+				remove_address(iter->first);
 			}
 		}
 
 	} else if (key == SPINEL_PROP_HWADDR) {
 		nl::Data hwaddr(value_data_ptr, value_data_len);
 		if (value_data_len == sizeof(mMACHardwareAddress)) {
-			if (0 != memcmp(value_data_ptr, mMACHardwareAddress, sizeof(mMACHardwareAddress))) {
-				set_mac_hardware_address(value_data_ptr);
-			}
+			set_mac_hardware_address(value_data_ptr);
 		}
 
 	} else if (key == SPINEL_PROP_MAC_15_4_LADDR) {
 		nl::Data hwaddr(value_data_ptr, value_data_len);
 		if (value_data_len == sizeof(mMACAddress)) {
-			if (0 != memcmp(value_data_ptr, mMACAddress, sizeof(mMACAddress))) {
-				set_mac_address(value_data_ptr);
-			}
+			set_mac_address(value_data_ptr);
 		}
 
 	} else if (key == SPINEL_PROP_MAC_15_4_PANID) {
@@ -1078,29 +1087,26 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 }
 
 void
-SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags)
+SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags)
 {
 	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
-	  && !lookup_address_for_prefix(NULL, *addr, prefix_len)
+	  && !lookup_address_for_prefix(NULL, *prefix, prefix_len)
 	) {
 		std::list<Data> commands;
+		struct in6_addr addr = make_slaac_addr_from_eui64(prefix->s6_addr, mMACAddress);
 
-		// Calculate the lower 64-bits of the SLAAC address.
-		memcpy(addr->s6_addr + 8, mMACAddress, 8);
-		addr->s6_addr[8] ^= 0x02; // flip the private-use bit on the hardware address.
-
-		syslog(LOG_NOTICE, "Adding a new address %s/%d", in6_addr_to_string(*addr).c_str(), prefix_len);
+		syslog(LOG_NOTICE, "Pushing a new address %s/%d to the NCP", in6_addr_to_string(addr).c_str(), prefix_len);
 
 		commands.push_back(
 			SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix
+					SPINEL_DATATYPE_UINT8_S      // Prefix Length
 					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
 					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
 				),
 				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				addr,
+				&addr,
 				prefix_len,
 				UINT32_MAX,
 				UINT32_MAX
@@ -1142,7 +1148,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 						handle_ncp_spinel_value_is(SPINEL_PROP_IPV6_ML_ADDR, addr->s6_addr, sizeof(*addr));
 					}
 				} else {
-					update_global_address(*addr, valid_lifetime, preferred_lifetime, 0);
+					add_address(*addr, 64, valid_lifetime, preferred_lifetime);
 				}
 			}
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {

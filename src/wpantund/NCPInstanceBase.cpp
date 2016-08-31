@@ -407,10 +407,10 @@ NCPInstanceBase::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress)) {
 		struct in6_addr legacy_addr;
 
-		if ((mLegacyInterfaceEnabled || mNodeTypeSupportsLegacy) && buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))) {
-			memcpy(&legacy_addr, mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix));
-			memcpy(&legacy_addr.s6_addr[8], mMACAddress, sizeof(mMACAddress));
-			legacy_addr.s6_addr[8] ^= 0x02; // Flip the private-use bit on the hardware address.
+		if ( (mLegacyInterfaceEnabled || mNodeTypeSupportsLegacy)
+		  && buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))
+		) {
+			legacy_addr = make_slaac_addr_from_eui64(mNCPV6LegacyPrefix, mMACAddress);
 			cb(0, boost::any(in6_addr_to_string(legacy_addr)));
 		} else {
 			cb(kWPANTUNDStatus_FeatureNotSupported, std::string("Property is unavailable"));

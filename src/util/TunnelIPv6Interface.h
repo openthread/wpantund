@@ -50,11 +50,7 @@ public:
 	bool is_online(void);
 	int set_online(bool isOnline);
 
-	bool set_mac_address(const uint8_t addr[8]);
 
-	const uint8_t* get_mac_address(void)const;
-
-	bool set_realm_local_address(const struct in6_addr *addr, int prefixlen = 64);
 
 	const struct in6_addr& get_realm_local_address()const;
 
@@ -85,9 +81,6 @@ private:
 
 	int mNetlinkFD;
 
-	uint8_t mMACAddress[8];
-	struct in6_addr mRealmLocalAddress;
-	int mRealmLocalPrefixSize;
 	std::set<struct in6_addr> mAddresses;
 };
 #endif /* defined(__wpantund__TunnelInterface__) */
