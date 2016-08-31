@@ -44,7 +44,9 @@ void
 nl::wpantund::SpinelNCPTaskJoin::finish(int status, const boost::any& value)
 {
 	SpinelNCPTask::finish(status, value);
-	if (!ncp_state_is_associated(mInstance->get_ncp_state())) {
+	if ( (status != kWPANTUNDStatus_InProgress)
+	  && !ncp_state_is_associated(mInstance->get_ncp_state())
+	) {
 		mInstance->change_ncp_state(mLastState);
 	}
 }
@@ -54,6 +56,7 @@ int
 nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 {
 	int ret = kWPANTUNDStatus_Failure;
+	int last_status = peek_ncp_callback_status(event, args);
 
 	EH_BEGIN();
 
@@ -239,7 +242,19 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 
 	ret = mNextCommandRet;
 
-	require_noerr(ret, on_error);
+	require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING,
+		true
+	);
+
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	ret = mNextCommandRet;
+
+	check_noerr(ret);
 
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
@@ -255,11 +270,23 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 
 	EH_REQUIRE_WITHIN(
 		NCP_JOIN_TIMEOUT,
-		ncp_state_is_associated(mInstance->get_ncp_state()),
+		((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END))
+		|| ncp_state_is_associated(mInstance->get_ncp_state()),
 		on_error
 	);
 
-	ret = kWPANTUNDStatus_Ok;
+	ret = last_status
+		? WPANTUND_NCPERROR_TO_STATUS(last_status)
+		: kWPANTUNDStatus_Ok;
+
+	if ( (last_status == SPINEL_STATUS_JOIN_SECURITY)
+	  || (last_status == SPINEL_STATUS_JOIN_FAILURE)
+	) {
+		mInstance->change_ncp_state(CREDENTIALS_NEEDED);
+		ret = kWPANTUNDStatus_InProgress;
+	} else if ((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)) {
+		ret = kWPANTUNDStatus_JoinFailedUnknown;
+	}
 
 	finish(ret);
 
@@ -272,8 +299,6 @@ on_error:
 	}
 
 	syslog(LOG_ERR, "Join failed: %d", ret);
-
-	//mInstance->reinitialize_ncp();
 
 	finish(ret);
 
