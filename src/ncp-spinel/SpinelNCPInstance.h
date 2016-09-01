@@ -241,6 +241,8 @@ bool ncp_event_matches_header_from_args(int event, va_list args, uint8_t last_he
 
 int peek_ncp_callback_status(int event, va_list args);
 
+int spinel_status_to_wpantund_status(int spinel_status);
+
 }; // namespace wpantund
 }; // namespace nl
 

@@ -1669,10 +1669,10 @@ StatCollector::record_rip_entry(const ValueMap& rip_entry)
 {
 	ValueMap::const_iterator it;
 	Data eui64;
-	int8_t rssi;
-	uint8_t in_lqi;
-	uint8_t out_lqi;
-	NodeType node_type;
+	int8_t rssi = 0;
+	uint8_t in_lqi = 0;
+	uint8_t out_lqi = 0;
+	NodeType node_type = UNKNOWN;
 
 
 	mLinkStat.update(eui64.data(), rssi, in_lqi, out_lqi, node_type);

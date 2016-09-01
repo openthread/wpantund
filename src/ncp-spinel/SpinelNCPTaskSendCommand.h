@@ -42,7 +42,6 @@ public:
 	virtual int vprocess_event(int event, va_list args);
 
 private:
-	int mTimeout;
 	std::string mPackedFormat;
 };
 

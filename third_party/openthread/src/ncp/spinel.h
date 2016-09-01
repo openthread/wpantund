@@ -102,6 +102,41 @@ typedef enum
     SPINEL_STATUS_ALREADY           = 19, ///< The operation is already in progress.
     SPINEL_STATUS_ITEM_NOT_FOUND    = 20, ///< The given item could not be found.
 
+    SPINEL_STATUS_JOIN__BEGIN       = 104,
+
+    /// Generic failure to associate with other peers.
+    /**
+     *  This status error should not be used by implementors if
+     *  enough information is available to determine that one of the
+     *  later join failure status codes would be more accurate.
+     *
+     *  \sa SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
+     */
+    SPINEL_STATUS_JOIN_FAILURE      = SPINEL_STATUS_JOIN__BEGIN + 0,
+
+    /// The node found other peers but was unable to decode their packets.
+    /**
+     *  Typically this error code indicates that the network
+     *  key has been set incorrectly.
+     *
+     *  \sa SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
+     */
+    SPINEL_STATUS_JOIN_SECURITY     = SPINEL_STATUS_JOIN__BEGIN + 1,
+
+    /// The node was unable to find any other peers on the network.
+    /**
+     *  \sa SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
+     */
+    SPINEL_STATUS_JOIN_NO_PEERS     = SPINEL_STATUS_JOIN__BEGIN + 2,
+
+    /// The only potential peer nodes found are incompatible.
+    /**
+     *  \sa SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
+     */
+    SPINEL_STATUS_JOIN_INCOMPATIBLE = SPINEL_STATUS_JOIN__BEGIN + 3,
+
+    SPINEL_STATUS_JOIN__END         = 112,
+
     SPINEL_STATUS_RESET__BEGIN      = 112,
     SPINEL_STATUS_RESET_POWER_ON    = SPINEL_STATUS_RESET__BEGIN + 0,
     SPINEL_STATUS_RESET_EXTERNAL    = SPINEL_STATUS_RESET__BEGIN + 1,
@@ -326,6 +361,7 @@ typedef enum
     SPINEL_PROP_MAC_15_4_PANID         = SPINEL_PROP_MAC__BEGIN + 6, ///< [S]
     SPINEL_PROP_MAC_RAW_STREAM_ENABLED = SPINEL_PROP_MAC__BEGIN + 7, ///< [C]
     SPINEL_PROP_MAC_FILTER_MODE        = SPINEL_PROP_MAC__BEGIN + 8, ///< [C]
+    SPINEL_PROP_MAC_ENERGY_SCAN_RESULT = SPINEL_PROP_MAC__BEGIN + 9, ///< chan,maxRssi [Cc]
     SPINEL_PROP_MAC__END               = 0x40,
 
     SPINEL_PROP_MAC_EXT__BEGIN         = 0x1300,
@@ -362,6 +398,28 @@ typedef enum
     SPINEL_PROP_NET_MASTER_KEY       = SPINEL_PROP_NET__BEGIN + 6, ///< [D]
     SPINEL_PROP_NET_KEY_SEQUENCE     = SPINEL_PROP_NET__BEGIN + 7, ///< [L]
     SPINEL_PROP_NET_PARTITION_ID     = SPINEL_PROP_NET__BEGIN + 8, ///< [L]
+
+    /// Require Join Existing
+    /** Format: `b`
+     *  Default Value: `false`
+     *
+     * This flag is typically used for nodes that are associating with an
+     * existing network for the first time. If this is set to `true` before
+     * `PROP_NET_STACK_UP` is set to `true`, the
+     * creation of a new partition at association is prevented. If the node
+     * cannot associate with an existing partition, `PROP_LAST_STATUS` will
+     * emit a status that indicates why the association failed and
+     * `PROP_NET_STACK_UP` will automatically revert to `false`.
+     *
+     * Once associated with an existing partition, this flag automatically
+     * reverts to `false`.
+     *
+     * The behavior of this property being set to `true` when
+     * `PROP_NET_STACK_UP` is already set to `true` is undefined.
+     */
+    SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
+                                     = SPINEL_PROP_NET__BEGIN + 9,
+
     SPINEL_PROP_NET__END             = 0x50,
 
     SPINEL_PROP_THREAD__BEGIN          = 0x50,
@@ -428,6 +486,22 @@ typedef enum
     SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 4,
 
+    /// List of active thread router ids
+    /** Format: `A(C)`
+     *
+     * Note that some implementations may not support CMD_GET_VALUE
+     * routerids, but may support CMD_REMOVE_VALUE when the node is
+     * a leader.
+     */
+    SPINEL_PROP_THREAD_ACTIVE_ROUTER_IDS
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 5,
+
+    /// Forward IPv6 packets that use RLOC16 addresses to HOST.
+    /** Format: `b`
+     */
+    SPINEL_PROP_THREAD_RLOC16_DEBUG_PASSTHRU
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 6,
+
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
     SPINEL_PROP_IPV6__BEGIN          = 0x60,
@@ -436,6 +510,18 @@ typedef enum
     SPINEL_PROP_IPV6_ML_PREFIX       = SPINEL_PROP_IPV6__BEGIN + 2, ///< [6C]
     SPINEL_PROP_IPV6_ADDRESS_TABLE   = SPINEL_PROP_IPV6__BEGIN + 3, ///< array(ipv6addr,prefixlen,valid,preferred,flags) [A(T(6CLLC))]
     SPINEL_PROP_IPV6_ROUTE_TABLE     = SPINEL_PROP_IPV6__BEGIN + 4, ///< array(ipv6prefix,prefixlen,iface,flags) [A(T(6CCC))]
+
+
+    /// IPv6 ICMP Ping Offload
+    /** Format: `b`
+     *
+     * Allow the NCP to directly respond to ICMP ping requests. If this is
+     * turned on, ping request ICMP packets will not be passed to the host.
+     *
+     * Default value is `false`.
+     */
+    SPINEL_PROP_IPV6_ICMP_PING_OFFLOAD = SPINEL_PROP_IPV6__BEGIN + 5, ///< [b]
+
     SPINEL_PROP_IPV6__END            = 0x70,
 
     SPINEL_PROP_STREAM__BEGIN       = 0x70,

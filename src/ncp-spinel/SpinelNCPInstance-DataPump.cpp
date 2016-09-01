@@ -416,6 +416,10 @@ SpinelNCPInstance::driver_to_ncp_pump()
 				continue;
 			}
 
+			if (get_ncp_state() == CREDENTIALS_NEEDED) {
+				mOutboundBufferType = FRAME_TYPE_INSECURE_DATA;
+			}
+
 			mOutboundBuffer[3] = (mOutboundBufferLen & 0xFF);
 			mOutboundBuffer[4] = ((mOutboundBufferLen >> 8) & 0xFF);
 
@@ -426,8 +430,10 @@ SpinelNCPInstance::driver_to_ncp_pump()
 
 			if (mOutboundBufferType == FRAME_TYPE_DATA) {
 				mOutboundBuffer[2] = SPINEL_PROP_STREAM_NET;
+
 			} else if (mOutboundBufferType == FRAME_TYPE_INSECURE_DATA) {
 				mOutboundBuffer[2] = SPINEL_PROP_STREAM_NET_INSECURE;
+
 			} else {
 				mOutboundBuffer[0] = SPINEL_HEADER_FLAG | SPINEL_HEADER_IID_1;
 				mOutboundBuffer[2] = SPINEL_PROP_STREAM_NET;
