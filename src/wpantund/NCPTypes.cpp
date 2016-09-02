@@ -235,20 +235,44 @@ nl::wpantund::node_type_to_string(NodeType node_type)
 nl::wpantund::NodeType
 nl::wpantund::string_to_node_type(const std::string& node_type_string)
 {
-	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_EndDevice) || (node_type_string == "3")) {
+	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_EndDevice) ||
+	    strcaseequal(node_type_string.c_str(), "end") ||
+	    strcaseequal(node_type_string.c_str(), "e") ||
+	    (node_type_string == "3"))
+	{
 		return END_DEVICE;
-	} else if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_SleepyEndDevice) || (node_type_string == "4")) {
+	}
+
+	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_SleepyEndDevice) ||
+	    strcaseequal(node_type_string.c_str(), "sleepy") ||
+	    strcaseequal(node_type_string.c_str(), "sed") ||
+	    strcaseequal(node_type_string.c_str(), "s") ||
+	    (node_type_string == "4"))
+	{
 		return SLEEPY_END_DEVICE;
-	} else if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_Router) || (node_type_string == "2")) {
+	}
+
+	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_Router) ||
+	    strcaseequal(node_type_string.c_str(), "r") ||
+	    (node_type_string == "2"))
+	{
 		return ROUTER;
-	} else if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_Leader)) {
+	}
+
+	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_Leader))
+	{
 		return LEADER;
-	} else if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_NestLurker) || (node_type_string == "6") || strcaseequal(node_type_string.c_str(), "lurker")) {
+	}
+
+	if (strcaseequal(node_type_string.c_str(), kWPANTUNDNodeType_NestLurker) ||
+	    strcaseequal(node_type_string.c_str(), "lurker") ||
+	    (node_type_string == "6"))
+	{
 		return LURKER;
 	}
+
 	return UNKNOWN;
 }
-
 
 std::string
 nl::wpantund::address_flags_to_string(uint8_t flags)
