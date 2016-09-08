@@ -96,6 +96,8 @@ class SpinelNCPInstance : public NCPInstanceBase {
 	friend class SpinelNCPTaskScan;
 	friend class SpinelNCPTaskLeave;
 	friend class SpinelNCPTaskSendCommand;
+	friend class SpinelNCPTaskGetChildTable;
+
 public:
 
 	enum DriverState {

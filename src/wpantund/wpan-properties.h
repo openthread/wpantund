@@ -81,12 +81,12 @@
 #define kWPANTUNDProperty_ThreadLeaderWeight      "Thread:Leader:Weight"
 #define kWPANTUNDProperty_ThreadLeaderLocalWeight "Thread:Leader:LocalWeight"
 #define kWPANTUNDProperty_ThreadNetworkData       "Thread:NetworkData"
+#define kWPANTUNDProperty_ThreadChildTable        "Thread:ChildTable"
 #define kWPANTUNDProperty_ThreadNetworkDataVersion       "Thread:NetworkDataVersion"
 #define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
-
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"

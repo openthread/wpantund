@@ -58,6 +58,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskChangeNetData.cpp \
 	SpinelNCPTaskChangeNetData.h \
 	SpinelNCPTaskDeepSleep.cpp \
+	SpinelNCPTaskGetChildTable.h \
+	SpinelNCPTaskGetChildTable.cpp \
 	SpinelNCPTaskDeepSleep.h \
 	SpinelNCPTaskForm.cpp \
 	SpinelNCPTaskForm.h \
