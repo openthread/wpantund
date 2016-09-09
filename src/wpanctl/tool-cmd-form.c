@@ -38,7 +38,8 @@ static const arg_list_item_t form_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
 	{'c', "channel", "channel", "Set the desired channel"},
-	{'T', "type", "node-type", "Join as a specific node type"},
+	{'T', "type", "node-type: router(r,2), end-device(end,e,3), sleepy-end-device(sleepy,sed,4), nl-lurker(lurker,l,6)",
+		"Join as a specific node type" },
 //	{'u', "ula-prefix", "ULA Prefix", "Specify a specific *LEGACY* ULA prefix"},
 	{'M', "mesh-local-prefix", "Mesh-Local IPv6 Prefix", "Specify a non-default mesh-local IPv6 prefix"},
 	{'L', "legacy-prefix", "Legacy IPv6 Prefix", "Specify a specific *LEGACY* IPv6 prefix"},
@@ -228,9 +229,10 @@ int tool_cmd_form(int argc, char* argv[])
 		}
 
 		fprintf(stderr,
-		        "Forming WPAN \"%s\" as node type %d\n",
+		        "Forming WPAN \"%s\" as node type \"%s\"\n",
 		        network_name,
-		        node_type);
+		        node_type_int2str(node_type));
+
 
 		reply = dbus_connection_send_with_reply_and_block(
 		    connection,

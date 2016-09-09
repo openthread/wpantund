@@ -570,6 +570,8 @@ node_type_str2int(const char *node_type)
 		return WPAN_IFACE_ROLE_SLEEPY_END_DEVICE;
 	} else if (strcasecmp(node_type, "sleepy") == 0) {
 		return WPAN_IFACE_ROLE_SLEEPY_END_DEVICE;
+	} else if (strcasecmp(node_type, "sed") == 0) {
+		return WPAN_IFACE_ROLE_SLEEPY_END_DEVICE;
 	} else if (strcasecmp(node_type, "s") == 0) {
 		return WPAN_IFACE_ROLE_SLEEPY_END_DEVICE;
 
@@ -584,4 +586,19 @@ node_type_str2int(const char *node_type)
 		// At this moment it should be a number
 		return strtol(node_type, NULL, 0);
 	}
+}
+
+const char *
+node_type_int2str(uint16_t node_type)
+{
+	switch (node_type)
+	{
+	case WPAN_IFACE_ROLE_ROUTER:            return "router";
+	case WPAN_IFACE_ROLE_END_DEVICE:        return "end-device";
+	case WPAN_IFACE_ROLE_SLEEPY_END_DEVICE: return "sleepy-end-device";
+	case WPAN_IFACE_ROLE_LURKER:            return "nl-lurker";
+	default: break;
+	}
+
+	return "unknown";
 }

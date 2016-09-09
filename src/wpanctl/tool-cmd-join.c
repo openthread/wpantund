@@ -38,7 +38,8 @@ const char join_cmd_syntax[] = "[args] [network-name]";
 static const arg_list_item_t join_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
-	{'T', "type", "node-type", "Join as a specific node type"},
+	{'T', "type", "node-type: router(r,2), end-device(end,e,3), sleepy-end-device(sleepy,sed,4), nl-lurker(lurker,l,6)",
+		"Join as a specific node type"},
 	{'p', "panid", "panid", "Specify a specific PAN ID"},
 	{'x', "xpanid", "xpanid", "Specify a specific Extended PAN ID"},
 	{'c', "channel", "channel", "Specify a specific channel"},
@@ -185,9 +186,10 @@ int tool_cmd_join(int argc, char* argv[])
 		    );
 
 		fprintf(stderr,
-		        "Joining \"%s\" %016llX\n",
+		        "Joining \"%s\" %016llX as node type \"%s\"\n",
 		        target_network.network_name,
-		        (unsigned long long)target_network.xpanid);
+		        (unsigned long long)target_network.xpanid,
+		        node_type_int2str(node_type));
 
 		dbus_message_append_args(
 		    message,

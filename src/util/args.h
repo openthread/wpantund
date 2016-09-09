@@ -62,7 +62,12 @@ print_arg_list_help(
 			printf("                       ");
 		}
 
-		printf(" %s\n", arg_list[i].desc);
+		if (arg_list[i].param != NULL) {
+			printf(" %s [%s]\n", arg_list[i].desc, arg_list[i].param);
+		} else {
+			printf(" %s\n", arg_list[i].desc);
+		}
+
 	}
 }
 
