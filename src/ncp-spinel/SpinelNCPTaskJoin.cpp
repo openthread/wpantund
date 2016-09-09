@@ -97,6 +97,48 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
 
+	if (mOptions.count(kWPANTUNDProperty_NetworkNodeType)) {
+		NodeType node_type;
+		bool isRouterRoleEnabled;
+
+		node_type = string_to_node_type(any_to_string(mOptions[kWPANTUNDProperty_NetworkNodeType]));
+
+		if ((node_type == ROUTER) || (node_type == LEADER)) {
+			if (!mInstance->mCapabilities.count(SPINEL_CAP_ROLE_ROUTER)) {
+				// We cannot join as a router/leader unless we are router-capable
+				ret = kWPANTUNDStatus_FeatureNotSupported;
+				goto on_error;
+			}
+			isRouterRoleEnabled = true;
+
+		} else if (node_type == END_DEVICE) {
+			isRouterRoleEnabled = false;
+
+		} else if (node_type == SLEEPY_END_DEVICE) {
+			if (!mInstance->mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
+				ret = kWPANTUNDStatus_FeatureNotSupported;
+				goto on_error;
+			}
+			isRouterRoleEnabled = false;
+
+		} else {
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
+			isRouterRoleEnabled
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+	}
+
 	if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
