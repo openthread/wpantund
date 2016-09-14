@@ -32,10 +32,21 @@ namespace wpantund {
 class SpinelNCPTaskScan : public SpinelNCPTask
 {
 public:
+	enum ScanType {
+		kScanTypeNet = 0,
+		kScanTypeEnergy,
+	};
+
+	enum {
+		kDefaultScanPeriod = 200,
+	};
+
 	SpinelNCPTaskScan(
 		SpinelNCPInstance* instance,
 		CallbackWithStatusArg1 cb,
-		uint32_t channel_mask
+		uint32_t channel_mask,
+		uint16_t channel_scan_period = kDefaultScanPeriod,   // per channel in ms
+		ScanType scan_type = kScanTypeNet
 	);
 	virtual int vprocess_event(int event, va_list args);
 	virtual void finish(int status, const boost::any& value = boost::any());
@@ -43,7 +54,8 @@ public:
 private:
 	uint8_t mChannelMaskData[32];
 	uint8_t mChannelMaskLen;
-	uint16_t mChannelDelayPeriod;
+	uint16_t mScanPeriod;  // per channel
+	ScanType mScanType;
 };
 
 }; // namespace wpantund

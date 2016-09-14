@@ -416,7 +416,23 @@ SpinelNCPControlInterface::energyscan_start(
     const ValueMap& options,
     CallbackWithStatus cb
 ) {
-	cb(kWPANTUNDStatus_FeatureNotImplemented);
+	ChannelMask channel_mask(mNCPInstance->mDefaultChannelMask);
+
+	if (options.count(kWPANTUNDProperty_NCPChannelMask)) {
+		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));
+	}
+
+	if (-1 == mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskScan(
+			mNCPInstance,
+			boost::bind(cb,_1),
+			channel_mask,
+			SpinelNCPTaskScan::kDefaultScanPeriod,
+			SpinelNCPTaskScan::kScanTypeEnergy
+		)
+	))) {
+		cb(kWPANTUNDStatus_InvalidForCurrentState);
+	}
 }
 
 void
