@@ -35,6 +35,7 @@
 #include "SpinelNCPTaskSendCommand.h"
 #include "SpinelNCPTaskChangeNetData.h"
 #include "SpinelNCPTaskJoin.h"
+#include "SpinelNCPTaskGetChildTable.h"
 #include "any-to.h"
 #include "spinel-extra.h"
 
@@ -511,6 +512,17 @@ SpinelNCPInstance::get_property(
 				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_LL_ADDR),
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
+			)
+		))) {
+			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
+		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetChildTable(
+				this,
+				cb,
+				SpinelNCPTaskGetChildTable::kResultFormat_StringArray
 			)
 		))) {
 			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
