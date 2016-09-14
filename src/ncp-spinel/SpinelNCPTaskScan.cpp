@@ -34,8 +34,10 @@ using namespace nl::wpantund;
 nl::wpantund::SpinelNCPTaskScan::SpinelNCPTaskScan(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
-	uint32_t channel_mask
-):	SpinelNCPTask(instance, cb), mChannelMaskLen(0), mChannelDelayPeriod(200)
+	uint32_t channel_mask,
+	uint16_t scan_period,
+	ScanType scan_type
+):	SpinelNCPTask(instance, cb), mChannelMaskLen(0), mScanPeriod(scan_period), mScanType(scan_type)
 {
 	uint8_t i;
 
@@ -107,7 +109,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
 		SPINEL_PROP_MAC_SCAN_PERIOD,
-		mChannelDelayPeriod
+		mScanPeriod
 	);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;
@@ -118,12 +120,11 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
 		SPINEL_PROP_MAC_SCAN_STATE,
-		SPINEL_SCAN_STATE_BEACON
+		(mScanType == kScanTypeNet) ? SPINEL_SCAN_STATE_BEACON : SPINEL_SCAN_STATE_ENERGY
 	);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;
 	require_noerr(ret, on_error);
-
 
 	do {
 		EH_REQUIRE_WITHIN(
@@ -137,7 +138,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 		const uint8_t* data_ptr = va_arg(args, const uint8_t*);
 		spinel_size_t data_len = va_arg(args, spinel_size_t);
 
-		if (prop_key == SPINEL_PROP_MAC_SCAN_BEACON) {
+		if ((prop_key == SPINEL_PROP_MAC_SCAN_BEACON) && (mScanType == kScanTypeNet)) {
 			const spinel_eui64_t* laddr = NULL;
 			const char* networkid = "";
 			const uint8_t* xpanid = NULL;
@@ -192,9 +193,25 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 
 			mInstance->get_control_interface().mOnNetScanBeacon(network);
 
+		} else if ((prop_key == SPINEL_PROP_MAC_ENERGY_SCAN_RESULT) && (mScanType == kScanTypeEnergy)) {
+			EnergyScanResultEntry result;
+
+			syslog(LOG_DEBUG, "Got an Energy Scan result");
+
+			spinel_datatype_unpack(
+				data_ptr,
+				data_len,
+				"Cc",
+				&result.mChannel,
+				&result.mMaxRssi
+			);
+
+			mInstance->get_control_interface().mOnEnergyScanResult(result);
+
 		} else if (prop_key == SPINEL_PROP_MAC_SCAN_STATE) {
 			int scan_state;
 			spinel_datatype_unpack(data_ptr, data_len, "i", &scan_state);
+
 			if (scan_state == SPINEL_SCAN_STATE_IDLE) {
 				break;
 			}

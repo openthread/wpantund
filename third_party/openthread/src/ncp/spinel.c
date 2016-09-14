@@ -978,6 +978,10 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_MAC_SCAN_BEACON";
         break;
 
+    case SPINEL_PROP_MAC_ENERGY_SCAN_RESULT:
+        ret = "PROP_MAC_SCAN_ENERGY_SCAN_RESULT";
+        break;
+
     case SPINEL_PROP_MAC_SCAN_PERIOD:
         ret = "PROP_MAC_SCAN_PERIOD";
         break;
