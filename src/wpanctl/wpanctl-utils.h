@@ -75,6 +75,7 @@ int parse_energy_scan_result_from_iter(int16_t *channel, int8_t *maxRssi, DBusMe
 int lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name);
 void dump_info_from_iter(FILE* file, DBusMessageIter *iter, int indent, bool bare, bool indentFirstLine);
 uint16_t node_type_str2int(const char *node_type);
+const char *node_type_int2str(uint16_t node_type);
 
 extern char gInterfaceName[32];
 extern int gRet;
