@@ -2610,7 +2610,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00-61-g1fbd232
+SOURCE_VERSION=0.07.00-122-gf2d6051
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
@@ -2642,7 +2642,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-ac_config_files="$ac_config_files Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile third_party/Makefile"
+ac_config_files="$ac_config_files Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile third_party/Makefile"
 
 
 # Set up AC_CONFIG_FILES for all of the available plugins.
@@ -20787,6 +20787,7 @@ do
     "src/wpanctl/Makefile") CONFIG_FILES="$CONFIG_FILES src/wpanctl/Makefile" ;;
     "src/wpantund/Makefile") CONFIG_FILES="$CONFIG_FILES src/wpantund/Makefile" ;;
     "src/util/Makefile") CONFIG_FILES="$CONFIG_FILES src/util/Makefile" ;;
+    "src/scripts/Makefile") CONFIG_FILES="$CONFIG_FILES src/scripts/Makefile" ;;
     "third_party/Makefile") CONFIG_FILES="$CONFIG_FILES third_party/Makefile" ;;
     "src/ncp-spinel/Makefile") CONFIG_FILES="$CONFIG_FILES src/ncp-spinel/Makefile" ;;
     "src/ncp-dummy/Makefile") CONFIG_FILES="$CONFIG_FILES src/ncp-dummy/Makefile" ;;

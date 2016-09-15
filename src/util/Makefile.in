@@ -309,6 +309,7 @@ EXTRA_DIST = \
 	Data.h \
 	EventHandler.h \
 	IPv6Helpers.h \
+	IPv6Helpers.cpp \
 	IPv6PacketMatcher.h \
 	NilReturn.h \
 	SocketAdapter.h \

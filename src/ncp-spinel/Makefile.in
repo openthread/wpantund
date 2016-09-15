@@ -154,6 +154,7 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPInstance-Protothreads.cpp SpinelNCPTask.cpp \
 	SpinelNCPTask.h SpinelNCPTaskChangeNetData.cpp \
 	SpinelNCPTaskChangeNetData.h SpinelNCPTaskDeepSleep.cpp \
+	SpinelNCPTaskGetChildTable.h SpinelNCPTaskGetChildTable.cpp \
 	SpinelNCPTaskDeepSleep.h SpinelNCPTaskForm.cpp \
 	SpinelNCPTaskForm.h SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
@@ -169,6 +170,7 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTask.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskChangeNetData.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskDeepSleep.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskGetChildTable.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskLeave.lo \
@@ -194,6 +196,7 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPInstance-Protothreads.cpp SpinelNCPTask.cpp \
 	SpinelNCPTask.h SpinelNCPTaskChangeNetData.cpp \
 	SpinelNCPTaskChangeNetData.h SpinelNCPTaskDeepSleep.cpp \
+	SpinelNCPTaskGetChildTable.h SpinelNCPTaskGetChildTable.cpp \
 	SpinelNCPTaskDeepSleep.h SpinelNCPTaskForm.cpp \
 	SpinelNCPTaskForm.h SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
@@ -209,6 +212,7 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTask.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskChangeNetData.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskDeepSleep.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskGetChildTable.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskLeave.lo \
@@ -494,6 +498,8 @@ EXTRA_DIST = \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskChangeNetData.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskChangeNetData.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskDeepSleep.cpp \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetChildTable.h \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetChildTable.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskDeepSleep.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskForm.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskForm.h \
@@ -619,6 +625,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskChangeNetData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskDeepSleep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
@@ -632,6 +639,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskChangeNetData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
@@ -738,6 +746,13 @@ libncp_spinel_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
 
+libncp_spinel_la-SpinelNCPTaskGetChildTable.lo: SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskGetChildTable.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo -c -o libncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetChildTable.cpp' object='libncp_spinel_la-SpinelNCPTaskGetChildTable.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
+
 libncp_spinel_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o libncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Plo
@@ -828,6 +843,13 @@ ncp_spinel_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskDeepSleep.cpp' object='ncp_spinel_la-SpinelNCPTaskDeepSleep.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
+
+ncp_spinel_la-SpinelNCPTaskGetChildTable.lo: SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetChildTable.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetChildTable.cpp' object='ncp_spinel_la-SpinelNCPTaskGetChildTable.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
 
 ncp_spinel_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
