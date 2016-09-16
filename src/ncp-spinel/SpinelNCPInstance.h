@@ -120,7 +120,7 @@ protected:
 	virtual char ncp_to_driver_pump();
 	virtual char driver_to_ncp_pump();
 
-	int start_new_task(const boost::shared_ptr<SpinelNCPTask> &task);
+	void start_new_task(const boost::shared_ptr<SpinelNCPTask> &task);
 
 protected:
 

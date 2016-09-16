@@ -394,15 +394,13 @@ SpinelNCPControlInterface::netscan_start(
 		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));
 	}
 
-	if (-1 == mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskScan(
 			mNCPInstance,
 			boost::bind(cb,_1),
 			channel_mask
 		)
-	))) {
-		cb(kWPANTUNDStatus_InvalidForCurrentState);
-	}
+	));
 }
 
 void
@@ -422,7 +420,7 @@ SpinelNCPControlInterface::energyscan_start(
 		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));
 	}
 
-	if (-1 == mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskScan(
 			mNCPInstance,
 			boost::bind(cb,_1),
@@ -430,9 +428,7 @@ SpinelNCPControlInterface::energyscan_start(
 			SpinelNCPTaskScan::kDefaultScanPeriod,
 			SpinelNCPTaskScan::kScanTypeEnergy
 		)
-	))) {
-		cb(kWPANTUNDStatus_InvalidForCurrentState);
-	}
+	));
 }
 
 void

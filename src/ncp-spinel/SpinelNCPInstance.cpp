@@ -73,7 +73,7 @@ SpinelNCPInstance::handle_ncp_log(const uint8_t* data_ptr, int data_len)
     }
 }
 
-int
+void
 SpinelNCPInstance::start_new_task(const boost::shared_ptr<SpinelNCPTask> &task)
 {
 	if (ncp_state_is_detached_from_ncp(get_ncp_state())) {
@@ -86,9 +86,7 @@ SpinelNCPInstance::start_new_task(const boost::shared_ptr<SpinelNCPTask> &task)
 			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskWake(this, NilReturn())));
 		}
 		mTaskQueue.push_back(task);
-		return 0;
 	}
-	return -1;
 }
 
 int
@@ -300,7 +298,7 @@ SpinelNCPInstance::get_property(
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)) {
 		cb(0, boost::any(std::string("spinel")));
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -308,11 +306,9 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_INT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPFrequency)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -320,12 +316,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_INT32_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -333,9 +327,7 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_DATA_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -349,7 +341,7 @@ SpinelNCPInstance::get_property(
 		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -357,11 +349,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT32_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -369,12 +360,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_INT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderAddress)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -382,12 +371,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderRouterID)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -395,12 +382,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderWeight)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -408,12 +393,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderLocalWeight)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -421,12 +404,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNetworkData)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -434,12 +415,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_DATA_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNetworkDataVersion)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -447,12 +426,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkData)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -460,12 +437,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_DATA_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -473,13 +448,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_UINT8_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
-
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -487,12 +459,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalAddress) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -500,12 +470,10 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6LinkLocalAddress) && !IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskSendCommand(
 				this,
 				cb,
@@ -513,20 +481,16 @@ SpinelNCPInstance::get_property(
 				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 				SPINEL_DATATYPE_IPv6ADDR_S
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
-		if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetChildTable(
 				this,
 				cb,
 				SpinelNCPTaskGetChildTable::kResultFormat_StringArray
 			)
-		))) {
-			cb(kWPANTUNDStatus_InvalidForCurrentState, boost::any());
-		}
+		));
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
@@ -621,39 +585,35 @@ SpinelNCPInstance::set_property(
 			int channel = any_to_int(value);
 			mCurrentNetworkInstance.channel = channel;
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_PHY_CHAN, channel)
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 			int cca = any_to_int(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca)
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPANID)) {
 			uint16_t panid = any_to_int(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_MAC_15_4_PANID, panid)
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 			Data network_key = any_to_data(value);
@@ -726,51 +686,47 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
 			Data xpanid = any_to_data(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_XPANID, xpanid.data(), xpanid.size())
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 			Data network_key = any_to_data(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_MASTER_KEY, network_key.data(), network_key.size())
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 			uint32_t key_index = any_to_int(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE, key_index)
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkName)) {
 			std::string str = any_to_string(value);
 
-			if (-1 == start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
 				new SpinelNCPTaskSendCommand(
 					this,
 					boost::bind(cb,_1),
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S), SPINEL_PROP_NET_NETWORK_NAME, str.c_str())
 				)
-			))) {
-				cb(kWPANTUNDStatus_InvalidForCurrentState);
-			}
+			));
+
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
 		}
