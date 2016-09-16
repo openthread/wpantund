@@ -45,6 +45,25 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 
 	EH_BEGIN();
 
+	if (!mInstance->mEnabled) {
+		ret = kWPANTUNDStatus_InvalidWhenDisabled;
+		finish(ret);
+		EH_EXIT();
+	}
+
+	if (mInstance->get_ncp_state() == UPGRADING) {
+		ret = kWPANTUNDStatus_InvalidForCurrentState;
+		finish(ret);
+		EH_EXIT();
+	}
+
+	// Wait for a bit to see if the NCP will enter the right state.
+	EH_REQUIRE_WITHIN(
+		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+		!ncp_state_is_initializing(mInstance->get_ncp_state()),
+		on_error
+	);
+
 	// The first event to a task is EVENT_STARTING_TASK. The following
 	// line makes sure that we don't start processing this task
 	// until it is properly scheduled. All tasks immediately receive
