@@ -70,6 +70,8 @@ wpantund_SOURCES = \
 	NCPTypes.cpp \
 	NetworkRetain.h \
 	NetworkRetain.cpp \
+	Pcap.h \
+	Pcap.cpp \
 	../util/IPv6PacketMatcher.cpp \
 	../util/IPv6Helpers.cpp \
 	../util/tunnel.c \

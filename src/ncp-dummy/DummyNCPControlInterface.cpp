@@ -216,6 +216,18 @@ DummyNCPControlInterface::get_ncp_instance()
 	return (*mNCPInstance);
 }
 
+void
+DummyNCPControlInterface::pcap_to_fd(int fd, CallbackWithStatus cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
 
 // ----------------------------------------------------------------------------
 // MARK: -

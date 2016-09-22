@@ -166,6 +166,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
 	mDefaultChannelMask = 0x07FFF800;
+	mIsPcapInProgress = false;
 
 	if (!settings.empty()) {
 		int status;
@@ -1087,6 +1088,47 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_NOTICE, "Network is not joinable");
 		}
 
+	} else if (key == SPINEL_PROP_STREAM_RAW) {
+		if (mPcapManager.is_enabled()) {
+			const uint8_t* frame_ptr(NULL);
+			unsigned int frame_len(0);
+			const uint8_t* meta_ptr(NULL);
+			unsigned int meta_len(0);
+			spinel_ssize_t ret;
+			uint8_t frame_data_type = FRAME_TYPE_DATA;
+			PcapPacket packet;
+
+			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
+
+			if (SPINEL_PROP_STREAM_NET_INSECURE == key) {
+				frame_data_type = FRAME_TYPE_INSECURE_DATA;
+			}
+
+			ret = spinel_datatype_unpack(
+				value_data_ptr,
+				value_data_len,
+				SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_DATA_S,
+				&frame_ptr,
+				&frame_len,
+				&meta_ptr,
+				&meta_len
+			);
+
+			if ( (frame_ptr[frame_len - 1] == 0)
+			  && (frame_ptr[frame_len - 2] == 0)
+			) {
+				// FCS is zero.
+				frame_len -= 2;
+				packet.set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
+			}
+
+			mPcapManager.push_packet(
+				packet
+					.append_ppi_field(PCAP_PPI_TYPE_SPINEL, meta_ptr, meta_len)
+					.append_payload(frame_ptr, frame_len)
+			);
+		}
+
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
@@ -1424,5 +1466,32 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 			)
 		));
 
+	}
+}
+
+void
+SpinelNCPInstance::process(void)
+{
+	NCPInstanceBase::process();
+
+	if (!is_initializing_ncp()) {
+		bool x = mPcapManager.is_enabled();
+
+		if (mIsPcapInProgress != x) {
+			mIsPcapInProgress = x;
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
+				new SpinelNCPTaskSendCommand(
+					this,
+					NilReturn(),
+					SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+							SPINEL_DATATYPE_BOOL_S
+						),
+						SPINEL_PROP_MAC_RAW_STREAM_ENABLED,
+						mIsPcapInProgress
+					)
+				)
+			));
+		}
 	}
 }

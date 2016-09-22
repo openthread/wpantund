@@ -475,6 +475,29 @@ SpinelNCPControlInterface::get_ncp_instance()
 	return (*mNCPInstance);
 }
 
+void
+SpinelNCPControlInterface::pcap_to_fd(int fd, CallbackWithStatus cb)
+{
+	int ret = mNCPInstance->mPcapManager.insert_fd(fd);
+
+	if (ret < 0) {
+		syslog(LOG_ERR, "pcap_to_fd: Failed: \"%s\" (%d)", strerror(errno), errno);
+
+		cb(kWPANTUNDStatus_Failure);
+
+	} else {
+		cb(kWPANTUNDStatus_Ok);
+	}
+}
+
+void
+SpinelNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
+{
+	mNCPInstance->mPcapManager.close_fd_set(mNCPInstance->mPcapManager.get_fd_set());
+	cb(kWPANTUNDStatus_Ok);
+}
+
+
 
 // ----------------------------------------------------------------------------
 // MARK: -

@@ -169,6 +169,10 @@ NCPInstanceBase::update_fd_set(fd_set *read_fd_set, fd_set *write_fd_set, fd_set
 
 	require_noerr(ret, bail);
 
+	ret = mPcapManager.update_fd_set(read_fd_set, write_fd_set, error_fd_set, max_fd, timeout);
+
+	require_noerr(ret, bail);
+
 	if (!ncp_state_is_detached_from_ncp(get_ncp_state())) {
 		nlpt_select_update_fd_set(&mDriverToNCPPumpPT, read_fd_set, write_fd_set, error_fd_set, max_fd);
 		nlpt_select_update_fd_set(&mNCPToDriverPumpPT, read_fd_set, write_fd_set, error_fd_set, max_fd);
@@ -197,6 +201,8 @@ NCPInstanceBase::process(void)
 	mRunawayResetBackoffManager.update();
 
 	mFirmwareUpgrade.process();
+
+	mPcapManager.process();
 
 	if (get_upgrade_status() != EINPROGRESS) {
 		refresh_global_addresses();

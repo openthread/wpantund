@@ -141,6 +141,15 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+	virtual void pcap_to_fd(
+		int fd,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void pcap_terminate(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 public:
 	// ========================================================================
 	// Scan-related Member Functions
