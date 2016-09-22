@@ -291,9 +291,9 @@ signal_critical(int sig, siginfo_t * info, void * ucontext)
 		syslog(LOG_CRIT, "[BT] %2d: %s", i, stack_symbols[i]);
 #endif
 	}
-#endif // WPANTUND_BACKTRACE
 
 	free(stack_symbols);
+#endif // WPANTUND_BACKTRACE
 
 	_exit(EXIT_FAILURE);
 }
