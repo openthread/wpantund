@@ -225,7 +225,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 					SPINEL_PROP_THREAD_ON_MESH_NETS,
 					&addr,
 					64,
-					false,
+					true,
 					flags
 				)
 			)
@@ -245,7 +245,7 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 					SPINEL_PROP_THREAD_ON_MESH_NETS,
 					&addr,
 					64,
-					false,
+					true,
 					flags
 				)
 			)
@@ -291,7 +291,7 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 				SPINEL_PROP_THREAD_LOCAL_ROUTES,
 				&addr,
 				route_prefix_len*8, // because route_prefix_len is in bytes
-				false,
+				true,
 				flags
 			)
 		)
@@ -324,7 +324,7 @@ SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route
 				SPINEL_PROP_THREAD_LOCAL_ROUTES,
 				&addr,
 				route_prefix_len*8, // because route_prefix_len is in bytes
-				false,
+				true,
 				0
 			)
 		)
