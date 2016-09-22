@@ -39,6 +39,7 @@ matrix:
     allow_failures:
         - os: linux        # This seems to be some sort of weird failure to
           compiler: clang  # find boost-signals. Needs further investigation.
+        - os: osx          # This seems to be an autoconf failure.
     exclude:
         - os: osx
           compiler: gcc

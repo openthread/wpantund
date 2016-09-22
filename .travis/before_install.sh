@@ -29,6 +29,8 @@ set -x
 }
 
 [ $TRAVIS_OS_NAME != osx ] || {
-	brew install d-bus || die
-	brew install autoconf-archive || die
+	brew install d-bus
+	brew install autoconf-archive
+	brew install libtool
+	brew install gnu-sed
 }
