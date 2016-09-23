@@ -506,6 +506,9 @@ main(int argc, char * argv[])
 	gPreviousHandlerForSIGTERM = signal(SIGTERM, &signal_SIGTERM);
 	signal(SIGHUP, &signal_SIGHUP);
 
+	// Always ignore SIGPIPE.
+	signal(SIGPIPE, SIG_IGN);
+
 	{
 		struct sigaction sigact;
 		sigact.sa_sigaction = &signal_critical;

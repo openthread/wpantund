@@ -95,6 +95,10 @@ public:
 
 	virtual NCPInstance& get_ncp_instance(void);
 
+	virtual void pcap_to_fd(int fd, CallbackWithStatus cb = NilReturn());
+
+	virtual void pcap_terminate(CallbackWithStatus cb = NilReturn());
+
 private:
 
 	DummyNCPInstance* mNCPInstance;

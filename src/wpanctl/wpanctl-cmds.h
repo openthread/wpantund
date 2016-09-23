@@ -39,6 +39,7 @@
 #include "tool-cmd-config-gateway.h"
 #include "tool-cmd-add-route.h"
 #include "tool-cmd-remove-route.h"
+#include "tool-cmd-pcap.h"
 
 #include "wpanctl-utils.h"
 
@@ -142,6 +143,11 @@
 		"host-did-wake", \
 		"Perform any host-wakeup related tasks", \
 		&tool_cmd_host_did_wake \
+	}, \
+	{ \
+		"pcap", \
+		"Start a packet capture", \
+		&tool_cmd_pcap \
 	}, \
 	{ "cd",   "Change current interface (command mode)", \
 	  &tool_cmd_cd                                            }

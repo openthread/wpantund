@@ -133,10 +133,21 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_pcap_to_fd_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_pcap_terminate_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_get_prop_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
+
 	DBusHandlerResult interface_set_prop_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message

@@ -94,6 +94,10 @@ public:
 
 	virtual NCPInstance& get_ncp_instance(void);
 
+	virtual void pcap_to_fd(int fd, CallbackWithStatus cb = NilReturn());
+
+	virtual void pcap_terminate(CallbackWithStatus cb = NilReturn());
+
 	/******************* NCPMfgInterface_v1 ********************/
 	virtual void mfg(const std::string& mfg_command, CallbackWithStatusArg1 cb = NilReturn());
 

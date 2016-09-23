@@ -73,6 +73,8 @@ wpanctl_SOURCES = \
 	tool-cmd-host-did-wake.h \
 	tool-cmd-add-route.h \
 	tool-cmd-remove-route.h \
+	tool-cmd-pcap.h \
+	tool-cmd-pcap.c \
 	$(NULL)
 
 wpanctl_LDADD = \

@@ -92,6 +92,9 @@ DBusIPCAPI_v1::init_callback_tables()
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_get_prop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_set_prop_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TO_FD, interface_pcap_to_fd_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
 }
 
 static void
@@ -940,6 +943,60 @@ DBusIPCAPI_v1::interface_energy_scan_start_handler(
 			message
 		)
 	);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_pcap_to_fd_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	int fd = -1;
+
+	dbus_message_ref(message);
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UNIX_FD, &fd,
+		DBUS_TYPE_INVALID
+	);
+
+	interface->pcap_to_fd(
+		fd,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_pcap_terminate_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	interface->pcap_terminate(
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
 	return ret;

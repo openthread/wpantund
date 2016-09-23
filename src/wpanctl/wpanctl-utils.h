@@ -43,6 +43,7 @@
 #define ERRORCODE_BADVERSION     (12)
 #define ERRORCODE_ALLOC           (13)
 #define ERRORCODE_NOTFOUND     (14)
+#define ERRORCODE_REFUSED     (15)
 
 #define ERRORCODE_INTERRUPT     (128 + SIGINT)
 #define ERRORCODE_SIGHUP        (128 + SIGHUP)

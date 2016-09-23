@@ -29,6 +29,7 @@
 #include "StatCollector.h"
 #include "NetworkRetain.h"
 #include "RunawayResetBackoffManager.h"
+#include "Pcap.h"
 
 namespace nl {
 namespace wpantund {
@@ -290,6 +291,7 @@ protected:
 	bool mLegacyInterfaceEnabled;
 	bool mNodeTypeSupportsLegacy;
 
+	PcapManager mPcapManager;
 
 private:
 	// ========================================================================

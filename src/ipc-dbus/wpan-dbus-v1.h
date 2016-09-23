@@ -61,6 +61,9 @@
 #define WPANTUND_IF_CMD_BEGIN_LOW_POWER       "BeginLowPower"
 #define WPANTUND_IF_CMD_HOST_DID_WAKE         "HostDidWake"
 
+#define WPANTUND_IF_CMD_PCAP_TO_FD            "PcapToFd"
+#define WPANTUND_IF_CMD_PCAP_TERMINATE        "PcapTerminate"
+
 #define WPANTUND_IF_CMD_NET_SCAN_START        "NetScanStart"
 #define WPANTUND_IF_CMD_NET_SCAN_STOP         "NetScanStop"
 #define WPANTUND_IF_SIGNAL_NET_SCAN_BEACON    "NetScanBeacon"

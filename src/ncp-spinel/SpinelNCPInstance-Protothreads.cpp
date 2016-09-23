@@ -379,6 +379,14 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 		// point to cause the control protothread to be restarted.
 		mDriverState = INITIALIZING;
 
+		if (mIsPcapInProgress) {
+			CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+			GetInstance(this)->mOutboundBufferLen = spinel_cmd_prop_value_set_uint(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), SPINEL_PROP_MAC_RAW_STREAM_ENABLED, 1);
+			CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+
+			CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
+		}
+
 		if (mEnabled) {
 			// Refresh our internal copies of the following radio parameters:
 			static const spinel_prop_key_t keys_to_fetch[] = {

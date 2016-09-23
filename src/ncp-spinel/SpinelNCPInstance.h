@@ -165,6 +165,8 @@ public:
 
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
 
+	virtual void process(void);
+
 private:
 	SpinelNCPControlInterface mControlInterface;
 
@@ -207,6 +209,8 @@ private:
 	uint32_t mNetworkKeyIndex;
 
 	bool mResetIsExpected;
+
+	bool mIsPcapInProgress;
 
 	// Task management
 	std::list<boost::shared_ptr<SpinelNCPTask> > mTaskQueue;
