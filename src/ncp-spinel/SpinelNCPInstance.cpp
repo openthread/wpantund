@@ -1387,7 +1387,7 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 				SPINEL_PROP_THREAD_ON_MESH_NETS,
 				&addr,
 				prefix_len,
-				false,
+				true,
 				flags
 			)
 		);
