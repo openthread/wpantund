@@ -116,6 +116,9 @@ NCPInstanceBase::reset_interface(void)
 {
 	mPrimaryInterface->reset();
 
+	// The global address table must be cleared upon reset.
+	mGlobalAddresses.clear();
+
 	if (static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface->reset();
 	}
