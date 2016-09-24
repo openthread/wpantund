@@ -114,6 +114,12 @@ NCPInstanceBase::set_mac_hardware_address(const uint8_t x[8])
 void
 NCPInstanceBase::reset_interface(void)
 {
+	syslog(LOG_NOTICE, "Resetting interface(s). . .");
+
+	mCurrentNetworkInstance.joinable = false;
+
+	set_commissioniner(0, 0, 0);
+
 	mPrimaryInterface->reset();
 
 	// The global address table must be cleared upon reset.
