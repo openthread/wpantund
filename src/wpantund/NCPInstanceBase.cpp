@@ -778,10 +778,18 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 	} else if (ncp_state_is_commissioned(old_ncp_state)
 		&& !ncp_state_is_commissioned(new_ncp_state)
 		&& !ncp_state_is_sleeping(new_ncp_state)
+		&& (new_ncp_state != UNINITIALIZED)
 	) {
-		syslog(LOG_NOTICE, "Resetting interface(s). . .");
-		mCurrentNetworkInstance.joinable = false;
-		set_commissioniner(0, 0, 0);
+		reset_interface();
+
+
+	// Uninitialized -> Offline
+	// If we are transitioning from uninitialized to offline,
+	// and we have global addresses, then need to clear them out.
+	} else if (old_ncp_state == UNINITIALIZED
+		&& new_ncp_state == OFFLINE
+		&& !mGlobalAddresses.empty()
+	) {
 		reset_interface();
 
 
