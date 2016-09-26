@@ -100,6 +100,7 @@ string_printf(const char *fmt, ...)
 	char c_str_buf[512];
 	va_start(args, fmt);
 	vsnprintf(c_str_buf, sizeof(c_str_buf), fmt, args);
+	va_end(args);
 	return std::string(c_str_buf);
 }
 
@@ -910,7 +911,7 @@ StatCollector::LinkStat::LinkQuality::to_string(void) const
 // LinkStat::LinkInfo
 
 StatCollector::LinkStat::LinkInfo::LinkInfo() :
-		mLinkQualityHistory()
+		mNodeType(), mLinkQualityHistory()
 {
 	clear();
 }
@@ -1090,6 +1091,12 @@ StatCollector::StatCollector() :
 
 	mTxPacketsTotal = 0;
 	mRxPacketsTotal = 0;
+	mRxPacketsUDP = 0;
+	mRxPacketsTCP = 0;
+	mRxPacketsICMP = 0;
+	mTxPacketsUDP = 0;
+	mTxPacketsTCP = 0;
+	mTxPacketsICMP = 0;
 
 	mLastReadyForHostSleepState = true;
 

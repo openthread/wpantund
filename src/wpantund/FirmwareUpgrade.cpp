@@ -169,8 +169,13 @@ FirmwareUpgrade::set_firmware_upgrade_command(const std::string& command)
 		dup2(STDERR_FILENO,STDOUT_FILENO);
 		close(STDIN_FILENO);
 
-		stdin = fdopen(stdin_copy, "r");
-		stdout = fdopen(stdout_copy, "w");
+		if (stdin_copy >= 0) {
+			stdin = fdopen(stdin_copy, "r");
+		}
+
+		if (stdout_copy >= 0) {
+			stdout = fdopen(stdout_copy, "w");
+		}
 
 		// Double fork to avoid leaking zombie processes.
 		pid = fork();
@@ -269,12 +274,12 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 
 		dup2(STDERR_FILENO,STDOUT_FILENO);
 
-		if (stdin_copy >=0 ) {
+		if (stdin_copy >= 0) {
 			close(STDIN_FILENO);
 			stdin = fdopen(stdin_copy, "r");
 		}
 
-		if (stdout_copy >=0 ) {
+		if (stdout_copy >= 0) {
 			stdout = fdopen(stdout_copy, "w");
 		}
 

@@ -510,7 +510,7 @@ main(int argc, char * argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 	{
-		struct sigaction sigact;
+		struct sigaction sigact = { };
 		sigact.sa_sigaction = &signal_critical;
 		sigact.sa_flags = SA_RESTART | SA_SIGINFO | SA_NOCLDWAIT;
 
@@ -732,7 +732,13 @@ main(int argc, char * argv[])
 				gRet = ERRORCODE_ERRNO;
 				goto bail;
 			} else {
-				syslog(LOG_INFO, "Successfully changed root directory to \"%s\".", gChroot);
+				if (chdir("/") != 0) {
+					syslog(LOG_INFO, "Failed to `chdir` after `chroot` to \"%s\"", gChroot);
+					gRet = ERRORCODE_ERRNO;
+					goto bail;
+				} else {
+					syslog(LOG_INFO, "Successfully changed root directory to \"%s\".", gChroot);
+				}
 			}
 		} else {
 			syslog(LOG_WARNING, "Not running as root, cannot chroot");

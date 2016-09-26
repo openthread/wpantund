@@ -320,7 +320,7 @@ PcapManager::update_fd_set(fd_set *read_fd_set, fd_set *write_fd_set, fd_set *er
 		}
 
 		if (error_fd_set) {
-			FD_SET(fd, read_fd_set);
+			FD_SET(fd, error_fd_set);
 		}
 
 		if (max_fd && (*max_fd < fd)) {
