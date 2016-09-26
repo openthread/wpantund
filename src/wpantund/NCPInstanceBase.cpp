@@ -837,6 +837,10 @@ NCPInstanceBase::is_busy(void)
 	const NCPState ncp_state = get_ncp_state();
 	bool is_busy = ncp_state_is_busy(ncp_state);
 
+	if (is_initializing_ncp()) {
+		return true;
+	}
+
 	if (ncp_state == FAULT) {
 		return false;
 	}
