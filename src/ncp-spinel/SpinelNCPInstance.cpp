@@ -1095,14 +1095,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			const uint8_t* meta_ptr(NULL);
 			unsigned int meta_len(0);
 			spinel_ssize_t ret;
-			uint8_t frame_data_type = FRAME_TYPE_DATA;
 			PcapPacket packet;
 
 			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
-
-			if (SPINEL_PROP_STREAM_NET_INSECURE == key) {
-				frame_data_type = FRAME_TYPE_INSECURE_DATA;
-			}
 
 			ret = spinel_datatype_unpack(
 				value_data_ptr,

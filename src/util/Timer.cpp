@@ -47,6 +47,8 @@ null_timer_callback(Timer *timer)
 Timer::Timer() :
 	mFireTime()
 {
+	mType = kOneShot;
+	mInterval = 0;
 	mNext = NULL;
 	mCallback = &null_timer_callback;
 }
