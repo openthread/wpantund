@@ -138,7 +138,7 @@ am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) \
 	wpantund-NCPInstanceBase-Addresses.$(OBJEXT) \
 	wpantund-NCPInstanceBase-AsyncIO.$(OBJEXT) \
 	wpantund-NCPTypes.$(OBJEXT) wpantund-NetworkRetain.$(OBJEXT) \
-	wpantund-IPv6PacketMatcher.$(OBJEXT) \
+	wpantund-Pcap.$(OBJEXT) wpantund-IPv6PacketMatcher.$(OBJEXT) \
 	wpantund-IPv6Helpers.$(OBJEXT) wpantund-tunnel.$(OBJEXT) \
 	wpantund-config-file.$(OBJEXT) wpantund-socket-utils.$(OBJEXT) \
 	wpantund-any-to.$(OBJEXT) wpantund-string-utils.$(OBJEXT) \
@@ -453,7 +453,7 @@ wpantund_SOURCES = wpantund.cpp wpantund.h IPCServer.h NCPConstants.h \
 	RunawayResetBackoffManager.cpp RunawayResetBackoffManager.h \
 	NCPInstanceBase-NetInterface.cpp NCPInstanceBase-Addresses.cpp \
 	NCPInstanceBase-AsyncIO.cpp NCPTypes.h NCPTypes.cpp \
-	NetworkRetain.h NetworkRetain.cpp \
+	NetworkRetain.h NetworkRetain.cpp Pcap.h Pcap.cpp \
 	../util/IPv6PacketMatcher.cpp ../util/IPv6Helpers.cpp \
 	../util/tunnel.c ../util/config-file.c ../util/socket-utils.c \
 	../util/any-to.cpp ../util/string-utils.c ../util/time-utils.c \
@@ -581,6 +581,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-NCPInstanceBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-NCPTypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-NetworkRetain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-Pcap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-RunawayResetBackoffManager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-SocketAdapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-SocketWrapper.Po@am__quote@
@@ -922,6 +923,20 @@ wpantund-NetworkRetain.obj: NetworkRetain.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NetworkRetain.cpp' object='wpantund-NetworkRetain.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -c -o wpantund-NetworkRetain.obj `if test -f 'NetworkRetain.cpp'; then $(CYGPATH_W) 'NetworkRetain.cpp'; else $(CYGPATH_W) '$(srcdir)/NetworkRetain.cpp'; fi`
+
+wpantund-Pcap.o: Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -MT wpantund-Pcap.o -MD -MP -MF $(DEPDIR)/wpantund-Pcap.Tpo -c -o wpantund-Pcap.o `test -f 'Pcap.cpp' || echo '$(srcdir)/'`Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-Pcap.Tpo $(DEPDIR)/wpantund-Pcap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='Pcap.cpp' object='wpantund-Pcap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -c -o wpantund-Pcap.o `test -f 'Pcap.cpp' || echo '$(srcdir)/'`Pcap.cpp
+
+wpantund-Pcap.obj: Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -MT wpantund-Pcap.obj -MD -MP -MF $(DEPDIR)/wpantund-Pcap.Tpo -c -o wpantund-Pcap.obj `if test -f 'Pcap.cpp'; then $(CYGPATH_W) 'Pcap.cpp'; else $(CYGPATH_W) '$(srcdir)/Pcap.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-Pcap.Tpo $(DEPDIR)/wpantund-Pcap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='Pcap.cpp' object='wpantund-Pcap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -c -o wpantund-Pcap.obj `if test -f 'Pcap.cpp'; then $(CYGPATH_W) 'Pcap.cpp'; else $(CYGPATH_W) '$(srcdir)/Pcap.cpp'; fi`
 
 wpantund-IPv6PacketMatcher.o: ../util/IPv6PacketMatcher.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -MT wpantund-IPv6PacketMatcher.o -MD -MP -MF $(DEPDIR)/wpantund-IPv6PacketMatcher.Tpo -c -o wpantund-IPv6PacketMatcher.o `test -f '../util/IPv6PacketMatcher.cpp' || echo '$(srcdir)/'`../util/IPv6PacketMatcher.cpp

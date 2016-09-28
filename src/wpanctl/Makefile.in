@@ -142,7 +142,7 @@ am_wpanctl_OBJECTS = wpanctl-wpanctl.$(OBJEXT) \
 	wpanctl-tool-cmd-host-did-wake.$(OBJEXT) \
 	wpanctl-tool-cmd-add-route.$(OBJEXT) \
 	wpanctl-tool-cmd-remove-route.$(OBJEXT) \
-	wpanctl-version.$(OBJEXT)
+	wpanctl-tool-cmd-pcap.$(OBJEXT) wpanctl-version.$(OBJEXT)
 wpanctl_OBJECTS = $(am_wpanctl_OBJECTS)
 am__DEPENDENCIES_1 =
 wpanctl_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -386,8 +386,8 @@ wpanctl_SOURCES = wpanctl.c wpanctl-cmds.h ../util/config-file.c \
 	tool-cmd-begin-low-power.h tool-cmd-begin-net-wake.h \
 	tool-cmd-cd.h tool-cmd-poll.h tool-cmd-config-gateway.h \
 	tool-cmd-host-did-wake.h tool-cmd-add-route.h \
-	tool-cmd-remove-route.h $(NULL) \
-	$(top_builddir)/$(subdir)/version.c
+	tool-cmd-remove-route.h tool-cmd-pcap.h tool-cmd-pcap.c \
+	$(NULL) $(top_builddir)/$(subdir)/version.c
 wpanctl_LDADD = \
 	$(DBUS_LIBS) \
 	$(LIBREADLINE_LIBS) \
@@ -509,6 +509,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-join.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-leave.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-pcap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-permit-join.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-poll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-remove-route.Po@am__quote@
@@ -863,6 +864,20 @@ wpanctl-tool-cmd-remove-route.obj: tool-cmd-remove-route.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-remove-route.c' object='wpanctl-tool-cmd-remove-route.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-remove-route.obj `if test -f 'tool-cmd-remove-route.c'; then $(CYGPATH_W) 'tool-cmd-remove-route.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-remove-route.c'; fi`
+
+wpanctl-tool-cmd-pcap.o: tool-cmd-pcap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-pcap.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo -c -o wpanctl-tool-cmd-pcap.o `test -f 'tool-cmd-pcap.c' || echo '$(srcdir)/'`tool-cmd-pcap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo $(DEPDIR)/wpanctl-tool-cmd-pcap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-pcap.c' object='wpanctl-tool-cmd-pcap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-pcap.o `test -f 'tool-cmd-pcap.c' || echo '$(srcdir)/'`tool-cmd-pcap.c
+
+wpanctl-tool-cmd-pcap.obj: tool-cmd-pcap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-pcap.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo -c -o wpanctl-tool-cmd-pcap.obj `if test -f 'tool-cmd-pcap.c'; then $(CYGPATH_W) 'tool-cmd-pcap.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-pcap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo $(DEPDIR)/wpanctl-tool-cmd-pcap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-pcap.c' object='wpanctl-tool-cmd-pcap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-pcap.obj `if test -f 'tool-cmd-pcap.c'; then $(CYGPATH_W) 'tool-cmd-pcap.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-pcap.c'; fi`
 
 wpanctl-version.o: $(top_builddir)/$(subdir)/version.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-version.o -MD -MP -MF $(DEPDIR)/wpanctl-version.Tpo -c -o wpanctl-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
