@@ -62,9 +62,6 @@ using namespace wpantund;
 // Maximum allowed period for auto log (value is in min)
 #define STAT_COLLECTOR_AUTO_LOG_MAX_PERIOD		  (60 * 24 * 7 * 2) // Two weeks
 
-// Default period (in min) to check the link quality to peers
-#define STAT_COLLECTOR_LINK_STAT_PERIOD_IN_MIN    10     // 10 min
-
 // Time stamp constants
 #define TIMESTAMP_ONE_SEC_IN_MS           ((int32_t)1000)
 #define TIMESTAMP_ONE_MIN_IN_MS           (TIMESTAMP_ONE_SEC_IN_MS * 60)
@@ -1106,8 +1103,6 @@ StatCollector::StatCollector() :
 	mAutoLogState = kAutoLogShort;
 	mAutoLogPeriod = STAT_COLLECTOR_AUTO_LOG_PERIOD_IN_MIN * Timer::kOneMinute;
 	update_auto_log_timer();
-
-	update_link_stat_timer(STAT_COLLECTOR_LINK_STAT_PERIOD_IN_MIN * Timer::kOneMinute);
 }
 
 StatCollector::~StatCollector()
