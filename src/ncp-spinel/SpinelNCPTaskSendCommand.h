@@ -32,17 +32,43 @@ namespace wpantund {
 class SpinelNCPTaskSendCommand : public SpinelNCPTask
 {
 public:
-	SpinelNCPTaskSendCommand(SpinelNCPInstance* instance,
-		CallbackWithStatusArg1 cb,
-		const Data& send_command,
-		int timeout = NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		const std::string& packed_format = SPINEL_DATATYPE_NULL_S
-	);
+
+	class Factory {
+	public:
+		friend class SpinelNCPTaskSendCommand;
+
+		Factory(SpinelNCPInstance* instance);
+
+		Factory& set_callback(const CallbackWithStatusArg1 &cb);
+		Factory& set_callback(const CallbackWithStatus &cb);
+		Factory& add_command(const Data& command);
+		Factory& set_timeout(int timeout);
+		Factory& set_reply_format(const std::string& packed_format);
+		Factory& set_lock_property(int lock_property = SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+
+		boost::shared_ptr<SpinelNCPTask> finish(void);
+
+	private:
+		SpinelNCPInstance* mInstance;
+		CallbackWithStatusArg1 mCb;
+		std::list<Data> mCommandList;
+		int mTimeout;
+		std::string mReplyFormat;
+		int mLockProperty;
+	};
+
+	SpinelNCPTaskSendCommand(const Factory& factory);
 
 	virtual int vprocess_event(int event, va_list args);
 
 private:
+
+	std::list<Data> mCommandList;
+	std::list<Data>::const_iterator mCommandIter;
+	int mLockProperty;
 	std::string mPackedFormat;
+	int mRetVal;
+	boost::any mReturnValue;
 };
 
 }; // namespace wpantund

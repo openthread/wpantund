@@ -31,17 +31,71 @@
 using namespace nl;
 using namespace nl::wpantund;
 
+SpinelNCPTaskSendCommand::Factory::Factory(SpinelNCPInstance* instance):
+	mInstance(instance),
+	mCb(NilReturn()),
+	mTimeout(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT),
+	mLockProperty(0)
+{
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_callback(const CallbackWithStatusArg1 &cb)
+{
+	mCb = cb;
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_callback(const CallbackWithStatus &cb)
+{
+	mCb = boost::bind(cb, _1);
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::add_command(const Data& command)
+{
+	mCommandList.insert(mCommandList.end(), command);
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_timeout(int timeout)
+{
+	mTimeout = timeout;
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_reply_format(const std::string& packed_format)
+{
+	mReplyFormat = packed_format;
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_lock_property(int lock_property)
+{
+	mLockProperty = lock_property;
+	return *this;
+}
+
+boost::shared_ptr<SpinelNCPTask>
+SpinelNCPTaskSendCommand::Factory::finish(void)
+{
+	return boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskSendCommand(*this));
+}
 
 nl::wpantund::SpinelNCPTaskSendCommand::SpinelNCPTaskSendCommand(
-	SpinelNCPInstance* instance,
-	CallbackWithStatusArg1 cb,
-	const Data& send_command,
-	int timeout,
-	const std::string& packed_format
-):	SpinelNCPTask(instance, cb), mPackedFormat(packed_format)
+	const Factory& factory
+):	SpinelNCPTask(factory.mInstance, factory.mCb),
+	mCommandList(factory.mCommandList),
+	mLockProperty(factory.mLockProperty),
+	mPackedFormat(factory.mReplyFormat),
+	mRetVal(kWPANTUNDStatus_Failure)
 {
-	mNextCommandTimeout = timeout;
-	mNextCommand = send_command;
+	mNextCommandTimeout = factory.mTimeout;
 }
 
 static boost::any
@@ -194,13 +248,12 @@ spinel_packed_to_any(const uint8_t* data_in, spinel_size_t data_len, const char*
 	return spinel_iter_to_any(&spinel_iter);
 }
 
-
 int
 nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 {
-	int ret = kWPANTUNDStatus_Failure;
-
 	EH_BEGIN();
+
+	mRetVal = kWPANTUNDStatus_Failure;
 
 	// The first event to a task is EVENT_STARTING_TASK. The following
 	// line makes sure that we don't start processing this task
@@ -210,42 +263,82 @@ nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
-	require(mNextCommand.size() < sizeof(GetInstance(this)->mOutboundBuffer), on_error);
+	if (mLockProperty != 0) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			mLockProperty,
+			true
+		);
 
-	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-	ret = mNextCommandRet;
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 
-	if (mPackedFormat.size()) {
-		require_noerr(ret, on_error);
+		mRetVal = mNextCommandRet;
 
-		require(EVENT_NCP_PROP_VALUE_IS == event, on_error);
+		// In case of BUSY error status (meaning the `ALLOW_LOCAL_NET_DATA_CHANGE`
+		// was already true), allow the operation to proceed.
+
+		require((mRetVal == kWPANTUNDStatus_Ok) || (mRetVal == kWPANTUNDStatus_Busy), on_error);
+	}
+
+	mRetVal = kWPANTUNDStatus_Ok;
+
+	mCommandIter = mCommandList.begin();
+
+	while ( (mRetVal == kWPANTUNDStatus_Ok)
+	     && (mCommandList.end() != mCommandIter)
+	) {
+		mNextCommand = *mCommandIter++;
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	}
+
+	mRetVal = mNextCommandRet;
+
+	require_noerr(mRetVal, on_error);
+
+	if ( !mPackedFormat.empty()
+	  && (kWPANTUNDStatus_Ok == mRetVal)
+	  && (EVENT_NCP_PROP_VALUE_IS == event)
+	) {
+		// Handle the packed response from the last command
 
 		unsigned int key = va_arg(args, unsigned int);
 		const uint8_t* data_in = va_arg(args, const uint8_t*);
 		spinel_size_t data_len = va_arg_small(args, spinel_size_t);
+		(void) key; // Ignored
 
-		(void) key;
+		try {
+			mReturnValue = spinel_packed_to_any(data_in, data_len, mPackedFormat.c_str());
 
-		ret = kWPANTUNDStatus_Ok;
-
-		finish(ret, spinel_packed_to_any(data_in, data_len, mPackedFormat.c_str()));
-
-		EH_EXIT();
+		} catch(...) {
+			mRetVal = kWPANTUNDStatus_Failure;
+		}
 	}
-
-	finish(ret);
-
-	EH_EXIT();
 
 on_error:
 
-	if (ret == kWPANTUNDStatus_Ok) {
-		ret = kWPANTUNDStatus_Failure;
+	if (mRetVal != kWPANTUNDStatus_Ok) {
+		syslog(LOG_ERR, "SendCommand task encountered an error: %d (0x%08X)", mRetVal, mRetVal);
 	}
 
-	syslog(LOG_ERR, "SendCommand failed: %d", ret);
+	// Even in case of failure we proceed to set mLockProperty
+	// to `false`. The error status is checked after this. It is stored in
+	// a class instance variable `mRetVal` so that the value is preserved
+	// over the protothread EH_SPAWN() call.
 
-	finish(ret);
+	if (mLockProperty != 0) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			mLockProperty,
+			false
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		check_noerr(mNextCommandRet);
+	}
+
+	finish(mRetVal, mReturnValue);
 
 	EH_END();
 }

@@ -50,7 +50,6 @@
 #include "SpinelNCPTaskForm.h"
 #include "SpinelNCPTaskLeave.h"
 #include "SpinelNCPTaskScan.h"
-#include "SpinelNCPTaskChangeNetData.h"
 #include "SpinelNCPTaskSendCommand.h"
 
 using namespace nl;
@@ -109,20 +108,21 @@ SpinelNCPControlInterface::leave(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::attach(CallbackWithStatus cb)
 {
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			NilReturn(),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_NET_IF_UP, true)
-		)
-	));
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			boost::bind(cb,_1),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_NET_STACK_UP, true)
-		)
-	));
+	mNCPInstance->start_new_task(
+		SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_NET_IF_UP,
+				true
+			))
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_NET_STACK_UP,
+				true
+			))
+			.finish()
+	);
 }
 
 void
@@ -131,13 +131,12 @@ SpinelNCPControlInterface::reset(CallbackWithStatus cb)
 	if (mNCPInstance->get_ncp_state() == FAULT) {
 		mNCPInstance->change_ncp_state(UNINITIALIZED);
 	}
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			boost::bind(cb,kWPANTUNDStatus_Ok),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET)
-		)
-	));
+
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+		.set_callback(CallbackWithStatus(boost::bind(cb,kWPANTUNDStatus_Ok)))
+		.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET))
+		.finish()
+	);
 }
 
 void
@@ -164,25 +163,21 @@ SpinelNCPControlInterface::begin_low_power(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::refresh_state(CallbackWithStatus cb)
 {
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			boost::bind(cb,_1),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_NOOP)
-		)
-	));
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+		.set_callback(cb)
+		.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_NOOP))
+		.finish()
+	);
 }
 
 void
 SpinelNCPControlInterface::data_poll(CallbackWithStatus cb)
 {
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			boost::bind(cb,_1),
-			SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_STREAM_NET)
-		)
-	));
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+		.set_callback(cb)
+		.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_STREAM_NET))
+		.finish()
+	);
 }
 
 void
@@ -209,13 +204,11 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 
 	memcpy(addr.s6_addr, prefix, 8);
 
-
 	if (validLifetime == 0) {
 		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskChangeNetData(
-				mNCPInstance,
-				boost::bind(cb,_1),
-				SpinelPackData(
+			new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
 						SPINEL_DATATYPE_IPv6ADDR_S
 						SPINEL_DATATYPE_UINT8_S
@@ -227,15 +220,15 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 					64,
 					true,
 					flags
-				)
+				))
+				.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 			)
 		));
 	} else {
 		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskChangeNetData(
-				mNCPInstance,
-				boost::bind(cb,_1),
-				SpinelPackData(
+			new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 						SPINEL_DATATYPE_IPv6ADDR_S
 						SPINEL_DATATYPE_UINT8_S
@@ -247,7 +240,8 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 					64,
 					true,
 					flags
-				)
+				))
+				.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 			)
 		));
 	}
@@ -278,10 +272,9 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 	memcpy(addr.s6_addr, route, route_prefix_len);
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskChangeNetData(
-			mNCPInstance,
-			boost::bind(cb,_1),
-			SpinelPackData(
+		new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_IPv6ADDR_S
 					SPINEL_DATATYPE_UINT8_S
@@ -293,7 +286,8 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 				route_prefix_len*8, // because route_prefix_len is in bytes
 				true,
 				flags
-			)
+			))
+			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 		)
 	));
 }
@@ -311,10 +305,9 @@ SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route
 	memcpy(addr.s6_addr, route, route_prefix_len);
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskChangeNetData(
-			mNCPInstance,
-			boost::bind(cb,_1),
-			SpinelPackData(
+		new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
 					SPINEL_DATATYPE_IPv6ADDR_S
 					SPINEL_DATATYPE_UINT8_S
@@ -326,7 +319,8 @@ SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route
 				route_prefix_len*8, // because route_prefix_len is in bytes
 				true,
 				0
-			)
+			))
+			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 		)
 	));
 }
@@ -340,6 +334,7 @@ SpinelNCPControlInterface::permit_join(
     CallbackWithStatus cb
     )
 {
+	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
 	int ret = kWPANTUNDStatus_Ok;
 
 	if (!mNCPInstance->mEnabled) {
@@ -357,23 +352,22 @@ SpinelNCPControlInterface::permit_join(
 
 	require_noerr(ret, bail);
 
+	factory.set_callback(cb);
+
 	if (seconds > 0) {
-		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
-				mNCPInstance,
-				boost::bind(cb,_1),
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_THREAD_ASSISTING_PORTS, ntohs(traffic_port))
-			)
+		factory.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+			SPINEL_PROP_THREAD_ASSISTING_PORTS,
+			ntohs(traffic_port)
 		));
 	} else {
-		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(
-				mNCPInstance,
-				boost::bind(cb,_1),
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_VOID_S), SPINEL_PROP_THREAD_ASSISTING_PORTS)
-			)
+		factory.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+			SPINEL_PROP_THREAD_ASSISTING_PORTS
 		));
 	}
+
+	mNCPInstance->start_new_task(factory.finish());
 
 bail:
 	if (ret) {
@@ -447,19 +441,17 @@ SpinelNCPControlInterface::mfg(
     const std::string& mfg_command,
     CallbackWithStatusArg1 cb
 ) {
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(
-			mNCPInstance,
-			cb,
-			SpinelPackData(
+	mNCPInstance->start_new_task(
+		SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S),
 				SPINEL_PROP_NEST_STREAM_MFG,
 				mfg_command.c_str()
-			),
-			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-			SPINEL_DATATYPE_UTF8_S
-		)
-	));
+			))
+			.set_reply_format(SPINEL_DATATYPE_UTF8_S)
+			.finish()
+	);
 }
 
 const WPAN::NetworkInstance&
