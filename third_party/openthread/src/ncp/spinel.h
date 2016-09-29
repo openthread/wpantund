@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2016, Nest Labs, Inc.
+ *    Copyright (c) 2016, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -425,7 +425,7 @@ typedef enum
     SPINEL_PROP_THREAD__BEGIN          = 0x50,
     SPINEL_PROP_THREAD_LEADER_ADDR     = SPINEL_PROP_THREAD__BEGIN + 0, ///< [6]
     SPINEL_PROP_THREAD_PARENT          = SPINEL_PROP_THREAD__BEGIN + 1, ///< LADDR, SADDR [ES]
-    SPINEL_PROP_THREAD_CHILD_TABLE     = SPINEL_PROP_THREAD__BEGIN + 2, ///< [A(T(ES))]
+    SPINEL_PROP_THREAD_CHILD_TABLE     = SPINEL_PROP_THREAD__BEGIN + 2, ///< array(EUI64,rloc16,timeout,age,netDataVer,inLqi,aveRSS,mode) [A(T(ESLLCCcC))]
     SPINEL_PROP_THREAD_LEADER_RID      = SPINEL_PROP_THREAD__BEGIN + 3, ///< [C]
     SPINEL_PROP_THREAD_LEADER_WEIGHT   = SPINEL_PROP_THREAD__BEGIN + 4, ///< [C]
     SPINEL_PROP_THREAD_LOCAL_LEADER_WEIGHT
@@ -507,6 +507,18 @@ typedef enum
      */
     SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 7,
+
+    /// Thread Router Downgrade Threshold
+    /** Format: `C`
+     */
+    SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 8,
+
+    /// Thread Router Selection Jitter
+    /** Format: `C`
+     */
+    SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER
+                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 9,
 
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
