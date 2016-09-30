@@ -54,15 +54,20 @@ WPANTUND_PROP_CHANNEL="NCP:Channel"
 WPANTUND_PROP_MACADDR="NCP:MACAddress"
 WPANTUND_PROP_NODE_TYPE="Network:NodeType"
 WPANTUND_PROP_KEY_INDEX="Network:KeyIndex"
+WPANTUND_PROP_ROUTER_ID="Thread:RouterID"
+WPANTUND_PROP_PREFERRED_ROUTER_ID="Thread:PreferredRouterID"
+
+MAX_ROUTER_ID=60
 
 cur_name=
 cur_key=
 cur_panid=
 cur_xpanid=
 cur_channel=
-cur_macaddr=SOMETHING
+cur_macaddr=
 cur_type=
 cur_keyindex=
+cur_routerid=
 
 new_name=
 new_key=
@@ -72,6 +77,7 @@ new_channel=
 new_macaddr=
 new_type=
 new_keyindex=
+new_routerid=
 
 # Populate the new network info variables by reading the values from wpanctl
 get_new_network_info_from_wpantund ()
@@ -102,10 +108,23 @@ get_new_network_info_from_wpantund ()
 
 	val=$($wpanctl_command get $WPANTUND_PROP_KEY_INDEX)
 	new_keyindex=$(echo "$val" | sed -e 's/.*=[[:space:]]*//')
+
+	val=$($wpanctl_command get -v $WPANTUND_PROP_ROUTER_ID)
+	new_routerid=$(printf "%d" $val)
 }
 
 restore_network_info_on_wpantund ()
 {
+	# Calculate a new router id value by adding one to it
+	# This ensures router id is different upon every reset/restore
+	router_id=$((new_routerid+1))
+
+	if [ "$router_id" -ge "$MAX_ROUTER_ID" ]
+	then
+		router_id=0
+	fi
+	$wpanctl_command set $WPANTUND_PROP_PREFERRED_ROUTER_ID $router_id
+
 	$wpanctl_command set $WPANTUND_PROP_MACADDR $cur_macaddr
 	$wpanctl_command set $WPANTUND_PROP_NAME $cur_name
 	$wpanctl_command set $WPANTUND_PROP_KEY -d $cur_key
@@ -125,9 +144,10 @@ verify_cur_info ()
 	   [ -z "$cur_panid" ] || 		\
 	   [ -z "$cur_xpanid" ] ||		\
 	   [ -z "$cur_channel" ] || 	\
-	   [ -z "$cur_macaddr" ] || 		\
+	   [ -z "$cur_macaddr" ] || 	\
 	   [ -z "$cur_type" ] ||		\
-	   [ -z "$cur_keyindex" ]
+	   [ -z "$cur_keyindex" ] || 	\
+	   [ -z "$cur_routerid" ]
 	then
 		return 1
 	fi
@@ -143,9 +163,10 @@ verify_new_info ()
 	   [ -z "$new_panid" ] || 		\
 	   [ -z "$new_xpanid" ] ||		\
 	   [ -z "$new_channel" ] || 	\
-	   [ -z "$new_macaddr" ] || 		\
+	   [ -z "$new_macaddr" ] || 	\
 	   [ -z "$new_type" ] ||		\
-	   [ -z "$new_keyindex" ]
+	   [ -z "$new_keyindex" ] ||    \
+	   [ -z "$new_routerid" ]
 	then
 		return 1
 	fi
@@ -162,7 +183,8 @@ is_new_info_same_as_cur_info ()
 	   [ "$cur_channel" != "$new_channel" ] || \
 	   [ "$cur_macaddr" != "$new_macaddr" ] || \
 	   [ "$cur_type" != "$new_type" ] || \
-	   [ "$cur_keyindex" != "$new_keyindex" ]
+	   [ "$cur_keyindex" != "$new_keyindex" ] || \
+	   [ "$cur_routerid" != "$new_routerid" ]
 	then
 		return 1
 	fi
@@ -203,6 +225,9 @@ read_cur_network_info_from_file ()
 	        $WPANTUND_PROP_KEY_INDEX)
 			  cur_keyindex=$value
 			  ;;
+	        $WPANTUND_PROP_ROUTER_ID)
+			  cur_routerid=$value
+			  ;;
 			esac
 
 		done < $1
@@ -230,6 +255,7 @@ write_new_info_to_file ()
 	echo "${WPANTUND_PROP_MACADDR} = $new_macaddr" >> $fname
 	echo "${WPANTUND_PROP_NODE_TYPE} = $new_type" >> $fname
 	echo "${WPANTUND_PROP_KEY_INDEX} = $new_keyindex" >> $fname
+	echo "${WPANTUND_PROP_ROUTER_ID} = $new_routerid" >> $fname
 
 	# Add a time stamp
 	echo "# Saved on " $(date) >> $fname
@@ -246,6 +272,7 @@ display_cur_network_info ()
 	echo "cur_macaddr is" $cur_macaddr
 	echo "cur_type is" $cur_type
 	echo "cur_keyindex is"  $cur_keyindex
+	echo "cur_routerid is"  $cur_routerid
 }
 
 # For test and debugging only
@@ -258,7 +285,8 @@ display_new_network_info ()
 	echo "new_channel is" $new_channel
 	echo "new_macaddr is" $new_macaddr
 	echo "new_type is" $new_type
-	echo "new_keyindex is"  $new_keyindex
+	echo "new_keyindex is" $new_keyindex
+	echo "new_routerid is" $new_routerid
 }
 
 save_network_info ()
