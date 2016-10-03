@@ -213,6 +213,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 
 	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_0)) {
+		properties.insert(kWPANTUNDProperty_ThreadRLOC16);
+		properties.insert(kWPANTUNDProperty_ThreadRouterID);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderAddress);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderRouterID);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderWeight);
@@ -291,6 +293,17 @@ SpinelNCPInstance::get_ms_to_next_event(void)
 	return cms;
 }
 
+static void convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, const boost::any& value)
+{
+	uint8_t router_id = 0;
+
+	if (status == kWPANTUNDStatus_Ok) {
+		uint16_t rloc16 = any_to_int(value);
+		router_id = rloc16 >> 10;
+	}
+	cb(status, router_id);
+}
+
 void
 SpinelNCPInstance::get_property(
 	const std::string& key,
@@ -327,6 +340,13 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRLOC16)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterID)) {
+		cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -594,6 +614,17 @@ SpinelNCPInstance::set_property(
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S), SPINEL_PROP_NET_NETWORK_NAME, str.c_str()))
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadPreferredRouterID)) {
+			uint8_t routerId = any_to_int(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID, routerId)
+				)
 				.finish()
 			);
 
