@@ -996,9 +996,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			unsigned int meta_len(0);
 			spinel_ssize_t ret;
 			PcapPacket packet;
+			uint16_t flags = 0;
 
-			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
+			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
 
+			// Unpack the packet.
 			ret = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
@@ -1009,12 +1011,27 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				&meta_len
 			);
 
-			if ( (frame_ptr[frame_len - 1] == 0)
-			  && (frame_ptr[frame_len - 2] == 0)
-			) {
+			require(ret > 0, bail);
+
+			// Unpack the metadata.
+			ret = spinel_datatype_unpack(
+				meta_ptr,
+				meta_len,
+				SPINEL_DATATYPE_INT8_S     // RSSI/TXPower
+				SPINEL_DATATYPE_INT8_S     // Noise Floor
+				SPINEL_DATATYPE_UINT16_S,  // Flags
+				NULL,   // Ignore RSSI/TXPower
+				NULL,	// Ignore Noise Floor
+				&flags
+			);
+
+			__ASSERT_MACROS_check(ret > 0);
+
+			if ((flags & SPINEL_MD_FLAG_HAS_FCS) == SPINEL_MD_FLAG_HAS_FCS)
+			{
 				// FCS is zero.
 				frame_len -= 2;
-				packet.set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
+				packet.set_dlt(PCAP_DLT_IEEE802_15_4);
 			}
 
 			mPcapManager.push_packet(
@@ -1055,6 +1072,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		}
 	}
+
+bail:
 	process_event(EVENT_NCP_PROP_VALUE_IS, key, value_data_ptr, value_data_len);
 }
 
