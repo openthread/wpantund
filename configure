@@ -2610,7 +2610,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00-144-g66fe6f5
+SOURCE_VERSION=0.07.00-156-g66dbf15
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
