@@ -35,11 +35,9 @@ const char setprop_cmd_syntax[] = "[args] <property-name> <property-value>";
 static const arg_list_item_t setprop_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
-	{'d', "data", "hex", "Value is binary data (in hex)"},
-	{'s', "string", "string", "Value is a string"},
-	{'i', "integer", "integer", "Value is an integer"},
-	{'v', "value", "property-value",
-	 "Useful when the value starts with a '-'"},
+	{'d', "data", NULL, "Value is binary data (in hex)"},
+	{'s', "string", NULL, "Value is a string"},
+	{'v', "value", "property-value", "Useful when the value starts with a '-'"},
 	{0}
 };
 
@@ -58,7 +56,6 @@ int tool_cmd_setprop(int argc, char* argv[])
 	enum {
 		kPropertyType_String,
 		kPropertyType_Data,
-		kPropertyType_Integer,
 	} property_type = kPropertyType_String;
 
 	dbus_error_init(&error);
@@ -67,15 +64,14 @@ int tool_cmd_setprop(int argc, char* argv[])
 		static struct option long_options[] = {
 			{"help", no_argument, 0, 'h'},
 			{"timeout", required_argument, 0, 't'},
-			{"data", required_argument, 0, 'd'},
-			{"string", required_argument, 0, 's'},
-			{"integer", required_argument, 0, 'i'},
+			{"data", no_argument, 0, 'd'},
+			{"string", no_argument, 0, 's'},
 			{"value", required_argument, 0, 'v'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "ht:dsiv:", long_options,
+		c = getopt_long(argc, argv, "ht:dsv:", long_options,
 				&option_index);
 
 		if (c == -1)
@@ -94,20 +90,13 @@ int tool_cmd_setprop(int argc, char* argv[])
 
 		case 'd':
 			property_type = kPropertyType_Data;
-			property_value = optarg;
 			break;
 
 		case 's':
 			property_type = kPropertyType_String;
-			property_value = optarg;
 			break;
 
 		case 'v':
-			property_value = optarg;
-			break;
-
-		case 'i':
-			property_type = kPropertyType_Integer;
 			property_value = optarg;
 			break;
 		}
