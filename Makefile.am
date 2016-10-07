@@ -53,6 +53,7 @@ EXTRA_DIST =                           \
 	etc/build-in-docker.sh             \
 	etc/run-in-docker.sh               \
 	etc/wpantund.rb                    \
+	etc/autoandr/autoandr              \
 	m4/nl.m4                           \
 	$(NULL)
 

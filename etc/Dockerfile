@@ -40,6 +40,13 @@ RUN apt-get -y update \
 				gcc g++ \
 				pkg-config
 
+RUN apt-get -y update \
+	&& DEBIAN_FRONTEND=noninteractive \
+			apt-get install -y -q --no-install-recommends \
+				autoconf \
+				autoconf-archive \
+				automake
+
 ADD $CONNMAN_INCLUDE_ARCHIVE /
 
 RUN tar xvjf /connman-include.tar.bz2 -C / && rm /connman-include.tar.bz2

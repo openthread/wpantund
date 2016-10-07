@@ -17,36 +17,97 @@
 #
 
 LOGFILE=`mktemp -q /tmp/bootstrap.log.XXXXXX`
+BOOTSTRAP_ANDROID=0
+BOOTSTRAP_AUTOTOOLS=1
+SOURCE_DIR=$(cd `dirname $0` && pwd)
+AUTOANDR=${AUTOANDR-${SOURCE_DIR}/etc/autoandr/autoandr}
+AUTOMAKE="automake --foreign"
 
 die() {
+	local errcode=$?
+	local prog=$1
+	shift
+
 	echo " ***************************** "
-	cat "$LOGFILE"
+
+	[[ $prog == "autoreconf" ]] && cat "$LOGFILE"
+
 	echo ""
-	echo " *** $1 failed with error code $?"
+	if [[ $# -ge 1 ]]
+	then echo " *** $prog failed: \"$*\""
+	else echo " *** $prog failed with error code $errcode"
+	fi
+
 	exit 1
 }
 
-cd "`dirname "$0"`"
+while [ "$#" -ge 1 ]
+do
+	case $1 in
+		--all)
+			BOOTSTRAP_ANDROID=1
+			BOOTSTRAP_AUTOTOOLS=1
+			;;
 
-which autoreconf 1>/dev/null 2>&1 || {
-	echo " *** error: The 'autoreconf' command was not found."
-	echo "Use the appropriate command for your platform to install the package:"
-	echo ""
-	echo "Homebrew(OS X) ....... brew install libtool autoconf autoconf-archive"
-	echo "Debian/Ubuntu ........ apt-get install libtool autoconf autoconf-archive"
-	exit 1
-}
+		--android)
+			BOOTSTRAP_ANDROID=1
+			BOOTSTRAP_AUTOTOOLS=0
+			;;
 
-AUTOMAKE="automake --foreign" autoreconf --verbose --force --install 2>"$LOGFILE" || die autoreconf
+		--verbose)
+			LOGFILE=/dev/stderr
+			export V=1
+			;;
 
-grep -q AX_CHECK_ configure && {
-	echo " *** error: The 'autoconf-archive' package is not installed."
-	echo "Use the appropriate command for your platform to install the package:"
-	echo ""
-	echo "Homebrew(OS X) ....... brew install autoconf-archive"
-	echo "Debian/Ubuntu ........ apt-get install autoconf-archive"
-	exit 1
-}
+		*)
+			die bootstrap "Unknown argument: $1"
+			;;
+	esac
+	shift
+done
+
+
+if [ "$BOOTSTRAP_AUTOTOOLS" = 1 ]
+then
+	cd "${SOURCE_DIR}"
+
+	which autoreconf 1>/dev/null 2>&1 || {
+		echo " *** error: The 'autoreconf' command was not found."
+		echo "Use the appropriate command for your platform to install the package:"
+		echo ""
+		echo "Homebrew(OS X) ....... brew install libtool autoconf autoconf-archive"
+		echo "Debian/Ubuntu ........ apt-get install libtool autoconf autoconf-archive"
+		exit 1
+	}
+
+	autoreconf --verbose --force --install 2>"$LOGFILE" || die autoreconf
+
+	grep -q AX_CHECK_ configure && {
+		echo " *** error: The 'autoconf-archive' package is not installed."
+		echo "Use the appropriate command for your platform to install the package:"
+		echo ""
+		echo "Homebrew(OS X) ....... brew install autoconf-archive"
+		echo "Debian/Ubuntu ........ apt-get install autoconf-archive"
+		exit 1
+	}
+fi
+
+if [ "$BOOTSTRAP_ANDROID" = 1 ]
+then
+	cd "${SOURCE_DIR}"
+
+	AUTOANDR_STDOUT="$LOGFILE" \
+	$AUTOANDR start \
+		--disable-option-checking \
+		--enable-static-link-ncp-plugin \
+		--disable-shared \
+		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
+		CPPFLAGS="-Wno-date-time -Wno-unused-parameter" \
+		BOOST_CXXFLAGS="-Iexternal/boost" \
+		DBUS_CFLAGS="-Iexternal/dbus" \
+		DBUS_LIBS="-ldbus" \
+	|| die autoandr
+fi
 
 echo
 echo Success. Logs in '"'$LOGFILE'"'

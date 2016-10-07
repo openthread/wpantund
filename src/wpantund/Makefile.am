@@ -112,7 +112,7 @@ SOURCE_VERSION=$(shell                                            \
 
 BUILT_SOURCES  = $(top_builddir)/$(subdir)/version.c
 CLEANFILES     = $(top_builddir)/$(subdir)/version.c
-.INTERMEDIATE:   $(top_builddir)/$(subdir)/version.c wpantund-version.$(OBJEXT)
+.INTERMEDIATE:   wpantund-version.$(OBJEXT)
 
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@

@@ -57,56 +57,47 @@ AC_DEFUN([NL_EXPORT_DYNAMIC], [
 	AC_LANG_POP([C])
 ])
 
-AC_DEFUN([NL_CHECK_BOOST_NO_CXX11_RVALUE_REFERENCES], [
-	AC_MSG_CHECKING([necessity of BOOST_NO_CXX11_RVALUE_REFERENCES])
-	BOOST_NO_CXX11_RVALUE_REFERENCES=false
-	AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
-#if __APPLE__ && (__GNUC_LIBSTD__ <= 4) && (__GNUC_LIBSTD_MINOR__ <= 2)
-#error BOOST_NO_CXX11_RVALUE_REFERENCES needs to be set
-#endif
-	]])], [BOOST_NO_CXX11_RVALUE_REFERENCES=false], [BOOST_NO_CXX11_RVALUE_REFERENCES=true])
-	AM_CONDITIONAL([BOOST_NO_CXX11_RVALUE_REFERENCES],[$BOOST_NO_CXX11_RVALUE_REFERENCES])
-	AC_MSG_RESULT([$BOOST_NO_CXX11_RVALUE_REFERENCES])
-])
-
 AC_DEFUN([NL_CHECK_BOOST_SIGNALS2], [
 	AC_LANG_PUSH([C++])
 
 	AC_ARG_VAR([BOOST_CXXFLAGS], [C compiler flags for boost])
 	AC_ARG_VAR([BOOST_LIBS], [linker flags for boost])
 
-	# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
-	test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
+	if [ -z "${BOOST_CXXFLAGS}" ]
+	then
+		# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
+		test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
 
-	# Go ahead and add the BOOST_CXXFLAGS into CXXFLAGS for now.
-	nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
-	nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
-	CXXFLAGS="${BOOST_CXXFLAGS}"
-	CPPFLAGS="${BOOST_CXXFLAGS}"
+		# Go ahead and add the BOOST_CPPFLAGS into CFLAGS for now.
+		nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
+		nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
+		CXXFLAGS="${BOOST_CXXFLAGS}"
+		CPPFLAGS="${BOOST_CXXFLAGS}"
 
-	NL_CHECK_BOOST_NO_CXX11_RVALUE_REFERENCES
-	AC_CHECK_HEADERS([boost/signals2/signal.hpp], [$1],[
+		AC_CHECK_HEADERS([boost/signals2/signal.hpp], [$1],[
 
-		# Sometimes boost explicitly needs this flag to work.
-		AX_CHECK_COMPILE_FLAG([-std=c++11], [
-			CXXFLAGS="$CXXFLAGS -std=c++11"
-			CPPFLAGS="$CPPFLAGS -std=c++11"
-			BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
-		], [$2])
+			# Sometimes boost explicitly needs this flag to work.
+			AX_CHECK_COMPILE_FLAG([-std=c++11], [
+				CXXFLAGS="$CXXFLAGS -std=c++11"
+				CPPFLAGS="$CPPFLAGS -std=c++11"
+				BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
+			], [$2])
 
-		## Clear the cache entry we that we try again
-		unset ac_cv_header_boost_signals2_signal_hpp
+			## Clear the cache entry we that we try again
+			unset ac_cv_header_boost_signals2_signal_hpp
 
-		AC_CHECK_HEADERS([boost/signals2/signal.hpp], [$1], [$2])
-	])
+			AC_CHECK_HEADERS([boost/signals2/signal.hpp], [$1], [$2])
+		])
+
+		CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
+		unset nl_check_boost_signals2_CXXFLAGS
+
+		CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
+		unset nl_check_boost_signals2_CPPFLAGS
+	fi
+
 	AC_SUBST(BOOST_CXXFLAGS)
 	AC_SUBST(BOOST_LIBS)
-
-	CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
-	unset nl_check_boost_signals2_CXXFLAGS
-
-	CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
-	unset nl_check_boost_signals2_CPPFLAGS
 
 	AC_LANG_POP([C++])
 ])
