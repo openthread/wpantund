@@ -42,13 +42,13 @@ git checkout "${REF}" || die
 
 REV=`git describe --tags --always`
 
-./bootstrap.sh || die
+./bootstrap.sh --all || die
 
 find . -name autom4te.cache -print0 | xargs -0 rm -fr || die
 
 git add . -f || die
 git stash || die
-git checkout "${BASE}" || die
+git checkout "${BASE}" || git checkout -b "${BASE}" autoconf/master || die
 git rm . -f -r
 git stash pop || die
 
