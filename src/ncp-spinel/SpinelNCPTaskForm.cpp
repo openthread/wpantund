@@ -320,7 +320,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 	ret = mNextCommandRet;
 
-	require_noerr(ret, on_error);
+	require(ret == kWPANTUNDStatus_Ok || ret == kWPANTUNDStatus_Already, on_error);
 
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
