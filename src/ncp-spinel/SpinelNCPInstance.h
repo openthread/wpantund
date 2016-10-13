@@ -122,6 +122,8 @@ protected:
 
 	void start_new_task(const boost::shared_ptr<SpinelNCPTask> &task);
 
+	virtual bool is_busy(void);
+
 protected:
 
 	int vprocess_init(int event, va_list args);

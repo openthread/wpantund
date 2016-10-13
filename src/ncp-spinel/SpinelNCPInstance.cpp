@@ -268,7 +268,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 cms_t
 SpinelNCPInstance::get_ms_to_next_event(void)
 {
-	cms_t cms = EventHandler::get_ms_to_next_event();
+	cms_t cms = NCPInstanceBase::get_ms_to_next_event();
 
 	if (ncp_state_is_detached_from_ncp(get_ncp_state())) {
 		return CMS_DISTANT_FUTURE;
@@ -1345,6 +1345,14 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 		start_new_task(factory.finish());
 	}
 }
+
+bool
+SpinelNCPInstance::is_busy(void)
+{
+	return NCPInstanceBase::is_busy()
+		|| !mTaskQueue.empty();
+}
+
 
 void
 SpinelNCPInstance::process(void)

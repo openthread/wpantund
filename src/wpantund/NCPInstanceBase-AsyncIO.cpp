@@ -147,6 +147,10 @@ NCPInstanceBase::get_ms_to_next_event(void)
 		if (temp_cms < ret) {
 			ret = temp_cms;
 		}
+
+		if (ret > BUSY_DEBOUNCE_TIME_IN_MS && !is_busy()) {
+			ret = BUSY_DEBOUNCE_TIME_IN_MS;
+		}
 	}
 
 	if (ret < 0) {
