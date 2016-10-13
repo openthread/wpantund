@@ -1024,37 +1024,47 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_bool_t default_route = FALSE;
+	uint32_t preferred_lifetime = 0;
+	uint32_t valid_lifetime = 0;
+	uint8_t *prefix(NULL);
+	int prefix_len_in_bytes(0);
+	struct in6_addr address = {};
+	bool did_succeed(false);
 
-	dbus_message_ref(message);
-
-	dbus_bool_t defaultRoute = FALSE;
-	uint32_t preferredLifetime = 0;
-	uint32_t validLifetime = 0;
-	uint8_t *prefix = NULL;
-	int prefixLen = 0;
-
-	dbus_message_ref(message);
-	dbus_message_get_args(
+	did_succeed = dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_BOOLEAN, &defaultRoute,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefixLen,
-		DBUS_TYPE_UINT32, &preferredLifetime,
-		DBUS_TYPE_UINT32, &validLifetime,
+		DBUS_TYPE_BOOLEAN, &default_route,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
+		DBUS_TYPE_UINT32, &preferred_lifetime,
+		DBUS_TYPE_UINT32, &valid_lifetime,
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefixLen) {
-		prefix = NULL;
+	require(did_succeed, bail);
+	require(prefix_len_in_bytes <= sizeof(address), bail);
+	require(prefix_len_in_bytes >= 0, bail);
+
+	memcpy(address.s6_addr, prefix, prefix_len_in_bytes);
+
+	dbus_message_ref(message);
+
+	if (valid_lifetime == 0) {
+		interface->remove_on_mesh_prefix(
+			&address,
+			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
+		);
+	} else {
+		interface->add_on_mesh_prefix(
+			&address,
+			default_route,
+			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
+		);
 	}
 
-	interface->config_gateway(
-		defaultRoute,
-		prefix,
-		preferredLifetime,
-		validLifetime,
-		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
-	);
 	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 
 	return ret;
 }
@@ -1068,41 +1078,61 @@ DBusIPCAPI_v1::interface_route_add_handler(
 
 	dbus_message_ref(message);
 
-	uint8_t *route_prefix = NULL;
-	int prefix_len = 0;
-	uint16_t domain_id = 0;
-	int16_t priority_raw;
-	NCPControlInterface::ExternalRoutePriority priority;
+	uint8_t *route_prefix(NULL);
+	int prefix_len_in_bytes(0);
+	uint16_t domain_id(0);
+	int16_t priority_raw(0);
+	NCPControlInterface::ExternalRoutePriority priority(NCPControlInterface::ROUTE_MEDIUM_PREFERENCE);
+	uint8_t prefix_len_in_bits(0);
+	struct in6_addr address = {};
+	bool did_succeed(false);
 
-	dbus_message_ref(message);
-	dbus_message_get_args(
+	did_succeed = dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len_in_bytes,
 		DBUS_TYPE_UINT16, &domain_id,
 		DBUS_TYPE_INT16, &priority_raw,
+		DBUS_TYPE_BYTE, &prefix_len_in_bits,
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefix_len) {
-	   route_prefix = NULL;
+	if (!did_succeed) {
+		// Likely using the old syntax that doesn't include the prefix length in bits
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT16, &domain_id,
+			DBUS_TYPE_INT16, &priority_raw,
+			DBUS_TYPE_INVALID
+		);
+		prefix_len_in_bits = IPV6_PREFIX_BYTES_TO_BITS(prefix_len_in_bytes);
 	}
 
-	priority = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE;
+	require(did_succeed, bail);
+	require(prefix_len_in_bytes <= sizeof(address), bail);
+	require(prefix_len_in_bytes >= 0, bail);
+
+	memcpy(address.s6_addr, route_prefix, prefix_len_in_bytes);
+
 	if  (priority_raw > 0) {
 		priority = NCPControlInterface::ROUTE_HIGH_PREFERENCE;
 	} else if (priority_raw < 0) {
 		priority = NCPControlInterface::ROUTE_LOW_PREFRENCE;
 	}
 
+	dbus_message_ref(message);
+
 	interface->add_external_route(
-		route_prefix,
-		prefix_len,
+		&address,
+		prefix_len_in_bits,
 		domain_id,
 		priority,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 
 	return ret;
 }
@@ -1114,32 +1144,50 @@ DBusIPCAPI_v1::interface_route_remove_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	dbus_message_ref(message);
-
 	uint8_t *route_prefix = NULL;
-	int prefix_len = 0;
+	int prefix_len_in_bytes(0);
+	uint8_t prefix_len_in_bits(0);
 	uint16_t domain_id = 0;
+	struct in6_addr address = {};
+	bool did_succeed(false);
 
-	dbus_message_ref(message);
-	dbus_message_get_args(
+	did_succeed = dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len_in_bytes,
 		DBUS_TYPE_UINT16, &domain_id,
+		DBUS_TYPE_BYTE, &prefix_len_in_bits,
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefix_len) {
-		route_prefix = NULL;
+	if (!did_succeed) {
+		// Likely using the old syntax that doesn't include the prefix length in bits
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT16, &domain_id,
+			DBUS_TYPE_INVALID
+		);
+		prefix_len_in_bits = IPV6_PREFIX_BYTES_TO_BITS(prefix_len_in_bytes);
 	}
 
+	require(did_succeed, bail);
+	require(prefix_len_in_bytes <= sizeof(address), bail);
+	require(prefix_len_in_bytes >= 0, bail);
+
+	memcpy(address.s6_addr, route_prefix, prefix_len_in_bytes);
+
+	dbus_message_ref(message);
+
 	interface->remove_external_route(
-		route_prefix,
-		prefix_len,
+		&address,
+		prefix_len_in_bits,
 		domain_id,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 
 	return ret;
 }

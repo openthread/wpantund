@@ -634,6 +634,7 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 	uint32_t preferredLifetime = 0;
 	uint32_t validLifetime = 0;
 	uint8_t *prefix = NULL;
+	struct in6_addr addr = {};
 	int prefixLen = 0;
 
 	dbus_message_ref(message);
@@ -646,17 +647,24 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefixLen) {
-		prefix = NULL;
+	if (prefixLen > 16) {
+		prefixLen = 16;
 	}
 
-	interface->config_gateway(
-		defaultRoute,
-		prefix,
-		preferredLifetime,
-		validLifetime,
-		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
-	);
+	memcpy(addr.s6_addr, prefix, prefixLen);
+
+	if (validLifetime == 0) {
+		interface->remove_on_mesh_prefix(
+			&addr,
+			boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
+		);
+	} else {
+		interface->add_on_mesh_prefix(
+			&addr,
+			defaultRoute,
+			boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
+		);
+	}
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
 	return ret;
@@ -671,7 +679,8 @@ DBusIPCAPI_v0::interface_add_route_handler(
 
 	dbus_message_ref(message);
 
-	uint8_t *route_prefix = NULL;
+	uint8_t *prefix = NULL;
+	struct in6_addr addr = {};
 	int prefix_len = 0;
 	uint16_t domain_id = 0;
 	int16_t priority_raw;
@@ -680,15 +689,17 @@ DBusIPCAPI_v0::interface_add_route_handler(
 	dbus_message_ref(message);
 	dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len,
 		DBUS_TYPE_UINT16, &domain_id,
 		DBUS_TYPE_INT16, &priority_raw,
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefix_len) {
-	   route_prefix = NULL;
+	if (prefix_len > 16) {
+		prefix_len = 16;
 	}
+
+	memcpy(addr.s6_addr, prefix, prefix_len);
 
 	priority = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE;
 	if  (priority_raw > 0) {
@@ -698,8 +709,8 @@ DBusIPCAPI_v0::interface_add_route_handler(
 	}
 
 	interface->add_external_route(
-		route_prefix,
-		prefix_len,
+		&addr,
+		IPV6_PREFIX_BYTES_TO_BITS(prefix_len),
 		domain_id,
 		priority,
 		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1, message)
@@ -719,25 +730,28 @@ DBusIPCAPI_v0::interface_remove_route_handler(
 
 	dbus_message_ref(message);
 
-	uint8_t *route_prefix = NULL;
+	uint8_t *prefix = NULL;
+	struct in6_addr addr = {};
 	int prefix_len = 0;
 	uint16_t domain_id = 0;
 
 	dbus_message_ref(message);
 	dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len,
 		DBUS_TYPE_UINT16, &domain_id,
 		DBUS_TYPE_INVALID
 	);
 
-	if (0 == prefix_len) {
-		route_prefix = NULL;
+	if (prefix_len > 16) {
+		prefix_len = 16;
 	}
 
+	memcpy(addr.s6_addr, prefix, prefix_len);
+
 	interface->remove_external_route(
-		route_prefix,
-		prefix_len,
+		&addr,
+		IPV6_PREFIX_BYTES_TO_BITS(prefix_len),
 		domain_id,
 		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1, message)
 	);

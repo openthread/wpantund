@@ -60,6 +60,10 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 	uint32_t preferredLifetime = 0xFFFFFFFF;
 	uint32_t validLifetime = 0xFFFFFFFF;
 	const char* prefix = NULL;
+	uint8_t prefix_length = 64;
+	char address_string[INET6_ADDRSTRLEN] = "::";
+	uint8_t prefix_bytes[16] = {};
+	uint8_t *addr = prefix_bytes;
 
 	dbus_error_init(&error);
 
@@ -168,7 +172,6 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 		);
 
 		if(prefix) {
-			uint8_t prefix_bytes[16] = {};
 
 			// So the prefix could either be
 			// specified like an IPv6 address, or
@@ -201,24 +204,17 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 				}
 			}
 
-			fprintf(stderr, "Using prefix \"%s\"\n", prefix);
+			inet_ntop(AF_INET6, (const void *)&prefix_bytes, address_string, sizeof(address_string));
 
-			uint8_t *addr = prefix_bytes;
-			dbus_message_append_args(
-			    message,
-			    DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &addr, 8,
-			    DBUS_TYPE_INVALID
-			);
-		} else {
-			dbus_message_append_args(
-			    message,
-			    DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, "", 0,
-			    DBUS_TYPE_INVALID
-			);
+			fprintf(stderr, "Using prefix \"%s\"\n", address_string);
+
 		}
+
+		addr = prefix_bytes;
 
 		dbus_message_append_args(
 		    message,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &addr, 16,
 		    DBUS_TYPE_UINT32, &preferredLifetime,
 		    DBUS_TYPE_UINT32, &validLifetime,
 		    DBUS_TYPE_INVALID

@@ -118,25 +118,28 @@ public:
 	    CallbackWithStatus cb
 	) = 0;
 
-	virtual void config_gateway(
+	virtual void add_on_mesh_prefix(
+		const struct in6_addr *prefix,
 		bool defaultRoute,
-		const uint8_t prefix[8],
-		uint32_t preferredLifetime,
-		uint32_t validLifetime,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void remove_on_mesh_prefix(
+		const struct in6_addr *prefix,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 	virtual void add_external_route(
-		const uint8_t route[],
-		int route_prefix_len,
+		const struct in6_addr *prefix,
+		int prefix_len_in_bits,
 		int domain_id,
 		ExternalRoutePriority priority,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 	virtual void remove_external_route(
-		const uint8_t route[],
-		int route_prefix_len,
+		const struct in6_addr *prefix,
+		int prefix_len_in_bits,
 		int domain_id,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;

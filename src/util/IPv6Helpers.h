@@ -30,6 +30,14 @@
 
 #define MINIMUM_IPV6_PACKET_SIZE	40
 
+#define IPV6_MAX_PREFIX_LENGTH                  128
+#define IPV6_NETWORK_PREFIX_LENGTH              64
+
+#define IPV6_PREFIX_BITS_TO_BYTES(x)		((static_cast<uint8_t>(x)+7)/8)
+#define IPV6_PREFIX_BYTES_TO_BITS(x)		(static_cast<uint8_t>(x)*8)
+
+#define IPV6_MAX_LIFETIME					UINT32_MAX
+
 static inline bool
 operator==(const struct in6_addr &lhs, const struct in6_addr &rhs)
 {
@@ -59,5 +67,6 @@ std::string in6_addr_to_string(const struct in6_addr &addr);
 struct in6_addr make_slaac_addr_from_eui64(const uint8_t prefix[8], const uint8_t eui64[8]);
 
 void in6_addr_apply_mask(struct in6_addr &address, uint8_t mask);
+
 
 #endif
