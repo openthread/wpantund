@@ -998,7 +998,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			PcapPacket packet;
 			uint16_t flags = 0;
 
-			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
+			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
 
 			// Unpack the packet.
 			ret = spinel_datatype_unpack(
@@ -1027,11 +1027,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 			__ASSERT_MACROS_check(ret > 0);
 
-			if ((flags & SPINEL_MD_FLAG_HAS_FCS) == SPINEL_MD_FLAG_HAS_FCS)
+			if ((flags & SPINEL_MD_FLAG_TX) == SPINEL_MD_FLAG_TX)
 			{
-				// FCS is zero.
+				// Ignore FCS for transmitted packets
 				frame_len -= 2;
-				packet.set_dlt(PCAP_DLT_IEEE802_15_4);
+				packet.set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
 			}
 
 			mPcapManager.push_packet(
