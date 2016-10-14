@@ -253,7 +253,8 @@ PcapManager::close_fd_set(const std::set<int>& x)
 		std::set<int> copy(x);
 
 		close_fd_set(copy);
-	} else {
+
+	} else if (!x.empty()) {
 		std::set<int>::const_iterator iter;
 
 		for ( iter  = x.begin()
@@ -261,9 +262,11 @@ PcapManager::close_fd_set(const std::set<int>& x)
 			; ++iter
 		) {
 			const int fd = *iter;
+			syslog(LOG_INFO, "PcapManager::close_fd_set: Closing FD %d", fd);
 			close(fd);
 			mFDSet.erase(fd);
 		}
+		syslog(LOG_INFO, "PcapManager: %d pcap streams remaining", static_cast<int>(mFDSet.size()));
 	}
 }
 

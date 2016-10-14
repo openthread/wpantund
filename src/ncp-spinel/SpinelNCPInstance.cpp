@@ -1168,6 +1168,17 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 {
 	NCPInstanceBase::handle_ncp_state_change(new_ncp_state, old_ncp_state);
 
+	if ( ncp_state_is_joining_or_joined(old_ncp_state)
+	  && (new_ncp_state == OFFLINE)
+	) {
+		// Mark this as false so that if we are actually doing
+		// a pcap right now it will force the details to be updated
+		// on the NCP at the next run through the main loop. This
+		// allows us to go back to promiscuous-mode sniffing at
+		// disconnect
+		mIsPcapInProgress = false;
+	}
+
 	if (ncp_state_is_associated(new_ncp_state)
 	 && !ncp_state_is_associated(old_ncp_state)
 	) {
@@ -1359,7 +1370,7 @@ SpinelNCPInstance::process(void)
 {
 	NCPInstanceBase::process();
 
-	if (!is_initializing_ncp()) {
+	if (!is_initializing_ncp() && mTaskQueue.empty()) {
 		bool x = mPcapManager.is_enabled();
 
 		if (mIsPcapInProgress != x) {
@@ -1373,7 +1384,29 @@ SpinelNCPInstance::process(void)
 				mIsPcapInProgress
 			));
 
+			if (mIsPcapInProgress) {
+				factory.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_IF_UP,
+					true
+				));
+				if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
+					factory.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+						SPINEL_PROP_MAC_PROMISCUOUS_MODE,
+						SPINEL_MAC_PROMISCUOUS_MODE_FULL
+					));
+				}
+			} else {
+				factory.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+					SPINEL_PROP_MAC_PROMISCUOUS_MODE,
+					SPINEL_MAC_PROMISCUOUS_MODE_OFF
+				));
+			}
+
 			start_new_task(factory.finish());
+			NCPInstanceBase::process();
 		}
 	}
 }
