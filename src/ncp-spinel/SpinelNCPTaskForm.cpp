@@ -191,6 +191,17 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 	}
 
+	// Turn off promiscuous mode, if it happens to be on
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+		SPINEL_PROP_MAC_PROMISCUOUS_MODE,
+		SPINEL_MAC_PROMISCUOUS_MODE_OFF
+	);
+
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	check_noerr(ret);
+
 	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
@@ -320,7 +331,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 	ret = mNextCommandRet;
 
-	require_noerr(ret, on_error);
+	require(ret == kWPANTUNDStatus_Ok || ret == kWPANTUNDStatus_Already, on_error);
 
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),

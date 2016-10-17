@@ -139,6 +139,16 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 	}
 
+	// Turn off promiscuous mode, if it happens to be on
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+		SPINEL_PROP_MAC_PROMISCUOUS_MODE,
+		SPINEL_MAC_PROMISCUOUS_MODE_OFF
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	check_noerr(ret);
+
 	if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),

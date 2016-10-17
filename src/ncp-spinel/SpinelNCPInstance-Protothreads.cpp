@@ -443,6 +443,7 @@ on_error:
 		mFailureCount++;
 	} while (true);
 
+	mIsPcapInProgress = false;
 	mFailureCount = 0;
 	mResetIsExpected = false;
 	set_initializing_ncp(false);
