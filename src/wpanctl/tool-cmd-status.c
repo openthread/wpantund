@@ -107,6 +107,7 @@ int tool_cmd_status(int argc, char *argv[])
 		char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
 		ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
 		if (ret != 0) {
+			print_error_diagnosis(ret);
 			goto bail;
 		}
 		snprintf(path,
