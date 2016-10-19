@@ -406,6 +406,7 @@ EXTRA_DIST = \
 	etc/build-in-docker.sh             \
 	etc/run-in-docker.sh               \
 	etc/wpantund.rb                    \
+	etc/autoandr/autoandr              \
 	m4/nl.m4                           \
 	$(NULL)
 
@@ -891,3 +892,4 @@ uninstall-am:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+EXTRA_DIST += Android.mk etc/android/Android.mk etc/android/doxygen.cfg etc/android/src/Android.mk etc/android/src/config.h etc/android/src/ipc-dbus/Android.mk etc/android/src/ncp-spinel/Android.mk etc/android/src/wpanctl/Android.mk etc/android/src/wpanctl/version.c etc/android/src/wpantund/Android.mk etc/android/src/wpantund/version.c # Added by autoandr

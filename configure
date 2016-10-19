@@ -657,8 +657,6 @@ HAVE_LIBREADLINE_FALSE
 HAVE_LIBREADLINE_TRUE
 LIBREADLINE_CPPFLAGS
 LIBREADLINE_LIBS
-BOOST_NO_CXX11_RVALUE_REFERENCES_FALSE
-BOOST_NO_CXX11_RVALUE_REFERENCES_TRUE
 BOOST_LIBS
 BOOST_CXXFLAGS
 DBUS_DATADIR
@@ -2610,7 +2608,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00-164-g37d9bf2
+SOURCE_VERSION=0.07.00-166-gf83c0f5
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
@@ -18665,45 +18663,18 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-	# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
-	test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
+	if  -z "${BOOST_CXXFLAGS}"
+	then
+		# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
+		test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
 
-	# Go ahead and add the BOOST_CXXFLAGS into CXXFLAGS for now.
-	nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
-	nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
-	CXXFLAGS="${BOOST_CXXFLAGS}"
-	CPPFLAGS="${BOOST_CXXFLAGS}"
+		# Go ahead and add the BOOST_CPPFLAGS into CFLAGS for now.
+		nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
+		nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
+		CXXFLAGS="${BOOST_CXXFLAGS}"
+		CPPFLAGS="${BOOST_CXXFLAGS}"
 
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking necessity of BOOST_NO_CXX11_RVALUE_REFERENCES" >&5
-$as_echo_n "checking necessity of BOOST_NO_CXX11_RVALUE_REFERENCES... " >&6; }
-	BOOST_NO_CXX11_RVALUE_REFERENCES=false
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#if __APPLE__ && (__GNUC_LIBSTD__ <= 4) && (__GNUC_LIBSTD_MINOR__ <= 2)
-#error BOOST_NO_CXX11_RVALUE_REFERENCES needs to be set
-#endif
-
-_ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  BOOST_NO_CXX11_RVALUE_REFERENCES=false
-else
-  BOOST_NO_CXX11_RVALUE_REFERENCES=true
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-	 if $BOOST_NO_CXX11_RVALUE_REFERENCES; then
-  BOOST_NO_CXX11_RVALUE_REFERENCES_TRUE=
-  BOOST_NO_CXX11_RVALUE_REFERENCES_FALSE='#'
-else
-  BOOST_NO_CXX11_RVALUE_REFERENCES_TRUE='#'
-  BOOST_NO_CXX11_RVALUE_REFERENCES_FALSE=
-fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOST_NO_CXX11_RVALUE_REFERENCES" >&5
-$as_echo "$BOOST_NO_CXX11_RVALUE_REFERENCES" >&6; }
-
-	for ac_header in boost/signals2/signal.hpp
+		for ac_header in boost/signals2/signal.hpp
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "boost/signals2/signal.hpp" "ac_cv_header_boost_signals2_signal_hpp" "$ac_includes_default"
 if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
@@ -18714,8 +18685,8 @@ _ACEOF
 else
 
 
-		# Sometimes boost explicitly needs this flag to work.
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -std=c++11" >&5
+			# Sometimes boost explicitly needs this flag to work.
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -std=c++11" >&5
 $as_echo_n "checking whether C++ compiler accepts -std=c++11... " >&6; }
 if ${ax_cv_check_cxxflags___std_cpp11+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -18746,19 +18717,19 @@ fi
 $as_echo "$ax_cv_check_cxxflags___std_cpp11" >&6; }
 if test "x$ax_cv_check_cxxflags___std_cpp11" = xyes; then :
 
-			CXXFLAGS="$CXXFLAGS -std=c++11"
-			CPPFLAGS="$CPPFLAGS -std=c++11"
-			BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
+				CXXFLAGS="$CXXFLAGS -std=c++11"
+				CPPFLAGS="$CPPFLAGS -std=c++11"
+				BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
 
 else
   as_fn_error $? "Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost." "$LINENO" 5
 fi
 
 
-		## Clear the cache entry we that we try again
-		unset ac_cv_header_boost_signals2_signal_hpp
+			## Clear the cache entry we that we try again
+			unset ac_cv_header_boost_signals2_signal_hpp
 
-		for ac_header in boost/signals2/signal.hpp
+			for ac_header in boost/signals2/signal.hpp
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "boost/signals2/signal.hpp" "ac_cv_header_boost_signals2_signal_hpp" "$ac_includes_default"
 if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
@@ -18778,13 +18749,15 @@ fi
 done
 
 
+		CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
+		unset nl_check_boost_signals2_CXXFLAGS
+
+		CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
+		unset nl_check_boost_signals2_CPPFLAGS
+	fi
 
 
-	CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
-	unset nl_check_boost_signals2_CXXFLAGS
 
-	CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
-	unset nl_check_boost_signals2_CPPFLAGS
 
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -19774,10 +19747,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${VERBOSE_DEBUG_TRUE}" && test -z "${VERBOSE_DEBUG_FALSE}"; then
   as_fn_error $? "conditional \"VERBOSE_DEBUG\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BOOST_NO_CXX11_RVALUE_REFERENCES_TRUE}" && test -z "${BOOST_NO_CXX11_RVALUE_REFERENCES_FALSE}"; then
-  as_fn_error $? "conditional \"BOOST_NO_CXX11_RVALUE_REFERENCES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_LIBREADLINE_TRUE}" && test -z "${HAVE_LIBREADLINE_FALSE}"; then

@@ -488,9 +488,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/wpantund/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/wpantund/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign src/wpantund/Makefile
+	  $(AUTOMAKE) --gnu src/wpantund/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -1371,7 +1371,7 @@ uninstall-am: uninstall-pkgincludeHEADERS uninstall-sbinPROGRAMS \
 
 .PRECIOUS: Makefile
 
-.INTERMEDIATE:   $(top_builddir)/$(subdir)/version.c wpantund-version.$(OBJEXT)
+.INTERMEDIATE:   wpantund-version.$(OBJEXT)
 
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@
