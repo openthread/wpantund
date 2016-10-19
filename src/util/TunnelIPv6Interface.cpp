@@ -41,6 +41,10 @@
 
 #include <sys/select.h>
 
+#ifndef O_NONBLOCK
+#define O_NONBLOCK          O_NDELAY
+#endif
+
 TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int mtu):
 	UnixSocket(tunnel_open(interface_name.c_str()), true),
 	mInterfaceName(interface_name),
@@ -108,7 +112,7 @@ TunnelIPv6Interface::setup_signals()
 	require(status != -1, bail);
 
 	// Success!
-	IGNORE_RETURN_VALUE(fcntl(fd, F_SETFL, FNDELAY));
+	IGNORE_RETURN_VALUE(fcntl(fd, F_SETFL, O_NONBLOCK));
 
 	mNetlinkFD = fd;
 	fd = -1;

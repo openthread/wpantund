@@ -92,7 +92,7 @@ wpanctl_CPPFLAGS = \
 SOURCE_VERSION=$(shell git describe --dirty --always --match "[0-9].*" 2> /dev/null)
 BUILT_SOURCES  = $(top_builddir)/$(subdir)/version.c
 CLEANFILES = $(top_builddir)/$(subdir)/version.c
-.INTERMEDIATE: $(top_builddir)/$(subdir)/version.c wpanctl-version.$(OBJEXT)
+.INTERMEDIATE: wpanctl-version.$(OBJEXT)
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@
 wpanctl_SOURCES += $(top_builddir)/$(subdir)/version.c
