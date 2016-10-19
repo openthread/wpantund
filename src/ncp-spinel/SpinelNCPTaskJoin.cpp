@@ -121,6 +121,13 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 			}
 			isRouterRoleEnabled = false;
 
+		} else if (node_type == LURKER) {
+			if (!mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
+				ret = kWPANTUNDStatus_FeatureNotSupported;
+				goto on_error;
+			}
+			isRouterRoleEnabled = true;
+
 		} else {
 			ret = kWPANTUNDStatus_InvalidArgument;
 			goto on_error;
