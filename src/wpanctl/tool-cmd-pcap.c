@@ -40,12 +40,13 @@ const char pcap_cmd_syntax[] = "[args] <capture-file>";
 static const arg_list_item_t pcap_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
-	{'f', NULL, NULL, "Force use of stdout, even if it is a tty"},
+	{'f', NULL, NULL, "Allow packet capture to controlling TTY"},
 	{0}
 };
 
 
-static int do_pcap_to_fd(int fd, int timeout, DBusError *error)
+static int
+do_pcap_to_fd(int fd, int timeout, DBusError *error)
 {
 	int ret = ERRORCODE_UNKNOWN;
 	DBusConnection *connection = NULL;
@@ -56,7 +57,7 @@ static int do_pcap_to_fd(int fd, int timeout, DBusError *error)
 
 	connection = dbus_bus_get(DBUS_BUS_STARTER, error);
 
-	if (!connection) {
+	if (connection == NULL) {
 		if (error != NULL) {
 			dbus_error_free(error);
 			dbus_error_init(error);
@@ -126,6 +127,36 @@ bail:
 	return ret;
 }
 
+//! Checks to see if the given FD is the controlling TTY.
+bool
+is_descriptor_ctty(int fd)
+{
+	bool ret = false;
+
+	if (isatty(fd)) {
+		char tty_name_copy[L_ctermid] = "";
+		const char *tty_name = ttyname(fd);
+
+		if (tty_name == NULL) {
+			goto bail;
+		}
+
+		// Just use snprintf as a safe string copy.
+		// It is more portable than strlcpy and we don't care about
+		// performance in this context.
+		snprintf(tty_name_copy, sizeof(tty_name_copy), "%s", tty_name);
+
+		if (NULL == (tty_name = ttyname(STDIN_FILENO))) {
+			goto bail;
+		}
+
+		ret = (0 == strcmp(tty_name_copy, tty_name));
+	}
+
+bail:
+	return ret;
+}
+
 int
 tool_cmd_pcap(int argc, char *argv[])
 {
@@ -135,7 +166,8 @@ tool_cmd_pcap(int argc, char *argv[])
 
 	int fd_out = -1;
 	int fd_pair[2] = { -1, -1 };
-	bool force_stdout = false;
+	bool force_ctty = false;
+	bool stdout_was_closed = false;
 
 	DBusError error;
 
@@ -165,13 +197,22 @@ tool_cmd_pcap(int argc, char *argv[])
 			goto bail;
 
 		case 'f':
-			force_stdout = true;
+			force_ctty = true;
 			break;
 
 		case 't':
 			timeout = strtol(optarg, NULL, 0);
 			break;
 		}
+	}
+
+	// We use a socket pair for the socket we hand to wpantund,
+	// so that the termination of this process will stop packet
+	// capture.
+	if (socketpair(PF_UNIX, SOCK_DGRAM, 0, fd_pair) < 0) {
+		perror("socketpair");
+		ret = ERRORCODE_UNKNOWN;
+		goto bail;
 	}
 
 	if (optind < argc) {
@@ -184,8 +225,8 @@ tool_cmd_pcap(int argc, char *argv[])
 	} else {
 		// Capture packets to stdout
 
-		if (!force_stdout && isatty(STDOUT_FILENO)) {
-			fprintf(stderr, "%s: error: Cowardly refusing write binary data to stdout tty\n", argv[0]);
+		if (!force_ctty && is_descriptor_ctty(STDOUT_FILENO)) {
+			fprintf(stderr, "%s: error: Cowardly refusing write binary data to controlling tty, use -f to override\n", argv[0]);
 			ret = ERRORCODE_REFUSED;
 			goto bail;
 		}
@@ -193,6 +234,7 @@ tool_cmd_pcap(int argc, char *argv[])
 		// Update fd_out, close the original stdout.
 		fd_out = dup(STDOUT_FILENO);
 		close(STDOUT_FILENO);
+		stdout_was_closed = true;
 	}
 
 	if (optind < argc) {
@@ -214,15 +256,6 @@ tool_cmd_pcap(int argc, char *argv[])
 			strerror(errno)
 		);
 		ret = ERRORCODE_BADARG;
-		goto bail;
-	}
-
-	// We use a socket pair for the socket we hand to wpantund,
-	// so that the termination of this process will stop packet
-	// capture.
-	if (socketpair(PF_UNIX, SOCK_DGRAM, 0, fd_pair) < 0) {
-		perror("socketpair");
-		ret = ERRORCODE_UNKNOWN;
 		goto bail;
 	}
 
@@ -295,6 +328,10 @@ bail:
 	close(fd_pair[1]);
 
 	dbus_error_free(&error);
+
+	if (stdout_was_closed) {
+		exit (ret);
+	}
 
 	return ret;
 }
