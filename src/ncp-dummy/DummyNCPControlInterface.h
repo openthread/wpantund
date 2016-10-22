@@ -84,9 +84,31 @@ public:
 	    const std::string&                      key,
 	    const boost::any&                       value,
 	    CallbackWithStatus      cb);
-	virtual void config_gateway(bool defaultRoute, const uint8_t prefix[8], uint32_t preferredLifetime, uint32_t validLifetime, CallbackWithStatus cb = NilReturn());
-	virtual void add_external_route(const uint8_t route[], int route_prefix_len, int domain_id, ExternalRoutePriority priority, CallbackWithStatus);
-	virtual void remove_external_route(const uint8_t route[], int route_prefix_len, int domain_id, CallbackWithStatus cb);
+	virtual void add_on_mesh_prefix(
+		const struct in6_addr *prefix,
+		bool defaultRoute,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void remove_on_mesh_prefix(
+		const struct in6_addr *prefix,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void add_external_route(
+		const struct in6_addr *prefix,
+		int prefix_len_in_bits,
+		int domain_id,
+		ExternalRoutePriority priority,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void remove_external_route(
+		const struct in6_addr *prefix,
+		int prefix_len_in_bits,
+		int domain_id,
+		CallbackWithStatus cb = NilReturn()
+	);
 
 	virtual void data_poll(CallbackWithStatus cb = NilReturn());
 	virtual void host_did_wake(CallbackWithStatus cb = NilReturn());

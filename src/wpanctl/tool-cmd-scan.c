@@ -267,6 +267,7 @@ int tool_cmd_scan(int argc, char *argv[])
 		ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
 
 		if (ret != 0) {
+			print_error_diagnosis(ret);
 			goto bail;
 		}
 

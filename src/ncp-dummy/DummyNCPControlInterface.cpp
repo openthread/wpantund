@@ -131,22 +131,41 @@ DummyNCPControlInterface::data_poll(CallbackWithStatus cb)
 }
 
 void
-DummyNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefix[8], uint32_t preferredLifetime, uint32_t validLifetime, CallbackWithStatus cb)
-{
-	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Send config gateway command
+DummyNCPControlInterface::add_on_mesh_prefix(
+	const struct in6_addr *prefix,
+	bool defaultRoute,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 void
-DummyNCPControlInterface::add_external_route(const uint8_t *route, int route_prefix_len, int domain_id,
-	ExternalRoutePriority priority, CallbackWithStatus cb)
-{
-	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Send add external route command
+DummyNCPControlInterface::remove_on_mesh_prefix(
+	const struct in6_addr *prefix,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 void
-DummyNCPControlInterface::remove_external_route(const uint8_t *route, int route_prefix_len, int domain_id, CallbackWithStatus cb)
-{
-	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Send remove external route command
+DummyNCPControlInterface::add_external_route(
+	const struct in6_addr *prefix,
+	int prefix_len_in_bits,
+	int domain_id,
+	ExternalRoutePriority priority,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::remove_external_route(
+	const struct in6_addr *prefix,
+	int prefix_len_in_bits,
+	int domain_id,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 void

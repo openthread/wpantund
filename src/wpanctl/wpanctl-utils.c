@@ -323,7 +323,7 @@ bail:
 int
 lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 {
-	int ret = ERRORCODE_NOTFOUND;
+	int ret = kWPANTUNDStatus_InterfaceNotFound;
 	int i;
 	int timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
 	DBusConnection* connection = NULL;
@@ -454,6 +454,7 @@ wpantund_status_to_cstr(int status)
 	case kWPANTUNDStatus_TryAgainLater: return "TryAgainLater";
 	case kWPANTUNDStatus_InvalidRange: return "InvalidRange";
 	case kWPANTUNDStatus_MissingXPANID: return "MissingXPANID";
+	case kWPANTUNDStatus_InterfaceNotFound: return "InterfaceNotFound";
 	default: break;
 	}
 	return "";
@@ -462,6 +463,16 @@ wpantund_status_to_cstr(int status)
 void print_error_diagnosis(int error)
 {
 	switch(error) {
+	case kWPANTUNDStatus_InterfaceNotFound:
+		fprintf(stderr, "\nDIAGNOSIS: The requested operation can't be completed because the given\n"
+						"network interface doesn't exist or it isn't managed by wpantund. If you are\n"
+						"using wpanctl in interactive mode, you can use the `ls` command to get a list\n"
+						"of valid interfaces and use the `cd` command to select a valid interface.\n"
+						"Otherwise, use the `-I` argument to wpanctl to select a valid interface.\n"
+						"\n"
+		);
+		break;
+
 	case kWPANTUNDStatus_Busy:
 	case -EBUSY:
 		fprintf(stderr, "\nDIAGNOSIS: The requested operation can't be completed because the NCP\n"

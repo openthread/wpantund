@@ -109,13 +109,8 @@ static int do_pcap_to_fd(int fd, int timeout, DBusError *error)
 		DBUS_TYPE_INVALID
 	);
 
-	if (ret) {
-		fprintf(stderr, "pcap: failed with error %d. %s\n", ret, wpantund_status_to_cstr(ret));
-		print_error_diagnosis(ret);
-		goto bail;
-	}
-
 bail:
+
 	if (connection) {
 		dbus_connection_unref(connection);
 	}
@@ -285,6 +280,11 @@ tool_cmd_pcap(int argc, char *argv[])
 	fprintf(stderr, "%s: Capture terminated\n", argv[0]);
 
 bail:
+
+	if (ret) {
+		fprintf(stderr, "pcap: failed with error %d. %s\n", ret, wpantund_status_to_cstr(ret));
+		print_error_diagnosis(ret);
+	}
 
 	// Clean up.
 

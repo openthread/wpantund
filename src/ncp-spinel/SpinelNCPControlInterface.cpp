@@ -181,20 +181,16 @@ SpinelNCPControlInterface::data_poll(CallbackWithStatus cb)
 }
 
 void
-SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefix[8], uint32_t preferredLifetime, uint32_t validLifetime, CallbackWithStatus cb)
-{
-	struct in6_addr addr = {};
+SpinelNCPControlInterface::add_on_mesh_prefix(
+	const struct in6_addr *prefix,
+	bool defaultRoute,
+	CallbackWithStatus cb
+) {
 	uint8_t flags = 0;
+	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
 
-	if (!prefix) {
-		cb(kWPANTUNDStatus_InvalidArgument);
-		return;
-	}
-
-	if (!mNCPInstance->mEnabled) {
-		cb(kWPANTUNDStatus_InvalidWhenDisabled);
-		return;
-	}
+	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
 	if (defaultRoute) {
 		flags |= SPINEL_NET_FLAG_DEFAULT_ROUTE;
@@ -202,58 +198,78 @@ SpinelNCPControlInterface::config_gateway(bool defaultRoute, const uint8_t prefi
 
 	flags |= SPINEL_NET_FLAG_PREFERRED | SPINEL_NET_FLAG_SLAAC | SPINEL_NET_FLAG_ON_MESH;
 
-	memcpy(addr.s6_addr, prefix, 8);
+	factory.set_callback(cb);
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 
-	if (validLifetime == 0) {
-		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-				.set_callback(cb)
-				.add_command(SpinelPackData(
-					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-						SPINEL_DATATYPE_IPv6ADDR_S
-						SPINEL_DATATYPE_UINT8_S
-						SPINEL_DATATYPE_BOOL_S
-						SPINEL_DATATYPE_UINT8_S
-					),
-					SPINEL_PROP_THREAD_ON_MESH_NETS,
-					&addr,
-					64,
-					true,
-					flags
-				))
-				.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-			)
-		));
-	} else {
-		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-				.set_callback(cb)
-				.add_command(SpinelPackData(
-					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-						SPINEL_DATATYPE_IPv6ADDR_S
-						SPINEL_DATATYPE_UINT8_S
-						SPINEL_DATATYPE_BOOL_S
-						SPINEL_DATATYPE_UINT8_S
-					),
-					SPINEL_PROP_THREAD_ON_MESH_NETS,
-					&addr,
-					64,
-					true,
-					flags
-				))
-				.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-			)
-		));
-	}
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_ON_MESH_NETS,
+		prefix,
+		IPV6_NETWORK_PREFIX_LENGTH,
+		true,
+		flags
+	));
+
+	mNCPInstance->start_new_task(factory.finish());
+
+bail:
+	return;
 }
 
 void
-SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_prefix_len, int domain_id,
-	ExternalRoutePriority priority, CallbackWithStatus cb)
-{
-    const static int kPreferenceOffset = 6;
-	struct in6_addr addr = {};
+SpinelNCPControlInterface::remove_on_mesh_prefix(
+	const struct in6_addr *prefix,
+	CallbackWithStatus cb
+) {
 	uint8_t flags = 0;
+	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
+
+	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+
+	factory.set_callback(cb);
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_ON_MESH_NETS,
+		prefix,
+		IPV6_NETWORK_PREFIX_LENGTH,
+		true,
+		flags
+	));
+
+	mNCPInstance->start_new_task(factory.finish());
+
+bail:
+	return;
+}
+
+void
+SpinelNCPControlInterface::add_external_route(
+	const struct in6_addr *prefix,
+	int prefix_len_in_bits,
+	int domain_id,
+	ExternalRoutePriority priority,
+	CallbackWithStatus cb
+) {
+    const static int kPreferenceOffset = 6;
+	uint8_t flags = 0;
+
+	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len_in_bits >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len_in_bits <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
 	switch (priority) {
 	case ROUTE_HIGH_PREFERENCE:
@@ -269,60 +285,62 @@ SpinelNCPControlInterface::add_external_route(const uint8_t *route, int route_pr
 		break;
 	}
 
-	memcpy(addr.s6_addr, route, route_prefix_len);
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+		.set_callback(cb)
+		.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_BOOL_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			SPINEL_PROP_THREAD_LOCAL_ROUTES,
+			prefix,
+			prefix_len_in_bits,
+			true,
+			flags
+		))
+		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
+		.finish()
+	);
 
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-			.set_callback(cb)
-			.add_command(SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_IPv6ADDR_S
-					SPINEL_DATATYPE_UINT8_S
-					SPINEL_DATATYPE_BOOL_S
-					SPINEL_DATATYPE_UINT8_S
-				),
-				SPINEL_PROP_THREAD_LOCAL_ROUTES,
-				&addr,
-				route_prefix_len*8, // because route_prefix_len is in bytes
-				true,
-				flags
-			))
-			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-		)
-	));
+bail:
+	return;
 }
 
 void
-SpinelNCPControlInterface::remove_external_route(const uint8_t *route, int route_prefix_len, int domain_id, CallbackWithStatus cb)
-{
-	struct in6_addr addr = {};
+SpinelNCPControlInterface::remove_external_route(
+	const struct in6_addr *prefix,
+	int prefix_len_in_bits,
+	int domain_id,
+	CallbackWithStatus cb
+) {
+	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len_in_bits >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len_in_bits <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
-	if (route_prefix_len > sizeof(addr)) {
-		cb(kWPANTUNDStatus_InvalidArgument);
-		return;
-	}
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+		.set_callback(cb)
+		.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_BOOL_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			SPINEL_PROP_THREAD_LOCAL_ROUTES,
+			prefix,
+			prefix_len_in_bits,
+			true,
+			0
+		))
+		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
+		.finish()
+	);
 
-	memcpy(addr.s6_addr, route, route_prefix_len);
-
-	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
-		new SpinelNCPTaskSendCommand(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-			.set_callback(cb)
-			.add_command(SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-					SPINEL_DATATYPE_IPv6ADDR_S
-					SPINEL_DATATYPE_UINT8_S
-					SPINEL_DATATYPE_BOOL_S
-					SPINEL_DATATYPE_UINT8_S
-				),
-				SPINEL_PROP_THREAD_LOCAL_ROUTES,
-				&addr,
-				route_prefix_len*8, // because route_prefix_len is in bytes
-				true,
-				0
-			))
-			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-		)
-	));
+bail:
+	return;
 }
 
 void

@@ -61,6 +61,8 @@ typedef enum {
 
 	kWPANTUNDStatus_NCP_Reset                     = 27,
 
+	kWPANTUNDStatus_InterfaceNotFound             = 28,
+
 	kWPANTUNDStatus_NCPError_First = 0xEA0000,
 	kWPANTUNDStatus_NCPError_Last = 0xEAFFFF,
 } wpantund_status_t;
