@@ -1335,9 +1335,8 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 void
 SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_len)
 {
-	if (is_address_known(addr)) {
+	if (mPrimaryInterface->is_online() && is_address_known(addr)) {
 		SpinelNCPTaskSendCommand::Factory factory(this);
-		NCPInstanceBase::address_was_removed(addr, prefix_len);
 
 		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 
@@ -1355,6 +1354,8 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 
 		start_new_task(factory.finish());
 	}
+
+	NCPInstanceBase::address_was_removed(addr, prefix_len);
 }
 
 bool
