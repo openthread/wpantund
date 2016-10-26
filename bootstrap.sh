@@ -106,6 +106,7 @@ then
 		BOOST_CXXFLAGS="-Iexternal/boost" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
 		DBUS_LIBS="-ldbus" \
+		ac_cv_func_getdtablesize=no \
 	|| die autoandr
 fi
 

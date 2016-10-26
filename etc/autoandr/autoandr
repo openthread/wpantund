@@ -38,8 +38,8 @@ AUTOANDR_MAKE_FLAGS=
 
 if [ -t 1 ]
 then
-	export ESC_BOLD=${ESC_BOLD-`printf '\033[0;1m'`}
-	export ESC_NORMAL=${ESC_NORMAL-`printf '\033[0m'`}
+	export ESC_BOLD=${ESC_BOLD-`printf '\033[0;1m'`} # '
+	export ESC_NORMAL=${ESC_NORMAL-`printf '\033[0m'`} # '
 fi
 
 export AUTOANDR_DIR=${AUTOANDR_DIR-`cd "$(dirname $0)" && pwd`}
@@ -183,7 +183,7 @@ androidmake_prep() {
 		if [[ "$(cd $BUILD_DIR/.. && pwd)" != "${parentdir}" ]] && [[ "${SOURCE_DIR}" != "${parentdir}" ]] && [[ "${SOURCE_DIR}" != "${localpath}" ]]
 		then
 			(cd .. && androidmake_prep)
-			echo 'include $(NDK_PROJECT_PATH)/'$(cd ${SOURCE_DIR} && rel_path $localpath)'/Android.mk' >> ../Android.mk
+			grep -q all-subdir-makefiles ../Android.mk || echo 'include $(call all-subdir-makefiles)' >> ../Android.mk
 		fi
 	fi
 }
@@ -199,19 +199,19 @@ androidmake_object_begin() {
 # Arguments: <c-flags>
 androidmake_object_cflags() {
 	[ "${ANDROIDMAKE_OBJECT_NAME}" != "" ] || die "Internal error"
-	echo "$*" >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_CFLAGS_SUFFIX}
+	echo $* >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_CFLAGS_SUFFIX}
 }
 
 # Arguments: <c++-features>
 androidmake_object_cxx_features() {
 	[ "${ANDROIDMAKE_OBJECT_NAME}" != "" ] || die "Internal error"
-	echo "$*" >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_CXX_FEATURES_SUFFIX}
+	echo $* >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_CXX_FEATURES_SUFFIX}
 }
 
 # Arguments: <header-include-paths>
 androidmake_object_include_paths() {
 	[ "${ANDROIDMAKE_OBJECT_NAME}" != "" ] || die "Internal error"
-	echo "$*" >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_INCLUDEPATH_SUFFIX}
+	echo $* >> "${ANDROIDMAKE_OBJECT_NAME}"${AUTOANDR_INCLUDEPATH_SUFFIX}
 }
 
 androidmake_object_end() {
@@ -344,7 +344,11 @@ handle_cc() {
 					;;
 
 				-frtti|-fexceptions)
-					CXX_FEATURES="${CXX_FEATURES} ${1:2}"
+					# For some reason, the LOCAL_CPP_FEATURES
+					# variable doesn't seem to be working, so
+					# we just pass these as normal CFLAGS.
+					#CXX_FEATURES="${CXX_FEATURES} ${1:2}"
+					CFLAGS="${CFLAGS} $1"
 					;;
 
 				-Werror)
