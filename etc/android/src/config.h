@@ -167,7 +167,7 @@
 #define PREFIX "/usr/local"
 
 /* Source version */
-#define SOURCE_VERSION "0.07.00-166-gf83c0f5"
+#define SOURCE_VERSION "0.07.00-175-g3875bbe"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
