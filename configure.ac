@@ -195,6 +195,9 @@ NL_CHECK_CONNMAN([
 ])
 AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" = "xyes"])
 
+
+AM_CONDITIONAL([HOST_IS_LINUX],[(case "${host_os}" in *linux*) true ;; *) false ;; esac)])
+
 building_ncp_plugins=""
 
 m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[

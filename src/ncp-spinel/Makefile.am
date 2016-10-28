@@ -39,9 +39,16 @@ EXTRA_DIST =                                         \
 	../../third_party/openthread/src/ncp/PROTOCOL.md \
 	../../third_party/openthread/src/ncp/spinel.c    \
 	../../third_party/openthread/src/ncp/spinel.h    \
+	../../third_party/openthread/tools/spi-hdlc-adapter/README.md          \
+	../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c \
 	$(NULL)
 
 if BUILD_PLUGIN_NCP_SPINEL
+
+if HOST_IS_LINUX
+bin_PROGRAMS = spi-hdlc-adapter
+spi_hdlc_adapter_SOURCES = ../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c
+endif
 
 # Work around the omnipotent automake nanny-state.
 mypkglibexecdir = $(pkglibexecdir)
