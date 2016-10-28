@@ -645,6 +645,8 @@ STATIC_LINK_NCP_PLUGIN_FALSE
 STATIC_LINK_NCP_PLUGIN_TRUE
 EXPORT_DYNAMIC_LDFLAGS
 LIBDL_LIBS
+HOST_IS_LINUX_FALSE
+HOST_IS_LINUX_TRUE
 BUILD_CONNMAN_PLUGIN_FALSE
 BUILD_CONNMAN_PLUGIN_TRUE
 GLIB_LIBS
@@ -2608,7 +2610,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00-175-g3875bbe
+SOURCE_VERSION=0.07.00-177-g0b70ed2
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
@@ -19336,6 +19338,16 @@ else
 fi
 
 
+
+ if (case "${host_os}" in *linux*) true ;; *) false ;; esac); then
+  HOST_IS_LINUX_TRUE=
+  HOST_IS_LINUX_FALSE='#'
+else
+  HOST_IS_LINUX_TRUE='#'
+  HOST_IS_LINUX_FALSE=
+fi
+
+
 building_ncp_plugins=""
 
 
@@ -19759,6 +19771,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_CONNMAN_PLUGIN_TRUE}" && test -z "${BUILD_CONNMAN_PLUGIN_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_CONNMAN_PLUGIN\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HOST_IS_LINUX_TRUE}" && test -z "${HOST_IS_LINUX_FALSE}"; then
+  as_fn_error $? "conditional \"HOST_IS_LINUX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${STATIC_LINK_NCP_PLUGIN_TRUE}" && test -z "${STATIC_LINK_NCP_PLUGIN_FALSE}"; then
