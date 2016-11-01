@@ -63,7 +63,7 @@ AC_DEFUN([NL_CHECK_BOOST_SIGNALS2], [
 	AC_ARG_VAR([BOOST_CXXFLAGS], [C compiler flags for boost])
 	AC_ARG_VAR([BOOST_LIBS], [linker flags for boost])
 
-	if [ -z "${BOOST_CXXFLAGS}" ]
+	if test -z "${BOOST_CXXFLAGS}"
 	then
 		# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
 		test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
