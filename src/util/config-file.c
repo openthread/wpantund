@@ -47,27 +47,28 @@
 #define strcaseequal(x, y)   (strcasecmp(x, y) == 0)
 
 char*
-get_next_arg(
-    char *buf, char **rest
-    )
+get_next_arg(char *buf, char **rest)
 {
 	char* ret = NULL;
+	char quote_type = 0;
+	char* write_iter = NULL;
 
-	while (*buf && isspace(*buf)) buf++;
+	// Trim whitespace
+	while (isspace(*buf)) {
+		buf++;
+	};
 
-	if (!*buf || *buf == '#') {
+	// Skip if we are empty or the start of a comment.
+	if ((*buf == 0) || (*buf == '#')) {
 		goto bail;
 	}
 
-	ret = buf;
+	write_iter = ret = buf;
 
-	char quote_type = 0;
-	char* write_iter = ret;
-
-	while (isspace(*buf)) { buf++; };
-
-	while (*buf) {
+	while (*buf != 0) {
 		if (quote_type != 0) {
+			// We are in the middle of a quote, so we are
+			// looking for matching end of the quote.
 			if (*buf == quote_type) {
 				quote_type = 0;
 				buf++;
@@ -79,13 +80,17 @@ get_next_arg(
 				continue;
 			}
 
+			// Stop parsing arguments if we hit unquoted whitespace.
 			if (isspace(*buf)) {
 				buf++;
 				break;
 			}
 		}
 
-		if (buf[0] == '\\' && buf[1]) buf++;
+		// Allow for slash-escaping
+		if ((buf[0] == '\\') && (buf[1] != 0)) {
+			buf++;
+		}
 
 		*write_iter++ = *buf++;
 	}
@@ -93,8 +98,9 @@ get_next_arg(
 	*write_iter = 0;
 
 bail:
-	if (rest)
+	if (rest) {
 		*rest = buf;
+	}
 	return ret;
 }
 

@@ -1231,6 +1231,8 @@ int main(int argc, char *argv[])
     static fd_set error_set;
     struct timeval timeout;
     int max_fd = -1;
+    bool did_print_rate_limit_log = false;
+
     enum {
         ARG_SPI_MODE = 1001,
         ARG_SPI_SPEED = 1002,
@@ -1493,13 +1495,19 @@ int main(int argc, char *argv[])
         {
             // We are being rate-limited by the NCP.
             timeout_ms = SPI_POLL_PERIOD_MSEC;
-            syslog(LOG_INFO, "Rate limiting transactions");
+
+            if (!did_print_rate_limit_log) {
+                // Avoid printing out this message over and over.
+                syslog(LOG_INFO, "NCP is rate limiting transactions");
+                did_print_rate_limit_log = true;
+            }
         }
         else
         {
             // We have data to send to the slave. Unless we
             // are being rate-limited, proceed immediately.
             timeout_ms = 0;
+            did_print_rate_limit_log = false;
         }
 
         if (sSpiRxPayloadSize != 0)

@@ -151,6 +151,13 @@ AC_DEFINE_UNQUOTED([PKGLIBEXECDIR], ["`eval eval eval echo "$pkglibexecdir"`"], 
 
 AC_DEFINE_UNQUOTED([SOURCE_VERSION], ["`eval echo "$SOURCE_VERSION"`"], [Source version])
 
+if test "${TUNNEL_TUNTAP_DEVICE+set}" = "set"
+then AC_DEFINE_UNQUOTED([TUNNEL_TUNTAP_DEVICE], ["$TUNNEL_TUNTAP_DEVICE"], [Path to tuntap device])
+fi
+if test "${SOCKET_UTILS_DEFAULT_SHELL+set}" = "set"
+then AC_DEFINE_UNQUOTED([SOCKET_UTILS_DEFAULT_SHELL], ["$SOCKET_UTILS_DEFAULT_SHELL"], [Default path to a shell])
+fi
+
 AC_PROG_CC([],[AC_MSG_ERROR(["A working C compiler is required"])])
 AC_PROG_CXX([],[AC_MSG_ERROR(["A working C++ compiler is required"])])
 

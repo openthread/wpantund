@@ -188,7 +188,7 @@ FirmwareUpgrade::set_firmware_upgrade_command(const std::string& command)
 		if (0 == pid)
 		{
 			// Set the shell environment variable if it isn't set already.
-			setenv("SHELL","/bin/sh",0);
+			setenv("SHELL",SOCKET_UTILS_DEFAULT_SHELL,0);
 
 			while ((ferror(stdin) == 0) && (feof(stdin) == 0)) {
 				int c;
@@ -294,7 +294,7 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 		if (0 == pid)
 		{
 			// Set the shell environment variable if it isn't set already.
-			setenv("SHELL","/bin/sh",0);
+			setenv("SHELL",SOCKET_UTILS_DEFAULT_SHELL,0);
 
 			while ((ferror(stdin) == 0) && (feof(stdin) == 0)) {
 				int ret;
