@@ -62,6 +62,12 @@ using namespace wpantund;
 // Maximum allowed period for auto log (value is in min)
 #define STAT_COLLECTOR_AUTO_LOG_MAX_PERIOD		  (60 * 24 * 7 * 2) // Two weeks
 
+// Default period (in min) for retrieving and logging counters
+#define STAT_COLLECTOR_COUNTER_LOG_PERIOD_IN_MIN  15   //  15 min
+
+// Log level for the counter logs
+#define STAT_COLLECTOR_COUNTER_LOG_LEVEL          LOG_NOTICE
+
 // Time stamp constants
 #define TIMESTAMP_ONE_SEC_IN_MS           ((int32_t)1000)
 #define TIMESTAMP_ONE_MIN_IN_MS           (TIMESTAMP_ONE_SEC_IN_MS * 60)
@@ -87,6 +93,50 @@ using namespace wpantund;
 #define IPV6_ICMP_HEADER_CODE_OFFSET      40
 
 #define IPV6_GET_UINT16(pkt,idx)   ( (static_cast<uint16_t>(pkt[idx]) << 8) + static_cast<uint16_t>(pkt[idx + 1] << 0) )
+
+//===================================================================
+
+#define kWPANTUNDProperty_Spinel_CounterPrefix		"NCP:Counter:"
+
+// List of counters to be retrieved periodically
+static const char *kSpinelCounterList[] =
+{
+	"TX_PKT_TOTAL",
+	"TX_PKT_ACK_REQ",
+	"TX_PKT_ACKED",
+	"TX_PKT_NO_ACK_REQ",
+	"TX_PKT_DATA",
+	"TX_PKT_DATA_POLL",
+	"TX_PKT_BEACON",
+	"TX_PKT_BEACON_REQ",
+	"TX_PKT_OTHER",
+	"TX_PKT_RETRY",
+	"TX_ERR_CCA",
+	"RX_PKT_TOTAL",
+	"RX_PKT_DATA",
+	"RX_PKT_DATA_POLL",
+	"RX_PKT_BEACON",
+	"RX_PKT_BEACON_REQ",
+	"RX_PKT_OTHER",
+	"RX_PKT_FILT_WL",
+	"RX_PKT_FILT_DA",
+	"RX_ERR_EMPTY",
+	"RX_ERR_UKWN_NBR",
+	"RX_ERR_NVLD_SADDR",
+	"RX_ERR_SECURITY",
+	"RX_ERR_BAD_FCS",
+	"RX_ERR_OTHER",
+	"TX_IP_SEC_TOTAL",
+	"TX_IP_INSEC_TOTAL",
+	"TX_IP_DROPPED",
+	"RX_IP_SEC_TOTAL",
+	"RX_IP_INSEC_TOTAL",
+	"RX_IP_DROPPED",
+	"TX_SPINEL_TOTAL",
+	"RX_SPINEL_TOTAL",
+	"RX_SPINEL_ERR",
+};
+
 
 //===================================================================
 
@@ -1082,7 +1132,7 @@ StatCollector::StatCollector() :
 		mRxHistory(), mTxHistory(),
 		mLastBlockingHostSleepTime(),
 		mNodeStat(), mLinkStat(),
-		mAutoLogTimer(), mLinkStatTimer()
+		mAutoLogTimer(), mLinkStatTimer(), mCounterLogTimer()
 {
 	mControlInterface = NULL;
 
@@ -1103,6 +1153,8 @@ StatCollector::StatCollector() :
 	mAutoLogState = kAutoLogShort;
 	mAutoLogPeriod = STAT_COLLECTOR_AUTO_LOG_PERIOD_IN_MIN * Timer::kOneMinute;
 	update_auto_log_timer();
+
+	mCounterLogCurIndex = 0;
 }
 
 StatCollector::~StatCollector()
@@ -1130,6 +1182,8 @@ StatCollector::set_ncp_control_interface(NCPControlInterface *ncp_ctrl_interface
 			boost::bind(&StatCollector::property_changed, this, _1, _2)
 		);
 	}
+
+	start_counter_log_timer();
 }
 
 void
@@ -1680,6 +1734,56 @@ StatCollector::record_rip_entry(const ValueMap& rip_entry)
 	mLinkStat.update(eui64.data(), rssi, in_lqi, out_lqi, node_type);
 
 	return kWPANTUNDStatus_Ok;
+}
+
+void
+StatCollector::start_counter_log_timer(void)
+{
+	boost::any driver_name;
+
+	driver_name = mControlInterface->get_property(kWPANTUNDProperty_ConfigNCPDriverName);
+
+	// Start the counter log timer for the spinel plug-in
+	if (any_to_string(driver_name) == "spinel") {
+		mCounterLogTimer.schedule(
+			STAT_COLLECTOR_COUNTER_LOG_PERIOD_IN_MIN * Timer::kOneMinute,
+			boost::bind(&StatCollector::counter_collection_timer_did_fire, this),
+			Timer::kPeriodicFixedDelay
+		);
+
+		counter_collection_timer_did_fire();
+	}
+}
+
+void
+StatCollector::counter_collection_timer_did_fire(void)
+{
+	mCounterLogCurIndex = 0;
+	get_next_counter();
+}
+
+void
+StatCollector::get_next_counter(void)
+{
+	if (mCounterLogCurIndex < sizeof(kSpinelCounterList)/sizeof(char *))
+	{
+		mControlInterface->get_property(
+			std::string(kWPANTUNDProperty_Spinel_CounterPrefix) + kSpinelCounterList[mCounterLogCurIndex],
+			boost::bind(&StatCollector::did_get_counter_value, this, _1, _2)
+		);
+	}
+}
+
+void
+StatCollector::did_get_counter_value(int status, const boost::any& value)
+{
+	if (status == kWPANTUNDStatus_Ok) {
+		syslog(STAT_COLLECTOR_COUNTER_LOG_LEVEL,
+			 "NCP Counter: %s = %d", kSpinelCounterList[mCounterLogCurIndex], any_to_int(value));
+	}
+
+	mCounterLogCurIndex++;
+	get_next_counter();
 }
 
 void

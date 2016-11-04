@@ -1175,6 +1175,146 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID";
         break;
 
+    case SPINEL_PROP_CNTR_RESET:
+        ret = "SPINEL_PROP_CNTR_RESET";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_TOTAL:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_ACK_REQ:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_ACK_REQ";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_ACKED:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_ACKED";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_NO_ACK_REQ:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_NO_ACK_REQ";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_DATA:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_DATA";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_DATA_POLL:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_DATA_POLL";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_BEACON:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_BEACON";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_BEACON_REQ:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_BEACON_REQ";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_OTHER:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_OTHER";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_PKT_RETRY:
+        ret = "SPINEL_PROP_CNTR_TX_PKT_RETRY";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_ERR_CCA:
+        ret = "SPINEL_PROP_CNTR_TX_ERR_CCA";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_TOTAL:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_DATA:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_DATA";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_DATA_POLL:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_DATA_POLL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_BEACON:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_BEACON";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_BEACON_REQ:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_BEACON_REQ";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_OTHER:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_OTHER";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_FILT_WL:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_FILT_WL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_PKT_FILT_DA:
+        ret = "SPINEL_PROP_CNTR_RX_PKT_FILT_DA";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_EMPTY:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_EMPTY";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_UKWN_NBR:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_UKWN_NBR";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_NVLD_SADDR:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_NVLD_SADDR";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_SECURITY:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_SECURITY";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_BAD_FCS:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_BAD_FCS";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_ERR_OTHER:
+        ret = "SPINEL_PROP_CNTR_RX_ERR_OTHER";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_IP_SEC_TOTAL:
+        ret = "SPINEL_PROP_CNTR_TX_IP_SEC_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_IP_INSEC_TOTAL:
+        ret = "SPINEL_PROP_CNTR_TX_IP_INSEC_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_IP_DROPPED:
+        ret = "SPINEL_PROP_CNTR_TX_IP_DROPPED";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_IP_SEC_TOTAL:
+        ret = "SPINEL_PROP_CNTR_RX_IP_SEC_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_IP_INSEC_TOTAL:
+        ret = "SPINEL_PROP_CNTR_RX_IP_INSEC_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_IP_DROPPED:
+        ret = "SPINEL_PROP_CNTR_RX_IP_DROPPED";
+        break;
+
+    case SPINEL_PROP_CNTR_TX_SPINEL_TOTAL:
+        ret = "SPINEL_PROP_CNTR_TX_SPINEL_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_SPINEL_TOTAL:
+        ret = "SPINEL_PROP_CNTR_RX_SPINEL_TOTAL";
+        break;
+
+    case SPINEL_PROP_CNTR_RX_SPINEL_ERR:
+        ret = "SPINEL_PROP_CNTR_RX_SPINEL_ERR";
+        break;
+
     default:
         break;
     }

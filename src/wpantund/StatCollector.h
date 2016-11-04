@@ -287,6 +287,10 @@ private:
 	void did_get_rip_entry_value_map(int status, const boost::any& value);
 	int  record_rip_entry(const ValueMap& rip_entry);
 	void property_changed(const std::string& key, const boost::any& value);
+	void start_counter_log_timer(void);
+	void counter_collection_timer_did_fire(void);
+	void get_next_counter(void);
+	void did_get_counter_value(int status, const boost::any& value);
 
 private:
 	NCPControlInterface *mControlInterface;
@@ -317,6 +321,9 @@ private:
 
 	Timer mAutoLogTimer;
 	Timer mLinkStatTimer;
+	Timer mCounterLogTimer;
+
+	uint16_t mCounterLogCurIndex;
 
 	Timer::Interval mAutoLogPeriod;
 	enum AutoLogState mAutoLogState;
