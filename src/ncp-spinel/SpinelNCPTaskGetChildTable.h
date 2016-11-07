@@ -41,14 +41,6 @@ public:
 		kResultFormat_ValueMapArray,   // Returns the child table as an array of ValueMap dictionary.
 	};
 
-	SpinelNCPTaskGetChildTable(
-		SpinelNCPInstance* instance,
-		CallbackWithStatusArg1 cb,
-		ResultFormat result_format = kResultFormat_StringArray
-	);
-	virtual int vprocess_event(int event, va_list args);
-
-private:
 	enum
 	{
 		kThreadMode_RxOnWhenIdle        = (1 << 3),
@@ -75,8 +67,22 @@ private:
 		ValueMap get_as_valuemap(void) const;
 	};
 
+	typedef std::list<ChildInfoEntry> ChildTable;
+
+public:
+	SpinelNCPTaskGetChildTable(
+		SpinelNCPInstance* instance,
+		CallbackWithStatusArg1 cb,
+		ResultFormat result_format = kResultFormat_StringArray
+	);
+	virtual int vprocess_event(int event, va_list args);
+
+	// Parses the spinel child table property and updates the child_table
+	static int prase_child_table(const uint8_t *data_in, spinel_size_t data_len, ChildTable& child_table);
+
+private:
 	ResultFormat mResultFormat;
-	std::list<ChildInfoEntry> mChildTable;
+	ChildTable mChildTable;
 };
 
 
