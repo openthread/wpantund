@@ -105,6 +105,7 @@ struct NetworkInstance : public NetworkId {
 	uint8_t type;
 	uint8_t hwaddr[8];
 	uint16_t saddr;
+	uint8_t version;
 
 public:
 	NetworkInstance(
@@ -119,7 +120,8 @@ public:
 		joinable(_joinable),
 		rssi(-128),
 		type(0),
-		hwaddr()
+		hwaddr(),
+		version(0)
 	{
 	}
 	NetworkInstance(
@@ -134,7 +136,8 @@ public:
 		joinable(_joinable),
 		rssi(-128),
 		type(0),
-		hwaddr()
+		hwaddr(),
+		version(0)
 	{
 	}
 
