@@ -35,6 +35,7 @@
 #include "SpinelNCPTaskSendCommand.h"
 #include "SpinelNCPTaskJoin.h"
 #include "SpinelNCPTaskGetChildTable.h"
+#include "SpinelNCPTaskGetMsgBufferCounters.h"
 #include "any-to.h"
 #include "spinel-extra.h"
 
@@ -389,7 +390,22 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetChildTable::kResultFormat_StringArray
 			)
 		));
-
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetMsgBufferCounters(
+				this,
+				cb,
+				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_StringArray
+			)
+		));
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetMsgBufferCounters(
+				this,
+				cb,
+				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_String
+			)
+		));
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
 

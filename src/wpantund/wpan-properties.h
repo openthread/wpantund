@@ -89,6 +89,9 @@
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID        "Thread:PreferredRouterID"
 
+#define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
+#define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString  "OpenThread:MsgBufferCounters:AsString"
+
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
@@ -103,6 +106,7 @@
 #define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist        "com.nestlabs.internal:NetworkWake:Blacklist"
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower  "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake       "com.nestlabs.internal:Hack:AlwaysResetToWake"
+
 
 #define kWPANTUNDProperty_Stat_Prefix                "Stat:"
 #define kWPANTUNDProperty_StatRX                     "Stat:RX"
