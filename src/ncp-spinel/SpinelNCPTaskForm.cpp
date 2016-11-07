@@ -319,6 +319,26 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 	}
 
+	if (mOptions.count(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
+		if (mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
+			{
+				nl::Data data(any_to_data(mOptions[kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix]));
+				mNextCommand = SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_NEST_LEGACY_ULA_PREFIX,
+					data.data(),
+					data.size()
+				);
+			}
+
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+			ret = mNextCommandRet;
+
+			require_noerr(ret, on_error);
+		}
+	}
+
 	// Now bring up the network by bringing up the interface and the stack.
 
 	mNextCommand = SpinelPackData(

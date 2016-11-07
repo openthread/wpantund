@@ -1155,6 +1155,14 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_NEST_STREAM_MFG";
         break;
 
+    case SPINEL_PROP_NEST_LEGACY_ULA_PREFIX:
+        ret = "SPINEL_PROP_NEST_LEGACY_ULA_PREFIX";
+        break;
+
+    case SPINEL_PROP_NEST_LEGACY_JOINED_NODE:
+        ret = "SPINEL_PROP_NEST_LEGACY_JOINED_NODE";
+        break;
+
     case SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT:
         ret = "SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT";
         break;
