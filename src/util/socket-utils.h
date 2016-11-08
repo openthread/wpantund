@@ -33,6 +33,10 @@
 #define SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX	"system-forkpty:"
 #define SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX	"system-socketpair:"
 
+#ifndef SOCKET_UTILS_DEFAULT_SHELL
+#define SOCKET_UTILS_DEFAULT_SHELL         "/bin/sh"
+#endif
+
 __BEGIN_DECLS
 extern int gSocketWrapperBaud;
 bool socket_name_is_device(const char* socket_name);

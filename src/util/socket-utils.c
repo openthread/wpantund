@@ -86,7 +86,7 @@ static struct {
 static void
 system_socket_table_close_alarm_(int sig)
 {
-	static const char message[] = "\nclose_super_socket: Unable to terminate child\n";
+	static const char message[] = "\nclose_super_socket: Unable to terminate child in a timely manner, watchdog fired\n";
 
 	// Can't use syslog here, write to stderr instead.
 	(void)write(STDERR_FILENO, message, sizeof(message) - 1);
@@ -150,25 +150,42 @@ close_super_socket(int fd)
 	ret = close(fd);
 
 	if (i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0])) {
-		// Set up a watchdog timer in case things go sour.
-		void (*prev_alarm_handler)(int) = signal(SIGALRM, &system_socket_table_close_alarm_);
-		unsigned int prev_alarm_remaining = alarm(5);
 		pid_t pid = gSystemSocketTable[i].pid;
-		int x = 0;
+		int x = 0, j = 0;
 
-		kill(pid, SIGTERM);
+		kill(gSystemSocketTable[i].pid, SIGHUP);
 
-		do {
-			errno = 0;
-			pid = waitpid(gSystemSocketTable[i].pid, &x, 0);
-		} while ((pid == -1) && (errno == EINTR));
+		for (j = 0; j < 100; ++j) {
+			pid = waitpid(gSystemSocketTable[i].pid, &x, WNOHANG);
+			if (pid > 0) {
+				break;
+			}
+			usleep(100000);
+		}
+
+		if (pid <= 0) {
+			// Five second watchdog.
+			void (*prev_alarm_handler)(int) = signal(SIGALRM, &system_socket_table_close_alarm_);
+			unsigned int prev_alarm_remaining = alarm(5);
+
+			syslog(LOG_WARNING, "close_super_socket: PID %d didn't respond to SIGHUP, trying SIGTERM", gSystemSocketTable[i].pid);
+
+			kill(gSystemSocketTable[i].pid, SIGTERM);
+
+			do {
+				errno = 0;
+				pid = waitpid(gSystemSocketTable[i].pid, &x, 0);
+			} while ((pid == -1) && (errno == EINTR));
+
+			// Disarm watchdog.
+			alarm(prev_alarm_remaining);
+			signal(SIGALRM, prev_alarm_handler);
+		}
 
 		if (pid == -1) {
 			perror(strerror(errno));
 		}
 
-		alarm(prev_alarm_remaining);
-		signal(SIGALRM, prev_alarm_handler);
 
 		gSystemSocketTable[i].pid = 0;
 		gSystemSocketTable[i].fd = -1;
@@ -424,7 +441,7 @@ open_system_socket_forkpty(const char* command)
 		dup2(stderr_copy_fd, STDERR_FILENO);
 
 		// Set the shell environment variable if it isn't set already.
-		setenv("SHELL", "/bin/sh", 0);
+		setenv("SHELL", SOCKET_UTILS_DEFAULT_SHELL, 0);
 
 		// Close all file descriptors larger than STDERR_FILENO.
 		for (i = (STDERR_FILENO + 1); i < dtablesize; i++) {
