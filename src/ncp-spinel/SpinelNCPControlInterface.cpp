@@ -380,7 +380,7 @@ SpinelNCPControlInterface::permit_join(
 		));
 	} else {
 		factory.add_command(SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_NULL_S),
 			SPINEL_PROP_THREAD_ASSISTING_PORTS
 		));
 	}
