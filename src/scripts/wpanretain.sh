@@ -117,7 +117,7 @@ restore_network_info_on_wpantund ()
 {
 	# Calculate a new router id value by adding one to it
 	# This ensures router id is different upon every reset/restore
-	router_id=$((new_routerid+1))
+	router_id=$(($cur_routerid+1))
 
 	if [ "$router_id" -ge "$MAX_ROUTER_ID" ]
 	then
@@ -217,15 +217,15 @@ read_cur_network_info_from_file ()
 			  cur_channel=$value
 			  ;;
 			$WPANTUND_PROP_MACADDR)
-	          cur_macaddr=$value
-	          ;;
-	        $WPANTUND_PROP_NODE_TYPE)
-	          cur_type=$value
-	          ;;
-	        $WPANTUND_PROP_KEY_INDEX)
+			  cur_macaddr=$value
+			  ;;
+			$WPANTUND_PROP_NODE_TYPE)
+			  cur_type=$value
+			  ;;
+			$WPANTUND_PROP_KEY_INDEX)
 			  cur_keyindex=$value
 			  ;;
-	        $WPANTUND_PROP_ROUTER_ID)
+			$WPANTUND_PROP_ROUTER_ID)
 			  cur_routerid=$value
 			  ;;
 			esac
