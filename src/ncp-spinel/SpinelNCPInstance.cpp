@@ -262,6 +262,14 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_ERR");
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+		properties.insert(kWPANTUNDProperty_JamDetectionStatus);
+		properties.insert(kWPANTUNDProperty_JamDetectionEnable);
+		properties.insert(kWPANTUNDProperty_JamDetectionRssiThreshold);
+		properties.insert(kWPANTUNDProperty_JamDetectionWindow);
+		properties.insert(kWPANTUNDProperty_JamDetectionBusyPeriod);
+	}
+
 	return properties;
 }
 
@@ -380,6 +388,41 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6LinkLocalAddress) && !IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_LL_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_ENABLE, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionRssiThreshold)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionWindow)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_WINDOW, SPINEL_DATATYPE_UINT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionBusyPeriod)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_BUSY, SPINEL_DATATYPE_UINT8_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -627,6 +670,71 @@ SpinelNCPInstance::set_property(
 				)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
+			bool isEnabled = any_to_bool(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_JAM_DETECT_ENABLE, isEnabled)
+					)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionRssiThreshold)) {
+			int8_t rssiThreshold = static_cast<int8_t>(any_to_int(value));
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, rssiThreshold)
+					)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionWindow)) {
+			uint8_t window = static_cast<uint8_t>(any_to_int(value));
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_WINDOW, window)
+					)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionBusyPeriod)) {
+			uint8_t busyPeriod = static_cast<uint8_t>(any_to_int(value));
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_BUSY, busyPeriod)
+					)
+					.finish()
+				);
+			}
+
 
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
@@ -986,6 +1094,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		} else {
 			syslog(LOG_NOTICE, "Network is not joinable");
+		}
+
+	} else if (key == SPINEL_PROP_JAM_DETECTED) {
+		bool jamDetected = false;
+
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &jamDetected);
+		signal_property_changed(kWPANTUNDProperty_JamDetectionStatus, jamDetected);
+
+		if (jamDetected) {
+			syslog(LOG_NOTICE, "Signal jamming is detected");
+		} else {
+			syslog(LOG_NOTICE, "Signal jamming cleared");
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_RAW) {
