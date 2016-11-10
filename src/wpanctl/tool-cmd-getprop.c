@@ -54,6 +54,8 @@ int tool_cmd_getprop(int argc, char *argv[])
 
 	dbus_error_init(&error);
 
+	optind = 0;
+
 	while (1) {
 		static struct option long_options[] = {
 			{"help", no_argument, 0, 'h'},
