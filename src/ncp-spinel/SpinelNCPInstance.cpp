@@ -662,6 +662,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	if (key == SPINEL_PROP_LAST_STATUS) {
 		spinel_status_t status = SPINEL_STATUS_OK;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
+		syslog(LOG_INFO,"[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
 		if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
 			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
 			process_event(EVENT_NCP_RESET, status);
@@ -1070,6 +1071,16 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			} else {
 				handle_normal_ipv6_from_ncp(frame_ptr, frame_len);
 			}
+		}
+	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
+		SpinelNCPTaskGetChildTable::ChildTable child_table;
+		SpinelNCPTaskGetChildTable::ChildTable::iterator it;
+
+		SpinelNCPTaskGetChildTable::prase_child_table(value_data_ptr, value_data_len, child_table);
+
+		for (it = child_table.begin(); it != child_table.end(); it++)
+		{
+			syslog(LOG_INFO, "[-NCP-] Child: %s", it->get_as_string().c_str());
 		}
 	}
 

@@ -40,6 +40,65 @@ nl::wpantund::SpinelNCPTaskGetChildTable::SpinelNCPTaskGetChildTable(
 }
 
 int
+nl::wpantund::SpinelNCPTaskGetChildTable::prase_child_table(const uint8_t *data_in, spinel_size_t data_len,
+                                                            ChildTable& child_table)
+{
+	int ret = kWPANTUNDStatus_Ok;
+
+	child_table.clear();
+
+	while (data_len > 0)
+	{
+		spinel_ssize_t len = 0;
+		ChildInfoEntry child_info;
+		const spinel_eui64_t *eui64 = NULL;
+		uint8_t mode;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			"T("
+				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+				SPINEL_DATATYPE_UINT16_S        // Rloc16
+				SPINEL_DATATYPE_UINT32_S        // Timeout
+				SPINEL_DATATYPE_UINT32_S        // Age
+				SPINEL_DATATYPE_UINT8_S         // Network Data Version
+				SPINEL_DATATYPE_UINT8_S         // Link Quality In
+				SPINEL_DATATYPE_INT8_S          // Average RSS
+				SPINEL_DATATYPE_UINT8_S         // Mode (flags)
+			")",
+			&eui64,
+			&child_info.mRloc16,
+			&child_info.mTimeout,
+			&child_info.mAge,
+			&child_info.mNetworkDataVersion,
+			&child_info.mLinkQualityIn,
+			&child_info.mAverageRssi,
+            &mode
+		);
+
+		if (len <= 0)
+		{
+			break;
+		}
+
+		memcpy(child_info.mExtAddress, eui64, sizeof(child_info.mExtAddress));
+
+		child_info.mRxOnWhenIdle = ((mode & kThreadMode_RxOnWhenIdle) != 0);
+		child_info.mSecureDataRequest = ((mode & kThreadMode_SecureDataRequest) != 0);
+		child_info.mFullFunction = ((mode & kThreadMode_FullFunctionDevice) != 0);
+		child_info.mFullNetworkData = ((mode & kThreadMode_FullNetworkData) != 0);
+
+		child_table.push_back(child_info);
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	return ret;
+}
+
+int
 nl::wpantund::SpinelNCPTaskGetChildTable::vprocess_event(int event, va_list args)
 {
 	int ret = kWPANTUNDStatus_Failure;
@@ -95,62 +154,14 @@ nl::wpantund::SpinelNCPTaskGetChildTable::vprocess_event(int event, va_list args
 
 	require(prop_key == SPINEL_PROP_THREAD_CHILD_TABLE, on_error);
 
-	mChildTable.clear();
-
-	while (data_len > 0)
-	{
-		spinel_ssize_t len = 0;
-		ChildInfoEntry child_info;
-		const spinel_eui64_t *eui64 = NULL;
-		uint8_t mode;
-
-		len = spinel_datatype_unpack(
-			data_in,
-			data_len,
-			"T("
-				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
-				SPINEL_DATATYPE_UINT16_S        // Rloc16
-				SPINEL_DATATYPE_UINT32_S        // Timeout
-				SPINEL_DATATYPE_UINT32_S        // Age
-				SPINEL_DATATYPE_UINT8_S         // Network Data Version
-				SPINEL_DATATYPE_UINT8_S         // Link Quality In
-				SPINEL_DATATYPE_INT8_S          // Average RSS
-				SPINEL_DATATYPE_UINT8_S         // Mode (flags)
-			")",
-			&eui64,
-			&child_info.mRloc16,
-			&child_info.mTimeout,
-			&child_info.mAge,
-			&child_info.mNetworkDataVersion,
-			&child_info.mLinkQualityIn,
-			&child_info.mAverageRssi,
-            &mode
-		);
-
-		if (len <= 0)
-		{
-			break;
-		}
-
-		memcpy(child_info.mExtAddress, eui64, sizeof(child_info.mExtAddress));
-
-		child_info.mRxOnWhenIdle = ((mode & kThreadMode_RxOnWhenIdle) != 0);
-		child_info.mSecureDataRequest = ((mode & kThreadMode_SecureDataRequest) != 0);
-		child_info.mFullFunction = ((mode & kThreadMode_FullFunctionDevice) != 0);
-		child_info.mFullNetworkData = ((mode & kThreadMode_FullNetworkData) != 0);
-
-		mChildTable.push_back(child_info);
-
-		data_in += len;
-		data_len -= len;
-	}
+	prase_child_table(data_in, data_len, mChildTable);
 
 	ret = kWPANTUNDStatus_Ok;
 
 	if (mResultFormat == kResultFormat_StringArray)
 	{
 		std::list<std::string> result;
-		std::list<ChildInfoEntry>::iterator it;
+		ChildTable::iterator it;
 
 		for (it = mChildTable.begin(); it != mChildTable.end(); it++)
 		{
@@ -162,7 +173,7 @@ nl::wpantund::SpinelNCPTaskGetChildTable::vprocess_event(int event, va_list args
 	else if (mResultFormat == kResultFormat_ValueMapArray)
 	{
 		std::list<ValueMap> result;
-		std::list<ChildInfoEntry>::iterator it;
+		ChildTable::iterator it;
 
 		for (it = mChildTable.begin(); it != mChildTable.end(); it++)
 		{
