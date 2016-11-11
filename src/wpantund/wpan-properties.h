@@ -94,6 +94,12 @@
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
 
+#define kWPANTUNDProperty_JamDetectionStatus                   "JamDetection:Status"
+#define kWPANTUNDProperty_JamDetectionEnable                   "JamDetection:Enable"
+#define kWPANTUNDProperty_JamDetectionRssiThreshold            "JamDetection:RssiThreshold"
+#define kWPANTUNDProperty_JamDetectionWindow                   "JamDetection:Window"
+#define kWPANTUNDProperty_JamDetectionBusyPeriod               "JamDetection:BusyPeriod"
+
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"
 #define kWPANTUNDProperty_NestLabs_NCPTransmitHookActive       "com.nestlabs.internal:NCP:TransmitHookActive"

@@ -1183,6 +1183,26 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID";
         break;
 
+    case SPINEL_PROP_JAM_DETECT_ENABLE:
+        ret = "SPINEL_PROP_JAM_DETECT_ENABLE";
+        break;
+
+    case SPINEL_PROP_JAM_DETECTED:
+        ret = "SPINEL_PROP_JAM_DETECTED";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD:
+        ret = "SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_WINDOW:
+        ret = "SPINEL_PROP_JAM_DETECT_WINDOW";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_BUSY:
+        ret = "SPINEL_PROP_JAM_DETECT_BUSY";
+        break;
+
     default:
         break;
     }
