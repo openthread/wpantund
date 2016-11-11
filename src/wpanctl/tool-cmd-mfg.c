@@ -37,6 +37,7 @@ int tool_cmd_mfg(int argc, char *argv[])
 	DBusConnection *connection = NULL;
 	DBusMessage *message = NULL;
 	DBusMessage *reply = NULL;
+	const char* result_cstr = NULL;
 	DBusError error;
 
 	dbus_error_init(&error);
@@ -83,7 +84,6 @@ int tool_cmd_mfg(int argc, char *argv[])
 		if (argc == 4)
 			sprintf(string, "%s %s %s %s", argv[0], argv[1], argv[2], argv[3]);
 		char *cmd = string;
-		printf("%s\n", cmd);
 		dbus_message_append_args(
 		    message,
 		    DBUS_TYPE_STRING, &cmd,
@@ -108,7 +108,12 @@ int tool_cmd_mfg(int argc, char *argv[])
 
 		dbus_message_iter_next(&iter);
 
-		dump_info_from_iter(stdout, &iter, 0, false, false);
+		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING) {
+			dbus_message_iter_get_basic(&iter, &result_cstr);
+			printf("%s", result_cstr);
+		} else {
+			dump_info_from_iter(stdout, &iter, 0, false, false);
+		}
 	}
 
 bail:
