@@ -424,13 +424,42 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				}
 			}
 
-			// TODO: Perform initialization of other radio paramaters here:
+			// Restore all the saved settings
+			for (mSettingsIter = mSettings.begin(); mSettingsIter != mSettings.end(); mSettingsIter++) {
 
-			// TX Power
+				syslog(LOG_INFO, "Restoring property \"%s\" on NCP", mSettingsIter->first.c_str());
 
-			// CCA Threshold
+				// Skip the settings if capability is not present.
+				if ((mSettingsIter->second.mCapability != 0) &&!mCapabilities.count(mSettingsIter->second.mCapability)) {
+					continue;
+				}
 
-			// etc...
+				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+
+				if (mSettingsIter->second.mSpinelCommand.size() > sizeof(GetInstance(this)->mOutboundBuffer))
+				{
+					syslog(LOG_WARNING,
+						"Spinel command for restoring property \"%s\" does not fit in outbound buffer (require %d bytes but only %u bytes available)",
+						mSettingsIter->first.c_str(),
+						mSettingsIter->second.mSpinelCommand.size(),
+						sizeof(GetInstance(this)->mOutboundBuffer)
+					);
+
+					continue;
+				}
+
+				GetInstance(this)->mOutboundBufferLen = mSettingsIter->second.mSpinelCommand.size();
+				memcpy(GetInstance(this)->mOutboundBuffer, mSettingsIter->second.mSpinelCommand.data(), mSettingsIter->second.mSpinelCommand.size());
+
+				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
+
+				status = peek_ncp_callback_status(event, args);
+
+				if (status != 0) {
+					syslog(LOG_WARNING, "Unsuccessful in restoring property \"%s\" on NCP: \"%s\" (%d)", mSettingsIter->first.c_str(), spinel_status_to_cstr(static_cast<spinel_status_t>(status)), status);
+				}
+			}
 		}
 
 		break;
