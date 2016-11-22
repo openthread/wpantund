@@ -243,7 +243,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	if (mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
-			SPINEL_PROP_NET_KEY_SEQUENCE,
+			SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER,
 			any_to_int(mOptions[kWPANTUNDProperty_NetworkKeyIndex])
 		);
 
