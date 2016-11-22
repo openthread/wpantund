@@ -197,9 +197,9 @@ enum {
 
 enum
 {
-    SPINEL_PROTOCOL_TYPE_ZIGBEE    = 1,
-    SPINEL_PROTOCOL_TYPE_ZIGBEE_IP = 2,
-    SPINEL_PROTOCOL_TYPE_THREAD    = 3,
+    SPINEL_PROTOCOL_TYPE_BOOTLOADER = 0,
+    SPINEL_PROTOCOL_TYPE_ZIGBEE_IP  = 2,
+    SPINEL_PROTOCOL_TYPE_THREAD     = 3,
 };
 
 enum
@@ -265,6 +265,10 @@ enum
     SPINEL_CMD_HBO_RECLAIMED        = 16,
     SPINEL_CMD_HBO_DROPED           = 17,
 
+    SPINEL_CMD_PEEK                 = 18,
+    SPINEL_CMD_PEEK_RET             = 19,
+    SPINEL_CMD_POKE                 = 20,
+
     SPINEL_CMD_NEST__BEGIN          = 15296,
     SPINEL_CMD_NEST__END            = 15360,
 
@@ -284,6 +288,8 @@ enum
 
     SPINEL_CAP_COUNTERS              = 5,
     SPINEL_CAP_JAM_DETECT            = 6,
+
+    SPINEL_CAP_PEEK_POKE             = 7,
 
     SPINEL_CAP_802_15_4__BEGIN        = 16,
     SPINEL_CAP_802_15_4_2003          = (SPINEL_CAP_802_15_4__BEGIN + 0),
@@ -445,12 +451,13 @@ typedef enum
     SPINEL_PROP_NET__BEGIN           = 0x40,
     SPINEL_PROP_NET_SAVED            = SPINEL_PROP_NET__BEGIN + 0, ///< [b]
     SPINEL_PROP_NET_IF_UP            = SPINEL_PROP_NET__BEGIN + 1, ///< [b]
-    SPINEL_PROP_NET_STACK_UP         = SPINEL_PROP_NET__BEGIN + 2, ///< [C]
+    SPINEL_PROP_NET_STACK_UP         = SPINEL_PROP_NET__BEGIN + 2, ///< [b]
     SPINEL_PROP_NET_ROLE             = SPINEL_PROP_NET__BEGIN + 3, ///< [C]
     SPINEL_PROP_NET_NETWORK_NAME     = SPINEL_PROP_NET__BEGIN + 4, ///< [U]
     SPINEL_PROP_NET_XPANID           = SPINEL_PROP_NET__BEGIN + 5, ///< [D]
     SPINEL_PROP_NET_MASTER_KEY       = SPINEL_PROP_NET__BEGIN + 6, ///< [D]
-    SPINEL_PROP_NET_KEY_SEQUENCE     = SPINEL_PROP_NET__BEGIN + 7, ///< [L]
+    SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER
+                                     = SPINEL_PROP_NET__BEGIN + 7, ///< [L]
     SPINEL_PROP_NET_PARTITION_ID     = SPINEL_PROP_NET__BEGIN + 8, ///< [L]
 
     /// Require Join Existing
@@ -473,6 +480,9 @@ typedef enum
      */
     SPINEL_PROP_NET_REQUIRE_JOIN_EXISTING
                                      = SPINEL_PROP_NET__BEGIN + 9,
+
+    SPINEL_PROP_NET_KEY_SWITCH_GUARDTIME
+                                     = SPINEL_PROP_NET__BEGIN + 10, ///< [L]
 
     SPINEL_PROP_NET__END             = 0x50,
 
@@ -572,19 +582,24 @@ typedef enum
     /** Format: `C`
      */
     SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER
-                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 9,
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 9,
 
     /// Thread Preferred Router Id
     /** Format: `C` - Write only
      */
     SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID
-                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 10,
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 10,
 
     /// Thread Neighbor Table
     /** Format: `A(T(ESLCcCbLL))`
      *  eui64, rloc16, age, inLqi ,aveRSS, mode, isChild. linkFrameCounter, mleCounter
      */
     SPINEL_PROP_THREAD_NEIGHBOR_TABLE  = SPINEL_PROP_THREAD_EXT__BEGIN + 11,
+
+    /// Thread Max Child Count
+    /** Format: `C`
+     */
+    SPINEL_PROP_THREAD_CHILD_COUNT_MAX = SPINEL_PROP_THREAD_EXT__BEGIN + 12,
 
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
@@ -719,6 +734,14 @@ typedef enum
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_TX_ERR_CCA        = SPINEL_PROP_CNTR__BEGIN + 11,
 
+    /// The number of unicast packets transmitted.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_PKT_UNICAST    = SPINEL_PROP_CNTR__BEGIN + 12,
+
+    /// The number of broadcast packets transmitted.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_TX_PKT_BROADCAST  = SPINEL_PROP_CNTR__BEGIN + 13,
+
     /// The total number of received packets.
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_PKT_TOTAL      = SPINEL_PROP_CNTR__BEGIN + 100,
@@ -775,6 +798,18 @@ typedef enum
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_ERR_OTHER      = SPINEL_PROP_CNTR__BEGIN + 113,
 
+    /// The number of received duplicated.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_PKT_DUP        = SPINEL_PROP_CNTR__BEGIN + 114,
+
+    /// The number of unicast packets recived.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_PKT_UNICAST    = SPINEL_PROP_CNTR__BEGIN + 115,
+
+    /// The number of broadcast packets recived.
+    /** Format: `L` (Read-only) */
+    SPINEL_PROP_CNTR_RX_PKT_BROADCAST  = SPINEL_PROP_CNTR__BEGIN + 116,
+
     /// The total number of secure transmitted IP messages.
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_TX_IP_SEC_TOTAL   = SPINEL_PROP_CNTR__BEGIN + 200,
@@ -811,8 +846,11 @@ typedef enum
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_SPINEL_ERR     = SPINEL_PROP_CNTR__BEGIN + 302,
 
+
+
     /// The message buffer counter info
-    /** Format: `SSSSSSSSSSSSSSSS` (Read-only)
+    /** Format: `T(SSSSSSSSSSSSSSSS)` (Read-only)
+     *  `T(`
      *      `S`, (TotalBuffers)           The number of buffers in the pool.
      *      `S`, (FreeBuffers)            The number of free message buffers.
      *      `S`, (6loSendMessages)        The number of messages in the 6lo send queue.
@@ -828,7 +866,8 @@ typedef enum
      *      `S`, (ArpMessages)            The number of messages in the ARP send queue.
      *      `S`, (ArpBuffers)             The number of buffers in the ARP send queue.
      *      `S`, (CoapClientMessages)     The number of messages in the CoAP client send queue.
-     *      `S`  (CoapClientBuffers)      The number of buffers in the CoAP client send queue.
+     *      `S`, (CoapClientBuffers)      The number of buffers in the CoAP client send queue.
+     *  `)`
      */
     SPINEL_PROP_MSG_BUFFER_COUNTERS    = SPINEL_PROP_CNTR__BEGIN + 400,
 

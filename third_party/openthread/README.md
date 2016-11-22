@@ -1,5 +1,7 @@
 [![OpenThread][ot-logo]][ot-repo]  
 [![Build Status][ot-travis-svg]][ot-travis]
+[![Build Status][ot-appveyor-svg]][ot-appveyor]
+[![Coverage Status][ot-codecov-svg]][ot-codecov]
 
 ---
 
@@ -18,7 +20,10 @@ applications. More information about Thread can be found on
 [ot-logo]: doc/images/openthread_logo.png
 [ot-travis]: https://travis-ci.org/openthread/openthread
 [ot-travis-svg]: https://travis-ci.org/openthread/openthread.svg?branch=master
-
+[ot-appveyor]: https://ci.appveyor.com/project/jwhui/openthread
+[ot-appveyor-svg]: https://ci.appveyor.com/api/projects/status/r5qwyhn9p26nmfk3?svg=true
+[ot-codecov]: https://codecov.io/gh/openthread/openthread
+[ot-codecov-svg]: https://codecov.io/gh/openthread/openthread/branch/master/graph/badge.svg
 
 ## Features ##
 
@@ -37,9 +42,10 @@ Mesh Routing.
 ![OpenThread Contributor Logos](doc/images/openthread_contrib.png)
 
 Nest, along with ARM, Atmel, a subsidiary of Microchip Technology,
-Dialog Semiconductor, Qualcomm Technologies, Inc. (a subsidiary of
-Qualcomm Incorporated and Texas Instruments Incorporated) are
-contributing to the ongoing development of OpenThread.
+Dialog Semiconductor, Microsoft Corporation, Nordic Semiconductor,
+Qualcomm Technologies, Inc. (a subsidiary of Qualcomm Incorporated),
+and Texas Instruments Incorporated are contributing to the ongoing
+development of OpenThread.
 
 
 # Getting started #
@@ -57,11 +63,12 @@ In the repo you'll find the following directories and files:
 File/Folder   | Provides
 --------------|----------------------------------------------------------------
 `doc`         | Doxygen docs
-`examples`    | Sample applications demonstrating various parts of OpenThread
-`include`     | Includes header files for OpenThread API
-`src`         | The core implementation of the Thread standard
+`examples`    | Sample applications demonstrating OpenThread
+`include`     | Public API header files
+`src`         | Core implementation of the Thread standard and related add-ons
 `tests`       | Unit and Thread conformance tests
 `third_party` | Third-party code used by OpenThread
+`tools`       | Helpful utilities related to the OpenThread project
 
 
 ## Documentation ##
