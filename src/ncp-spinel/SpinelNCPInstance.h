@@ -171,6 +171,33 @@ public:
 	virtual void process(void);
 
 private:
+	struct SettingsEntry
+	{
+	public:
+		SettingsEntry(const Data &command = Data(), unsigned int capability = 0) :
+			mSpinelCommand(command),
+			mCapability(capability)
+		{
+		}
+
+		Data mSpinelCommand;
+		unsigned int mCapability;
+	};
+
+	/* Map from property key to setting entry
+	 *
+	 * The map contains all parameters/properties that are retained and
+	 * restored when NCP gets initialized.
+	 *
+	 * `Setting entry` contains an optional capability value and an associated
+	 * spinel command.
+	 *
+	 * If the `capability` is present in the list of NCP capabilities , then
+	 * the associated spinel command is sent to NCP after initialization.
+	 */
+	typedef std::map<std::string, SettingsEntry> SettingsMap;
+
+private:
 	SpinelNCPControlInterface mControlInterface;
 
 	uint8_t mLastTID;
@@ -199,6 +226,8 @@ private:
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
 
+	SettingsMap mSettings;
+	SettingsMap::iterator mSettingsIter;
 
 	DriverState mDriverState;
 

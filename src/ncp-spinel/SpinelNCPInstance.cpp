@@ -167,6 +167,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mDefaultChannelMask = 0x07FFF800;
 	mIsPcapInProgress = false;
+	mSettings.clear();
 
 	if (!settings.empty()) {
 		int status;
@@ -544,12 +545,13 @@ SpinelNCPInstance::set_property(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 			int cca = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca);
+
+			mSettings[kWPANTUNDProperty_NCPCCAThreshold] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
-				.add_command(
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca)
-				)
+				.add_command(command)
 				.finish()
 			);
 
@@ -689,6 +691,9 @@ SpinelNCPInstance::set_property(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 			bool isEnabled = any_to_bool(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_JAM_DETECT_ENABLE, isEnabled);
+
+			mSettings[kWPANTUNDProperty_JamDetectionEnable] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
 
 			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
 			{
@@ -696,15 +701,16 @@ SpinelNCPInstance::set_property(
 			} else {
 				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 					.set_callback(cb)
-					.add_command(
-						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_JAM_DETECT_ENABLE, isEnabled)
-					)
+					.add_command(command)
 					.finish()
 				);
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionRssiThreshold)) {
 			int8_t rssiThreshold = static_cast<int8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, rssiThreshold);
+
+			mSettings[kWPANTUNDProperty_JamDetectionRssiThreshold] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
 
 			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
 			{
@@ -712,15 +718,16 @@ SpinelNCPInstance::set_property(
 			} else {
 				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 					.set_callback(cb)
-					.add_command(
-						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, rssiThreshold)
-					)
+					.add_command(command)
 					.finish()
 				);
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionWindow)) {
 			uint8_t window = static_cast<uint8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_WINDOW, window);
+
+			mSettings[kWPANTUNDProperty_JamDetectionWindow] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
 
 			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
 			{
@@ -728,15 +735,16 @@ SpinelNCPInstance::set_property(
 			} else {
 				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 					.set_callback(cb)
-					.add_command(
-						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_WINDOW, window)
-					)
+					.add_command(command)
 					.finish()
 				);
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionBusyPeriod)) {
 			uint8_t busyPeriod = static_cast<uint8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_BUSY, busyPeriod);
+
+			mSettings[kWPANTUNDProperty_JamDetectionBusyPeriod] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
 
 			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
 			{
@@ -744,13 +752,10 @@ SpinelNCPInstance::set_property(
 			} else {
 				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 					.set_callback(cb)
-					.add_command(
-						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_BUSY, busyPeriod)
-					)
+					.add_command(command)
 					.finish()
 				);
 			}
-
 
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
