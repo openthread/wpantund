@@ -783,6 +783,9 @@ SpinelNCPInstance::reset_tasks(wpantund_status_t status)
 void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
+	const uint8_t *original_value_data_ptr = value_data_ptr;
+	spinel_size_t original_value_data_len = value_data_len;
+
 	if (key == SPINEL_PROP_LAST_STATUS) {
 		spinel_status_t status = SPINEL_STATUS_OK;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
@@ -1221,7 +1224,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	}
 
 bail:
-	process_event(EVENT_NCP_PROP_VALUE_IS, key, value_data_ptr, value_data_len);
+	process_event(EVENT_NCP_PROP_VALUE_IS, key, original_value_data_ptr, original_value_data_len);
 }
 
 void
