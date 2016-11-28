@@ -16,12 +16,14 @@
 #
 
 AM_CPPFLAGS = \
+	$(CPPFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/util \
 	-I$(top_srcdir)/src/ipc-dbus \
 	-I$(top_srcdir)/third_party/fgetln \
 	-I$(top_srcdir)/third_party/pt \
 	-I$(top_srcdir)/third_party/assert-macros \
+	$(MISSING_CPPFLAGS) \
 	$(NULL)
 
 DISTCLEANFILES = \
@@ -93,7 +95,7 @@ wpantund_SOURCES = \
 	../util/sec-random.c \
 	$(NULL)
 
-wpantund_LDADD =  $(DBUS_LIBS)
+wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
 wpantund_LDADD += ../ipc-dbus/libwpantund-dbus.la
 
 if STATIC_LINK_NCP_PLUGIN
