@@ -34,7 +34,7 @@
 #include "SpinelNCPTaskWake.h"
 #include "SpinelNCPTaskSendCommand.h"
 #include "SpinelNCPTaskJoin.h"
-#include "SpinelNCPTaskGetChildTable.h"
+#include "SpinelNCPTaskGetNetworkTopology.h"
 #include "SpinelNCPTaskGetMsgBufferCounters.h"
 #include "any-to.h"
 #include "spinel-extra.h"
@@ -225,6 +225,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadNetworkDataVersion);
 		properties.insert(kWPANTUNDProperty_ThreadStableNetworkDataVersion);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
+		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -428,12 +429,24 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskGetChildTable(
+			new SpinelNCPTaskGetNetworkTopology(
 				this,
 				cb,
-				SpinelNCPTaskGetChildTable::kResultFormat_StringArray
+				SpinelNCPTaskGetNetworkTopology::kChildTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
 			)
 		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+			)
+		));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -442,6 +455,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_StringArray
 			)
 		));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -450,6 +464,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_String
 			)
 		));
+
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
 
@@ -1217,10 +1232,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		}
 	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
-		SpinelNCPTaskGetChildTable::ChildTable child_table;
-		SpinelNCPTaskGetChildTable::ChildTable::iterator it;
+		SpinelNCPTaskGetNetworkTopology::Table child_table;
+		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
 
-		SpinelNCPTaskGetChildTable::prase_child_table(value_data_ptr, value_data_len, child_table);
+		SpinelNCPTaskGetNetworkTopology::prase_child_table(value_data_ptr, value_data_len, child_table);
 
 		for (it = child_table.begin(); it != child_table.end(); it++)
 		{

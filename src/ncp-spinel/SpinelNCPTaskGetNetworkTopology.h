@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __wpantund__SpinelNCPTaskGetChildTable__
-#define __wpantund__SpinelNCPTaskGetChildTable__
+#ifndef __wpantund__SpinelNCPTaskGetNetworkTopology__
+#define __wpantund__SpinelNCPTaskGetNetworkTopology__
 
 #include <list>
 #include <string>
@@ -32,13 +32,20 @@ using namespace nl::wpantund;
 namespace nl {
 namespace wpantund {
 
-class SpinelNCPTaskGetChildTable : public SpinelNCPTask
+class SpinelNCPTaskGetNetworkTopology : public SpinelNCPTask
 {
 public:
+
+	enum Type
+	{
+		kChildTable,                   // Get the child table
+		kNeighborTable                 // Get the neighbor table
+	};
+
 	enum ResultFormat
 	{
-		kResultFormat_StringArray,     // Returns the child table as an array of std::string(s) (one per child).
-		kResultFormat_ValueMapArray,   // Returns the child table as an array of ValueMap dictionary.
+		kResultFormat_StringArray,     // Returns the child/neighbor table as an array of std::string(s) (one per child).
+		kResultFormat_ValueMapArray,   // Returns the child/neighbor table as an array of ValueMap dictionary.
 	};
 
 	enum
@@ -49,13 +56,15 @@ public:
 		kThreadMode_FullNetworkData     = (1 << 0),
 	};
 
-	struct ChildInfoEntry
+	// This struct defines a common table entry to store either a child info or a neighbor info
+	struct TableEntry
 	{
+		Type      mType;     // Indicates if this entry is for a child or a neighbor
+
+		// Common fields for both child info and neighbor info
 		uint8_t   mExtAddress[8];
-		uint32_t  mTimeout;
 		uint32_t  mAge;
 		uint16_t  mRloc16;
-		uint8_t   mNetworkDataVersion;
 		uint8_t   mLinkQualityIn;
 		int8_t    mAverageRssi;
 		bool      mRxOnWhenIdle : 1;
@@ -63,26 +72,41 @@ public:
 		bool      mFullFunction : 1;
 		bool      mFullNetworkData : 1;
 
+		// Child info only
+		uint32_t  mTimeout;
+		uint8_t   mNetworkDataVersion;
+
+		// Neighbor info only
+		uint32_t  mLinkFrameCounter;
+		uint32_t  mMleFrameCounter;
+		bool      mIsChild : 1;
+
+	public:
 		std::string get_as_string(void) const;
 		ValueMap get_as_valuemap(void) const;
 	};
 
-	typedef std::list<ChildInfoEntry> ChildTable;
+	typedef std::list<TableEntry> Table;
 
 public:
-	SpinelNCPTaskGetChildTable(
-		SpinelNCPInstance* instance,
+	SpinelNCPTaskGetNetworkTopology(
+		SpinelNCPInstance *instance,
 		CallbackWithStatusArg1 cb,
+		Type table_type = kChildTable,
 		ResultFormat result_format = kResultFormat_StringArray
 	);
 	virtual int vprocess_event(int event, va_list args);
 
 	// Parses the spinel child table property and updates the child_table
-	static int prase_child_table(const uint8_t *data_in, spinel_size_t data_len, ChildTable& child_table);
+	static int prase_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
+
+	// Parses the spinel neighbor table property and updates the neighbor_table
+	static int prase_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
 
 private:
+	Type mType;
+	Table mTable;
 	ResultFormat mResultFormat;
-	ChildTable mChildTable;
 };
 
 
@@ -90,4 +114,4 @@ private:
 }; // namespace nl
 
 
-#endif /* defined(__wpantund__SpinelNCPTaskGetChildTable__) */
+#endif /* defined(__wpantund__SpinelNCPTaskGetNetworkTopology__) */

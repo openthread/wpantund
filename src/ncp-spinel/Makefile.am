@@ -63,8 +63,8 @@ NCP_SOURCES = \
 	SpinelNCPTask.cpp \
 	SpinelNCPTask.h \
 	SpinelNCPTaskDeepSleep.cpp \
-	SpinelNCPTaskGetChildTable.h \
-	SpinelNCPTaskGetChildTable.cpp \
+	SpinelNCPTaskGetNetworkTopology.h \
+	SpinelNCPTaskGetNetworkTopology.cpp \
 	SpinelNCPTaskGetMsgBufferCounters.h \
 	SpinelNCPTaskGetMsgBufferCounters.cpp \
 	SpinelNCPTaskDeepSleep.h \
