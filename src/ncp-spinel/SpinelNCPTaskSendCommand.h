@@ -32,9 +32,11 @@ namespace wpantund {
 class SpinelNCPTaskSendCommand : public SpinelNCPTask
 {
 public:
+	typedef boost::function<int (const uint8_t*, spinel_size_t, boost::any&)> ReplyUnpacker;
 
 	class Factory {
 	public:
+
 		friend class SpinelNCPTaskSendCommand;
 
 		Factory(SpinelNCPInstance* instance);
@@ -43,7 +45,17 @@ public:
 		Factory& set_callback(const CallbackWithStatus &cb);
 		Factory& add_command(const Data& command);
 		Factory& set_timeout(int timeout);
+
+		/* For simple (single type) reply formats, we can use the
+		 * `set_reply_format()` and specify the spinel packing format.
+		 * For more complicated reply format (e.g., multiple types, structs)
+		 * a `ReplyUnpakcer` function pointer can be specified using
+		 * `set_reply_unpacker()` which is then used to decode/unpack
+		 * the reply spinel message into a `boost::any` output result.
+		 */
 		Factory& set_reply_format(const std::string& packed_format);
+		Factory& set_reply_unpacker(const ReplyUnpacker &reply_unpacker);
+
 		Factory& set_lock_property(int lock_property = SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 
 		boost::shared_ptr<SpinelNCPTask> finish(void);
@@ -53,7 +65,7 @@ public:
 		CallbackWithStatusArg1 mCb;
 		std::list<Data> mCommandList;
 		int mTimeout;
-		std::string mReplyFormat;
+		ReplyUnpacker mReplyUnpacker;
 		int mLockProperty;
 	};
 
@@ -66,7 +78,7 @@ private:
 	std::list<Data> mCommandList;
 	std::list<Data>::const_iterator mCommandIter;
 	int mLockProperty;
-	std::string mPackedFormat;
+	ReplyUnpacker mReplyUnpacker;
 	int mRetVal;
 	boost::any mReturnValue;
 };
