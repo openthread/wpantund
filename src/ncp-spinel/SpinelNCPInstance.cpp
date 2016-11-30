@@ -347,7 +347,7 @@ SpinelNCPInstance::get_property(
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE, SPINEL_DATATYPE_UINT32_S);
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
@@ -679,7 +679,7 @@ SpinelNCPInstance::set_property(
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE, key_index)
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, key_index)
 				)
 				.finish()
 			);
@@ -1005,7 +1005,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		}
 
-	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE) {
+	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER) {
 		uint32_t network_key_index;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
 		if (network_key_index != mNetworkKeyIndex) {
