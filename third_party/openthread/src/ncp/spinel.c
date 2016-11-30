@@ -1203,6 +1203,11 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_JAM_DETECT_BUSY";
         break;
 
+    case SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP:
+        ret = "SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP";
+        break;
+
+
     default:
         break;
     }
