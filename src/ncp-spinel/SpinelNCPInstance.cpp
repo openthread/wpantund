@@ -230,6 +230,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_UNICAST");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_BROADCAST");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACK_REQ");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACKED");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_NO_ACK_REQ");
@@ -241,6 +243,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_RETRY");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_CCA");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_UNICAST");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BROADCAST");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA_POLL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BEACON");
@@ -484,6 +488,8 @@ SpinelNCPInstance::get_property(
 		}
 
 		CNTR_KEY(TX_PKT_TOTAL)
+		CNTR_KEY(TX_PKT_UNICAST)
+		CNTR_KEY(TX_PKT_BROADCAST)
 		CNTR_KEY(TX_PKT_ACK_REQ)
 		CNTR_KEY(TX_PKT_ACKED)
 		CNTR_KEY(TX_PKT_NO_ACK_REQ)
@@ -495,6 +501,8 @@ SpinelNCPInstance::get_property(
 		CNTR_KEY(TX_PKT_RETRY)
 		CNTR_KEY(TX_ERR_CCA)
 		CNTR_KEY(RX_PKT_TOTAL)
+		CNTR_KEY(RX_PKT_UNICAST)
+		CNTR_KEY(RX_PKT_BROADCAST)
 		CNTR_KEY(RX_PKT_DATA)
 		CNTR_KEY(RX_PKT_DATA_POLL)
 		CNTR_KEY(RX_PKT_BEACON)
