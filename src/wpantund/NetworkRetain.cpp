@@ -106,18 +106,20 @@ NetworkRetain::set_network_retain_command(const std::string& command)
 	}
 
 	if (pid == 0) {
-		int stdout_copy = dup(STDOUT_FILENO);
-		int stdin_copy = dup(STDIN_FILENO);
+		int stdout_fd_copy = dup(STDOUT_FILENO);
+		int stdin_fd_copy = dup(STDIN_FILENO);
+		FILE* stdin_copy = NULL;
+		FILE* stdout_copy = NULL;
 
 		dup2(STDERR_FILENO,STDOUT_FILENO);
 
-		if (stdin_copy >= 0) {
+		if (stdin_fd_copy >= 0) {
 			close(STDIN_FILENO);
-			stdin = fdopen(stdin_copy, "r");
+			stdin_copy = fdopen(stdin_fd_copy, "r");
 		}
 
-		if (stdout_copy >= 0) {
-			stdout = fdopen(stdout_copy, "w");
+		if (stdout_fd_copy >= 0) {
+			stdout_copy = fdopen(stdout_fd_copy, "w");
 		}
 
 		// Double fork to avoid leaking zombie processes.
@@ -133,11 +135,11 @@ NetworkRetain::set_network_retain_command(const std::string& command)
 			// Set the shell environment variable if it isn't set already.
 			setenv("SHELL",SOCKET_UTILS_DEFAULT_SHELL,0);
 
-			while ((ferror(stdin) == 0) && (feof(stdin) == 0)) {
+			while ((ferror(stdin_copy) == 0) && (feof(stdin_copy) == 0)) {
 				int c;
 				std::string args;
 
-				c = fgetc(stdin);
+				c = fgetc(stdin_copy);
 
 				switch (c) {
 				case 'R':
