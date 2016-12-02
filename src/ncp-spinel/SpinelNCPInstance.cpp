@@ -49,28 +49,28 @@ WPANTUND_DEFINE_NCPINSTANCE_PLUGIN(spinel, SpinelNCPInstance);
 void
 SpinelNCPInstance::handle_ncp_log(const uint8_t* data_ptr, int data_len)
 {
-    static char linebuffer[NCP_DEBUG_LINE_LENGTH_MAX + 1];
-    static int linepos = 0;
-    while (data_len--) {
-        char nextchar = *data_ptr++;
+	static char linebuffer[NCP_DEBUG_LINE_LENGTH_MAX + 1];
+	static int linepos = 0;
+	while (data_len--) {
+		char nextchar = *data_ptr++;
 
-        if ((nextchar == '\t') || (nextchar >= 32)) {
-            linebuffer[linepos++] = nextchar;
-        }
+		if ((nextchar == '\t') || (nextchar >= 32)) {
+			linebuffer[linepos++] = nextchar;
+		}
 
-        if ( (linepos != 0)
-          && ( (nextchar == '\n')
-            || (nextchar == '\r')
-            || (linepos >= (sizeof(linebuffer) - 1))
-          )
-        )
-        {
-            // flush.
-            linebuffer[linepos] = 0;
-            syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
-            linepos = 0;
-        }
-    }
+		if ( (linepos != 0)
+		  && ( (nextchar == '\n')
+			|| (nextchar == '\r')
+			|| (linepos >= (sizeof(linebuffer) - 1))
+		  )
+		)
+		{
+			// flush.
+			linebuffer[linepos] = 0;
+			syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
+			linepos = 0;
+		}
+	}
 }
 
 void
@@ -275,6 +275,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_JamDetectionRssiThreshold);
 		properties.insert(kWPANTUNDProperty_JamDetectionWindow);
 		properties.insert(kWPANTUNDProperty_JamDetectionBusyPeriod);
+		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
 	}
 
 	return properties;
@@ -317,6 +318,30 @@ static void convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, c
 		router_id = rloc16 >> 10;
 	}
 	cb(status, router_id);
+}
+
+static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint32_t lower, higher;
+	uint64_t val;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT32_S SPINEL_DATATYPE_UINT32_S,
+		&lower,
+		&higher
+	);
+
+	if (len > 0)
+	{
+		ret = kWPANTUNDStatus_Ok;
+		value = (static_cast<uint64_t>(higher) << 32) + static_cast<uint64_t>(lower);
+	}
+
+	return ret;
 }
 
 void
@@ -429,6 +454,20 @@ SpinelNCPInstance::get_property(
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
 		} else {
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_BUSY, SPINEL_DATATYPE_UINT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionDebugHistoryBitmap)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP)
+				)
+				.set_reply_unpacker(unpack_jam_detect_history_bitmap)
+				.finish()
+			);
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
@@ -1038,7 +1077,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_DEBUG) {
-        handle_ncp_log(value_data_ptr, value_data_len);
+		handle_ncp_log(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_NET_ROLE) {
 		uint8_t value;
@@ -1467,7 +1506,7 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 		SpinelNCPTaskSendCommand::Factory factory(this);
 		uint8_t flags = SPINEL_NET_FLAG_SLAAC
 					  | SPINEL_NET_FLAG_ON_MESH
-		              | SPINEL_NET_FLAG_PREFERRED;
+					  | SPINEL_NET_FLAG_PREFERRED;
 		std::list<Data> commands;
 
 		NCPInstanceBase::address_was_added(addr, prefix_len);

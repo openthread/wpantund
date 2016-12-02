@@ -1209,6 +1209,11 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_JAM_DETECT_WINDOW";
         break;
 
+    case SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP:
+        ret = "SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP";
+        break;
+
+
     default:
         break;
     }
