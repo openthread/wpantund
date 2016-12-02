@@ -158,13 +158,13 @@ if test "${SOCKET_UTILS_DEFAULT_SHELL+set}" = "set"
 then AC_DEFINE_UNQUOTED([SOCKET_UTILS_DEFAULT_SHELL], ["$SOCKET_UTILS_DEFAULT_SHELL"], [Default path to a shell])
 fi
 
-AC_PROG_CC([],[AC_MSG_ERROR(["A working C compiler is required"])])
-AC_PROG_CXX([],[AC_MSG_ERROR(["A working C++ compiler is required"])])
+AC_PROG_CC([],AC_MSG_ERROR(["A working C compiler is required"]))
+AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 
 AC_HEADER_STDC
 AC_HEADER_TIME
 
-AC_CHECK_HEADERS([unistd.h errno.h stdbool.h], [], [AC_MSG_ERROR(["Missing a required header."])])
+AC_CHECK_HEADERS([unistd.h errno.h stdbool.h], [], AC_MSG_ERROR(["Missing a required header."]))
 
 AC_CHECK_HEADERS([sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h sys/prctl.h])
 
@@ -184,7 +184,7 @@ AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlca
 
 NL_DEBUG
 NL_CHECK_DBUS
-NL_CHECK_BOOST_SIGNALS2([],[AC_MSG_ERROR(Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost.)])
+NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR(Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost.))
 NL_CHECK_READLINE
 NL_CHECK_PTS
 
@@ -197,7 +197,7 @@ AC_DEFINE_UNQUOTED([ASSERT_MACROS_SQUELCH], 0, [Define to 0 to explicitly preven
 NL_CHECK_CONNMAN([
 	NL_CHECK_GLIB(
 		[],
-		[AC_MSG_ERROR(["Found ConnMan headers, but couldn't find GLIB"])]
+		AC_MSG_ERROR(["Found ConnMan headers, but couldn't find GLIB"])
 	)
 ])
 AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" = "xyes"])
