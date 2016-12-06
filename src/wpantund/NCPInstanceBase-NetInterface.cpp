@@ -48,6 +48,10 @@ NCPInstanceBase::set_online(bool x)
 		add_address(mNCPLinkLocalAddress);
 	}
 
+	if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress)))	{
+		add_address(mNCPMeshLocalAddress);
+	}
+
 	if ((ret == 0) && static_cast<bool>(mLegacyInterface)) {
 		if (x && mNodeTypeSupportsLegacy) {
 			ret = mLegacyInterface->set_online(true);
