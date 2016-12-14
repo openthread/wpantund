@@ -28,15 +28,17 @@ BASE="$1"
 
 [ -n "$BASE" ] || BASE="master"
 
-./update-autoconf ${BASE} autoconf/${BASE} || die
+./update-autoconf ${BASE} autoconf/${BASE} full/${BASE} || die
 
 git branch -f autoconf/${BASE} __AUTOCONF_HEAD || die
+git branch -f full/${BASE} __FULL_HEAD || die
 
 git branch -D __AUTOCONF_HEAD
+git branch -D __FULL_HEAD
 
 [ -n "${NO_PUSH}" ] && exit 0
 
 read -p "Press enter to push." || exit 0
 
-git push origin autoconf/${BASE}:autoconf/${BASE} || die
+git push origin autoconf/${BASE}:autoconf/${BASE} full/${BASE}:full/${BASE} || die
 

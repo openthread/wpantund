@@ -30,7 +30,15 @@ REF="$1"
 
 BASE="$2"
 
-[ -n "$BASE" ] || BASE="autoconf/master"
+
+[ -n "$BASE" ] || BASE=`git rev-parse --verify "autoconf/${REF}"`
+[ -n "$BASE" ] || BASE=`git rev-parse --verify "autoconf/master"`
+[ -n "$BASE" ] || die "Can't find BASE"
+
+FULL="$3"
+
+[ -n "$FULL" ] || FULL=`git rev-parse --verify "full/${REF}"`
+[ -n "$FULL" ] || FULL="full/${REF}"
 
 [ -d proj ] && { chmod -R 777 proj && rm -fr proj ; }
 
@@ -62,6 +70,20 @@ else
 fi
 
 git push -f origin "${BASE}":refs/heads/__AUTOCONF_HEAD || die
+
+if git checkout "${FULL}"
+then
+	git merge --allow-unrelated-histories -m "build-system: Merge of changes for $REV
+
+Based-on: `git rev-parse $REV`" "${REF}" "${BASE}" || die
+else
+	git checkout -B "${FULL}" "${REF}"
+	git merge --allow-unrelated-histories -m "build-system: Merge of changes for $REV
+
+Based-on: `git rev-parse $REV`" "${BASE}" || die
+fi
+
+git push -f origin "${FULL}":refs/heads/__FULL_HEAD || die
 
 cd .. || die
 

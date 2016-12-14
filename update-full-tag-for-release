@@ -30,6 +30,7 @@ REF="$1"
 
 BASE="$2"
 
+[ -n "$BASE" ] || BASE=`git rev-parse --verify "full/${REF}"`
 [ -n "$BASE" ] || BASE=`git rev-parse --verify "full/$(git describe --abbrev=0 --match="[0123456789].[0123456789][0123456789].[0123456789][0123456789]" ${REF}^)^2"`
 [ -n "$BASE" ] || BASE=`git rev-parse --verify "full/$(git describe --abbrev=0 --match="[0123456789].[0123456789][0123456789].[0123456789][0123456789]*" ${REF}^)^2"`
 
