@@ -967,7 +967,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
 		) {
-			remove_address(mNCPMeshLocalAddress);
+			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+				remove_address(mNCPMeshLocalAddress);
+			}
 			memcpy(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress));
 			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
 			add_address(mNCPMeshLocalAddress);
@@ -980,7 +982,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
 		) {
-			remove_address(mNCPMeshLocalAddress);
+			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+				remove_address(mNCPMeshLocalAddress);
+			}
 			memcpy(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix));
 			struct in6_addr prefix_addr (mNCPMeshLocalAddress);
 			// Zero out the lower 64 bits.
