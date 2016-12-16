@@ -165,7 +165,8 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 {
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
-	mDefaultChannelMask = 0x07FFF800;
+	mSupprotedChannels.clear();
+
 	mIsPcapInProgress = false;
 	mSettings.clear();
 
@@ -203,6 +204,21 @@ SpinelNCPInstance::get_control_interface()
 	return mControlInterface;
 }
 
+uint32_t
+SpinelNCPInstance::get_default_channel_mask(void)
+{
+	uint32_t channel_mask = 0;
+	uint16_t i;
+
+	for (i = 0; i < 32; i++) {
+		if (mSupprotedChannels.find(i) != mSupprotedChannels.end()) {
+			channel_mask |= (1 << i);
+		}
+	}
+
+	return channel_mask;
+}
+
 std::set<std::string>
 SpinelNCPInstance::get_supported_property_keys()const
 {
@@ -210,6 +226,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 
 	properties.insert(kWPANTUNDProperty_ConfigNCPDriverName);
 	properties.insert(kWPANTUNDProperty_NCPChannel);
+	properties.insert(kWPANTUNDProperty_NCPChannelMask);
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
@@ -362,6 +379,9 @@ SpinelNCPInstance::get_property(
 
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)) {
 		cb(0, boost::any(std::string("spinel")));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPChannelMask)) {
+		cb(0, boost::any(get_default_channel_mask()));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
@@ -1070,6 +1090,22 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if (value != mCurrentNetworkInstance.channel) {
 			mCurrentNetworkInstance.channel = value;
 			signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
+		}
+
+	} else if (key == SPINEL_PROP_PHY_CHAN_SUPPORTED) {
+
+		uint8_t channel;
+		spinel_ssize_t len = 0;
+
+		mSupprotedChannels.clear();
+
+		while (value_data_len > 0)
+		{
+			len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &channel);
+			mSupprotedChannels.insert(channel);
+
+			value_data_ptr += len;
+			value_data_len -= len;
 		}
 
 	} else if (key == SPINEL_PROP_PHY_TX_POWER) {

@@ -142,6 +142,8 @@ protected:
 	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
 	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
 
+	uint32_t get_default_channel_mask(void);
+
 private:
 
 	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags);
