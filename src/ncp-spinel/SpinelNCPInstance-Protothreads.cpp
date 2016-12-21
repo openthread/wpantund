@@ -166,7 +166,7 @@ SpinelNCPInstance::vprocess_associated(int event, va_list args)
 	// very similar, it is not the same! DO NOT REMOVE!
 	EH_WAIT_UNTIL_WITH_TIMEOUT(
 		NCP_TICKLE_TIMEOUT,
-		should_exit || (IS_EVENT_FROM_NCP(event))
+		should_exit
 	);
 
 	if (eh_did_timeout) {
