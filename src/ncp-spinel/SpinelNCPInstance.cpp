@@ -167,6 +167,8 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mDefaultChannelMask = 0x07FFF800;
 	mIsPcapInProgress = false;
+	mNoMemStatusCounter = 0;
+	mLastTimeNoMemStatus = 0;
 	mSettings.clear();
 
 	if (!settings.empty()) {
@@ -877,6 +879,21 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				reset_tasks(wstatus);
 			}
 			return;
+		} else if (status == SPINEL_STATUS_NOMEM) {
+			cms_t now = time_ms();
+			if (now - mLastTimeNoMemStatus > kMaxTimeBetweenNoMemStatus) {
+				mNoMemStatusCounter = 0;
+			}
+			mLastTimeNoMemStatus = now;
+			mNoMemStatusCounter++;
+
+			if (mNoMemStatusCounter == kMaxNonMemCountToReset)
+			{
+				mNoMemStatusCounter = 0;
+				syslog(LOG_WARNING, "NCP is out of memory for too long...Resetting the NCP!");
+				ncp_is_misbehaving();
+				return;
+			}
 		} else if (status == SPINEL_STATUS_INVALID_COMMAND) {
 			syslog(LOG_NOTICE, "[-NCP-]: COMMAND NOT RECOGNIZED");
 		}
