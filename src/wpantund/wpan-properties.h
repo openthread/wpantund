@@ -84,6 +84,7 @@
 #define kWPANTUNDProperty_ThreadLeaderLocalWeight "Thread:Leader:LocalWeight"
 #define kWPANTUNDProperty_ThreadNetworkData       "Thread:NetworkData"
 #define kWPANTUNDProperty_ThreadChildTable        "Thread:ChildTable"
+#define kWPANTUNDProperty_ThreadChildTableAsValMap       "Thread:ChildTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNeighborTable     "Thread:NeighborTable"
 #define kWPANTUNDProperty_ThreadNetworkDataVersion       "Thread:NetworkDataVersion"
 #define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
