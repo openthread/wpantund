@@ -499,6 +499,16 @@ SpinelNCPInstance::get_property(
 			)
 		));
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+			)
+		));
+		
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
