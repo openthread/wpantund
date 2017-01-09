@@ -333,6 +333,36 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 ValueMap
 SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 {
-	// TODO: return the child info as a value map dictionary.
-	return ValueMap();
+    ValueMap entryMap;
+    uint64_t addr;
+    
+    addr  = (uint64_t) mExtAddress[7];
+    addr |= (uint64_t) mExtAddress[6] << 8;
+    addr |= (uint64_t) mExtAddress[5] << 16;
+    addr |= (uint64_t) mExtAddress[4] << 24;
+    addr |= (uint64_t) mExtAddress[3] << 32;
+    addr |= (uint64_t) mExtAddress[2] << 40;
+    addr |= (uint64_t) mExtAddress[1] << 48;
+    addr |= (uint64_t) mExtAddress[0] << 56;
+
+    entryMap.insert( std::pair<std::string, boost::any>( "extAddress",     addr               ));
+    entryMap.insert( std::pair<std::string, boost::any>( "rolc16",         mRloc16            ));
+    entryMap.insert( std::pair<std::string, boost::any>( "inLQI",          mLinkQualityIn     ));
+    entryMap.insert( std::pair<std::string, boost::any>( "aveRSS",         mAverageRssi       ));
+    entryMap.insert( std::pair<std::string, boost::any>( "age",            mAge               ));
+    entryMap.insert( std::pair<std::string, boost::any>( "RxOnWhenIdle",   mRxOnWhenIdle      ));
+    entryMap.insert( std::pair<std::string, boost::any>( "FFD",            mFullFunction      ));
+    entryMap.insert( std::pair<std::string, boost::any>( "secureDataReq",  mSecureDataRequest ));
+    entryMap.insert( std::pair<std::string, boost::any>( "fullNetData",    mFullNetworkData   ));    
+
+    if (mType == kChildTable) {
+	entryMap.insert( std::pair<std::string, boost::any>( "timeout",        mTimeout ));
+	entryMap.insert( std::pair<std::string, boost::any>( "netDataVer",     mNetworkDataVersion  ));
+    } else {    
+	entryMap.insert( std::pair<std::string, boost::any>( "linkCounter",    mLinkFrameCounter  ));
+	entryMap.insert( std::pair<std::string, boost::any>( "mleCounter",     mMleFrameCounter   ));
+	entryMap.insert( std::pair<std::string, boost::any>( "IsChild",        mIsChild           ));
+    }
+    
+    return entryMap;
 }
