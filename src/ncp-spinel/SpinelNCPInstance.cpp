@@ -505,7 +505,7 @@ SpinelNCPInstance::get_property(
 				this,
 				cb,
 				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
-				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
 		
