@@ -118,7 +118,8 @@ nl::wpantund::SpinelPackData(const char* pack_format, ...)
 		} else {
 			ret.resize(packed_size);
 		}
-	} while(false);
+		break;
+	} while(true);
 
 	va_end(args);
 	return ret;
