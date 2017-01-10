@@ -2603,7 +2603,6 @@ bail:
 /* -------------------------------------------------------------------------- */
 // MARK: - LoWPAN Plugin
 
-#include <mcheck.h>
 static int
 lowpan_tunnel_init(void)
 {
