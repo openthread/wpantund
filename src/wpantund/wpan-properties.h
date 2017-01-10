@@ -178,4 +178,22 @@
 #define kWPANTUNDStatAutoLogState_Short             "short"
 
 
+// ----------------------------------------------------------------------------
+
+// Values for value map keys
+#define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress           "ExtAddress"
+#define kWPANTUNDValueMapKey_NetworkTopology_RLOC16               "RLOC16"
+#define kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn        "LinkQualityIn"
+#define kWPANTUNDValueMapKey_NetworkTopology_AverageRssi          "AverageRssi"
+#define kWPANTUNDValueMapKey_NetworkTopology_Age                  "Age"
+#define kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle         "RxOnWhenIdle"
+#define kWPANTUNDValueMapKey_NetworkTopology_FullFunction         "FullFunction"
+#define kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest    "SecureDataRequest"
+#define kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData      "FullNetworkData"
+#define kWPANTUNDValueMapKey_NetworkTopology_Timeout              "Timeout"
+#define kWPANTUNDValueMapKey_NetworkTopology_NetworkDataVersion   "NetworkDataVersion"
+#define kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter     "LinkFrameCounter"
+#define kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter      "MleFrameCounter"
+#define kWPANTUNDValueMapKey_NetworkTopology_IsChild              "IsChild"
+
 #endif
