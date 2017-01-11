@@ -149,6 +149,12 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
 
+	// Clear any previously saved network settings
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
 	// TODO: We should do a scan to make sure we pick a good channel
 	//       and don't have a panid collision.
 

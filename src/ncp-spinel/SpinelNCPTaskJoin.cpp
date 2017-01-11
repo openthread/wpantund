@@ -51,7 +51,6 @@ nl::wpantund::SpinelNCPTaskJoin::finish(int status, const boost::any& value)
 	}
 }
 
-
 int
 nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 {
@@ -93,6 +92,13 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	// will only be received by that task once it is that task's turn
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
+
+	// Clear any previously saved network settings
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
 
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
