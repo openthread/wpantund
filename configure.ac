@@ -184,7 +184,7 @@ AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlca
 
 NL_DEBUG
 NL_CHECK_DBUS
-NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR(Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost.))
+NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR([Unable to find a usable implementation of boost::signals2 (not even our internal copy)]))
 NL_CHECK_READLINE
 NL_CHECK_PTS
 
@@ -283,6 +283,7 @@ echo "= Summary ================================================================
 echo ""
 echo "ConnMan Plugin ................. ${with_connman-no}"
 echo "Using libreadline .............. ${with_readline-???}"
+echo "Boost .......................... ${with_boost-???}"
 echo "NCP plugins to build ........... ${building_ncp_plugins-none}"
 echo "Default NCP Plugin ............. ${default_ncp_plugin}"
 echo "Static link NCP plugin ......... ${enable_static_link_ncp_plugin-no}"

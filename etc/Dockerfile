@@ -25,8 +25,6 @@ RUN apt-get -y update \
 				libglib2.0-dev \
 				libdbus-1-dev \
 				libdbus-1-dev \
-				libboost-dev \
-				libboost-signals-dev \
 				libreadline-dev \
 				libtool \
 				autoconf-archive \
@@ -38,15 +36,17 @@ RUN apt-get -y update \
 				man \
 				bsdtar \
 				gcc g++ \
-				pkg-config
-
-RUN apt-get -y update \
-	&& DEBIAN_FRONTEND=noninteractive \
-			apt-get install -y -q --no-install-recommends \
+				pkg-config \
 				autoconf \
 				autoconf-archive \
 				automake
 
 ADD $CONNMAN_INCLUDE_ARCHIVE /
+
+RUN apt-get -y update \
+	&& DEBIAN_FRONTEND=noninteractive \
+			apt-get install -y -q --no-install-recommends \
+				libboost-dev \
+				libboost-signals-dev
 
 RUN tar xvjf /connman-include.tar.bz2 -C / && rm /connman-include.tar.bz2
