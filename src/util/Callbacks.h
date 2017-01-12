@@ -23,9 +23,23 @@
 #ifndef wpantund_Callbacks_h
 #define wpantund_Callbacks_h
 
+#ifndef __STDC_CONSTANT_MACROS
+#define __STDC_CONSTANT_MACROS 1
+#endif
+
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS 1
+#endif
+
+#include <stdint.h>
+#include <string>
+#include <vector>
+
 #include <boost/signals2/signal.hpp>
 #include <boost/bind.hpp>
 #include <boost/any.hpp>
+
+#include "NilReturn.h"
 
 namespace nl {
 
