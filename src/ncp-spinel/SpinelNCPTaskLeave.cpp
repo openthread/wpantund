@@ -96,6 +96,9 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	ret = mNextCommandRet;
 	require_noerr(ret, on_error);
 
+	mInstance->mNetworkKey = Data();
+	mInstance->mNetworkKeyIndex = 0;
+
 	ret = kWPANTUNDStatus_Ok;
 
 	finish(ret);
