@@ -24,9 +24,16 @@ die() {
 
 set -x
 
+REMOTE=${REMOTE-origin}
+
 BASE="$1"
 
 [ -n "$BASE" ] || BASE="master"
+
+git fetch ${REMOTE} autoconf/${BASE}:autoconf/${BASE} full/${BASE}:full/${BASE}
+
+#git branch -f autoconf/${BASE} ${REMOTE}/autoconf/${BASE} || die
+#git branch -f full/${BASE} ${REMOTE}/full/${BASE} || die
 
 ./update-autoconf ${BASE} autoconf/${BASE} full/${BASE} || die
 
@@ -40,5 +47,5 @@ git branch -D __FULL_HEAD
 
 read -p "Press enter to push." || exit 0
 
-git push origin autoconf/${BASE}:autoconf/${BASE} full/${BASE}:full/${BASE} || die
+git push ${REMOTE} autoconf/${BASE}:autoconf/${BASE} full/${BASE}:full/${BASE} || die
 
