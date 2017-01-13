@@ -21,6 +21,7 @@
 #define __wpantund__NCPInstanceBase__
 
 #include "NCPInstance.h"
+#include <set>
 #include <map>
 #include <string>
 #include "FirmwareUpgrade.h"
@@ -164,7 +165,7 @@ public:
 
 public:
 	// ========================================================================
-	// MARK: Firware Upgrade
+	// MARK: Firmware Upgrade
 
 	virtual bool is_firmware_upgrade_required(const std::string& version);
 
@@ -273,6 +274,8 @@ protected:
 	struct in6_addr mNCPLinkLocalAddress;
 
 	WPAN::NetworkInstance mCurrentNetworkInstance;
+
+	std::set<unsigned int> mSupprotedChannels;
 
 	NodeType mNodeType;
 
