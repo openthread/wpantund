@@ -1221,6 +1221,35 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
     return ret;
 }
 
+const char *spinel_net_role_to_cstr(uint8_t net_role)
+{
+    const char *ret = "NET_ROLE_UNKNONW";
+
+    switch (net_role)
+    {
+    case SPINEL_NET_ROLE_DETACHED:
+        ret = "NET_ROLE_DETACHED";
+        break;
+
+    case SPINEL_NET_ROLE_CHILD:
+        ret = "NET_ROLE_CHILD";
+        break;
+
+    case SPINEL_NET_ROLE_ROUTER:
+        ret = "NET_ROLE_ROUTER";
+        break;
+
+    case SPINEL_NET_ROLE_LEADER:
+        ret = "NET_ROLE_LEADER";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
+
 const char *spinel_status_to_cstr(spinel_status_t status)
 {
     const char *ret = "UNKNOWN";

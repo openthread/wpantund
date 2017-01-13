@@ -1086,6 +1086,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NET_ROLE) {
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+		syslog(LOG_INFO,"[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
 
 		if ( ncp_state_is_joining(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)
@@ -1109,6 +1110,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (mNodeType != LEADER) {
 				mNodeType = LEADER;
 				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
+			}
+
+		} else if (value == SPINEL_NET_ROLE_DETACHED) {
+			if (ncp_state_is_associated(get_ncp_state())) {
+				change_ncp_state(ISOLATED);
 			}
 		}
 
