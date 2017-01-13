@@ -479,7 +479,16 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
 			)
 		));
-
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kChildTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+		
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -490,6 +499,16 @@ SpinelNCPInstance::get_property(
 			)
 		));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+		
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
