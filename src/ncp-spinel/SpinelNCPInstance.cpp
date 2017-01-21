@@ -297,6 +297,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
+	{
+		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
+	}
+
 	return properties;
 }
 
@@ -492,6 +497,13 @@ SpinelNCPInstance::get_property(
 			);
 		}
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
+		if (!mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Legacy Capability Not Supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NEST_LEGACY_ULA_PREFIX, SPINEL_DATATYPE_DATA_S);
+		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -510,7 +522,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -530,7 +542,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -850,6 +862,29 @@ SpinelNCPInstance::set_property(
 			mSettings[kWPANTUNDProperty_JamDetectionBusyPeriod] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
 
 			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
+			Data legacy_prefix = any_to_data(value);
+			Data command =
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_NEST_LEGACY_ULA_PREFIX,
+					legacy_prefix.data(),
+					legacy_prefix.size()
+				);
+
+			mSettings[kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix] = SettingsEntry(command, SPINEL_CAP_NEST_LEGACY_INTERFACE);
+
+			if (!mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
 			{
 				cb(kWPANTUNDStatus_FeatureNotSupported);
 			} else {
