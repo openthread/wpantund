@@ -85,7 +85,7 @@ then
 	}
 else
 	git checkout -B "${FULL}" "${REF}"
-	git merge --allow-unrelated-histories -m "${COMMIT_LOG}" || die
+	git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${BASE} || die
 fi
 
 git push -f origin "${FULL}":refs/heads/__FULL_HEAD || die
