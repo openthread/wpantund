@@ -355,6 +355,11 @@ on_error:
 
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 
+		if (mNextCommandRet != kWPANTUNDStatus_Ok)
+		{
+			mRetVal = mNextCommandRet;
+		}
+
 		check_noerr(mNextCommandRet);
 	}
 

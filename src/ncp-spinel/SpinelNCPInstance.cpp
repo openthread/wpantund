@@ -510,7 +510,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -530,7 +530,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -1589,11 +1589,14 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 		uint8_t flags = SPINEL_NET_FLAG_SLAAC
 					  | SPINEL_NET_FLAG_ON_MESH
 					  | SPINEL_NET_FLAG_PREFERRED;
-		std::list<Data> commands;
+		CallbackWithStatus callback;
 
 		NCPInstanceBase::address_was_added(addr, prefix_len);
 
 		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+
+		callback = boost::bind(&SpinelNCPInstance::check_operation_status, this, "address_was_added()", _1);
+		factory.set_callback(callback);
 
 		factory.add_command(
 			SpinelPackData(
@@ -1655,6 +1658,16 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 	}
 
 	NCPInstanceBase::address_was_removed(addr, prefix_len);
+}
+
+void
+SpinelNCPInstance::check_operation_status(std::string operation, int status)
+{
+	if (status == kWPANTUNDStatus_Timeout)
+	{
+		syslog(LOG_ERR, "Timed out while performing \"%s\" - Resetting NCP.", operation.c_str());
+		ncp_is_misbehaving();
+	}
 }
 
 bool
