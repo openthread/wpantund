@@ -142,7 +142,7 @@ protected:
 	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
 	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
 
-	void check_for_success(std::string operation, int status);
+	void check_status(std::string operation, int status);
 
 	uint32_t get_default_channel_mask(void);
 

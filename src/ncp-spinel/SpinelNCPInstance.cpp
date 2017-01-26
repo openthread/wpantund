@@ -1595,7 +1595,7 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 
 		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 
-		callback = boost::bind(&SpinelNCPInstance::check_for_success, this, "address_was_added()", _1);
+		callback = boost::bind(&SpinelNCPInstance::check_status, this, "address_was_added()", _1);
 		factory.set_callback(callback);
 
 		factory.add_command(
@@ -1663,9 +1663,9 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 void
 SpinelNCPInstance::check_for_success(std::string operation, int status)
 {
-	if (status != kWPANTUNDStatus_Ok)
+	if (status == kWPANTUNDStatus_Timeout)
 	{
-		syslog(LOG_ERR, "Failed performing \"%s\" - status %d - Resetting NCP.", operation.c_str(), status);
+		syslog(LOG_ERR, "Timed out while performing \"%s\" - Resetting NCP.", operation.c_str());
 		ncp_is_misbehaving();
 	}
 }
