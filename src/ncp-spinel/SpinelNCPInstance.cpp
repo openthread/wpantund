@@ -242,7 +242,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadLeaderLocalWeight);
 		properties.insert(kWPANTUNDProperty_ThreadNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadNetworkDataVersion);
+		properties.insert(kWPANTUNDProperty_ThreadStableNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadStableNetworkDataVersion);
+		properties.insert(kWPANTUNDProperty_ThreadLeaderNetworkData);
+		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 	}
@@ -431,6 +434,12 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkData)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderNetworkData)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableLeaderNetworkData)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
 
@@ -510,7 +519,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -530,7 +539,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -1370,6 +1379,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		{
 			syslog(LOG_INFO, "[-NCP-] Child: %s", it->get_as_string().c_str());
 		}
+	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
+		char net_data_cstr_buf[540];
+		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
+		syslog(LOG_INFO, "[-NCP-] Leader network data: %s", net_data_cstr_buf);
 	}
 
 bail:
