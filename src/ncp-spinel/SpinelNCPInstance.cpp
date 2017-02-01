@@ -261,6 +261,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_OTHER");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_RETRY");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_CCA");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_ABORT");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_TOTAL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_UNICAST");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BROADCAST");
@@ -510,7 +511,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -530,7 +531,7 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
-		
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetMsgBufferCounters(
@@ -580,6 +581,7 @@ SpinelNCPInstance::get_property(
 		CNTR_KEY(TX_PKT_OTHER)
 		CNTR_KEY(TX_PKT_RETRY)
 		CNTR_KEY(TX_ERR_CCA)
+		CNTR_KEY(TX_ERR_ABORT)
 		CNTR_KEY(RX_PKT_TOTAL)
 		CNTR_KEY(RX_PKT_UNICAST)
 		CNTR_KEY(RX_PKT_BROADCAST)
