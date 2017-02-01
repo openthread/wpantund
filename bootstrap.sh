@@ -97,6 +97,7 @@ then
 	cd "${SOURCE_DIR}"
 
 	AUTOANDR_STDOUT="$LOGFILE" \
+	AUTOANDR_MODULE_TAGS=optional \
 	$AUTOANDR start \
 		--disable-option-checking \
 		--enable-static-link-ncp-plugin \
