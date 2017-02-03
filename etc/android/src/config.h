@@ -19,8 +19,8 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
 
-/* Define to 1 if you have the <connman/version.h> header file. */
-/* #undef HAVE_CONNMAN_VERSION_H */
+/* Define to 1 if you have the <connman/plugin.h> header file. */
+/* #undef HAVE_CONNMAN_PLUGIN_H */
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -32,7 +32,7 @@
 /* #undef HAVE_EXECINFO_H */
 
 /* Define to 1 if you have the `fgetln' function. */
-#define HAVE_FGETLN 1
+/* #undef HAVE_FGETLN */
 
 /* Define to 1 if you have the `forkpty' function. */
 /* #undef HAVE_FORKPTY */
@@ -128,7 +128,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Define to 1 if you have the <util.h> header file. */
-#define HAVE_UTIL_H 1
+/* #undef HAVE_UTIL_H */
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
@@ -161,22 +161,28 @@
 #define PACKAGE_VERSION "0.07.00"
 
 /* Define to the sub-directory for plugins. */
-#define PKGLIBEXECDIR "/usr/local/libexec/wpantund"
+#define PKGLIBEXECDIR "/system/bin/wpantund"
 
 /* Define to the install prefix */
-#define PREFIX "/usr/local"
+#define PREFIX "/system"
+
+/* Default path to a shell */
+#define SOCKET_UTILS_DEFAULT_SHELL "/system/bin/sh"
 
 /* Source version */
-#define SOURCE_VERSION "0.07.00-177-g0b70ed2"
+#define SOURCE_VERSION "0.07.00-266-gf832c6d"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Define to the sub-directory for system settings. */
-#define SYSCONFDIR "/usr/local/etc"
+#define SYSCONFDIR "/system/etc"
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
+
+/* Path to tuntap device */
+#define TUNNEL_TUNTAP_DEVICE "/dev/tun"
 
 /* Version number of package */
 #define VERSION "0.07.00"
