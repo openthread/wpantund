@@ -62,6 +62,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/assert-macros
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/boost
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/openthread/src/ncp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/pt
+LOCAL_MODULE_TAGS += optional
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPControlInterface.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPInstance-DataPump.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPInstance-Protothreads.cpp
