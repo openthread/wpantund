@@ -126,7 +126,7 @@ am_wpanctl_OBJECTS = wpanctl-wpanctl.$(OBJEXT) \
 	wpanctl-wpanctl-utils.$(OBJEXT) \
 	wpanctl-tool-cmd-scan.$(OBJEXT) \
 	wpanctl-tool-cmd-join.$(OBJEXT) \
-	wpanctl-tool-cmd-form.$(OBJEXT) \
+	wpanctl-tool-cmd-form.$(OBJEXT) wpanctl-tool-cmd-mfg.$(OBJEXT) \
 	wpanctl-tool-cmd-leave.$(OBJEXT) \
 	wpanctl-tool-cmd-permit-join.$(OBJEXT) \
 	wpanctl-tool-cmd-list.$(OBJEXT) \
@@ -372,15 +372,16 @@ AM_CPPFLAGS = \
 DISTCLEANFILES = .deps Makefile
 wpanctl_SOURCES = wpanctl.c wpanctl-cmds.h ../util/config-file.c \
 	../util/string-utils.c wpanctl-utils.c tool-cmd-scan.c \
-	tool-cmd-join.c tool-cmd-form.c tool-cmd-leave.c \
-	tool-cmd-permit-join.c tool-cmd-list.c tool-cmd-status.c \
-	tool-cmd-resume.c tool-cmd-reset.c tool-cmd-getprop.c \
-	tool-cmd-setprop.c tool-cmd-begin-low-power.c \
-	tool-cmd-begin-net-wake.c tool-cmd-cd.c tool-cmd-poll.c \
-	tool-cmd-config-gateway.c tool-cmd-host-did-wake.c \
-	tool-cmd-add-route.c tool-cmd-remove-route.c wpanctl-utils.h \
-	tool-cmd-scan.h tool-cmd-join.h tool-cmd-form.h \
-	tool-cmd-leave.h tool-cmd-permit-join.h tool-cmd-list.h \
+	tool-cmd-join.c tool-cmd-form.c tool-cmd-mfg.c \
+	tool-cmd-leave.c tool-cmd-permit-join.c tool-cmd-list.c \
+	tool-cmd-status.c tool-cmd-resume.c tool-cmd-reset.c \
+	tool-cmd-getprop.c tool-cmd-setprop.c \
+	tool-cmd-begin-low-power.c tool-cmd-begin-net-wake.c \
+	tool-cmd-cd.c tool-cmd-poll.c tool-cmd-config-gateway.c \
+	tool-cmd-host-did-wake.c tool-cmd-add-route.c \
+	tool-cmd-remove-route.c wpanctl-utils.h tool-cmd-scan.h \
+	tool-cmd-join.h tool-cmd-form.h tool-cmd-leave.h \
+	tool-cmd-mfg.h tool-cmd-permit-join.h tool-cmd-list.h \
 	tool-cmd-status.h tool-cmd-resume.h tool-cmd-reset.h \
 	tool-cmd-getprop.h tool-cmd-setprop.h \
 	tool-cmd-begin-low-power.h tool-cmd-begin-net-wake.h \
@@ -509,6 +510,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-join.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-leave.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-mfg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-pcap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-permit-join.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-poll.Po@am__quote@
@@ -640,6 +642,20 @@ wpanctl-tool-cmd-form.obj: tool-cmd-form.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-form.c' object='wpanctl-tool-cmd-form.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-form.obj `if test -f 'tool-cmd-form.c'; then $(CYGPATH_W) 'tool-cmd-form.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-form.c'; fi`
+
+wpanctl-tool-cmd-mfg.o: tool-cmd-mfg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-mfg.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-mfg.Tpo -c -o wpanctl-tool-cmd-mfg.o `test -f 'tool-cmd-mfg.c' || echo '$(srcdir)/'`tool-cmd-mfg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-mfg.Tpo $(DEPDIR)/wpanctl-tool-cmd-mfg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-mfg.c' object='wpanctl-tool-cmd-mfg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-mfg.o `test -f 'tool-cmd-mfg.c' || echo '$(srcdir)/'`tool-cmd-mfg.c
+
+wpanctl-tool-cmd-mfg.obj: tool-cmd-mfg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-mfg.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-mfg.Tpo -c -o wpanctl-tool-cmd-mfg.obj `if test -f 'tool-cmd-mfg.c'; then $(CYGPATH_W) 'tool-cmd-mfg.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-mfg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-mfg.Tpo $(DEPDIR)/wpanctl-tool-cmd-mfg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-mfg.c' object='wpanctl-tool-cmd-mfg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-mfg.obj `if test -f 'tool-cmd-mfg.c'; then $(CYGPATH_W) 'tool-cmd-mfg.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-mfg.c'; fi`
 
 wpanctl-tool-cmd-leave.o: tool-cmd-leave.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-leave.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-leave.Tpo -c -o wpanctl-tool-cmd-leave.o `test -f 'tool-cmd-leave.c' || echo '$(srcdir)/'`tool-cmd-leave.c

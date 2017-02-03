@@ -37,6 +37,8 @@
 #include <arpa/inet.h>
 #include "time-utils.h"
 
+#include <pthread.h>
+
 #include "NetworkInstance.h"
 #include "NCPTypes.h"
 #include <cstring>

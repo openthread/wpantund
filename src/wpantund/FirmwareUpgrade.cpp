@@ -163,18 +163,20 @@ FirmwareUpgrade::set_firmware_upgrade_command(const std::string& command)
 	}
 
 	if (pid == 0) {
-		int stdout_copy = dup(STDOUT_FILENO);
-		int stdin_copy = dup(STDIN_FILENO);
+		int stdout_fd_copy = dup(STDOUT_FILENO);
+		int stdin_fd_copy = dup(STDIN_FILENO);
+		FILE* stdin_copy = NULL;
+		FILE* stdout_copy = NULL;
 
 		dup2(STDERR_FILENO,STDOUT_FILENO);
 		close(STDIN_FILENO);
 
-		if (stdin_copy >= 0) {
-			stdin = fdopen(stdin_copy, "r");
+		if (stdin_fd_copy >= 0) {
+			stdin_copy = fdopen(stdin_fd_copy, "r");
 		}
 
-		if (stdout_copy >= 0) {
-			stdout = fdopen(stdout_copy, "w");
+		if (stdout_fd_copy >= 0) {
+			stdout_copy = fdopen(stdout_fd_copy, "w");
 		}
 
 		// Double fork to avoid leaking zombie processes.
@@ -188,13 +190,13 @@ FirmwareUpgrade::set_firmware_upgrade_command(const std::string& command)
 		if (0 == pid)
 		{
 			// Set the shell environment variable if it isn't set already.
-			setenv("SHELL","/bin/sh",0);
+			setenv("SHELL",SOCKET_UTILS_DEFAULT_SHELL,0);
 
-			while ((ferror(stdin) == 0) && (feof(stdin) == 0)) {
+			while ((ferror(stdin_copy) == 0) && (feof(stdin_copy) == 0)) {
 				int c;
 				int ret;
 
-				c = fgetc(stdin);
+				c = fgetc(stdin_copy);
 
 				switch (c) {
 				case '1':
@@ -205,19 +207,19 @@ FirmwareUpgrade::set_firmware_upgrade_command(const std::string& command)
 					ret = system(command.c_str());
 
 					// Inform our parent process of the return value for the command.
-					fputc(WEXITSTATUS(ret), stdout);
-					fflush(stdout);
+					fputc(WEXITSTATUS(ret), stdout_copy);
+					fflush(stdout_copy);
 					break;
 
 				case 'X':
-					fputc(0, stdout);
-					fflush(stdout);
+					fputc(0, stdout_copy);
+					fflush(stdout_copy);
 					_exit(EXIT_SUCCESS);
 					break;
 
 				default:
-					fputc(1, stdout);
-					fflush(stdout);
+					fputc(1, stdout_copy);
+					fflush(stdout_copy);
 					_exit(EXIT_FAILURE);
 					break;
 				}
@@ -269,18 +271,20 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 	}
 
 	if (pid == 0) {
-		int stdout_copy = dup(STDOUT_FILENO);
-		int stdin_copy = dup(STDIN_FILENO);
+		int stdout_fd_copy = dup(STDOUT_FILENO);
+		int stdin_fd_copy = dup(STDIN_FILENO);
+		FILE* stdin_copy = NULL;
+		FILE* stdout_copy = NULL;
 
 		dup2(STDERR_FILENO,STDOUT_FILENO);
 
-		if (stdin_copy >= 0) {
+		if (stdin_fd_copy >= 0) {
 			close(STDIN_FILENO);
-			stdin = fdopen(stdin_copy, "r");
+			stdin_copy = fdopen(stdin_fd_copy, "r");
 		}
 
-		if (stdout_copy >= 0) {
-			stdout = fdopen(stdout_copy, "w");
+		if (stdout_fd_copy >= 0) {
+			stdout_copy = fdopen(stdout_fd_copy, "w");
 		}
 
 		// Double fork to avoid leaking zombie processes.
@@ -294,23 +298,23 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 		if (0 == pid)
 		{
 			// Set the shell environment variable if it isn't set already.
-			setenv("SHELL","/bin/sh",0);
+			setenv("SHELL",SOCKET_UTILS_DEFAULT_SHELL,0);
 
-			while ((ferror(stdin) == 0) && (feof(stdin) == 0)) {
+			while ((ferror(stdin_copy) == 0) && (feof(stdin_copy) == 0)) {
 				int ret;
 				const char* line = NULL;
 				size_t line_len = 0;
 				std::string escaped_line;
 
-				line = fgetln(stdin, &line_len);
+				line = fgetln(stdin_copy, &line_len);
 
 				if (!line || (line_len == 0)) {
 					continue;
 				}
 
 				if ((line[0] == 'X') && (line[1] == 0)) {
-					fputc(0, stdout);
-					fflush(stdout);
+					fputc(0, stdout_copy);
+					fflush(stdout_copy);
 					_exit(EXIT_SUCCESS);
 				}
 
@@ -323,8 +327,8 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 					if ((c < 32) && (c != '\t') && (c != '\n') && (c != '\r')) {
 						// Control characters aren't allowed.
 						syslog(LOG_ERR, "FirmwareCheck: Prohibited character (%d) in version string", c);
-						fputc('E', stdout);
-						fflush(stdout);
+						fputc('E', stdout_copy);
+						fflush(stdout_copy);
 						_exit(EXIT_FAILURE);
 					}
 					switch (c) {
@@ -345,8 +349,8 @@ FirmwareUpgrade::set_firmware_check_command(const std::string& command)
 
 				ret = system((command + escaped_line).c_str());
 
-				fputc(WEXITSTATUS(ret), stdout);
-				fflush(stdout);
+				fputc(WEXITSTATUS(ret), stdout_copy);
+				fflush(stdout_copy);
 			}
 
 			_exit(EXIT_FAILURE);

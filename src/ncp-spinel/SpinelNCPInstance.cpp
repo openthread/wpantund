@@ -34,7 +34,8 @@
 #include "SpinelNCPTaskWake.h"
 #include "SpinelNCPTaskSendCommand.h"
 #include "SpinelNCPTaskJoin.h"
-#include "SpinelNCPTaskGetChildTable.h"
+#include "SpinelNCPTaskGetNetworkTopology.h"
+#include "SpinelNCPTaskGetMsgBufferCounters.h"
 #include "any-to.h"
 #include "spinel-extra.h"
 
@@ -48,28 +49,28 @@ WPANTUND_DEFINE_NCPINSTANCE_PLUGIN(spinel, SpinelNCPInstance);
 void
 SpinelNCPInstance::handle_ncp_log(const uint8_t* data_ptr, int data_len)
 {
-    static char linebuffer[NCP_DEBUG_LINE_LENGTH_MAX + 1];
-    static int linepos = 0;
-    while (data_len--) {
-        char nextchar = *data_ptr++;
+	static char linebuffer[NCP_DEBUG_LINE_LENGTH_MAX + 1];
+	static int linepos = 0;
+	while (data_len--) {
+		char nextchar = *data_ptr++;
 
-        if ((nextchar == '\t') || (nextchar >= 32)) {
-            linebuffer[linepos++] = nextchar;
-        }
+		if ((nextchar == '\t') || (nextchar >= 32)) {
+			linebuffer[linepos++] = nextchar;
+		}
 
-        if ( (linepos != 0)
-          && ( (nextchar == '\n')
-            || (nextchar == '\r')
-            || (linepos >= (sizeof(linebuffer) - 1))
-          )
-        )
-        {
-            // flush.
-            linebuffer[linepos] = 0;
-            syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
-            linepos = 0;
-        }
-    }
+		if ( (linepos != 0)
+		  && ( (nextchar == '\n')
+			|| (nextchar == '\r')
+			|| (linepos >= (sizeof(linebuffer) - 1))
+		  )
+		)
+		{
+			// flush.
+			linebuffer[linepos] = 0;
+			syslog(LOG_WARNING, "NCP => %s\n", linebuffer);
+			linepos = 0;
+		}
+	}
 }
 
 void
@@ -164,8 +165,12 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 {
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
-	mDefaultChannelMask = 0x07FFF800;
+	mSupprotedChannels.clear();
+
 	mIsPcapInProgress = false;
+	mNoMemStatusCounter = 0;
+	mLastTimeNoMemStatus = 0;
+	mSettings.clear();
 
 	if (!settings.empty()) {
 		int status;
@@ -201,6 +206,21 @@ SpinelNCPInstance::get_control_interface()
 	return mControlInterface;
 }
 
+uint32_t
+SpinelNCPInstance::get_default_channel_mask(void)
+{
+	uint32_t channel_mask = 0;
+	uint16_t i;
+
+	for (i = 0; i < 32; i++) {
+		if (mSupprotedChannels.find(i) != mSupprotedChannels.end()) {
+			channel_mask |= (1 << i);
+		}
+	}
+
+	return channel_mask;
+}
+
 std::set<std::string>
 SpinelNCPInstance::get_supported_property_keys()const
 {
@@ -208,6 +228,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 
 	properties.insert(kWPANTUNDProperty_ConfigNCPDriverName);
 	properties.insert(kWPANTUNDProperty_NCPChannel);
+	properties.insert(kWPANTUNDProperty_NCPChannelMask);
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
@@ -221,12 +242,18 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadLeaderLocalWeight);
 		properties.insert(kWPANTUNDProperty_ThreadNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadNetworkDataVersion);
+		properties.insert(kWPANTUNDProperty_ThreadStableNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadStableNetworkDataVersion);
+		properties.insert(kWPANTUNDProperty_ThreadLeaderNetworkData);
+		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
+		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_UNICAST");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_BROADCAST");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACK_REQ");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACKED");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_NO_ACK_REQ");
@@ -237,7 +264,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_OTHER");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_RETRY");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_CCA");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_ABORT");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_TOTAL");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_UNICAST");
+		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BROADCAST");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA_POLL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BEACON");
@@ -260,6 +290,20 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_SPINEL_TOTAL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_TOTAL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_ERR");
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+		properties.insert(kWPANTUNDProperty_JamDetectionStatus);
+		properties.insert(kWPANTUNDProperty_JamDetectionEnable);
+		properties.insert(kWPANTUNDProperty_JamDetectionRssiThreshold);
+		properties.insert(kWPANTUNDProperty_JamDetectionWindow);
+		properties.insert(kWPANTUNDProperty_JamDetectionBusyPeriod);
+		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
+	{
+		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
 
 	return properties;
@@ -304,6 +348,30 @@ static void convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, c
 	cb(status, router_id);
 }
 
+static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint32_t lower, higher;
+	uint64_t val;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT32_S SPINEL_DATATYPE_UINT32_S,
+		&lower,
+		&higher
+	);
+
+	if (len > 0)
+	{
+		ret = kWPANTUNDStatus_Ok;
+		value = (static_cast<uint64_t>(higher) << 32) + static_cast<uint64_t>(lower);
+	}
+
+	return ret;
+}
+
 void
 SpinelNCPInstance::get_property(
 	const std::string& key,
@@ -323,6 +391,9 @@ SpinelNCPInstance::get_property(
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)) {
 		cb(0, boost::any(std::string("spinel")));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPChannelMask)) {
+		cb(0, boost::any(get_default_channel_mask()));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
 
@@ -336,7 +407,7 @@ SpinelNCPInstance::get_property(
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE, SPINEL_DATATYPE_UINT32_S);
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
@@ -369,6 +440,12 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkData)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderNetworkData)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableLeaderNetworkData)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA, SPINEL_DATATYPE_DATA_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
 
@@ -381,12 +458,116 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6LinkLocalAddress) && !IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_LL_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_ENABLE, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionRssiThreshold)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionWindow)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_WINDOW, SPINEL_DATATYPE_UINT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionBusyPeriod)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECT_BUSY, SPINEL_DATATYPE_UINT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionDebugHistoryBitmap)) {
+		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP)
+				)
+				.set_reply_unpacker(unpack_jam_detect_history_bitmap)
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
+		if (!mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Legacy Capability Not Supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NEST_LEGACY_ULA_PREFIX, SPINEL_DATATYPE_DATA_S);
+		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
-			new SpinelNCPTaskGetChildTable(
+			new SpinelNCPTaskGetNetworkTopology(
 				this,
 				cb,
-				SpinelNCPTaskGetChildTable::kResultFormat_StringArray
+				SpinelNCPTaskGetNetworkTopology::kChildTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+			)
+		));
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kChildTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetMsgBufferCounters(
+				this,
+				cb,
+				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_StringArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetMsgBufferCounters(
+				this,
+				cb,
+				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_String
 			)
 		));
 
@@ -409,6 +590,8 @@ SpinelNCPInstance::get_property(
 		}
 
 		CNTR_KEY(TX_PKT_TOTAL)
+		CNTR_KEY(TX_PKT_UNICAST)
+		CNTR_KEY(TX_PKT_BROADCAST)
 		CNTR_KEY(TX_PKT_ACK_REQ)
 		CNTR_KEY(TX_PKT_ACKED)
 		CNTR_KEY(TX_PKT_NO_ACK_REQ)
@@ -419,7 +602,10 @@ SpinelNCPInstance::get_property(
 		CNTR_KEY(TX_PKT_OTHER)
 		CNTR_KEY(TX_PKT_RETRY)
 		CNTR_KEY(TX_ERR_CCA)
+		CNTR_KEY(TX_ERR_ABORT)
 		CNTR_KEY(RX_PKT_TOTAL)
+		CNTR_KEY(RX_PKT_UNICAST)
+		CNTR_KEY(RX_PKT_BROADCAST)
 		CNTR_KEY(RX_PKT_DATA)
 		CNTR_KEY(RX_PKT_DATA_POLL)
 		CNTR_KEY(RX_PKT_BEACON)
@@ -485,12 +671,13 @@ SpinelNCPInstance::set_property(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 			int cca = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca);
+
+			mSettings[kWPANTUNDProperty_NCPCCAThreshold] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
-				.add_command(
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca)
-				)
+				.add_command(command)
 				.finish()
 			);
 
@@ -603,7 +790,7 @@ SpinelNCPInstance::set_property(
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE, key_index)
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, key_index)
 				)
 				.finish()
 			);
@@ -627,6 +814,97 @@ SpinelNCPInstance::set_property(
 				)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
+			bool isEnabled = any_to_bool(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_JAM_DETECT_ENABLE, isEnabled);
+
+			mSettings[kWPANTUNDProperty_JamDetectionEnable] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionRssiThreshold)) {
+			int8_t rssiThreshold = static_cast<int8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD, rssiThreshold);
+
+			mSettings[kWPANTUNDProperty_JamDetectionRssiThreshold] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionWindow)) {
+			uint8_t window = static_cast<uint8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_WINDOW, window);
+
+			mSettings[kWPANTUNDProperty_JamDetectionWindow] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionBusyPeriod)) {
+			uint8_t busyPeriod = static_cast<uint8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_JAM_DETECT_BUSY, busyPeriod);
+
+			mSettings[kWPANTUNDProperty_JamDetectionBusyPeriod] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+
+			if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
+			Data legacy_prefix = any_to_data(value);
+			Data command =
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_NEST_LEGACY_ULA_PREFIX,
+					legacy_prefix.data(),
+					legacy_prefix.size()
+				);
+
+			mSettings[kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix] = SettingsEntry(command, SPINEL_CAP_NEST_LEGACY_INTERFACE);
+
+			if (!mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
 
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
@@ -659,9 +937,13 @@ SpinelNCPInstance::reset_tasks(wpantund_status_t status)
 void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
+	const uint8_t *original_value_data_ptr = value_data_ptr;
+	spinel_size_t original_value_data_len = value_data_len;
+
 	if (key == SPINEL_PROP_LAST_STATUS) {
 		spinel_status_t status = SPINEL_STATUS_OK;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
+		syslog(LOG_INFO,"[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
 		if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
 			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
 			process_event(EVENT_NCP_RESET, status);
@@ -682,6 +964,21 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				reset_tasks(wstatus);
 			}
 			return;
+		} else if (status == SPINEL_STATUS_NOMEM) {
+			cms_t now = time_ms();
+			if (now - mLastTimeNoMemStatus > kMaxTimeBetweenNoMemStatus) {
+				mNoMemStatusCounter = 0;
+			}
+			mLastTimeNoMemStatus = now;
+			mNoMemStatusCounter++;
+
+			if (mNoMemStatusCounter == kMaxNonMemCountToReset)
+			{
+				mNoMemStatusCounter = 0;
+				syslog(LOG_WARNING, "NCP is out of memory for too long...Resetting the NCP!");
+				ncp_is_misbehaving();
+				return;
+			}
 		} else if (status == SPINEL_STATUS_INVALID_COMMAND) {
 			syslog(LOG_NOTICE, "[-NCP-]: COMMAND NOT RECOGNIZED");
 		}
@@ -756,7 +1053,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				remove_address(mNCPLinkLocalAddress);
 			}
 
-			memcpy(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress));
+			memcpy((void*)mNCPLinkLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPLinkLocalAddress));
 
 			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
 				add_address(mNCPLinkLocalAddress);
@@ -772,8 +1069,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
 		) {
-			remove_address(mNCPMeshLocalAddress);
-			memcpy(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress));
+			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+				remove_address(mNCPMeshLocalAddress);
+			}
+			memcpy((void*)mNCPMeshLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPMeshLocalAddress));
 			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
 			add_address(mNCPMeshLocalAddress);
 		}
@@ -785,8 +1084,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		 && buffer_is_nonzero(addr->s6_addr, 8)
 		 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
 		) {
-			remove_address(mNCPMeshLocalAddress);
-			memcpy(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix));
+			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+				remove_address(mNCPMeshLocalAddress);
+			}
+			memcpy((void*)mNCPV6Prefix, (void*)addr, sizeof(mNCPV6Prefix));
 			struct in6_addr prefix_addr (mNCPMeshLocalAddress);
 			// Zero out the lower 64 bits.
 			memset(prefix_addr.s6_addr+8, 0, 8);
@@ -857,7 +1158,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		}
 
-	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE) {
+	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER) {
 		uint32_t network_key_index;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
 		if (network_key_index != mNetworkKeyIndex) {
@@ -873,6 +1174,22 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
 		}
 
+	} else if (key == SPINEL_PROP_PHY_CHAN_SUPPORTED) {
+
+		uint8_t channel;
+		spinel_ssize_t len = 0;
+
+		mSupprotedChannels.clear();
+
+		while (value_data_len > 0)
+		{
+			len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &channel);
+			mSupprotedChannels.insert(channel);
+
+			value_data_ptr += len;
+			value_data_len -= len;
+		}
+
 	} else if (key == SPINEL_PROP_PHY_TX_POWER) {
 		int8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
@@ -882,11 +1199,12 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_DEBUG) {
-        handle_ncp_log(value_data_ptr, value_data_len);
+		handle_ncp_log(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_NET_ROLE) {
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+		syslog(LOG_INFO,"[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
 
 		if ( ncp_state_is_joining(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)
@@ -910,6 +1228,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (mNodeType != LEADER) {
 				mNodeType = LEADER;
 				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
+			}
+
+		} else if (value == SPINEL_NET_ROLE_DETACHED) {
+			if (ncp_state_is_associated(get_ncp_state())) {
+				change_ncp_state(ISOLATED);
 			}
 		}
 
@@ -986,6 +1309,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		} else {
 			syslog(LOG_NOTICE, "Network is not joinable");
+		}
+
+	} else if (key == SPINEL_PROP_JAM_DETECTED) {
+		bool jamDetected = false;
+
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &jamDetected);
+		signal_property_changed(kWPANTUNDProperty_JamDetectionStatus, jamDetected);
+
+		if (jamDetected) {
+			syslog(LOG_NOTICE, "Signal jamming is detected");
+		} else {
+			syslog(LOG_NOTICE, "Signal jamming cleared");
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_RAW) {
@@ -1071,10 +1406,24 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				handle_normal_ipv6_from_ncp(frame_ptr, frame_len);
 			}
 		}
+	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::Table child_table;
+		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+
+		SpinelNCPTaskGetNetworkTopology::prase_child_table(value_data_ptr, value_data_len, child_table);
+
+		for (it = child_table.begin(); it != child_table.end(); it++)
+		{
+			syslog(LOG_INFO, "[-NCP-] Child: %s", it->get_as_string().c_str());
+		}
+	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
+		char net_data_cstr_buf[540];
+		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
+		syslog(LOG_INFO, "[-NCP-] Leader network data: %s", net_data_cstr_buf);
 	}
 
 bail:
-	process_event(EVENT_NCP_PROP_VALUE_IS, key, value_data_ptr, value_data_len);
+	process_event(EVENT_NCP_PROP_VALUE_IS, key, original_value_data_ptr, original_value_data_len);
 }
 
 void
@@ -1289,12 +1638,15 @@ SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len
 		SpinelNCPTaskSendCommand::Factory factory(this);
 		uint8_t flags = SPINEL_NET_FLAG_SLAAC
 					  | SPINEL_NET_FLAG_ON_MESH
-		              | SPINEL_NET_FLAG_PREFERRED;
-		std::list<Data> commands;
+					  | SPINEL_NET_FLAG_PREFERRED;
+		CallbackWithStatus callback;
 
 		NCPInstanceBase::address_was_added(addr, prefix_len);
 
 		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+
+		callback = boost::bind(&SpinelNCPInstance::check_operation_status, this, "address_was_added()", _1);
+		factory.set_callback(callback);
 
 		factory.add_command(
 			SpinelPackData(
@@ -1356,6 +1708,16 @@ SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_l
 	}
 
 	NCPInstanceBase::address_was_removed(addr, prefix_len);
+}
+
+void
+SpinelNCPInstance::check_operation_status(std::string operation, int status)
+{
+	if (status == kWPANTUNDStatus_Timeout)
+	{
+		syslog(LOG_ERR, "Timed out while performing \"%s\" - Resetting NCP.", operation.c_str());
+		ncp_is_misbehaving();
+	}
 }
 
 bool

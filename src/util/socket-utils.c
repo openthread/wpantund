@@ -86,7 +86,7 @@ static struct {
 static void
 system_socket_table_close_alarm_(int sig)
 {
-	static const char message[] = "\nclose_super_socket: Unable to terminate child\n";
+	static const char message[] = "\nclose_super_socket: Unable to terminate child in a timely manner, watchdog fired\n";
 
 	// Can't use syslog here, write to stderr instead.
 	(void)write(STDERR_FILENO, message, sizeof(message) - 1);
@@ -150,25 +150,42 @@ close_super_socket(int fd)
 	ret = close(fd);
 
 	if (i < sizeof(gSystemSocketTable)/sizeof(gSystemSocketTable[0])) {
-		// Set up a watchdog timer in case things go sour.
-		void (*prev_alarm_handler)(int) = signal(SIGALRM, &system_socket_table_close_alarm_);
-		unsigned int prev_alarm_remaining = alarm(5);
 		pid_t pid = gSystemSocketTable[i].pid;
-		int x = 0;
+		int x = 0, j = 0;
 
-		kill(pid, SIGTERM);
+		kill(gSystemSocketTable[i].pid, SIGHUP);
 
-		do {
-			errno = 0;
-			pid = waitpid(gSystemSocketTable[i].pid, &x, 0);
-		} while ((pid == -1) && (errno == EINTR));
+		for (j = 0; j < 100; ++j) {
+			pid = waitpid(gSystemSocketTable[i].pid, &x, WNOHANG);
+			if (pid > 0) {
+				break;
+			}
+			usleep(100000);
+		}
+
+		if (pid <= 0) {
+			// Five second watchdog.
+			void (*prev_alarm_handler)(int) = signal(SIGALRM, &system_socket_table_close_alarm_);
+			unsigned int prev_alarm_remaining = alarm(5);
+
+			syslog(LOG_WARNING, "close_super_socket: PID %d didn't respond to SIGHUP, trying SIGTERM", gSystemSocketTable[i].pid);
+
+			kill(gSystemSocketTable[i].pid, SIGTERM);
+
+			do {
+				errno = 0;
+				pid = waitpid(gSystemSocketTable[i].pid, &x, 0);
+			} while ((pid == -1) && (errno == EINTR));
+
+			// Disarm watchdog.
+			alarm(prev_alarm_remaining);
+			signal(SIGALRM, prev_alarm_handler);
+		}
 
 		if (pid == -1) {
 			perror(strerror(errno));
 		}
 
-		alarm(prev_alarm_remaining);
-		signal(SIGALRM, prev_alarm_handler);
 
 		gSystemSocketTable[i].pid = 0;
 		gSystemSocketTable[i].fd = -1;
@@ -233,7 +250,10 @@ socket_name_is_port(const char* socket_name)
 static bool
 socket_name_is_inet(const char* socket_name)
 {
-	// It's an inet address if it Contains no slashes
+	// It's an inet address if it Contains no slashes or starts with a '['.
+	if (*socket_name == '[') {
+		return true;
+	}
 	do {
 		if (*socket_name == '/') {
 			return false;
@@ -424,7 +444,7 @@ open_system_socket_forkpty(const char* command)
 		dup2(stderr_copy_fd, STDERR_FILENO);
 
 		// Set the shell environment variable if it isn't set already.
-		setenv("SHELL", "/bin/sh", 0);
+		setenv("SHELL", SOCKET_UTILS_DEFAULT_SHELL, 0);
 
 		// Close all file descriptors larger than STDERR_FILENO.
 		for (i = (STDERR_FILENO + 1); i < dtablesize; i++) {
@@ -617,12 +637,51 @@ get_super_socket_type_from_path(const char* socket_name)
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
 	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
+	} else if (strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_TCP;
 	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
 		socket_type = SUPER_SOCKET_TYPE_TCP;
 	} else if (socket_name_is_device(socket_name)) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
 	}
 	return socket_type;
+}
+
+int
+baud_rate_to_termios_constant(int baud)
+{
+	int ret;
+	// Standard "TERMIOS" uses constants to get and set
+	// the baud rate, but we use the actual baud rate.
+	// This function converts from the actual baud rate
+	// to the constant supported by this platform. It
+	// returns zero if the baud rate is unsupported.
+	switch(baud) {
+	case 9600:
+		ret = B9600;
+		break;
+	case 19200:
+		ret = B19200;
+		break;
+	case 38400:
+		ret = B38400;
+		break;
+	case 57600:
+		ret = B57600;
+		break;
+	case 115200:
+		ret = B115200;
+		break;
+#ifdef B230400
+	case 230400:
+		ret = B230400;
+		break;
+#endif
+	default:
+		ret = 0;
+		break;
+	}
+	return ret;
 }
 
 int
@@ -637,7 +696,7 @@ open_super_socket(const char* socket_name)
 	int socket_type = get_super_socket_type_from_path(socket_name);
 
 	// Move past the colon, if there was one.
-	if (NULL != filename) {
+	if (NULL != filename && socket_name[0] != '[') {
 		filename++;
 	} else {
 		filename = "";
@@ -650,7 +709,11 @@ open_super_socket(const char* socket_name)
 	}
 
 	if (socket_type == SUPER_SOCKET_TYPE_TCP) {
-		socket_name_is_well_formed = false;
+		socket_name_is_well_formed =
+			(strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0);
+		if (!socket_name_is_well_formed) {
+			filename = (char*)socket_name;
+		}
 	}
 
 	if (!socket_name_is_well_formed) {
@@ -706,10 +769,10 @@ open_super_socket(const char* socket_name)
 			port = socket_name;
 		} else {
 			ssize_t i;
-			if (socket_name[0] == '[') {
-				host = strdup(socket_name + 1);
+			if (filename[0] == '[') {
+				host = strdup(filename + 1);
 			} else {
-				host = strdup(socket_name);
+				host = strdup(filename);
 			}
 			for (i = strlen(host) - 1; i >= 0; --i) {
 				if (host[i] == ':' && port == NULL) {
@@ -777,8 +840,9 @@ open_super_socket(const char* socket_name)
 		for (; NULL != options; options = strchr(options+1, ',')) {
 			if (strncasecmp(options, ",b", 2) == 0 && isdigit(options[2])) {
 				// Change Baud rate
+				int baud = baud_rate_to_termios_constant((int)strtol(options+2,NULL,10));
 				FETCH_TERMIOS();
-				cfsetspeed(&tios, strtol(options+2,NULL,10));
+				cfsetspeed(&tios, baud);
 				COMMIT_TERMIOS();
 			} else if (strncasecmp(options, ",default", strlen(",default")) == 0) {
 				FETCH_TERMIOS();
@@ -792,7 +856,7 @@ open_super_socket(const char* socket_name)
 				tios.c_lflag = 0;
 
 				cfmakeraw(&tios);
-				cfsetspeed(&tios, gSocketWrapperBaud);
+				cfsetspeed(&tios, baud_rate_to_termios_constant(gSocketWrapperBaud));
 				COMMIT_TERMIOS();
 			} else if (strncasecmp(options, ",raw", 4) == 0) {
 				// Raw mode

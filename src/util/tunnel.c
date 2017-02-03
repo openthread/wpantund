@@ -69,6 +69,10 @@
 #define IFEF_NOAUTOIPV6LL   0x2000  /* Interface IPv6 LinkLocal address not provided by kernel */
 #endif
 
+#ifndef TUNNEL_TUNTAP_DEVICE
+#define TUNNEL_TUNTAP_DEVICE               "/dev/net/tun"
+#endif
+
 int
 tunnel_open(const char* tun_name)
 {
@@ -133,7 +137,7 @@ tunnel_open(const char* tun_name)
 		tun_name = "tun0";
 	asprintf(&device, "/dev/%s", tun_name);
 #else
-	device = strdup("/dev/net/tun");
+	device = strdup(TUNNEL_TUNTAP_DEVICE);
 #endif
 
 	require(NULL != device, bail);

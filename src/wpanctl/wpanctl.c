@@ -26,6 +26,9 @@
 #include <config.h>
 #endif
 
+#undef ASSERT_MACROS_USE_SYSLOG
+#define ASSERT_MACROS_USE_SYSLOG 0
+
 #include <getopt.h>
 #include "assert-macros.h"
 #include <stdio.h>
@@ -482,13 +485,13 @@ int main(int argc, char * argv[])
 
 		case 'f':
 #if HAVE_LIBREADLINE
-			stdin = fopen(optarg, "r");
-		if (!stdin) {
-			fprintf(stderr,
-			        "%s: error: Unable to open file \"%s\".\n",
-					argv[0], optarg);
-			return ERRORCODE_BADARG;
-		}
+			if (NULL == freopen(optarg, "r", stdin))
+			{
+				fprintf(stderr,
+						"%s: error: Unable to open file \"%s\".\n",
+						argv[0], optarg);
+				return ERRORCODE_BADARG;
+			}
 #else
 			fprintf(stderr,
 				"%s: Cannot read from file \"%s\" : Missing readline library.\n",

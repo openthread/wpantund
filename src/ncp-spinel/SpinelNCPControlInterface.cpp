@@ -380,7 +380,7 @@ SpinelNCPControlInterface::permit_join(
 		));
 	} else {
 		factory.add_command(SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_NULL_S),
 			SPINEL_PROP_THREAD_ASSISTING_PORTS
 		));
 	}
@@ -400,7 +400,7 @@ SpinelNCPControlInterface::netscan_start(
     const ValueMap& options,
     CallbackWithStatus cb
 ) {
-	ChannelMask channel_mask(mNCPInstance->mDefaultChannelMask);
+	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
 
 	if (options.count(kWPANTUNDProperty_NCPChannelMask)) {
 		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));
@@ -426,7 +426,7 @@ SpinelNCPControlInterface::energyscan_start(
     const ValueMap& options,
     CallbackWithStatus cb
 ) {
-	ChannelMask channel_mask(mNCPInstance->mDefaultChannelMask);
+	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
 
 	if (options.count(kWPANTUNDProperty_NCPChannelMask)) {
 		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));

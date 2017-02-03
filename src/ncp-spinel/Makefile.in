@@ -155,9 +155,12 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPInstance.h SpinelNCPInstance-DataPump.cpp \
 	SpinelNCPInstance-Protothreads.cpp SpinelNCPTask.cpp \
 	SpinelNCPTask.h SpinelNCPTaskDeepSleep.cpp \
-	SpinelNCPTaskGetChildTable.h SpinelNCPTaskGetChildTable.cpp \
-	SpinelNCPTaskDeepSleep.h SpinelNCPTaskForm.cpp \
-	SpinelNCPTaskForm.h SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
+	SpinelNCPTaskGetNetworkTopology.h \
+	SpinelNCPTaskGetNetworkTopology.cpp \
+	SpinelNCPTaskGetMsgBufferCounters.h \
+	SpinelNCPTaskGetMsgBufferCounters.cpp SpinelNCPTaskDeepSleep.h \
+	SpinelNCPTaskForm.cpp SpinelNCPTaskForm.h \
+	SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
 	SpinelNCPTaskScan.cpp SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp SpinelNCPTaskSendCommand.h \
@@ -170,7 +173,8 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPInstance-Protothreads.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTask.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskDeepSleep.lo \
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskGetChildTable.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskLeave.lo \
@@ -195,9 +199,12 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPInstance.h SpinelNCPInstance-DataPump.cpp \
 	SpinelNCPInstance-Protothreads.cpp SpinelNCPTask.cpp \
 	SpinelNCPTask.h SpinelNCPTaskDeepSleep.cpp \
-	SpinelNCPTaskGetChildTable.h SpinelNCPTaskGetChildTable.cpp \
-	SpinelNCPTaskDeepSleep.h SpinelNCPTaskForm.cpp \
-	SpinelNCPTaskForm.h SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
+	SpinelNCPTaskGetNetworkTopology.h \
+	SpinelNCPTaskGetNetworkTopology.cpp \
+	SpinelNCPTaskGetMsgBufferCounters.h \
+	SpinelNCPTaskGetMsgBufferCounters.cpp SpinelNCPTaskDeepSleep.h \
+	SpinelNCPTaskForm.cpp SpinelNCPTaskForm.h \
+	SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
 	SpinelNCPTaskScan.cpp SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp SpinelNCPTaskSendCommand.h \
@@ -210,7 +217,8 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPInstance-Protothreads.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTask.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskDeepSleep.lo \
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskGetChildTable.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskLeave.lo \
@@ -504,8 +512,10 @@ EXTRA_DIST = \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTask.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTask.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskDeepSleep.cpp \
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetChildTable.h \
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetChildTable.cpp \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetNetworkTopology.h \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetNetworkTopology.cpp \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetMsgBufferCounters.h \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskGetMsgBufferCounters.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskDeepSleep.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskForm.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskForm.h \
@@ -683,7 +693,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTask.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskDeepSleep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
@@ -696,7 +707,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTask.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
@@ -811,12 +823,19 @@ libncp_spinel_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
 
-libncp_spinel_la-SpinelNCPTaskGetChildTable.lo: SpinelNCPTaskGetChildTable.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskGetChildTable.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo -c -o libncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetChildTable.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetChildTable.cpp' object='libncp_spinel_la-SpinelNCPTaskGetChildTable.lo' libtool=yes @AMDEPBACKSLASH@
+libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo: SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo -c -o libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetNetworkTopology.cpp' object='libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+
+libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo: SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo -c -o libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetMsgBufferCounters.cpp' object='libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
 
 libncp_spinel_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o libncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
@@ -902,12 +921,19 @@ ncp_spinel_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
 
-ncp_spinel_la-SpinelNCPTaskGetChildTable.lo: SpinelNCPTaskGetChildTable.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetChildTable.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetChildTable.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetChildTable.cpp' object='ncp_spinel_la-SpinelNCPTaskGetChildTable.lo' libtool=yes @AMDEPBACKSLASH@
+ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo: SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetNetworkTopology.cpp' object='ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetChildTable.lo `test -f 'SpinelNCPTaskGetChildTable.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetChildTable.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+
+ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo: SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetMsgBufferCounters.cpp' object='ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
 
 ncp_spinel_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp

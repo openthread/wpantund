@@ -51,7 +51,6 @@ nl::wpantund::SpinelNCPTaskJoin::finish(int status, const boost::any& value)
 	}
 }
 
-
 int
 nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 {
@@ -94,6 +93,13 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
+	// Clear any previously saved network settings
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
+
 	mLastState = mInstance->get_ncp_state();
 	mInstance->change_ncp_state(ASSOCIATING);
 
@@ -120,6 +126,13 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 				goto on_error;
 			}
 			isRouterRoleEnabled = false;
+
+		} else if (node_type == LURKER) {
+			if (!mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
+				ret = kWPANTUNDStatus_FeatureNotSupported;
+				goto on_error;
+			}
+			isRouterRoleEnabled = true;
 
 		} else {
 			ret = kWPANTUNDStatus_InvalidArgument;
@@ -236,7 +249,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	if (mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
-			SPINEL_PROP_NET_KEY_SEQUENCE,
+			SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER,
 			any_to_int(mOptions[kWPANTUNDProperty_NetworkKeyIndex])
 		);
 

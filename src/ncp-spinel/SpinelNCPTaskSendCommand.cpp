@@ -31,6 +31,9 @@
 using namespace nl;
 using namespace nl::wpantund;
 
+static int simple_unpacker(const uint8_t* data_in, spinel_size_t data_len, const std::string& pack_format,
+							boost::any& result);
+
 SpinelNCPTaskSendCommand::Factory::Factory(SpinelNCPInstance* instance):
 	mInstance(instance),
 	mCb(NilReturn()),
@@ -70,7 +73,14 @@ SpinelNCPTaskSendCommand::Factory::set_timeout(int timeout)
 SpinelNCPTaskSendCommand::Factory&
 SpinelNCPTaskSendCommand::Factory::set_reply_format(const std::string& packed_format)
 {
-	mReplyFormat = packed_format;
+	mReplyUnpacker = boost::bind(simple_unpacker, _1, _2, packed_format, _3);
+	return *this;
+}
+
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_reply_unpacker(const ReplyUnpacker& reply_unpacker)
+{
+	mReplyUnpacker = reply_unpacker;
 	return *this;
 }
 
@@ -92,7 +102,7 @@ nl::wpantund::SpinelNCPTaskSendCommand::SpinelNCPTaskSendCommand(
 ):	SpinelNCPTask(factory.mInstance, factory.mCb),
 	mCommandList(factory.mCommandList),
 	mLockProperty(factory.mLockProperty),
-	mPackedFormat(factory.mReplyFormat),
+	mReplyUnpacker(factory.mReplyUnpacker),
 	mRetVal(kWPANTUNDStatus_Failure)
 {
 	mNextCommandTimeout = factory.mTimeout;
@@ -248,6 +258,21 @@ spinel_packed_to_any(const uint8_t* data_in, spinel_size_t data_len, const char*
 	return spinel_iter_to_any(&spinel_iter);
 }
 
+static int
+simple_unpacker(const uint8_t* data_in, spinel_size_t data_len, const std::string& pack_format, boost::any& result)
+{
+	int retval = kWPANTUNDStatus_Ok;
+
+	try {
+		result = spinel_packed_to_any(data_in, data_len, pack_format.c_str());
+
+	} catch(...) {
+		retval = kWPANTUNDStatus_Failure;
+	}
+
+	return retval;
+}
+
 int
 nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 {
@@ -296,7 +321,7 @@ nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 
 	require_noerr(mRetVal, on_error);
 
-	if ( !mPackedFormat.empty()
+	if ( mReplyUnpacker
 	  && (kWPANTUNDStatus_Ok == mRetVal)
 	  && (EVENT_NCP_PROP_VALUE_IS == event)
 	) {
@@ -307,12 +332,7 @@ nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 		spinel_size_t data_len = va_arg_small(args, spinel_size_t);
 		(void) key; // Ignored
 
-		try {
-			mReturnValue = spinel_packed_to_any(data_in, data_len, mPackedFormat.c_str());
-
-		} catch(...) {
-			mRetVal = kWPANTUNDStatus_Failure;
-		}
+		mRetVal = mReplyUnpacker(data_in, data_len, mReturnValue);
 	}
 
 on_error:
@@ -334,6 +354,11 @@ on_error:
 		);
 
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		if (mNextCommandRet != kWPANTUNDStatus_Ok)
+		{
+			mRetVal = mNextCommandRet;
+		}
 
 		check_noerr(mNextCommandRet);
 	}

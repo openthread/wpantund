@@ -287,6 +287,7 @@ private:
 	void did_get_rip_entry_value_map(int status, const boost::any& value);
 	int  record_rip_entry(const ValueMap& rip_entry);
 	void property_changed(const std::string& key, const boost::any& value);
+	void did_rx_net_scan_beacon(const WPAN::NetworkInstance& network);
 
 private:
 	NCPControlInterface *mControlInterface;

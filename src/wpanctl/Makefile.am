@@ -37,6 +37,7 @@ wpanctl_SOURCES = \
 	tool-cmd-scan.c \
 	tool-cmd-join.c \
 	tool-cmd-form.c \
+	tool-cmd-mfg.c \
 	tool-cmd-leave.c \
 	tool-cmd-permit-join.c \
 	tool-cmd-list.c \
@@ -58,6 +59,7 @@ wpanctl_SOURCES = \
 	tool-cmd-join.h \
 	tool-cmd-form.h \
 	tool-cmd-leave.h \
+	tool-cmd-mfg.h \
 	tool-cmd-permit-join.h \
 	tool-cmd-list.h \
 	tool-cmd-status.h \

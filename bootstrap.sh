@@ -97,16 +97,30 @@ then
 	cd "${SOURCE_DIR}"
 
 	AUTOANDR_STDOUT="$LOGFILE" \
+	AUTOANDR_MODULE_TAGS=optional \
 	$AUTOANDR start \
 		--disable-option-checking \
 		--enable-static-link-ncp-plugin \
 		--disable-shared \
+		--prefix=/system \
+		--localstatedir=/data/misc \
+		--bindir=/system/bin \
+		--sbindir=/system/bin \
+		--libexecdir=/system/bin \
+		--libdir=/system/lib \
+		--includedir=/system/include \
+		--oldincludedir=/system/include \
+		--enable-debug=verbose \
 		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
-		CPPFLAGS="-Wno-date-time -Wno-unused-parameter" \
-		BOOST_CXXFLAGS="-Iexternal/boost" \
+		CPPFLAGS="-Wno-date-time -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
 		DBUS_LIBS="-ldbus" \
+		TUNNEL_TUNTAP_DEVICE="/dev/tun" \
+		SOCKET_UTILS_DEFAULT_SHELL="/system/bin/sh" \
 		ac_cv_func_getdtablesize=no \
+		ac_cv_func_fgetln=no \
+		ac_cv_header_util_h=no \
+		--with-boost=internal \
 	|| die autoandr
 fi
 

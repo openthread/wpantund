@@ -27,6 +27,7 @@
 #include "tool-cmd-permit-join.h"
 #include "tool-cmd-list.h"
 #include "tool-cmd-status.h"
+#include "tool-cmd-mfg.h"
 #include "tool-cmd-resume.h"
 #include "tool-cmd-reset.h"
 #include "tool-cmd-begin-low-power.h"
@@ -121,6 +122,11 @@
 		"scan", \
 		"Scan for nearby networks.", \
 		&tool_cmd_scan \
+	}, \
+	{ \
+		"mfg", \
+		"Execute manufacturing command.", \
+		&tool_cmd_mfg \
 	}, \
 	{ \
 		"getprop", \

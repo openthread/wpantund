@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2016, Nest Labs, Inc.
+ *    Copyright (c) 2016, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -70,6 +70,12 @@
 #define EINVAL 1
 #endif
 
+#ifdef _KERNEL_MODE
+#define va_copy(destination, source) ((destination) = (source))
+#undef errno
+#define assert_printf(fmt, ...)
+#endif
+
 #if defined(errno) && SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR
 #error "SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR is set but errno is already defined."
 #endif
@@ -105,13 +111,21 @@ static size_t spinel_strnlen_(const char *s, size_t maxlen)
 #endif
 
 #ifndef require_action
+#if SPINEL_PLATFORM_SHOULD_LOG_ASSERTS
 #define require_action(c, l, a) \
     do { if (!(c)) { \
         assert_printf("Requirement Failed (%s)", # c); \
         a; \
         goto l; \
     } } while (0)
-#endif
+#else // if DEBUG
+#define require_action(c, l, a) \
+    do { if (!(c)) { \
+        a; \
+        goto l; \
+    } } while (0)
+#endif // else DEBUG
+#endif // ifndef require_action
 
 #ifndef require
 #define require(c, l)   require_action(c, l, {})
@@ -393,9 +407,9 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
                 *arg_ptr = (const char *)data_ptr;
             }
 
-            ret += len;
+            ret += (spinel_size_t)len;
             data_ptr += len;
-            data_len -= len;
+            data_len -= (spinel_size_t)len;
             break;
         }
 
@@ -435,7 +449,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
                 *block_len_ptr = block_len;
             }
 
-            block_len += pui_len;
+            block_len += (uint16_t)pui_len;
             ret += block_len;
             data_ptr += block_len;
             data_len -= block_len;
@@ -472,7 +486,7 @@ spinel_datatype_vunpack_(const uint8_t *data_ptr, spinel_size_t data_len, const 
 
             if (pui_len)
             {
-                block_len += pui_len;
+                block_len += (uint16_t)pui_len;
             }
             else
             {
@@ -516,6 +530,7 @@ spinel_datatype_unpack(const uint8_t *data_ptr, spinel_size_t data_len, const ch
     va_end(args.obj);
     return ret;
 }
+
 
 spinel_ssize_t
 spinel_datatype_vunpack(const uint8_t *data_ptr, spinel_size_t data_len, const char *pack_format, va_list args)
@@ -719,14 +734,14 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
                 string_arg_len = 1;
             }
 
-            ret += string_arg_len;
+            ret += (spinel_size_t)string_arg_len;
 
             if (data_len_max >= string_arg_len)
             {
                 memcpy(data_ptr, string_arg, string_arg_len);
 
                 data_ptr += string_arg_len;
-                data_len_max -= string_arg_len;
+                data_len_max -= (spinel_size_t)string_arg_len;
             }
             else
             {
@@ -858,6 +873,8 @@ spinel_datatype_vpack(uint8_t *data_ptr, spinel_size_t data_len_max, const char 
 
 // ----------------------------------------------------------------------------
 // MARK: -
+
+// **** LCOV_EXCL_START ****
 
 const char *
 spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
@@ -1026,12 +1043,16 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_NET_MASTER_KEY";
         break;
 
-    case SPINEL_PROP_NET_KEY_SEQUENCE:
-        ret = "PROP_NET_KEY_SEQUENCE";
+    case SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER:
+        ret = "PROP_NET_KEY_SEQUENCE_COUNTER";
         break;
 
     case SPINEL_PROP_NET_PARTITION_ID:
         ret = "PROP_NET_PARTITION_ID";
+        break;
+
+    case SPINEL_PROP_NET_KEY_SWITCH_GUARDTIME:
+        ret = "PROP_NET_KEY_SWITCH_GUARDTIME";
         break;
 
     case SPINEL_PROP_THREAD_LEADER_ADDR:
@@ -1098,6 +1119,14 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SPINEL_PROP_THREAD_STABLE_NETWORK_DATA";
         break;
 
+    case SPINEL_PROP_THREAD_LEADER_NETWORK_DATA:
+        ret = "SPINEL_PROP_THREAD_LEADER_NETWORK_DATA";
+        break;
+
+    case SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA:
+        ret = "SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA";
+        break;
+
     case SPINEL_PROP_THREAD_ON_MESH_NETS:
         ret = "SPINEL_PROP_THREAD_ON_MESH_NETS";
         break;
@@ -1152,27 +1181,96 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         break;
 
     case SPINEL_PROP_NEST_STREAM_MFG:
-        ret = "SPINEL_PROP_NEST_STREAM_MFG";
+        ret = "PROP_NEST_STREAM_MFG";
         break;
 
     case SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT:
-        ret = "SPINEL_PROP_THREAD_NETWORK_ID_TIMEOUT";
+        ret = "PROP_THREAD_NETWORK_ID_TIMEOUT";
         break;
 
     case SPINEL_PROP_THREAD_ACTIVE_ROUTER_IDS:
-        ret = "SPINEL_PROP_THREAD_ACTIVE_ROUTER_IDS";
+        ret = "PROP_THREAD_ACTIVE_ROUTER_IDS";
         break;
 
     case SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD:
-        ret = "SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD";
+        ret = "PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD";
         break;
 
     case SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER:
-        ret = "SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER";
+        ret = "PROP_THREAD_ROUTER_SELECTION_JITTER";
         break;
 
     case SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID:
-        ret = "SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID";
+        ret = "PROP_THREAD_PREFERRED_ROUTER_ID";
+        break;
+
+    case SPINEL_PROP_THREAD_NEIGHBOR_TABLE:
+        ret = "PROP_THREAD_NEIGHBOR_TABLE";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_ENABLE:
+        ret = "PROP_JAM_DETECT_ENABLE";
+        break;
+
+    case SPINEL_PROP_JAM_DETECTED:
+        ret = "PROP_JAM_DETECTED";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_RSSI_THRESHOLD:
+        ret = "PROP_JAM_DETECT_RSSI_THRESHOLD";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_WINDOW:
+        ret = "PROP_JAM_DETECT_WINDOW";
+        break;
+
+    case SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP:
+        ret = "SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP";
+        break;
+
+    case SPINEL_PROP_GPIO_CONFIG:
+        ret = "PROP_GPIO_CONFIG";
+        break;
+
+    case SPINEL_PROP_GPIO_STATE:
+        ret = "PROP_GPIO_STATE";
+        break;
+
+    case SPINEL_PROP_GPIO_STATE_SET:
+        ret = "PROP_GPIO_STATE_SET";
+        break;
+
+    case SPINEL_PROP_GPIO_STATE_CLEAR:
+        ret = "PROP_GPIO_STATE_CLEAR";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
+
+const char *spinel_net_role_to_cstr(uint8_t net_role)
+{
+    const char *ret = "NET_ROLE_UNKNONW";
+
+    switch (net_role)
+    {
+    case SPINEL_NET_ROLE_DETACHED:
+        ret = "NET_ROLE_DETACHED";
+        break;
+
+    case SPINEL_NET_ROLE_CHILD:
+        ret = "NET_ROLE_CHILD";
+        break;
+
+    case SPINEL_NET_ROLE_ROUTER:
+        ret = "NET_ROLE_ROUTER";
+        break;
+
+    case SPINEL_NET_ROLE_LEADER:
+        ret = "NET_ROLE_LEADER";
         break;
 
     default:
@@ -1331,6 +1429,7 @@ const char *spinel_status_to_cstr(spinel_status_t status)
     return ret;
 }
 
+// **** LCOV_EXCL_STOP ****
 
 /* -------------------------------------------------------------------------- */
 

@@ -116,8 +116,6 @@ encode_data_into_string(
     ) {
 	int ret = 0;
 
-	*c_str++ = '{';
-	ret++;
 	c_str_max_len--;
 	while (len && (c_str_max_len > 4)) {
 		uint8_t byte = *buffer++;
@@ -137,8 +135,6 @@ encode_data_into_string(
 		ret += 2;
 	}
 
-	*c_str++ = '}';
-	ret++;
 	c_str_max_len--;
 	*c_str++ = 0;
 	return ret;

@@ -830,6 +830,7 @@ enable_static_link_ncp_plugin
 enable_debug
 with_dbusconfdir
 with_dbusdatadir
+with_boost
 with_readline
 with_connman
 with_libdl
@@ -1517,6 +1518,8 @@ Optional Packages:
                           compiler's sysroot if not specified).
   --with-dbusconfdir=PATH path to D-Bus config directory
   --with-dbusdatadir=PATH path to D-Bus data directory
+  --with-boost=internal   Use internal copy of boost
+
   --without-readline      Don't use libreadline or libedit
 
   --without-connman       Don't build connman plugin
@@ -2610,7 +2613,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-SOURCE_VERSION=0.07.00-177-g0b70ed2
+SOURCE_VERSION=0.07.00-266-gf832c6d
 
 ac_aux_dir=
 for ac_dir in m4 "$srcdir"/m4; do
@@ -13483,6 +13486,21 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+if test "${TUNNEL_TUNTAP_DEVICE+set}" = "set"
+then
+cat >>confdefs.h <<_ACEOF
+#define TUNNEL_TUNTAP_DEVICE "$TUNNEL_TUNTAP_DEVICE"
+_ACEOF
+
+fi
+if test "${SOCKET_UTILS_DEFAULT_SHELL+set}" = "set"
+then
+cat >>confdefs.h <<_ACEOF
+#define SOCKET_UTILS_DEFAULT_SHELL "$SOCKET_UTILS_DEFAULT_SHELL"
+_ACEOF
+
+fi
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -18665,18 +18683,38 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-	if  -z "${BOOST_CXXFLAGS}"
-	then
-		# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
-		test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
+	boost_internal_cxxflags="-I$(cd $srcdir && pwd)/third_party/boost -DBOOST_NO_CXX11_VARIADIC_TEMPLATES -DBOOST_NO_CXX11_HDR_ARRAY -DBOOST_NO_CXX11_HDR_CODECVT -DBOOST_NO_CXX11_HDR_CONDITION_VARIABLE -DBOOST_NO_CXX11_HDR_FORWARD_LIST -DBOOST_NO_CXX11_HDR_INITIALIZER_LIST -DBOOST_NO_CXX11_HDR_MUTEX -DBOOST_NO_CXX11_HDR_RANDOM -DBOOST_NO_CXX11_HDR_RATIO -DBOOST_NO_CXX11_HDR_REGEX -DBOOST_NO_CXX11_HDR_SYSTEM_ERROR -DBOOST_NO_CXX11_HDR_THREAD -DBOOST_NO_CXX11_HDR_TUPLE -DBOOST_NO_CXX11_HDR_TYPEINDEX -DBOOST_NO_CXX11_HDR_UNORDERED_MAP -DBOOST_NO_CXX11_HDR_UNORDERED_SET -DBOOST_NO_CXX11_NUMERIC_LIMITS -DBOOST_NO_CXX11_ALLOCATOR -DBOOST_NO_CXX11_SMART_PTR -DBOOST_NO_CXX11_HDR_FUNCTIONAL -DBOOST_NO_CXX11_STD_ALIGN -DBOOST_NO_CXX11_ADDRESSOF -DBOOST_NO_CXX11_DECLTYPE_N3276 -Wp,-w"
 
-		# Go ahead and add the BOOST_CPPFLAGS into CFLAGS for now.
-		nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
-		nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
-		CXXFLAGS="${BOOST_CXXFLAGS}"
-		CPPFLAGS="${BOOST_CXXFLAGS}"
 
-		for ac_header in boost/signals2/signal.hpp
+# Check whether --with-boost was given.
+if test "${with_boost+set}" = set; then :
+  withval=$with_boost;
+fi
+
+
+	with_boost=${with_boost-yes}
+
+	case ${with_boost} in
+		no)
+			as_fn_error $? "Unable to find a usable implementation of boost::signals2 (not even our internal copy)" "$LINENO" 5
+			;;
+		internal)
+			BOOST_CXXFLAGS="${boost_internal_cxxflags}"
+
+			;;
+		yes)
+			if test -z "${BOOST_CXXFLAGS}"
+			then
+				# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
+				test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
+
+				# Go ahead and add the BOOST_CPPFLAGS into CFLAGS for now.
+				nl_check_boost_signals2_CXXFLAGS="${CXXFLAGS}"
+				nl_check_boost_signals2_CPPFLAGS="${CPPFLAGS}"
+				CXXFLAGS+=" ${BOOST_CXXFLAGS}"
+				CPPFLAGS+=" ${BOOST_CXXFLAGS}"
+
+				for ac_header in boost/signals2/signal.hpp
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "boost/signals2/signal.hpp" "ac_cv_header_boost_signals2_signal_hpp" "$ac_includes_default"
 if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
@@ -18687,8 +18725,8 @@ _ACEOF
 else
 
 
-			# Sometimes boost explicitly needs this flag to work.
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -std=c++11" >&5
+					# Sometimes boost explicitly needs this flag to work.
+					{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -std=c++11" >&5
 $as_echo_n "checking whether C++ compiler accepts -std=c++11... " >&6; }
 if ${ax_cv_check_cxxflags___std_cpp11+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -18719,19 +18757,19 @@ fi
 $as_echo "$ax_cv_check_cxxflags___std_cpp11" >&6; }
 if test "x$ax_cv_check_cxxflags___std_cpp11" = xyes; then :
 
-				CXXFLAGS="$CXXFLAGS -std=c++11"
-				CPPFLAGS="$CPPFLAGS -std=c++11"
-				BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
+						CXXFLAGS="$CXXFLAGS -std=c++11"
+						CPPFLAGS="$CPPFLAGS -std=c++11"
+						BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
 
 else
-  as_fn_error $? "Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost." "$LINENO" 5
+  as_fn_error $? "Unable to find a usable implementation of boost::signals2 (not even our internal copy)" "$LINENO" 5
 fi
 
 
-			## Clear the cache entry we that we try again
-			unset ac_cv_header_boost_signals2_signal_hpp
+					## Clear the cache entry we that we try again
+					unset ac_cv_header_boost_signals2_signal_hpp
 
-			for ac_header in boost/signals2/signal.hpp
+					for ac_header in boost/signals2/signal.hpp
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "boost/signals2/signal.hpp" "ac_cv_header_boost_signals2_signal_hpp" "$ac_includes_default"
 if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
@@ -18740,7 +18778,27 @@ if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
 _ACEOF
 
 else
-  as_fn_error $? "Unable to find a usable implementation of boost::signals2. You probabbly need to install Boost." "$LINENO" 5
+
+						with_boost=internal
+						BOOST_CXXFLAGS="${boost_internal_cxxflags}"
+						CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS} ${BOOST_CXXFLAGS}"
+						CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS} ${BOOST_CXXFLAGS}"
+						unset ac_cv_header_boost_signals2_signal_hpp
+						for ac_header in boost/signals2/signal.hpp
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "boost/signals2/signal.hpp" "ac_cv_header_boost_signals2_signal_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_boost_signals2_signal_hpp" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_BOOST_SIGNALS2_SIGNAL_HPP 1
+_ACEOF
+
+
+							with_boost=internal
+
+else
+
+							as_fn_error $? "Unable to find a usable implementation of boost::signals2 (not even our internal copy)" "$LINENO" 5
+
 fi
 
 done
@@ -18751,12 +18809,23 @@ fi
 done
 
 
-		CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
-		unset nl_check_boost_signals2_CXXFLAGS
+fi
 
-		CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
-		unset nl_check_boost_signals2_CPPFLAGS
-	fi
+done
+
+
+				CXXFLAGS="${nl_check_boost_signals2_CXXFLAGS}"
+				unset nl_check_boost_signals2_CXXFLAGS
+
+				CPPFLAGS="${nl_check_boost_signals2_CPPFLAGS}"
+				unset nl_check_boost_signals2_CPPFLAGS
+			fi
+
+			;;
+		*)
+			BOOST_CXXFLAGS="-I${with_boost}"
+			;;
+	esac
 
 
 
@@ -19132,7 +19201,13 @@ if test "${with_connman+set}" = set; then :
 fi
 
 
-	if test "x${with_connman}" '!=' "xno"
+	if test "x${with_connman}" '==' "xforce"
+	then
+		with_connman=yes
+		if test "x${CONNMAN_LIBS}" == "x"
+		then CONNMAN_LIBS="-module -avoid-version -export-symbols-regex connman_plugin_desc"
+		fi
+	elif test "x${with_connman}" '!=' "xno"
 	then
 		if test "x${CONNMAN_CFLAGS}" '==' "x"
 		then
@@ -19213,12 +19288,12 @@ fi
 			# CONNMAN_CFLAGS was given manually.
 			prev_CPPFLAGS="${CPPFLAGS}"
 			CPPFLAGS="${CPPFLAGS} ${CONNMAN_CFLAGS}"
-			for ac_header in connman/version.h
+			for ac_header in connman/plugin.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "connman/version.h" "ac_cv_header_connman_version_h" "$ac_includes_default"
-if test "x$ac_cv_header_connman_version_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "connman/plugin.h" "ac_cv_header_connman_plugin_h" "$ac_includes_default"
+if test "x$ac_cv_header_connman_plugin_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_CONNMAN_VERSION_H 1
+#define HAVE_CONNMAN_PLUGIN_H 1
 _ACEOF
  with_connman=yes
 else
@@ -19243,6 +19318,8 @@ done
 	then {
 
 
+	if test "x${GLIB_CFLAGS}" '==' "x"
+	then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GLIB" >&5
@@ -19302,13 +19379,11 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GLIB_PKG_ERRORS" >&5
 
-	as_fn_error $? "\"Found ConnMan headers, but couldn't find GLIB\"" "$LINENO" 5
-
+	as_fn_error $? "\"Found ConnMan headers
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	as_fn_error $? "\"Found ConnMan headers, but couldn't find GLIB\"" "$LINENO" 5
-
+	as_fn_error $? "\"Found ConnMan headers
 else
 	GLIB_CFLAGS=$pkg_cv_GLIB_CFLAGS
 	GLIB_LIBS=$pkg_cv_GLIB_LIBS
@@ -19316,6 +19391,11 @@ else
 $as_echo "yes" >&6; }
 
 fi
+	else {
+		true
+
+	}
+	fi
 
 	GLIB_CFLAGS="${GLIB_CFLAGS} -DGLIB_VERSION_MAX_ALLOWED=138240 -DGLIB_VERSION_MIN_REQUIRED=138240"
 
@@ -22221,6 +22301,7 @@ echo "= Summary ================================================================
 echo ""
 echo "ConnMan Plugin ................. ${with_connman-no}"
 echo "Using libreadline .............. ${with_readline-???}"
+echo "Boost .......................... ${with_boost-???}"
 echo "NCP plugins to build ........... ${building_ncp_plugins-none}"
 echo "Default NCP Plugin ............. ${default_ncp_plugin}"
 echo "Static link NCP plugin ......... ${enable_static_link_ncp_plugin-no}"

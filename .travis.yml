@@ -33,13 +33,13 @@ after_success:
     - ssh-agent .travis/after_success.sh
 
 env:
-    - BUILD_MAKEPATH=build BUILD_MAKEARGS=distcheck
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal
 
 matrix:
     allow_failures:
         - os: linux        # This seems to be some sort of weird failure to
           compiler: clang  # find boost-signals. Needs further investigation.
-        - os: osx          # This seems to be an autoconf failure.
     exclude:
         - os: osx
           compiler: gcc

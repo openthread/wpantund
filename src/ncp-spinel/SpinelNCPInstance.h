@@ -96,7 +96,8 @@ class SpinelNCPInstance : public NCPInstanceBase {
 	friend class SpinelNCPTaskScan;
 	friend class SpinelNCPTaskLeave;
 	friend class SpinelNCPTaskSendCommand;
-	friend class SpinelNCPTaskGetChildTable;
+	friend class SpinelNCPTaskGetNetworkTopology;
+	friend class SpinelNCPTaskGetMsgBufferCounters;
 
 public:
 
@@ -141,6 +142,10 @@ protected:
 	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
 	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
 
+	void check_operation_status(std::string operation, int status);
+
+	uint32_t get_default_channel_mask(void);
+
 private:
 
 	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags);
@@ -168,6 +173,33 @@ public:
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
 
 	virtual void process(void);
+
+private:
+	struct SettingsEntry
+	{
+	public:
+		SettingsEntry(const Data &command = Data(), unsigned int capability = 0) :
+			mSpinelCommand(command),
+			mCapability(capability)
+		{
+		}
+
+		Data mSpinelCommand;
+		unsigned int mCapability;
+	};
+
+	/* Map from property key to setting entry
+	 *
+	 * The map contains all parameters/properties that are retained and
+	 * restored when NCP gets initialized.
+	 *
+	 * `Setting entry` contains an optional capability value and an associated
+	 * spinel command.
+	 *
+	 * If the `capability` is present in the list of NCP capabilities , then
+	 * the associated spinel command is sent to NCP after initialization.
+	 */
+	typedef std::map<std::string, SettingsEntry> SettingsMap;
 
 private:
 	SpinelNCPControlInterface mControlInterface;
@@ -198,6 +230,8 @@ private:
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
 
+	SettingsMap mSettings;
+	SettingsMap::iterator mSettingsIter;
 
 	DriverState mDriverState;
 
@@ -216,6 +250,15 @@ private:
 
 	// Task management
 	std::list<boost::shared_ptr<SpinelNCPTask> > mTaskQueue;
+
+	enum
+	{
+		kMaxTimeBetweenNoMemStatus = 60000, // (in ms) time between NOMEM status to consider it back-to-back.
+		kMaxNonMemCountToReset = 15,        // Number of back-to-back NOMEM status to reset
+	};
+
+	cms_t mLastTimeNoMemStatus;
+	uint16_t mNoMemStatusCounter;
 
 }; // class SpinelNCPInstance
 

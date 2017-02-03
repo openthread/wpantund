@@ -76,20 +76,35 @@
 #define kWPANTUNDProperty_IPv6MeshLocalPrefix    "IPv6:MeshLocalPrefix"
 #define kWPANTUNDProperty_IPv6AllAddresses       "IPv6:AllAddresses"
 
-#define kWPANTUNDProperty_ThreadRLOC16            "Thread:RLOC16"
-#define kWPANTUNDProperty_ThreadRouterID          "Thread:RouterID"
-#define kWPANTUNDProperty_ThreadLeaderAddress     "Thread:Leader:Address"
-#define kWPANTUNDProperty_ThreadLeaderRouterID    "Thread:Leader:RouterID"
-#define kWPANTUNDProperty_ThreadLeaderWeight      "Thread:Leader:Weight"
-#define kWPANTUNDProperty_ThreadLeaderLocalWeight "Thread:Leader:LocalWeight"
-#define kWPANTUNDProperty_ThreadNetworkData       "Thread:NetworkData"
-#define kWPANTUNDProperty_ThreadChildTable        "Thread:ChildTable"
+#define kWPANTUNDProperty_ThreadRLOC16                   "Thread:RLOC16"
+#define kWPANTUNDProperty_ThreadRouterID                 "Thread:RouterID"
+#define kWPANTUNDProperty_ThreadLeaderAddress            "Thread:Leader:Address"
+#define kWPANTUNDProperty_ThreadLeaderRouterID           "Thread:Leader:RouterID"
+#define kWPANTUNDProperty_ThreadLeaderWeight             "Thread:Leader:Weight"
+#define kWPANTUNDProperty_ThreadLeaderLocalWeight        "Thread:Leader:LocalWeight"
+#define kWPANTUNDProperty_ThreadLeaderNetworkData        "Thread:Leader:NetworkData"
+#define kWPANTUNDProperty_ThreadStableLeaderNetworkData  "Thread:Leader:StableNetworkData"
+#define kWPANTUNDProperty_ThreadNetworkData              "Thread:NetworkData"
+#define kWPANTUNDProperty_ThreadChildTable               "Thread:ChildTable"
+#define kWPANTUNDProperty_ThreadChildTableAsValMap       "Thread:ChildTable:AsValMap"
+#define kWPANTUNDProperty_ThreadNeighborTable            "Thread:NeighborTable"
+#define kWPANTUNDProperty_ThreadNeighborTableAsValMap    "Thread:NeighborTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNetworkDataVersion       "Thread:NetworkDataVersion"
 #define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID        "Thread:PreferredRouterID"
 
+#define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
+#define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString  "OpenThread:MsgBufferCounters:AsString"
+
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
+
+#define kWPANTUNDProperty_JamDetectionStatus                   "JamDetection:Status"
+#define kWPANTUNDProperty_JamDetectionEnable                   "JamDetection:Enable"
+#define kWPANTUNDProperty_JamDetectionRssiThreshold            "JamDetection:RssiThreshold"
+#define kWPANTUNDProperty_JamDetectionWindow                   "JamDetection:Window"
+#define kWPANTUNDProperty_JamDetectionBusyPeriod               "JamDetection:BusyPeriod"
+#define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap       "JamDetection:Debug:HistoryBitmap"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"
@@ -103,6 +118,7 @@
 #define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist        "com.nestlabs.internal:NetworkWake:Blacklist"
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower  "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake       "com.nestlabs.internal:Hack:AlwaysResetToWake"
+
 
 #define kWPANTUNDProperty_Stat_Prefix                "Stat:"
 #define kWPANTUNDProperty_StatRX                     "Stat:RX"
@@ -163,5 +179,23 @@
 #define kWPANTUNDStatAutoLogState_Long              "long"
 #define kWPANTUNDStatAutoLogState_Short             "short"
 
+
+// ----------------------------------------------------------------------------
+
+// Values for value map keys
+#define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress           "ExtAddress"
+#define kWPANTUNDValueMapKey_NetworkTopology_RLOC16               "RLOC16"
+#define kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn        "LinkQualityIn"
+#define kWPANTUNDValueMapKey_NetworkTopology_AverageRssi          "AverageRssi"
+#define kWPANTUNDValueMapKey_NetworkTopology_Age                  "Age"
+#define kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle         "RxOnWhenIdle"
+#define kWPANTUNDValueMapKey_NetworkTopology_FullFunction         "FullFunction"
+#define kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest    "SecureDataRequest"
+#define kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData      "FullNetworkData"
+#define kWPANTUNDValueMapKey_NetworkTopology_Timeout              "Timeout"
+#define kWPANTUNDValueMapKey_NetworkTopology_NetworkDataVersion   "NetworkDataVersion"
+#define kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter     "LinkFrameCounter"
+#define kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter      "MleFrameCounter"
+#define kWPANTUNDValueMapKey_NetworkTopology_IsChild              "IsChild"
 
 #endif

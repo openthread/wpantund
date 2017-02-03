@@ -18,8 +18,8 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
-/* Define to 1 if you have the <connman/version.h> header file. */
-#undef HAVE_CONNMAN_VERSION_H
+/* Define to 1 if you have the <connman/plugin.h> header file. */
+#undef HAVE_CONNMAN_PLUGIN_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -165,6 +165,9 @@
 /* Define to the install prefix */
 #undef PREFIX
 
+/* Default path to a shell */
+#undef SOCKET_UTILS_DEFAULT_SHELL
+
 /* Source version */
 #undef SOURCE_VERSION
 
@@ -176,6 +179,9 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
+
+/* Path to tuntap device */
+#undef TUNNEL_TUNTAP_DEVICE
 
 /* Version number of package */
 #undef VERSION
