@@ -52,6 +52,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../src/wpantund
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/assert-macros
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../third_party/boost
 LOCAL_C_INCLUDES += external/dbus
+LOCAL_MODULE_TAGS += optional
 LOCAL_SHARED_LIBRARIES += libdbus
 LOCAL_SRC_FILES += ../../../../src/ipc-dbus/DBUSIPCServer.cpp
 LOCAL_SRC_FILES += ../../../../src/ipc-dbus/DBusIPCAPI_v0.cpp
