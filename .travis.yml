@@ -33,7 +33,8 @@ after_success:
     - ssh-agent .travis/after_success.sh
 
 env:
-    - BUILD_MAKEPATH=build BUILD_MAKEARGS=distcheck
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal
 
 matrix:
     allow_failures:

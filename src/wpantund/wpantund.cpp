@@ -39,7 +39,6 @@
 
 #include "wpantund.h"
 
-#include "CallbackStore.hpp"
 #include "config-file.h"
 #include "args.h"
 #include "pt.h"
