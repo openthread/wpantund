@@ -241,7 +241,13 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 		]
 	)
 
-	if test "x${with_connman}" '!=' "xno"
+	if test "x${with_connman}" '==' "xforce"
+	then
+		with_connman=yes
+		if test "x${CONNMAN_LIBS}" == "x"
+		then CONNMAN_LIBS="-module -avoid-version -export-symbols-regex connman_plugin_desc"
+		fi
+	elif test "x${with_connman}" '!=' "xno"
 	then
 		if test "x${CONNMAN_CFLAGS}" '==' "x"
 		then
@@ -255,7 +261,7 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 			# CONNMAN_CFLAGS was given manually.
 			prev_CPPFLAGS="${CPPFLAGS}"
 			CPPFLAGS="${CPPFLAGS} ${CONNMAN_CFLAGS}"
-			AC_CHECK_HEADERS([connman/version.h],[with_connman=yes],[with_connman=no])
+			AC_CHECK_HEADERS([connman/plugin.h],[with_connman=yes],[with_connman=no])
 			CPPFLAGS="${prev_CPPFLAGS}"
 			unset prev_CPPFLAGS
 
@@ -279,7 +285,14 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 ])
 
 AC_DEFUN([NL_CHECK_GLIB], [
-	PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.28, [$1], [$2])
+	if test "x${GLIB_CFLAGS}" '==' "x"
+	then
+		PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.28, [$1], [$2])
+	else {
+		true
+		$1
+	}
+	fi
 
 	GLIB_CFLAGS="${GLIB_CFLAGS} -DGLIB_VERSION_MAX_ALLOWED=138240 -DGLIB_VERSION_MIN_REQUIRED=138240"
 

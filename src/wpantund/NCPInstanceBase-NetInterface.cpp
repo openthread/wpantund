@@ -244,7 +244,7 @@ NCPInstanceBase::handle_normal_ipv6_from_ncp(const uint8_t* ip_packet, size_t pa
 	ssize_t ret = mPrimaryInterface->write(ip_packet, packet_length);
 
 	if (ret != packet_length) {
-		syslog(LOG_INFO, "[NCP->] IPv6 packet refused by host stack! (ret = %ld)", ret);
+		syslog(LOG_INFO, "[NCP->] IPv6 packet refused by host stack! (ret = %ld)", (long)ret);
 	}
 }
 
@@ -254,7 +254,7 @@ NCPInstanceBase::handle_alt_ipv6_from_ncp(const uint8_t* ip_packet, size_t packe
 	ssize_t ret = mLegacyInterface->write(ip_packet, packet_length);
 
 	if (ret != packet_length) {
-		syslog(LOG_INFO, "[NCP->] IPv6 packet refused by host stack! (ret = %ld)", ret);
+		syslog(LOG_INFO, "[NCP->] IPv6 packet refused by host stack! (ret = %ld)", (long)ret);
 	}
 }
 

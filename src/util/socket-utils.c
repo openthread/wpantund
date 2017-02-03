@@ -250,7 +250,10 @@ socket_name_is_port(const char* socket_name)
 static bool
 socket_name_is_inet(const char* socket_name)
 {
-	// It's an inet address if it Contains no slashes
+	// It's an inet address if it Contains no slashes or starts with a '['.
+	if (*socket_name == '[') {
+		return true;
+	}
 	do {
 		if (*socket_name == '/') {
 			return false;
@@ -634,12 +637,51 @@ get_super_socket_type_from_path(const char* socket_name)
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
 	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
+	} else if (strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0) {
+		socket_type = SUPER_SOCKET_TYPE_TCP;
 	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
 		socket_type = SUPER_SOCKET_TYPE_TCP;
 	} else if (socket_name_is_device(socket_name)) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
 	}
 	return socket_type;
+}
+
+int
+baud_rate_to_termios_constant(int baud)
+{
+	int ret;
+	// Standard "TERMIOS" uses constants to get and set
+	// the baud rate, but we use the actual baud rate.
+	// This function converts from the actual baud rate
+	// to the constant supported by this platform. It
+	// returns zero if the baud rate is unsupported.
+	switch(baud) {
+	case 9600:
+		ret = B9600;
+		break;
+	case 19200:
+		ret = B19200;
+		break;
+	case 38400:
+		ret = B38400;
+		break;
+	case 57600:
+		ret = B57600;
+		break;
+	case 115200:
+		ret = B115200;
+		break;
+#ifdef B230400
+	case 230400:
+		ret = B230400;
+		break;
+#endif
+	default:
+		ret = 0;
+		break;
+	}
+	return ret;
 }
 
 int
@@ -654,7 +696,7 @@ open_super_socket(const char* socket_name)
 	int socket_type = get_super_socket_type_from_path(socket_name);
 
 	// Move past the colon, if there was one.
-	if (NULL != filename) {
+	if (NULL != filename && socket_name[0] != '[') {
 		filename++;
 	} else {
 		filename = "";
@@ -667,7 +709,11 @@ open_super_socket(const char* socket_name)
 	}
 
 	if (socket_type == SUPER_SOCKET_TYPE_TCP) {
-		socket_name_is_well_formed = false;
+		socket_name_is_well_formed =
+			(strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0);
+		if (!socket_name_is_well_formed) {
+			filename = (char*)socket_name;
+		}
 	}
 
 	if (!socket_name_is_well_formed) {
@@ -723,10 +769,10 @@ open_super_socket(const char* socket_name)
 			port = socket_name;
 		} else {
 			ssize_t i;
-			if (socket_name[0] == '[') {
-				host = strdup(socket_name + 1);
+			if (filename[0] == '[') {
+				host = strdup(filename + 1);
 			} else {
-				host = strdup(socket_name);
+				host = strdup(filename);
 			}
 			for (i = strlen(host) - 1; i >= 0; --i) {
 				if (host[i] == ':' && port == NULL) {
@@ -794,8 +840,9 @@ open_super_socket(const char* socket_name)
 		for (; NULL != options; options = strchr(options+1, ',')) {
 			if (strncasecmp(options, ",b", 2) == 0 && isdigit(options[2])) {
 				// Change Baud rate
+				int baud = baud_rate_to_termios_constant((int)strtol(options+2,NULL,10));
 				FETCH_TERMIOS();
-				cfsetspeed(&tios, strtol(options+2,NULL,10));
+				cfsetspeed(&tios, baud);
 				COMMIT_TERMIOS();
 			} else if (strncasecmp(options, ",default", strlen(",default")) == 0) {
 				FETCH_TERMIOS();
@@ -809,7 +856,7 @@ open_super_socket(const char* socket_name)
 				tios.c_lflag = 0;
 
 				cfmakeraw(&tios);
-				cfsetspeed(&tios, gSocketWrapperBaud);
+				cfsetspeed(&tios, baud_rate_to_termios_constant(gSocketWrapperBaud));
 				COMMIT_TERMIOS();
 			} else if (strncasecmp(options, ",raw", 4) == 0) {
 				// Raw mode

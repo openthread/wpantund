@@ -1051,7 +1051,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				remove_address(mNCPLinkLocalAddress);
 			}
 
-			memcpy(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress));
+			memcpy((void*)mNCPLinkLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPLinkLocalAddress));
 
 			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
 				add_address(mNCPLinkLocalAddress);
@@ -1070,7 +1070,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
 				remove_address(mNCPMeshLocalAddress);
 			}
-			memcpy(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress));
+			memcpy((void*)mNCPMeshLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPMeshLocalAddress));
 			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
 			add_address(mNCPMeshLocalAddress);
 		}
@@ -1085,7 +1085,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
 				remove_address(mNCPMeshLocalAddress);
 			}
-			memcpy(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix));
+			memcpy((void*)mNCPV6Prefix, (void*)addr, sizeof(mNCPV6Prefix));
 			struct in6_addr prefix_addr (mNCPMeshLocalAddress);
 			// Zero out the lower 64 bits.
 			memset(prefix_addr.s6_addr+8, 0, 8);

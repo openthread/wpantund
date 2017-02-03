@@ -26,6 +26,9 @@
 #include <config.h>
 #endif
 
+#undef ASSERT_MACROS_USE_SYSLOG
+#define ASSERT_MACROS_USE_SYSLOG 0
+
 #include <getopt.h>
 #include "assert-macros.h"
 #include <stdio.h>

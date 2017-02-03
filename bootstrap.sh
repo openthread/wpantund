@@ -112,7 +112,7 @@ then
 		--oldincludedir=/system/include \
 		--enable-debug=verbose \
 		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
-		CPPFLAGS="-Wno-date-time -Wno-unused-parameter" \
+		CPPFLAGS="-Wno-date-time -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare" \
 		BOOST_CXXFLAGS="-Iexternal/boost" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
 		DBUS_LIBS="-ldbus" \
@@ -120,6 +120,7 @@ then
 		SOCKET_UTILS_DEFAULT_SHELL="/system/bin/sh" \
 		ac_cv_func_getdtablesize=no \
 		ac_cv_func_fgetln=no \
+		ac_cv_header_util_h=no \
 	|| die autoandr
 fi
 

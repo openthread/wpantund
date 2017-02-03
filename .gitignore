@@ -54,3 +54,5 @@ wpantund.xcodeproj/project.xcworkspace/xcshareddata/wpantund.xccheckout
 .cproject
 .project
 src/wpantund/.libs/wpantund
+Android.mk
+/etc/android

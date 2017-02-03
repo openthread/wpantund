@@ -99,7 +99,7 @@
 		   __VA_ARGS__)
   #elif ASSERT_MACROS_USE_VANILLA_PRINTF
    #define assert_printf(fmt, ...) \
-	printf(__FILE__ ":%d: "fmt "\n", \
+	printf(__FILE__ ":%d: " fmt "\n", \
 		   __LINE__, \
 		   __VA_ARGS__)
   #else

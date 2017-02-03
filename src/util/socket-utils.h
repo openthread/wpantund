@@ -30,6 +30,7 @@
 #define SOCKET_FD_COMMAND_PREFIX	"fd:"
 #define SOCKET_FILE_COMMAND_PREFIX	"file:"
 #define SOCKET_SERIAL_COMMAND_PREFIX	"serial:"
+#define SOCKET_TCP_COMMAND_PREFIX	"tcp:"
 #define SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX	"system-forkpty:"
 #define SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX	"system-socketpair:"
 

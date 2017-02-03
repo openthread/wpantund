@@ -36,7 +36,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::SpinelNCPTaskGetNetworkTopology(
 	CallbackWithStatusArg1 cb,
 	Type table_type,
 	ResultFormat result_format
-):	SpinelNCPTask(instance, cb), mType(table_type), mResultFormat(result_format), mTable()
+):	SpinelNCPTask(instance, cb), mType(table_type), mTable(), mResultFormat(result_format)
 {
 }
 
