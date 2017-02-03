@@ -97,6 +97,7 @@ then
 	cd "${SOURCE_DIR}"
 
 	AUTOANDR_STDOUT="$LOGFILE" \
+	AUTOANDR_MODULE_TAGS=optional \
 	$AUTOANDR start \
 		--disable-option-checking \
 		--enable-static-link-ncp-plugin \
@@ -111,7 +112,7 @@ then
 		--oldincludedir=/system/include \
 		--enable-debug=verbose \
 		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
-		CPPFLAGS="-Wno-date-time -Wno-unused-parameter" \
+		CPPFLAGS="-Wno-date-time -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
 		DBUS_LIBS="-ldbus" \
 		TUNNEL_TUNTAP_DEVICE="/dev/tun" \

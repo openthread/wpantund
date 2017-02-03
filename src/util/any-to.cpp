@@ -37,18 +37,36 @@ using namespace nl;
 
 nl::Data any_to_data(const boost::any& value)
 {
-	nl::Data net_key;
+	nl::Data ret;
 
 	if (value.type() == typeid(std::string)) {
 		std::string key_string = boost::any_cast<std::string>(value);
-		net_key = nl::Data(
-		    (const uint8_t*)key_string.c_str(), key_string.length());
+		uint8_t data[key_string.size()/2];
+
+		int length = parse_string_into_data(data,
+											key_string.size()/2,
+											key_string.c_str());
+
+		ret = nl::Data(data, length);
 	} else if (value.type() == typeid(nl::Data)) {
-		net_key = boost::any_cast<nl::Data>(value);
+		ret = boost::any_cast<nl::Data>(value);
+	} else if (value.type() == typeid(uint64_t)) {
+		union {
+			uint64_t val;
+			uint8_t data[sizeof(uint64_t)];
+		} x;
+
+		x.val = boost::any_cast<uint64_t>(value);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		reverse_bytes(x.data, sizeof(uint64_t));
+#endif
+
+		ret.append(x.data,sizeof(uint64_t));
 	} else {
-		net_key = nl::Data(boost::any_cast<std::vector<uint8_t> >(value));
+		ret = nl::Data(boost::any_cast<std::vector<uint8_t> >(value));
 	}
-	return net_key;
+	return ret;
 }
 
 int any_to_int(const boost::any& value)
@@ -179,7 +197,9 @@ std::string any_to_string(const boost::any& value)
 {
 	std::string ret;
 
-	if (value.type() == typeid(uint8_t)) {
+	if (value.type() == typeid(std::string)) {
+		ret = boost::any_cast<std::string>(value);
+	} else if (value.type() == typeid(uint8_t)) {
 		char tmp[10];
 		snprintf(tmp, sizeof(tmp), "%u", boost::any_cast<uint8_t>(value));
 		ret = tmp;
@@ -223,9 +243,33 @@ std::string any_to_string(const boost::any& value)
 	} else if (value.type() == typeid(bool)) {
 		ret = (boost::any_cast<bool>(value))? "true" : "false";
 	} else if (value.type() == typeid(nl::Data)) {
-		ret = "<nl::Data>";
+		nl::Data data = boost::any_cast<nl::Data>(value);
+		ret = std::string(data.size()*2,0);
+
+		// Reserve the zero termination
+		ret.reserve(data.size()*2+1);
+
+		encode_data_into_string(data.data(),
+								data.size(),
+								&ret[0],
+								ret.capacity(),
+								0);
+	} else if (value.type() == typeid(std::list<std::string>)) {
+		std::list<std::string> l = boost::any_cast<std::list<std::string> >(value);
+		if (!l.empty()) {
+			std::list<std::string>::const_iterator iter;
+			ret = "{\n";
+			for (iter = l.begin(); iter != l.end(); ++iter) {
+				ret += "\t\"" + *iter + "\"\n";
+			}
+			ret += "}";
+		} else {
+			ret = "{ }";
+		}
 	} else {
-		ret = boost::any_cast<std::string>(value);
+		ret += "<";
+		ret += value.type().name();
+		ret += ">";
 	}
 	return ret;
 }

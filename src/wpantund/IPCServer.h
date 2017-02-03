@@ -20,12 +20,14 @@
 #ifndef wpantund_ipc_server_h
 #define wpantund_ipc_server_h
 
-#include "NCPControlInterface.h"
 #include <sys/select.h>
 #include <unistd.h>
+#include "time-utils.h"
 
 namespace nl {
 namespace wpantund {
+
+class NCPControlInterface;
 
 class IPCServer {
 public:
