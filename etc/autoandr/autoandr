@@ -768,6 +768,9 @@ handle_ar() {
 		if test "${AUTOANDR_MODULE_PATH_64}" != ""
 		then androidmake_module_path_64 "${AUTOANDR_MODULE_PATH_64}"
 		fi
+		for tag in ${AUTOANDR_MODULE_TAGS}
+		do androidmake_module_tags ${tag}
+		done
 		for object in ${OBJECTS}
 		do androidmake_module_add_object ${object}
 		done
