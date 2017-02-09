@@ -99,7 +99,30 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	mInstance->mNetworkKey = Data();
 	mInstance->mNetworkKeyIndex = 0;
 
+	// Issue a Reset
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
+	// Wait for re-initialization of NCP to start.
+	EH_REQUIRE_WITHIN(
+		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+		ncp_state_is_initializing(mInstance->get_ncp_state()),
+		on_error
+	);
+
+	// Wait for re-initialization to complete.
+	EH_REQUIRE_WITHIN(
+		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+		!ncp_state_is_initializing(mInstance->get_ncp_state()) &&
+		(mInstance->mDriverState == SpinelNCPInstance::NORMAL_OPERATION),
+		on_error
+	);
+
 	ret = kWPANTUNDStatus_Ok;
+
+	syslog(LOG_INFO, "Leave succeeded");
 
 	finish(ret);
 
