@@ -409,6 +409,9 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SAVED, SPINEL_DATATYPE_BOOL_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
 
