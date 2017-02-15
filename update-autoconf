@@ -78,10 +78,21 @@ Based-on: `git rev-parse $REV`"
 if git checkout "${FULL}"
 then
 	git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${REF} ${BASE} || {
-		git status --porcelain | grep '^UU' || die "Can't resolve merge"
-		git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${REF}"
-		git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${BASE}"
-		git commit -m "${COMMIT_LOG}" || die
+		if git status --porcelain | grep '^UU'
+		then
+			git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${REF}"
+			git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${BASE}"
+			git commit -m "${COMMIT_LOG}" || die
+		else
+			git merge --abort || die
+			git checkout "${REF}@{0}" || die
+			git merge --allow-unrelated-histories -m "TEMPORARY COMMIT, DO NOT PUSH" "${BASE}" || die
+			git checkout "${FULL}" || die
+			# Expected to fail:
+			git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${REF} ${BASE} && die 'Why didn'"'"'t this work the first time???'
+			git checkout "HEAD@{1}" . || die
+			git commit -m "${COMMIT_LOG}" || die
+		fi
 	}
 else
 	git checkout -B "${FULL}" "${REF}"
