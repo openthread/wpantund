@@ -120,7 +120,6 @@ do_deep_sleep_tickle:
 			timeout_error
 		);
 
-		mResetIsExpected = false;
 		continue;
 
 timeout_error:
