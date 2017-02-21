@@ -1,0 +1,245 @@
+#!/bin/sh
+#
+# Copyright (c) 2016 Nest Labs, Inc.
+# All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# update-bootstrap-tags
+
+USAGE='[--[no-]pull] [--[no-]push] [--[no-]make-branches] [<branch-name>]'
+LONG_USAGE='Creates or updates `autoconf/*` and `full/*` branches for the specified branch.'
+
+export LC_CTYPE=C
+export LANG=C
+export LC_ALL=C
+
+SUBDIRECTORY_OK=Yes
+OPTIONS_KEEPDASHDASH=
+OPTIONS_SPEC=
+
+. "$(git --exec-path)/git-sh-setup"
+
+cd_to_toplevel
+
+# Leave these unset here. Defaults are set after arguments are parsed.
+unset SHOULD_PULL
+unset SHOULD_PUSH
+unset SHOULD_MAKE_BRANCHES
+unset FALLBACK_AUTOCONF_REF
+unset FALLBACK_FULL_REF
+unset BOOTSTRAP_COMMAND
+
+BOOTSTRAP_SUBREPO=.update-bootstrap-proj
+
+total_argc=$#
+while test $# != 0
+do
+    case "$1" in
+    --help|-h|-[?])
+		usage
+		exit 0
+		;;
+	--pull)
+		SHOULD_PULL=true
+		;;
+	--no-pull)
+		SHOULD_PULL=false
+		;;
+	--push)
+		SHOULD_PUSH=true
+		SHOULD_PULL=${SHOULD_PULL-true}
+		SHOULD_MAKE_BRANCHES=${SHOULD_MAKE_BRANCHES-true}
+		;;
+	--no-push)
+		SHOULD_PUSH=false
+		;;
+	--make-branches)
+		SHOULD_MAKE_BRANCHES=true
+		SHOULD_PULL=${SHOULD_PULL-true}
+		#SHOULD_PUSH=${SHOULD_PUSH-true}
+		;;
+	--no-make-branches)
+		SHOULD_MAKE_BRANCHES=false
+		SHOULD_PUSH=${SHOULD_PUSH-false}
+		;;
+	--debug) set -x ;;
+	--)
+        shift
+		break
+		;;
+	*)
+		break
+        ;;
+	esac
+    shift
+done
+
+SHOULD_PULL=${SHOULD_PULL-`git config update-bootstrap.pull 2> /dev/null | printf "false"`}
+SHOULD_PUSH=${SHOULD_PUSH-`git config update-bootstrap.push 2> /dev/null | printf "false"`}
+SHOULD_MAKE_BRANCHES=${SHOULD_MAKE_BRANCHES-`git config update-bootstrap.make-branches 2> /dev/null | printf "false"`}
+FALLBACK_AUTOCONF_REF=${FALLBACK_AUTOCONF_REF-`git config update-bootstrap.fallback-autoconf-ref 2> /dev/null | printf "autoconf/master"`}
+FALLBACK_FULL_REF=${FALLBACK_FULL_REF-`git config update-bootstrap.fallback-full-ref 2> /dev/null | printf "full/master"`}
+BOOTSTRAP_COMMAND=${BOOTSTRAP_COMMAND-`git config update-bootstrap.bootstrap-command 2> /dev/null`}
+
+if ${SHOULD_PUSH} && ! ${SHOULD_MAKE_BRANCHES}
+then die "Can't --push without --make-branches"
+fi
+
+if [ -z "$*" ]
+then BRANCHES_TO_UPDATE=`git rev-parse --abbrev-ref HEAD` || die
+else BRANCHES_TO_UPDATE="$*"
+fi
+
+update_bootstrap() {
+	local source_ref="$1"
+	local autoconf_ref="$2"
+	local full_ref="$3"
+	local REV=`git describe --tags --always ${source_ref}`
+
+	[ -d "${BOOTSTRAP_SUBREPO}" ] && { chmod -R 777 "${BOOTSTRAP_SUBREPO}" && rm -fr "${BOOTSTRAP_SUBREPO}" ; }
+
+	git clone .git "${BOOTSTRAP_SUBREPO}" || die
+
+	pushd "${BOOTSTRAP_SUBREPO}" || die
+
+	git checkout "${source_ref}" || die
+
+	${BOOTSTRAP_COMMAND} || die
+
+	# Clean up crap we don't need in the autoconf ref.
+	find . -name autom4te.cache -print0 | xargs -0 rm -fr || die
+
+	git add . -f || die
+	git stash || die
+	git checkout "${autoconf_ref}" || git checkout --orphan "${autoconf_ref}" || die
+	git rm . -f -r
+	git stash pop || die
+
+	if git status --porcelain 2>/dev/null | grep -e '^[RMDA]' -e '^?[RDMA]' >/dev/null
+	then
+		git commit -m \
+"build-system: Autotools rebuild from $REV
+
+Based-on: `git rev-parse $REV`" || die
+	else
+		echo "No changes."
+	fi
+
+	autoconf_ref=`git rev-parse HEAD` || die
+
+
+	COMMIT_LOG="build-system: Merge of changes for $REV
+
+	Based-on: `git rev-parse $REV`"
+
+	if git checkout "${full_ref}"
+	then
+		git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${source_ref} ${autoconf_ref} || {
+			if git status --porcelain | grep '^UU'
+			then
+				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${source_ref}"
+				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${autoconf_ref}"
+				git commit -m "${COMMIT_LOG}" || die
+			else
+				git merge --abort || die
+				git checkout "${source_ref}@{0}" || die
+				git merge --allow-unrelated-histories -m "TEMPORARY COMMIT, DO NOT PUSH" "${autoconf_ref}" || die
+				git checkout "${full_ref}" || die
+				# Expected to fail:
+				git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${source_ref} ${autoconf_ref} && die 'Why didn'"'"'t this work the first time???'
+				git checkout "HEAD@{1}" . || die
+				git commit -m "${COMMIT_LOG}" || die
+			fi
+		}
+	else
+		git checkout -B "${full_ref}" "${source_ref}"
+		git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${autoconf_ref} || die
+	fi
+
+	git push -f origin HEAD:refs/heads/__FULL_HEAD ${autoconf_ref}:refs/heads/__AUTOCONF_HEAD || die
+
+	popd || die
+
+	rm -fr "${BOOTSTRAP_SUBREPO}" || die
+}
+
+# First do a sanity check
+for branch in ${BRANCHES_TO_UPDATE}
+do
+	if ${SHOULD_PULL} || ${SHOULD_PUSH}
+	then
+		remote=`git config "branch.${branch}.remote" 2>/dev/null` || die "Branch \"${branch}\" has no remote"
+	fi
+
+	# If the bootstrap command wasn't specified, try to guess it
+	if [ -z "${BOOTSTRAP_COMMAND}" ]
+	then
+		if git show "${branch}:bootstrap" 1> /dev/null 2> /dev/null
+		then BOOTSTRAP_COMMAND="./bootstrap"
+		elif git show "${branch}:bootstrap.sh" 1> /dev/null 2> /dev/null
+		then BOOTSTRAP_COMMAND="./bootstrap.sh"
+		elif git show "${branch}:autogen.sh" 1> /dev/null 2> /dev/null
+		then BOOTSTRAP_COMMAND="./autogen.sh"
+		elif git show "${branch}:configure.ac" 1> /dev/null 2> /dev/null
+		then BOOTSTRAP_COMMAND="autoreconf -vi"
+		else die "Bootstrap command not specified and unable to guess using branch \"${branch}\"."
+		fi
+		say "Using \"${BOOTSTRAP_COMMAND}\" as bootstrap command."
+	fi
+done
+
+# Now process the branches
+for branch in ${BRANCHES_TO_UPDATE}
+do
+	if ${SHOULD_PULL} || ${SHOULD_PUSH}
+	then
+		remote=`git config "branch.${branch}.remote" 2>/dev/null` || die "Branch \"${branch}\" has no remote"
+	fi
+
+	if ${SHOULD_PULL}
+	then
+		git fetch ${remote} "autoconf/${branch}:autoconf/${branch}" "full/${branch}:full/${branch}" || die
+	fi
+
+	autoconf_ref=
+	[ -n "$autoconf_ref" ] || autoconf_ref=`git rev-parse --verify "autoconf/${branch}" 2>/dev/null`
+	[ -n "$autoconf_ref" ] || autoconf_ref=`git rev-parse --verify "${FALLBACK_AUTOCONF_REF}" 2>/dev/null`
+	[ -n "$autoconf_ref" ] || autoconf_ref="autoconf/${branch}"
+
+	full_ref=
+	[ -n "$full_ref" ] || full_ref=`git rev-parse --verify "full/${branch}" 2>/dev/null`
+	[ -n "$full_ref" ] || full_ref=`git rev-parse --verify "${FALLBACK_AUTOCONF_REF}" 2>/dev/null`
+	[ -n "$full_ref" ] || full_ref="full/${source_ref}"
+
+	update_bootstrap "${branch}" "${autoconf_ref}" "${full_ref}" || die
+
+	if ${SHOULD_MAKE_BRANCHES}
+	then
+		git branch -f autoconf/${branch} __AUTOCONF_HEAD || die
+		git branch -f full/${branch} __FULL_HEAD || die
+		git branch -D __AUTOCONF_HEAD
+		git branch -D __FULL_HEAD
+		say "Tags autoconf/${branch} and full/${branch} updated."
+	else
+		say "Tags __AUTOCONF_HEAD and __FULL_HEAD updated."
+	fi
+
+	if ${SHOULD_PUSH}
+	then
+		git push ${remote} "autoconf/${branch}:autoconf/${branch}" "full/${branch}:full/${branch}" || die
+	fi
+done
+
+say Finished.

@@ -38,6 +38,10 @@ OTHER_TAG="`git tag -l "[0123456789].[0123456789][0123456789].[0123456789][01234
 
 echo "Helping for release $TAG"
 
+git fetch master:master autoconf/master:autoconf/master full/master:full/master
+
+./git-update-boostrap --no-pull --push --make-branch master || die
+
 ./update-full-tag-for-release "$TAG" || die
 
 ./update-latest-release "$TAG" || die
