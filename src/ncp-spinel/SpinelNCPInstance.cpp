@@ -124,6 +124,7 @@ nl::wpantund::spinel_status_to_wpantund_status(int spinel_status)
 	case SPINEL_STATUS_INVALID_STATE:
 		ret = kWPANTUNDStatus_InvalidForCurrentState;
 		break;
+
 	default:
 		ret = WPANTUND_NCPERROR_TO_STATUS(spinel_status);
 		break;
@@ -408,6 +409,9 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SAVED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
@@ -960,10 +964,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				default:
 					break;
 				}
-				reinitialize_ncp();
 				reset_tasks(wstatus);
 			}
+
+			if (mDriverState == NORMAL_OPERATION) {
+				reinitialize_ncp();
+			}
+			mResetIsExpected = false;
 			return;
+
 		} else if (status == SPINEL_STATUS_NOMEM) {
 			cms_t now = time_ms();
 			if (now - mLastTimeNoMemStatus > kMaxTimeBetweenNoMemStatus) {

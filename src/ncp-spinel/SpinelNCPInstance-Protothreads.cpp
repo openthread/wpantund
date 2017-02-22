@@ -120,7 +120,6 @@ do_deep_sleep_tickle:
 			timeout_error
 		);
 
-		mResetIsExpected = false;
 		continue;
 
 timeout_error:
@@ -144,7 +143,84 @@ timeout_error:
 int
 SpinelNCPInstance::vprocess_resume(int event, va_list args)
 {
+	Data command;
+	bool is_commissioned;
+	int ret;
+
 	EH_BEGIN_SUB(&mSubPT);
+
+	// Get the `SPINEL_PROP_NET_SAVED` property to check if the NCP is commissioned.
+
+	CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+
+	command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_SAVED);
+	require(command.size() < sizeof(mOutboundBuffer), on_error);
+	memcpy(mOutboundBuffer, command.data(), command.size());
+	mOutboundBufferLen = static_cast<spinel_ssize_t>(command.size());
+	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+	CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
+
+	ret = peek_ncp_callback_status(event, args);
+	require_noerr(ret, on_error);
+
+	{
+		unsigned int key = va_arg(args, unsigned int);
+		const uint8_t* data_in = va_arg(args, const uint8_t*);
+		spinel_size_t data_len = va_arg_small(args, spinel_size_t);
+		spinel_ssize_t len = 0;
+
+		require(key == SPINEL_PROP_NET_SAVED, on_error);
+
+		len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
+		require(len > 0, on_error);
+	}
+
+	if (!is_commissioned) {
+		syslog(LOG_NOTICE, "NCP is NOT commissioned. Cannot resume.");
+		EH_EXIT();
+	}
+
+	syslog(LOG_NOTICE, "NCP is commissioned. Resuming...");
+
+	// Resume by setting `NET_IF_UP` and `NET_STACK_UP` to `true`
+
+	CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+
+	command = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		true
+	);
+
+	require(command.size() < sizeof(mOutboundBuffer), on_error);
+	memcpy(mOutboundBuffer, command.data(), command.size());
+	mOutboundBufferLen = static_cast<spinel_ssize_t>(command.size());
+	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+	CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
+	ret = peek_ncp_callback_status(event, args);
+	require_noerr(ret, on_error);
+
+	CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+	command = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		true
+	);
+	require(command.size() < sizeof(mOutboundBuffer), on_error);
+	memcpy(mOutboundBuffer, command.data(), command.size());
+	mOutboundBufferLen = static_cast<spinel_ssize_t>(command.size());
+	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+	CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
+	ret = peek_ncp_callback_status(event, args);
+	require_noerr(ret, on_error);
+
+	EH_EXIT();
+
+on_error:
+
+	syslog(LOG_ERR, "NCP is misbehaving or unresponsive");
+	reinitialize_ncp();
+
 	EH_END();
 }
 
@@ -517,8 +593,9 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 
 	EH_WAIT_UNTIL(mTaskQueue.empty());
 
-	// If we are in the COMMISSIONED NCP state and we
-	if (mAutoResume && mEnabled && (get_ncp_state() == COMMISSIONED)) {
+	// If we are offline and autoResume is enabled
+	if (mAutoResume && mEnabled && (get_ncp_state() == OFFLINE)) {
+		syslog(LOG_NOTICE, "AutoResume is enabled. Trying to resume.");
 		EH_SPAWN(&mSubPT, vprocess_resume(event, args));
 	}
 
