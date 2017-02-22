@@ -170,7 +170,7 @@
 #define SOCKET_UTILS_DEFAULT_SHELL "/system/bin/sh"
 
 /* Source version */
-#define SOURCE_VERSION "0.07.00-267-gca729cd"
+#define SOURCE_VERSION "0.07.00-271-g7c0736659"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
