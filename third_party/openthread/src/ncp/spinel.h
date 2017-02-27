@@ -797,8 +797,8 @@ typedef enum
     /** Format: `C`
      */
     SPINEL_PROP_THREAD_CHILD_COUNT_MAX = SPINEL_PROP_THREAD_EXT__BEGIN + 12,
-
-    /// Leader network data
+   
+ /// Leader network data
     /** Format: `D` - Read only
      */
     SPINEL_PROP_THREAD_LEADER_NETWORK_DATA
@@ -810,6 +810,18 @@ typedef enum
     SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 14,
 
+    /// Thread joiner data
+    /** Format `A(T(EDc))`
+    *  eui64, PSKd, PSKd length
+    */
+    SPINEL_PROP_THREAD_JOINERS = SPINEL_PROP_THREAD_EXT__BEGIN + 15,
+
+    /// Thread commissioner enable
+    /** Format `b`
+    *
+    * Default value is `false`.
+    */
+    SPINEL_PROP_THREAD_COMMISSIONER_ENABLED = SPINEL_PROP_THREAD_EXT__BEGIN + 16,
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
     SPINEL_PROP_IPV6__BEGIN          = 0x60,

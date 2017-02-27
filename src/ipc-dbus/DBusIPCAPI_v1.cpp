@@ -43,6 +43,7 @@
 
 #include "DBUSHelpers.h"
 #include "any-to.h"
+#include "commissioner-utils.h"
 
 using namespace DBUSHelpers;
 using namespace nl;
@@ -77,6 +78,9 @@ DBusIPCAPI_v1::init_callback_tables()
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_ADD, interface_route_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_COMMISSIONER_ENABLED, interface_commissioner_enabled_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
@@ -1192,6 +1196,76 @@ bail:
 	return ret;
 }
 
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_add_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	const uint8_t* ext_addr = NULL;
+	int ext_addr_len = 0;
+	const char* psk = NULL;
+	int psk_len = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &psk, &psk_len,
+		DBUS_TYPE_INVALID
+);
+
+	require(did_succeed, bail);
+
+	require(ext_addr != NULL, bail);
+	require(psk != NULL, bail);
+	require(psk_len >= PSK_MIN_LENGTH, bail);
+	require(psk_len <= PSK_MAX_LENGTH, bail);
+
+	dbus_message_ref(message);
+	interface->joiner_add(
+		ext_addr,
+		ext_addr_len,
+		psk,
+		psk_len,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_commissioner_enabled_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_message_ref(message);
+	bool did_succeed = false;
+	bool enabled = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_BOOLEAN, &enabled,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+
+	dbus_message_ref(message);
+	interface->commissioner(enabled, boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+
+	return ret;
+}
 
 DBusHandlerResult
 DBusIPCAPI_v1::message_handler(

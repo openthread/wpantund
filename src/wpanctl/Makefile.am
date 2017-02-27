@@ -77,6 +77,8 @@ wpanctl_SOURCES = \
 	tool-cmd-remove-route.h \
 	tool-cmd-pcap.h \
 	tool-cmd-pcap.c \
+	tool-cmd-commissioner.h \
+	tool-cmd-commissioner.c \
 	$(NULL)
 
 wpanctl_LDADD = \

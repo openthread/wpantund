@@ -139,6 +139,19 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+	virtual void joiner_add(
+		const uint8_t *addr,
+		int addr_len,
+		const char *psk,
+		int psk_len,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void commissioner(
+		bool enabled,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 	virtual void remove_external_route(
 		const struct in6_addr *prefix,
 		int prefix_len_in_bits,

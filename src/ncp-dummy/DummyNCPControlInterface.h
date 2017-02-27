@@ -110,6 +110,16 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void joiner_add(
+		const uint8_t *addr,
+		int addr_len,
+		const char *psk,
+		int psk_len,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void commissioner(bool enabled, CallbackWithStatus cb = NilReturn());
+
 	virtual void data_poll(CallbackWithStatus cb = NilReturn());
 	virtual void host_did_wake(CallbackWithStatus cb = NilReturn());
 

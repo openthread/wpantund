@@ -169,13 +169,32 @@ DummyNCPControlInterface::remove_external_route(
 }
 
 void
+DummyNCPControlInterface::joiner_add(
+	const uint8_t *addr,
+	int addr_len,
+	const char *psk,
+	int psk_len,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::commissioner(
+		bool enabled,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::permit_join(
     int seconds,
     uint8_t traffic_type,
     in_port_t traffic_port,
     bool network_wide,
     CallbackWithStatus cb
-    )
+)
 {
 	// TODO: Writeme!
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
