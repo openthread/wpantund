@@ -95,7 +95,7 @@ as:
     brew install ./etc/wpantund.rb
 
     # Start the D-Bus daemon
-    sudo cp "$(brew --repository)"/Cellar/d-bus/*/org.freedesktop.dbus-session.plist /Library/LaunchDaemons/
+    sudo cp "$(brew --repository)"/Cellar/dbus/*/org.freedesktop.dbus-session.plist /Library/LaunchDaemons/
     sudo launchctl load -w /Library/LaunchDaemons/org.freedesktop.dbus-session.plist
 
 (the last two commands are for setting D-Bus up to launch properly at
