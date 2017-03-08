@@ -328,17 +328,15 @@ SpinelNCPControlInterface::joiner_add(
 		.set_callback(cb)
 		.add_command(SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-			SPINEL_DATATYPE_EUI64_S
-			SPINEL_DATATYPE_DATA_S
-			SPINEL_DATATYPE_UINT8_S
-		),
-		SPINEL_PROP_THREAD_JOINERS,
-		addr,
-		psk,
-		psk_len
-	))
-	.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-	.finish()
+				SPINEL_DATATYPE_EUI64_S
+				SPINEL_DATATYPE_DATA_S
+			),
+			SPINEL_PROP_THREAD_JOINERS,
+			addr,
+			psk
+		))
+		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
+		.finish()
 	);
 
 bail:

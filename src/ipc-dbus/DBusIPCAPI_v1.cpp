@@ -1216,7 +1216,7 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &psk, &psk_len,
 		DBUS_TYPE_INVALID
-);
+	);
 
 	require(did_succeed, bail);
 
@@ -1231,7 +1231,8 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 		ext_addr_len,
 		psk,
 		psk_len,
-		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
@@ -1259,7 +1260,11 @@ DBusIPCAPI_v1::interface_commissioner_enabled_handler(
 	require(did_succeed, bail);
 
 	dbus_message_ref(message);
-	interface->commissioner(enabled, boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+	interface->commissioner(
+			enabled,
+			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
 bail:
