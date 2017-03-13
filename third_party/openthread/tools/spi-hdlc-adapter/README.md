@@ -19,16 +19,31 @@ protocol document.
 *   `--pty`: Create a pseudo terminal for HDLC input/output. The path
     of the newly-created PTY will be written to `stdout`, followed by
     a newline.
+*   `--raw`: Do not encode/decode packets using HDLC. Instead, write
+    whole, raw frames to the specified input and output FDs. This is
+    useful for emulating a serial port, or when datagram-based sockets
+    are supplied for `stdin` and `stdout` (when used with `--stdio`).
+*   `--mtu=[MTU]`: Specify the MTU. Currently only used in raw mode.
+    Default and maximum value is 2043. Must be greater than zero.
 *   `--gpio-int[=gpio-path]`: Specify a path to the Linux
     sysfs-exported GPIO directory for the `I̅N̅T̅` pin. If not
     specified, `spi-hdlc-adapter` will fall back to polling, which is
     inefficient.
 *   `--gpio-reset[=gpio-path]`: Specify a path to the Linux
     sysfs-exported GPIO directory for the `R̅E̅S̅` pin.
-*   `--spi-mode[=mode]`: Specify the SPI mode to use (0-3).
-*   `--spi-speed[=hertz]`: Specify the SPI speed in hertz.
-*   `--spi-cs-delay[=usec]`: Specify the delay after C̅S̅ assertion, in
-    microseconds.
+*   `--spi-mode[=mode]`: Specify the SPI mode to use (0-3). Default
+    value is `0`.
+*   `--spi-speed[=hertz]`: Specify the SPI speed in hertz. Default
+    value is `1000000` (1MHz).
+*   `--spi-cs-delay[=usec]`: Specify the delay after C̅S̅ assertion,
+    in microseconds. Default is 20µs. Note that this may need to be
+    set to zero for spi-hdlc-adapter to work with some SPI drivers.
+*   `--spi-align-allowance[=n]`: Specify the the maximum number of 0xFF
+    bytes to clip from start of MISO frame. This makes this tool usable
+    with SPI slaves which have buggy SPI blocks that prepend up to
+    three 0xFF bytes to the start of MISO frame. Default value is `0`.
+    Maximum value is `3`. *This must be set to at least `2` for chips
+    in the SiLabs EM35x family.*
 *   `--verbose`: Increase debug verbosity.
 *   `--help`: Print out usage information to `stdout` and exit.
 
@@ -58,3 +73,18 @@ procedure:
 1.  Set `R̅E̅S̅/direction` to `low`.
 2.  Sleep for 30ms.
 3.  Set `R̅E̅S̅/direction` to `high`.
+
+## Statistics ##
+
+Some simple usage statistics are printed out to syslog at exit and
+whenever the `SIGUSR1` signal is received. The easiest way to send
+that signal to `spi-hdlc-adapter` is like this:
+
+    # killall -sigusr1 spi-hdlc-adapter
+
+At which point you will see something like this in the syslogs:
+
+    spi-hdlc-adapter[5215]: INFO: sSpiFrameCount=45660
+    spi-hdlc-adapter[5215]: INFO: sSpiValidFrameCount=45643
+    spi-hdlc-adapter[5215]: INFO: sSpiGarbageFrameCount=17
+    spi-hdlc-adapter[5215]: INFO: sSpiDuplexFrameCount=20931
