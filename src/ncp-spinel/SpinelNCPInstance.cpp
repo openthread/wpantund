@@ -353,7 +353,6 @@ static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_
 {
 	spinel_ssize_t len;
 	uint32_t lower, higher;
-	uint64_t val;
 	int ret = kWPANTUNDStatus_Failure;
 
 	len = spinel_datatype_unpack(
@@ -1278,7 +1277,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			len = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
-				"T(6CbC).",
+				"t(6CbC)",
 				&addr,
 				&prefix_len,
 				&stable,
@@ -1348,7 +1347,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			ret = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
-				SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_DATA_S,
+				SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_DATA_S,
 				&frame_ptr,
 				&frame_len,
 				&meta_ptr,

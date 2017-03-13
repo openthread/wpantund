@@ -156,7 +156,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 			spinel_datatype_unpack(
 				data_ptr,
 				data_len,
-				"CcT(ESSC.)T(iCUD.).",
+				"Cct(ESSC)t(iCUd)",
 				&chan,
 				&rssi,
 

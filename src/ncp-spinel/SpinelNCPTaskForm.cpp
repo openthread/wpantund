@@ -170,6 +170,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 			// Make sure the channel is the supported channel set.
 			if (mInstance->mSupprotedChannels.find(channel) == mInstance->mSupprotedChannels.end()) {
 				syslog(LOG_ERR, "Channel %d is not supported by NCP. Supported channels mask is %08x",
+					channel,
 					mInstance->get_default_channel_mask()
 				);
 				ret = kWPANTUNDStatus_InvalidArgument;

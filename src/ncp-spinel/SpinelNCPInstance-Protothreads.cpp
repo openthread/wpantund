@@ -519,14 +519,14 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 					syslog(LOG_WARNING,
 						"Spinel command for restoring property \"%s\" does not fit in outbound buffer (require %d bytes but only %u bytes available)",
 						mSettingsIter->first.c_str(),
-						mSettingsIter->second.mSpinelCommand.size(),
-						sizeof(GetInstance(this)->mOutboundBuffer)
+						(int)mSettingsIter->second.mSpinelCommand.size(),
+						(unsigned int)sizeof(GetInstance(this)->mOutboundBuffer)
 					);
 
 					continue;
 				}
 
-				GetInstance(this)->mOutboundBufferLen = mSettingsIter->second.mSpinelCommand.size();
+				GetInstance(this)->mOutboundBufferLen = (spinel_ssize_t)mSettingsIter->second.mSpinelCommand.size();
 				memcpy(GetInstance(this)->mOutboundBuffer, mSettingsIter->second.mSpinelCommand.data(), mSettingsIter->second.mSpinelCommand.size());
 
 				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
