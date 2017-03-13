@@ -73,11 +73,14 @@ spinel_datatype_iter_next(spinel_datatype_iter_t* iter)
 {
 	spinel_status_t ret = SPINEL_STATUS_PARSE_ERROR;
 	spinel_datatype_iter_t scratchpad = *iter;
+	const char* next_pack_format;
 
 	if (!iter->data_ptr || !iter->data_len || !iter->pack_format) {
 		ret = SPINEL_STATUS_EMPTY;
 		goto bail;
 	}
+
+	next_pack_format = spinel_next_packed_datatype(scratchpad.pack_format);
 
 	switch ((spinel_datatype_t)*scratchpad.pack_format) {
 	case SPINEL_DATATYPE_INT8_C:
@@ -85,7 +88,6 @@ spinel_datatype_iter_next(spinel_datatype_iter_t* iter)
 		require(scratchpad.data_len >= sizeof(uint8_t), bail);
 		scratchpad.data_ptr += sizeof(uint8_t);
 		scratchpad.data_len -= sizeof(uint8_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_INT16_C:
@@ -93,7 +95,6 @@ spinel_datatype_iter_next(spinel_datatype_iter_t* iter)
 		require(scratchpad.data_len >= sizeof(uint16_t), bail);
 		scratchpad.data_ptr += sizeof(uint16_t);
 		scratchpad.data_len -= sizeof(uint16_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_INT32_C:
@@ -101,28 +102,24 @@ spinel_datatype_iter_next(spinel_datatype_iter_t* iter)
 		require(scratchpad.data_len >= sizeof(uint32_t), bail);
 		scratchpad.data_ptr += sizeof(uint32_t);
 		scratchpad.data_len -= sizeof(uint32_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_IPv6ADDR_C:
 		require(scratchpad.data_len >= sizeof(spinel_ipv6addr_t), bail);
 		scratchpad.data_ptr += sizeof(spinel_ipv6addr_t);
 		scratchpad.data_len -= sizeof(spinel_ipv6addr_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_EUI64_C:
 		require(scratchpad.data_len >= sizeof(spinel_eui64_t), bail);
 		scratchpad.data_ptr += sizeof(spinel_eui64_t);
 		scratchpad.data_len -= sizeof(spinel_eui64_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_EUI48_C:
 		require(scratchpad.data_len >= sizeof(spinel_eui48_t), bail);
 		scratchpad.data_ptr += sizeof(spinel_eui48_t);
 		scratchpad.data_len -= sizeof(spinel_eui48_t);
-		scratchpad.pack_format++;
 		break;
 
 	case SPINEL_DATATYPE_UINT_PACKED_C:
@@ -131,46 +128,55 @@ spinel_datatype_iter_next(spinel_datatype_iter_t* iter)
 			require(pui_len > 0, bail);
 			scratchpad.data_ptr += pui_len;
 			scratchpad.data_len -= pui_len;
-			scratchpad.pack_format++;
 		}
 		break;
 
 
 	case SPINEL_DATATYPE_UTF8_C:
+		{
+			size_t str_len = strnlen((const char*)scratchpad.data_ptr, scratchpad.data_len) + 1;
+			scratchpad.data_ptr += str_len;
+			scratchpad.data_len -= str_len;
+		}
 		break;
 
-	case SPINEL_DATATYPE_STRUCT_C:
 	case SPINEL_DATATYPE_ARRAY_C:
-		scratchpad.pack_format = spinel_next_packed_datatype(scratchpad.pack_format)-1;
-
 	case SPINEL_DATATYPE_DATA_C:
-		{
-			if ((scratchpad.pack_format[1] == ')')
-			 || (scratchpad.pack_format[1] == 0)
-			) {
-				// Special case: data is size of the rest of the buffer!
-				scratchpad.data_ptr += scratchpad.data_len;
-				scratchpad.data_len -= scratchpad.data_len;
-			} else {
-				uint32_t block_len = 0;
-				spinel_ssize_t pui_len = spinel_packed_uint_decode(scratchpad.data_ptr, scratchpad.data_len, &block_len);
-
-				require(pui_len > 0, bail);
-				require(block_len < SPINEL_FRAME_MAX_SIZE, bail);
-
-				scratchpad.data_ptr += pui_len+block_len;
-				scratchpad.data_len -= pui_len+block_len;
-
-				require(scratchpad.data_len >= block_len, bail);
-			}
+		if ( (scratchpad.pack_format[1] == ')')
+		  || (next_pack_format == 0)
+		) {
+			// Special case: This type is size of the rest of the buffer!
+			scratchpad.data_ptr += scratchpad.data_len;
+			scratchpad.data_len -= scratchpad.data_len;
+			break;
 		}
-	case SPINEL_DATATYPE_VOID_C:
-		scratchpad.pack_format++;
+
+		// Fall through to length-prepended...
+	case SPINEL_DATATYPE_STRUCT_C:
+	case SPINEL_DATATYPE_DATA_WLEN_C:
+		{
+			spinel_ssize_t block_len = spinel_datatype_unpack(
+				scratchpad.data_ptr,
+				scratchpad.data_len,
+				SPINEL_DATATYPE_STRUCT_S("")
+			);
+
+			require(block_len > 0, bail);
+			require(block_len < SPINEL_FRAME_MAX_SIZE, bail);
+			require(scratchpad.data_len >= block_len, bail);
+
+			scratchpad.data_ptr += block_len;
+			scratchpad.data_len -= block_len;
+
+		}
+		break;
 
 	default:
 		// Unsupported Type!
 		goto bail;
 	}
+
+	scratchpad.pack_format = next_pack_format;
 
 	while (scratchpad.pack_format[0] == SPINEL_DATATYPE_VOID_C) {
 		scratchpad.pack_format++;
@@ -201,22 +207,26 @@ spinel_datatype_iter_open_container(const spinel_datatype_iter_t* iter, spinel_d
 {
 	spinel_status_t ret = SPINEL_STATUS_PARSE_ERROR;
 	int depth = 0;
+	spinel_ssize_t block_len;
 
 	require(iter->data_len > 2, bail);
 
-	switch ((spinel_datatype_t)*iter->pack_format) {
-	case SPINEL_DATATYPE_STRUCT_C:
-	case SPINEL_DATATYPE_ARRAY_C:
-		break;
-
-	default:
-		ret = SPINEL_STATUS_INVALID_ARGUMENT;
+	if ((spinel_datatype_t)*iter->pack_format == SPINEL_DATATYPE_ARRAY_C) {
+		ret = SPINEL_STATUS_UNIMPLEMENTED;
 		goto bail;
-		break;
+	}
+
+	if ((spinel_datatype_t)*iter->pack_format != SPINEL_DATATYPE_STRUCT_C) {
+		ret = SPINEL_STATUS_PARSE_ERROR;
+		goto bail;
 	}
 
 	*subiter = *iter;
+
+	require(subiter->pack_format[1] == '(', bail);
+
 	subiter->container = iter->pack_format[0];
+	subiter->pack_format += 2;
 
 	do {
 		switch(subiter->pack_format[1]) {
@@ -227,25 +237,17 @@ spinel_datatype_iter_open_container(const spinel_datatype_iter_t* iter, spinel_d
 	} while(depth > 0);
 
 	require(subiter->pack_format[1] == ')', bail);
-	subiter->pack_format++;
+	subiter->pack_format += 2;
 
-	if ((subiter->pack_format[1] != ')') && (subiter->pack_format[1] != 0))
-	{
-		// We aren't the special case. Extract the length.
-		uint32_t block_len = 0;
-		spinel_ssize_t pui_len = spinel_packed_uint_decode(subiter->data_ptr, subiter->data_len, &block_len);
+	block_len = spinel_datatype_unpack(
+		subiter->data_ptr,
+		subiter->data_len,
+		SPINEL_DATATYPE_DATA_WLEN_S,
+		&subiter->data_ptr,
+		&subiter->data_len
+	);
 
-		require(pui_len > 0, bail);
-		require(block_len < SPINEL_FRAME_MAX_SIZE, bail);
-
-		subiter->data_ptr += pui_len;
-		subiter->data_len -= pui_len;
-
-		require(block_len <= subiter->data_len, bail);
-
-		subiter->data_len = block_len;
-	}
-	subiter->pack_format = iter->pack_format+2;
+	require(block_len > 0, bail);
 
 	ret = SPINEL_STATUS_OK;
 

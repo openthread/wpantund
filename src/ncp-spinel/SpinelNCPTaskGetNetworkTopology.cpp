@@ -62,7 +62,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(const uint8_t *
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			"T("
+			"t("
 				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
 				SPINEL_DATATYPE_UINT16_S        // Rloc16
 				SPINEL_DATATYPE_UINT32_S        // Timeout
@@ -127,7 +127,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_neighbor_table(const uint8_
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			"T("
+			"t("
 				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
 				SPINEL_DATATYPE_UINT16_S        // Rloc16
 				SPINEL_DATATYPE_UINT32_S        // Age
