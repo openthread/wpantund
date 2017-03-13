@@ -59,6 +59,9 @@ WPANTUND_PROP_PREFERRED_ROUTER_ID="Thread:PreferredRouterID"
 
 MAX_ROUTER_ID=60
 
+WPANTUND_PROP_IS_COMMISSIONED="Network:IsCommissioned"
+WPANTUND_PROP_AUTO_RESUME="Daemon:AutoAssociateAfterReset"
+
 cur_name=
 cur_key=
 cur_panid=
@@ -135,6 +138,28 @@ restore_network_info_on_wpantund ()
 	$wpanctl_command set $WPANTUND_PROP_KEY_INDEX $cur_keyindex
 
 	$wpanctl_command attach
+}
+
+is_ncp_commissioned ()
+{
+	val=$($wpanctl_command get -v $WPANTUND_PROP_IS_COMMISSIONED)
+
+	if [ "$val" != "true" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+is_auto_resume_enabled ()
+{
+	val=$($wpanctl_command get -v $WPANTUND_PROP_AUTO_RESUME)
+
+	if [ "$val" != "true" ]; then
+		return 1
+	fi
+
+	return 0
 }
 
 verify_cur_info ()
@@ -339,6 +364,20 @@ erase_network_info ()
 
 recall_network_info ()
 {
+	if is_ncp_commissioned; then
+
+		if is_auto_resume_enabled; then
+			echo "NCP is commissioned and AutoResume is enabled. Skipping recall."
+			return
+		else
+			echo "NCP is commissioned but AutoResume is not enabled. Skipping recall. Resuming instead."
+			$wpanctl_command resume
+			return
+		fi
+	fi
+
+	echo "NCP is NOT commissioned, trying to recall."
+
 	read_cur_network_info_from_file $primary_file_name
 
 	# if no valid data from the main file, try to read from the second (backup) file
