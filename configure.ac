@@ -194,13 +194,8 @@ AC_DEFINE_UNQUOTED([__STDC_CONSTANT_MACROS], [1], [Needed by C++])
 AC_DEFINE_UNQUOTED([ASSERT_MACROS_USE_SYSLOG], 1, [Define to 1 to have assertmacros.h use syslog])
 AC_DEFINE_UNQUOTED([ASSERT_MACROS_SQUELCH], 0, [Define to 0 to explicitly prevent squelching assert printouts])
 
-NL_CHECK_CONNMAN([
-	NL_CHECK_GLIB(
-		[],
-		AC_MSG_ERROR(["Found ConnMan headers, but couldn't find GLIB"])
-	)
-])
-AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" = "xyes"])
+NL_CHECK_CONNMAN
+AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" != "xno"])
 
 
 AM_CONDITIONAL([HOST_IS_LINUX],[(case "${host_os}" in *linux*) true ;; *) false ;; esac)])

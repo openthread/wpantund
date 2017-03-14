@@ -271,7 +271,7 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 		[connman],
 		[AC_HELP_STRING([--without-connman], [Don't build connman plugin])],
 		[
-			if test "x${with_connman}" '=' "xyes"
+			if test "x${with_connman}" '=' "xyes" -o "x${with_connman}" '=' "xforce"
 			then require_connman=yes
 			fi
 		]
@@ -285,7 +285,10 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 		fi
 	elif test "x${with_connman}" '!=' "xno"
 	then
-		if test "x${CONNMAN_CFLAGS}" '==' "x"
+		if test "x${with_connman}" '==' "xforce"
+		then
+			true
+		elif test "x${CONNMAN_CFLAGS}" '==' "x"
 		then
 			PKG_CHECK_MODULES(
 				[CONNMAN],
@@ -307,33 +310,25 @@ AC_DEFUN([NL_CHECK_CONNMAN], [
 		fi
 	fi
 
+	if test "x${with_connman}" == "xyes" -a "x${GLIB_CFLAGS}" '==' "x"
+	then PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.28, [],[AC_MSG_ERROR(["Found ConnMan headers but couldn't find GLIB"])])
+	fi
+
 	AC_SUBST(CONNMAN_CFLAGS)
 	AC_SUBST(CONNMAN_LIBS)
+	AC_SUBST(GLIB_CFLAGS)
+	AC_SUBST(GLIB_LIBS)
 
-	if test "x${with_connman}" = "xyes"
+	if test "x${with_connman}" != "xno"
 	then {
+		GLIB_CFLAGS="${GLIB_CFLAGS} -DGLIB_VERSION_MAX_ALLOWED=138240 -DGLIB_VERSION_MIN_REQUIRED=138240"
+
 		$1
 	}
 	elif test "x$require_connman" = "xyes"
-	then false; AC_MSG_ERROR(["ConnMan plugin was explicitly requested, but can't find ConnMan headers"])
+	then false; AC_MSG_ERROR(["ConnMan plugin was explicitly requested but cannot find ConnMan headers"])
 	else false; $2
 	fi
-])
-
-AC_DEFUN([NL_CHECK_GLIB], [
-	if test "x${GLIB_CFLAGS}" '==' "x"
-	then
-		PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.28, [$1], [$2])
-	else {
-		true
-		$1
-	}
-	fi
-
-	GLIB_CFLAGS="${GLIB_CFLAGS} -DGLIB_VERSION_MAX_ALLOWED=138240 -DGLIB_VERSION_MIN_REQUIRED=138240"
-
-	AC_SUBST(GLIB_CFLAGS)
-	AC_SUBST(GLIB_LIBS)
 ])
 
 dnl Unix Pseudoterminal Support
