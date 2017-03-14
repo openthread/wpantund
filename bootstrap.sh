@@ -110,7 +110,7 @@ then
 		--libdir=/system/lib \
 		--includedir=/system/include \
 		--oldincludedir=/system/include \
-		--enable-debug=verbose \
+		--disable-debug \
 		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
 		CPPFLAGS="-Wno-date-time -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
