@@ -312,16 +312,13 @@ bail:
 void
 SpinelNCPControlInterface::joiner_add(
 		const uint8_t *addr,
-		int addr_len,
 		const char *psk,
-		int psk_len,
+		uint32_t joiner_timeout,
 		CallbackWithStatus cb
 ) {
 
 	require_action(addr != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(psk != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(psk_len >= PSK_MIN_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(psk_len <= PSK_MAX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
 	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
@@ -330,10 +327,12 @@ SpinelNCPControlInterface::joiner_add(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 				SPINEL_DATATYPE_EUI64_S
 				SPINEL_DATATYPE_DATA_S
+				SPINEL_DATATYPE_UINT32_S
 			),
 			SPINEL_PROP_THREAD_JOINERS,
 			addr,
-			psk
+			psk,
+			joiner_timeout
 		))
 		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 		.finish()

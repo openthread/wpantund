@@ -1209,12 +1209,14 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 	int ext_addr_len = 0;
 	const char* psk = NULL;
 	int psk_len = 0;
+	uint32_t joiner_timeout = 0;
 	bool did_succeed = false;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &psk, &psk_len,
+		DBUS_TYPE_UINT32, &joiner_timeout,
 		DBUS_TYPE_INVALID
 	);
 
@@ -1228,9 +1230,8 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 	dbus_message_ref(message);
 	interface->joiner_add(
 		ext_addr,
-		ext_addr_len,
 		psk,
-		psk_len,
+		joiner_timeout,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 

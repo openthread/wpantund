@@ -34,7 +34,7 @@
 #include "string-utils.h"
 #include "commissioner-utils.h"
 
-const char commissioner_cmd_syntax[] = "[args] <address> <psk>";
+const char commissioner_cmd_syntax[] = "[args] <address> <psk> [joiner_timeout]";
 
 static const arg_list_item_t commissioner_option_list[] = {
     {'h', "help", NULL, "Print Help"},
@@ -60,6 +60,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
     const char* ext_addr = NULL;
     const char* psk = NULL;
     int psk_len = 0;
+    uint32_t joiner_timeout = DEFAULT_JOINER_TIMEOUT;
     dbus_bool_t enabled = false;
     const char* invalid_psk_characters = INVALID_PSK_CHARACTERS;
 
@@ -180,6 +181,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
             goto bail;
 
         case 'a':
+            // add
             if (optind < argc) {
                 if (!ext_addr) {
                     ext_addr = argv[optind];
@@ -196,9 +198,20 @@ int tool_cmd_commissioner(int argc, char* argv[])
             }
 
             if (optind < argc) {
+                joiner_timeout = (uint32_t) strtol(argv[optind], NULL, 0);
+                optind++;
+            }
+
+            if (optind < argc) {
                 fprintf(stderr,
                         "%s: error: Unexpected extra argument: \"%s\"\n",
                         argv[0], argv[optind]);
+                ret = ERRORCODE_BADARG;
+                goto bail;
+            }
+
+            if (!ext_addr) {
+                fprintf(stderr, "%s: error: Missing address value.\n", argv[0]);
                 ret = ERRORCODE_BADARG;
                 goto bail;
             }
@@ -282,6 +295,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &p_addr_bytes, EXT_ADDRESS_LENGTH,
                     DBUS_TYPE_INVALID
                     );
+
                 uint8_t psk_bytes[psk_len];
                 memset(psk_bytes, '\0', psk_len+1);
 
@@ -294,6 +308,14 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     DBUS_TYPE_INVALID
                     );
 
+                fprintf(stderr, "Append joiner timeout\n");
+                dbus_message_append_args(
+                    message,
+                    DBUS_TYPE_UINT32, &joiner_timeout,
+                    DBUS_TYPE_INVALID
+                    );
+
+                fprintf(stderr, "After append joiner\n");
                 reply = dbus_connection_send_with_reply_and_block(
                     connection,
                     message,
@@ -301,12 +323,14 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     &error
                     );
 
+                fprintf(stderr, "After reply joiner\n");
                 if (!reply) {
                     fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
                     ret = ERRORCODE_TIMEOUT;
                     goto bail;
                 }
 
+                fprintf(stderr, "Get reply joiner timeout\n");
                 dbus_message_get_args(reply, &error,
                                       DBUS_TYPE_INT32, &ret,
                                       DBUS_TYPE_INVALID
