@@ -108,6 +108,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
         case 'e':
             // start (enabled)
             property_commissioner_enabled_value = "true";
+            // intentionally pass through
         case 'd':
             //stop (disabled)
             ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
