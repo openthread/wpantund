@@ -249,6 +249,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
+		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -452,6 +453,9 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_COMMISSIONER_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_ML_PREFIX, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -916,7 +920,7 @@ SpinelNCPInstance::set_property(
 				);
 			}
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnable)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
 			bool isEnabled = any_to_bool(value);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)

@@ -193,11 +193,6 @@ private:
 		DBusMessage *        message
 	);
 
-	DBusHandlerResult interface_commissioner_enabled_handler(
-		NCPControlInterface* interface,
-		DBusMessage *        message
-	);
-
 private:
 	typedef DBusHandlerResult (interface_handler_cb)(
 		NCPControlInterface*,

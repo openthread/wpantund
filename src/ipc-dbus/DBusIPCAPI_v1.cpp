@@ -80,7 +80,6 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_COMMISSIONER_ENABLED, interface_commissioner_enabled_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
@@ -1233,37 +1232,6 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 		psk,
 		joiner_timeout,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
-	);
-
-	ret = DBUS_HANDLER_RESULT_HANDLED;
-
-bail:
-
-	return ret;
-}
-
-DBusHandlerResult
-DBusIPCAPI_v1::interface_commissioner_enabled_handler(
-   NCPControlInterface* interface,
-   DBusMessage *        message
-) {
-	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_ref(message);
-	bool did_succeed = false;
-	bool enabled = false;
-
-	did_succeed = dbus_message_get_args(
-		message, NULL,
-		DBUS_TYPE_BOOLEAN, &enabled,
-		DBUS_TYPE_INVALID
-	);
-
-	require(did_succeed, bail);
-
-	dbus_message_ref(message);
-	interface->commissioner(
-			enabled,
-			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;

@@ -63,6 +63,8 @@ int tool_cmd_commissioner(int argc, char* argv[])
     uint32_t joiner_timeout = DEFAULT_JOINER_TIMEOUT;
     dbus_bool_t enabled = false;
     const char* invalid_psk_characters = INVALID_PSK_CHARACTERS;
+    const char* property_commissioner_enabled = kWPANTUNDProperty_ThreadCommissionerEnabled;
+    const char* property_commissioner_enabled_value = "false";
 
     char path[DBUS_MAXIMUM_NAME_LENGTH+1];
     char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
@@ -105,7 +107,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
 
         case 'e':
             // start (enabled)
-            enabled = true;
+            property_commissioner_enabled_value = "true";
         case 'd':
             //stop (disabled)
             ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
@@ -139,12 +141,18 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 interface_dbus_name,
                 path,
                 WPANTUND_DBUS_APIv1_INTERFACE,
-                WPANTUND_IF_CMD_COMMISSIONER_ENABLED
+                WPANTUND_IF_CMD_PROP_SET
                 );
 
             dbus_message_append_args(
                 message,
-                DBUS_TYPE_BOOLEAN, &enabled,
+                DBUS_TYPE_STRING, &property_commissioner_enabled,
+                DBUS_TYPE_INVALID
+                );
+
+            dbus_message_append_args(
+                message,
+                DBUS_TYPE_STRING, &property_commissioner_enabled_value,
                 DBUS_TYPE_INVALID
                 );
 
@@ -308,14 +316,12 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     DBUS_TYPE_INVALID
                     );
 
-                fprintf(stderr, "Append joiner timeout\n");
                 dbus_message_append_args(
                     message,
                     DBUS_TYPE_UINT32, &joiner_timeout,
                     DBUS_TYPE_INVALID
                     );
 
-                fprintf(stderr, "After append joiner\n");
                 reply = dbus_connection_send_with_reply_and_block(
                     connection,
                     message,
@@ -323,14 +329,12 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     &error
                     );
 
-                fprintf(stderr, "After reply joiner\n");
                 if (!reply) {
                     fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
                     ret = ERRORCODE_TIMEOUT;
                     goto bail;
                 }
 
-                fprintf(stderr, "Get reply joiner timeout\n");
                 dbus_message_get_args(reply, &error,
                                       DBUS_TYPE_INT32, &ret,
                                       DBUS_TYPE_INVALID
