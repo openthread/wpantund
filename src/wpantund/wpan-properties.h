@@ -93,6 +93,7 @@
 #define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID        "Thread:PreferredRouterID"
+#define kWPANTUNDProperty_ThreadCommissionerEnable       "Thread:Commissioner:Enable"
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                   "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
