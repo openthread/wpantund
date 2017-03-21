@@ -96,6 +96,7 @@
 
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString  "OpenThread:MsgBufferCounters:AsString"
+#define kWPANTUNDProperty_OpenThreadDebugTestAssert            "OpenThread:Debug:TestAssert"
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
 
