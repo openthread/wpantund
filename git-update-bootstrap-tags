@@ -17,6 +17,15 @@
 #
 
 # update-bootstrap-tags
+#
+# This command also uses the following git config options:
+#
+# * `update-bootstrap.pull`: (true/false) Same as `--pull`/`--no-pull`
+# * `update-bootstrap.push`: (true/false) Same as `--push`/`--no-push`
+# * `update-bootstrap.make-branches`: (true/false) Same as `--make-branches`/`--no-make-branches`
+# * `update-bootstrap.bootstrap-command`: Command to execute to bootstrap project (will try to guess if unspecified)
+# * `update-bootstrap.fallback-autoconf-ref`: Branch to use use for history if `autoconf/[branch-name]` doesn't exist.
+# * `update-bootstrap.fallback-full-ref`: Branch to use use for history if `full/[branch-name]` doesn't exist.
 
 USAGE='[--[no-]pull] [--[no-]push] [--[no-]make-branches] [<branch-name>]'
 LONG_USAGE='Creates or updates `autoconf/*` and `full/*` branches for the specified branch.'
