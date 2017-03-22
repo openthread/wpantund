@@ -74,6 +74,7 @@ wpantund_SOURCES = \
 	NetworkRetain.cpp \
 	Pcap.h \
 	Pcap.cpp \
+	wpan-error.c \
 	../util/IPv6PacketMatcher.cpp \
 	../util/IPv6Helpers.cpp \
 	../util/tunnel.c \
