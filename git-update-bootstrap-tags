@@ -220,8 +220,8 @@ do
 
 	full_ref=
 	[ -n "$full_ref" ] || full_ref=`git rev-parse --verify "full/${branch}" 2>/dev/null`
-	[ -n "$full_ref" ] || full_ref=`git rev-parse --verify "${FALLBACK_AUTOCONF_REF}" 2>/dev/null`
-	[ -n "$full_ref" ] || full_ref="full/${source_ref}"
+	[ -n "$full_ref" ] || full_ref=`git rev-parse --verify "${FALLBACK_FULL_REF}" 2>/dev/null`
+	[ -n "$full_ref" ] || full_ref="full/${branch}"
 
 	update_bootstrap "${branch}" "${autoconf_ref}" "${full_ref}" || die
 
