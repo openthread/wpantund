@@ -140,14 +140,9 @@ public:
 	) = 0;
 
 	virtual void joiner_add(
-		const uint8_t *addr,
 		const char *psk,
 		uint32_t joiner_timeout,
-		CallbackWithStatus cb = NilReturn()
-	) = 0;
-
-	virtual void commissioner(
-		bool enabled,
+		const uint8_t *addr,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 

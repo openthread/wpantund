@@ -34,7 +34,7 @@
 #include "string-utils.h"
 #include "commissioner-utils.h"
 
-const char commissioner_cmd_syntax[] = "[args] <address> <psk> [joiner_timeout]";
+const char commissioner_cmd_syntax[] = "[args] <psk> [address] [joiner_timeout [s]]";
 
 static const arg_list_item_t commissioner_option_list[] = {
     {'h', "help", NULL, "Print Help"},
@@ -192,16 +192,16 @@ int tool_cmd_commissioner(int argc, char* argv[])
         case 'a':
             // add
             if (optind < argc) {
-                if (!ext_addr) {
-                    ext_addr = argv[optind];
+                if (!psk) {
+                    psk = argv[optind];
+                    psk_len = strnlen(psk, PSK_MAX_LENGTH+1);
                     optind++;
                 }
             }
 
             if (optind < argc) {
-                if (!psk) {
-                    psk = argv[optind];
-                    psk_len = strnlen(psk, PSK_MAX_LENGTH+1);
+                if (!ext_addr) {
+                    ext_addr = argv[optind];
                     optind++;
                 }
             }
@@ -219,22 +219,19 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 goto bail;
             }
 
-            if (!ext_addr) {
-                fprintf(stderr, "%s: error: Missing address value.\n", argv[0]);
-                ret = ERRORCODE_BADARG;
-                goto bail;
-            }
-
-            if (strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1) != EXT_ADDRESS_LENGTH_CHAR) {
-                fprintf(stderr, "%s: error: Wrong address length.%d \n", argv[0], strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1));
-                ret = ERRORCODE_BADARG;
-                goto bail;
-            }
-
-            if (!is_hex(ext_addr, EXT_ADDRESS_LENGTH_CHAR)) {
-                fprintf(stderr, "%s: error: Invalid address.\n", argv[0]);
-                ret = ERRORCODE_BADARG;
-                goto bail;
+            if (!ext_addr)
+                fprintf(stderr, "%s: warning: No address value specified, any joiner knowing PSKd can join.\n", argv[0]);
+            else {
+                if (!is_hex(ext_addr, EXT_ADDRESS_LENGTH_CHAR)) {
+                    fprintf(stderr, "%s: error: Invalid address.\n", argv[0]);
+                    ret = ERRORCODE_BADARG;
+                    goto bail;
+                }
+                if (strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1) != EXT_ADDRESS_LENGTH_CHAR) {
+                    fprintf(stderr, "%s: error: Wrong address length.%d \n", argv[0], strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1));
+                    ret = ERRORCODE_BADARG;
+                    goto bail;
+                }
             }
 
             if (!psk) {
@@ -288,32 +285,16 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 WPANTUND_IF_CMD_JOINER_ADD
                 );
 
-            if (ext_addr && psk) {
-
-                uint8_t addr_bytes[EXT_ADDRESS_LENGTH];
-                memset(addr_bytes, 0, EXT_ADDRESS_LENGTH);
-
-                int length = parse_string_into_data(addr_bytes,
-                                                    EXT_ADDRESS_LENGTH,
-                                                    ext_addr);
-
-                uint8_t *p_addr_bytes = addr_bytes;
-                assert(length == EXT_ADDRESS_LENGTH);
-                dbus_message_append_args(
-                    message,
-                    DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &p_addr_bytes, EXT_ADDRESS_LENGTH,
-                    DBUS_TYPE_INVALID
-                    );
-
+            if (psk) {
                 uint8_t psk_bytes[psk_len];
                 memset(psk_bytes, '\0', psk_len+1);
 
                 memcpy(psk_bytes, psk, psk_len);
-                uint8_t *psk = psk_bytes;
+                char *psk = psk_bytes;
 
                 dbus_message_append_args(
                     message,
-                    DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &psk, psk_len+1,
+                    DBUS_TYPE_STRING, &psk,
                     DBUS_TYPE_INVALID
                     );
 
@@ -322,6 +303,21 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     DBUS_TYPE_UINT32, &joiner_timeout,
                     DBUS_TYPE_INVALID
                     );
+
+                if (ext_addr) {
+                    uint8_t addr_bytes[EXT_ADDRESS_LENGTH];
+                    memset(addr_bytes, 0, EXT_ADDRESS_LENGTH);
+                    uint8_t *p_addr_bytes = addr_bytes;
+                    int length = parse_string_into_data(addr_bytes,
+                                                        EXT_ADDRESS_LENGTH,
+                                                        ext_addr);
+                    assert(length == EXT_ADDRESS_LENGTH);
+                    dbus_message_append_args(
+                        message,
+                        DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &p_addr_bytes, length,
+                        DBUS_TYPE_INVALID
+                        );
+                }
 
                 reply = dbus_connection_send_with_reply_and_block(
                     connection,

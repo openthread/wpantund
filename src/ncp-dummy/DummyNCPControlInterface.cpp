@@ -170,18 +170,10 @@ DummyNCPControlInterface::remove_external_route(
 
 void
 DummyNCPControlInterface::joiner_add(
-	const uint8_t *addr,
 	const char *psk,
 	uint32_t joiner_timeout,
+	const uint8_t *addr,
 	CallbackWithStatus cb
-) {
-	cb(kWPANTUNDStatus_FeatureNotImplemented);
-}
-
-void
-DummyNCPControlInterface::commissioner(
-		bool enabled,
-		CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }

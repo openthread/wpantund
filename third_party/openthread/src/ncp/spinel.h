@@ -798,7 +798,7 @@ typedef enum
      */
     SPINEL_PROP_THREAD_CHILD_COUNT_MAX = SPINEL_PROP_THREAD_EXT__BEGIN + 12,
    
- /// Leader network data
+    /// Leader network data
     /** Format: `D` - Read only
      */
     SPINEL_PROP_THREAD_LEADER_NETWORK_DATA
@@ -811,8 +811,8 @@ typedef enum
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 14,
 
     /// Thread joiner data
-    /** Format `A(T(EDL))`
-    *  eui64, PSKd, PSKd length
+    /** Format `A(T(ULE))`
+    *  PSKd, joiner timeout, eui64 (optional)
     */
     SPINEL_PROP_THREAD_JOINERS = SPINEL_PROP_THREAD_EXT__BEGIN + 15,
 

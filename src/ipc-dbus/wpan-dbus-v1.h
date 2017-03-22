@@ -77,7 +77,6 @@
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
 
 #define WPANTUND_IF_CMD_JOINER_ADD             "JoinerAdd"
-#define WPANTUND_IF_CMD_COMMISSIONER_ENABLED   "CommissionerEnabled"
 
 // ============================================================================
 // NestLabs Internal API Interface
