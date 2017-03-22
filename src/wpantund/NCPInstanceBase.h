@@ -163,6 +163,10 @@ public:
 
 	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
 
+	virtual void link_state_changed(bool is_up, bool is_running);
+
+	virtual void legacy_link_state_changed(bool is_up, bool is_running);
+
 public:
 	// ========================================================================
 	// MARK: Firmware Upgrade
@@ -217,7 +221,7 @@ public:
 	virtual void set_property(
 	    const std::string& key,
 	    const boost::any& value,
-	    CallbackWithStatus cb
+		CallbackWithStatus cb = NilReturn()
 	);
 
 	virtual void signal_property_changed(

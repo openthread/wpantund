@@ -49,7 +49,10 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 	UnixSocket(tunnel_open(interface_name.c_str()), true),
 	mInterfaceName(interface_name),
 	mLastError(0),
-	mNetlinkFD(-1)
+	mNetlinkFD(-1),
+	mNetifMgmtFD(netif_mgmt_open()),
+	mIsRunning(false),
+	mIsUp(false)
 {
 	if (0 > mFDRead) {
 		throw std::invalid_argument("Unable to open tunnel interface");
@@ -73,7 +76,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 		}
 	}
 
-	tunnel_set_mtu(mFDRead, mtu);
+	netif_mgmt_set_mtu(mNetifMgmtFD, mInterfaceName.c_str(), mtu);
 
 	setup_signals();
 }
@@ -81,6 +84,25 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 TunnelIPv6Interface::~TunnelIPv6Interface()
 {
 	close(mNetlinkFD);
+	netif_mgmt_close(mNetifMgmtFD);
+}
+
+void
+TunnelIPv6Interface::on_link_state_changed(bool isUp, bool isRunning)
+{
+	syslog(LOG_INFO, "TunnelIPv6Interface::on_link_state_changed() UP=%d RUNNING=%d", isUp, isRunning);
+	if (isRunning != mIsRunning || isUp != mIsUp) {
+		if (isRunning && !mIsRunning) {
+			std::set<struct in6_addr>::const_iterator iter;
+			for (iter = mAddresses.begin(); iter != mAddresses.end(); ++iter) {
+				IGNORE_RETURN_VALUE(netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), iter->s6_addr, 64));
+			}
+		}
+
+		mIsUp = isUp;
+		mIsRunning = isRunning;
+		mLinkStateChanged(isUp, isRunning);
+	}
 }
 
 #if __linux__ // --------------------------------------------------------------
@@ -130,7 +152,7 @@ bail:
 int
 TunnelIPv6Interface::process(void)
 {
-	uint8_t buffer[1024];
+	uint8_t buffer[4096];
 	ssize_t buffer_len(-1);
 
 	if (mNetlinkFD >= 0) {
@@ -146,9 +168,9 @@ TunnelIPv6Interface::process(void)
 		nlp = (struct nlmsghdr *)buffer;
 		for (;NLMSG_OK(nlp, buffer_len); nlp=NLMSG_NEXT(nlp, buffer_len))
 		{
+			char ifnamebuf[IF_NAMESIZE];
 			if (nlp->nlmsg_type == RTM_NEWADDR || nlp->nlmsg_type == RTM_DELADDR) {
 				struct ifaddrmsg *ifaddr = (struct ifaddrmsg *)NLMSG_DATA(nlp);
-				char ifnamebuf[IF_NAMESIZE];
 				const char *ifname = if_indextoname(ifaddr->ifa_index, ifnamebuf);
 				struct in6_addr addr;
 
@@ -181,6 +203,19 @@ TunnelIPv6Interface::process(void)
 						break;
 					}
 				}
+			} else if (nlp->nlmsg_type == RTM_NEWLINK || nlp->nlmsg_type == RTM_DELLINK) {
+				struct ifinfomsg *ifinfo = (struct ifinfomsg *)NLMSG_DATA(nlp);
+				const char *ifname = if_indextoname(ifinfo->ifi_index, ifnamebuf);
+				bool isUp, isRunning;
+
+				if ((ifname == NULL) || (get_interface_name() != ifname)) {
+					continue;
+				}
+
+				isUp = ((ifinfo->ifi_flags & IFF_UP) == IFF_UP);
+				isRunning = ((ifinfo->ifi_flags & IFF_RUNNING) == IFF_RUNNING);
+
+				on_link_state_changed(isUp, isRunning);
 			}
 		}
 	}
@@ -231,36 +266,76 @@ TunnelIPv6Interface::get_last_error(void)
 }
 
 bool
+TunnelIPv6Interface::is_up(void)
+{
+	return netif_mgmt_is_up(mNetifMgmtFD, mInterfaceName.c_str());
+}
+
+bool
+TunnelIPv6Interface::is_running(void)
+{
+	return netif_mgmt_is_running(mNetifMgmtFD, mInterfaceName.c_str());
+}
+
+bool
 TunnelIPv6Interface::is_online(void)
 {
-	return tunnel_is_online(mFDRead);
+	static const int online_flags = IFF_UP | IFF_RUNNING;
+	return (netif_mgmt_get_flags(mNetifMgmtFD, mInterfaceName.c_str()) & online_flags) == online_flags;
 }
 
 int
-TunnelIPv6Interface::set_online(bool online)
+TunnelIPv6Interface::set_up(bool isUp)
 {
 	int ret = 0;
+	bool old = is_up();
 
-	if (online) {
-		syslog(LOG_INFO, "Bringing interface %s online. . .", mInterfaceName.c_str());
-
-		require_action((ret = tunnel_bring_online(mFDRead)) == 0, bail, mLastError = errno);
-		require_action(tunnel_is_online(mFDRead), bail, mLastError = errno);
-
-		require_action_string(tunnel_is_online(mFDRead), bail, mLastError = errno, "Tunnel went offline unexpectedly!");
-
-		std::set<struct in6_addr>::const_iterator iter;
-		for (iter = mAddresses.begin(); iter != mAddresses.end(); ++iter) {
-			(void)tunnel_add_address(mFDRead, iter->s6_addr, 64);
+	if (isUp != old) {
+		if (isUp) {
+			syslog(LOG_INFO, "Bringing interface %s up. . .", mInterfaceName.c_str());
+		} else {
+			syslog(LOG_INFO, "Taking interface %s down. . .", mInterfaceName.c_str());
 		}
-	} else {
-		syslog(LOG_INFO, "Taking interface %s offline. . .", mInterfaceName.c_str());
 
-		require_action((ret = tunnel_bring_offline(mFDRead)) == 0, bail, mLastError = errno);
+		ret = netif_mgmt_set_up(mNetifMgmtFD, mInterfaceName.c_str(), isUp);
+
+		require_action(ret == 0, bail, mLastError = errno);
 	}
 
 bail:
 	return ret;
+}
+
+int
+TunnelIPv6Interface::set_running(bool isRunning)
+{
+	int ret = 0;
+	bool old = is_running();
+
+	if (isRunning != old) {
+		if (isRunning) {
+			syslog(LOG_INFO, "Bringing interface %s online. . .", mInterfaceName.c_str());
+		} else {
+			syslog(LOG_INFO, "Taking interface %s offline. . .", mInterfaceName.c_str());
+		}
+
+		ret = netif_mgmt_set_running(mNetifMgmtFD, mInterfaceName.c_str(), isRunning);
+
+		mLastError = errno;
+
+		require_action(ret == 0, bail, mLastError = errno);
+
+	}
+
+bail:
+	return ret;
+}
+
+
+int
+TunnelIPv6Interface::set_online(bool online)
+{
+	return set_running(online);
 }
 
 void
@@ -295,16 +370,14 @@ TunnelIPv6Interface::add_address(const struct in6_addr *addr, int prefixlen)
 		mAddresses.insert(*addr);
 
 		if (is_online()) {
-			require_noerr_action(tunnel_add_address(mFDRead, addr->s6_addr, prefixlen), bail, mLastError = errno);
+			require_noerr_action(netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr, prefixlen), bail, mLastError = errno);
 		}
 	}
-
 
 	ret = true;
 
 bail:
 	return ret;
-
 }
 
 
@@ -324,7 +397,7 @@ TunnelIPv6Interface::remove_address(const struct in6_addr *addr, int prefixlen)
 
 	mAddresses.erase(*addr);
 
-	if (tunnel_remove_address(mFDRead, addr->s6_addr) != 0) {
+	if (netif_mgmt_remove_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr) != 0) {
 		mLastError = errno;
 		goto bail;
 	}
@@ -350,7 +423,7 @@ TunnelIPv6Interface::add_route(const struct in6_addr *route, int prefixlen)
 	);
 
 	if (is_online()) {
-		require_noerr_action(tunnel_add_route(mFDRead, route->s6_addr, prefixlen), bail, mLastError = errno);
+		require_noerr_action(netif_mgmt_add_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen), bail, mLastError = errno);
 	}
 
 	ret = true;
@@ -373,7 +446,7 @@ TunnelIPv6Interface::remove_route(const struct in6_addr *route, int prefixlen)
 	);
 
 	if (is_online()) {
-		require_noerr_action(tunnel_remove_route(mFDRead, route->s6_addr, prefixlen), bail, mLastError = errno);
+		require_noerr_action(netif_mgmt_remove_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen), bail, mLastError = errno);
 	}
 
 	ret = true;

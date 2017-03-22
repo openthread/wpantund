@@ -126,6 +126,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mPrimaryInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(wpan_interface_name));
 	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::address_was_added, this, _1, _2));
 	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::address_was_removed, this, _1, _2));
+	mPrimaryInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::link_state_changed, this, _1, _2));
 
 	set_ncp_power(true);
 
@@ -249,14 +250,18 @@ NCPInstanceBase::get_supported_property_keys() const
 {
 	std::set<std::string> properties;
 
+	properties.insert(kWPANTUNDProperty_DaemonEnabled);
+	properties.insert(kWPANTUNDProperty_NetworkIsCommissioned);
+	properties.insert(kWPANTUNDProperty_InterfaceUp);
 	properties.insert(kWPANTUNDProperty_NetworkName);
 	properties.insert(kWPANTUNDProperty_NetworkPANID);
 	properties.insert(kWPANTUNDProperty_NetworkXPANID);
 	properties.insert(kWPANTUNDProperty_NetworkKey);
 	properties.insert(kWPANTUNDProperty_NetworkKeyIndex);
 	properties.insert(kWPANTUNDProperty_NetworkNodeType);
-
 	properties.insert(kWPANTUNDProperty_NCPState);
+	properties.insert(kWPANTUNDProperty_NCPChannel);
+	properties.insert(kWPANTUNDProperty_NCPTXPower);
 
 	properties.insert(kWPANTUNDProperty_IPv6MeshLocalPrefix);
 	properties.insert(kWPANTUNDProperty_IPv6MeshLocalAddress);
@@ -265,7 +270,6 @@ NCPInstanceBase::get_supported_property_keys() const
 
 	properties.insert(kWPANTUNDProperty_DaemonAutoAssociateAfterReset);
 	properties.insert(kWPANTUNDProperty_DaemonAutoDeepSleep);
-	properties.insert(kWPANTUNDProperty_DaemonEnabled);
 	properties.insert(kWPANTUNDProperty_DaemonReadyForHostSleep);
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
 
@@ -274,15 +278,12 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_DaemonVersion);
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
 
-	properties.insert(kWPANTUNDProperty_NCPChannel);
 	properties.insert(kWPANTUNDProperty_NCPVersion);
 	properties.insert(kWPANTUNDProperty_NCPHardwareAddress);
 	properties.insert(kWPANTUNDProperty_NCPCCAThreshold);
-	properties.insert(kWPANTUNDProperty_NCPTXPower);
 
 	properties.insert(kWPANTUNDProperty_NCPMACAddress);
 
-	properties.insert(kWPANTUNDProperty_NetworkIsCommissioned);
 
 	properties.insert(kWPANTUNDProperty_ConfigTUNInterfaceName);
 
@@ -313,6 +314,9 @@ NCPInstanceBase::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonEnabled)) {
 		cb(0, boost::any(mEnabled));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {
+		cb(0, boost::any(mPrimaryInterface->is_online()));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonReadyForHostSleep)) {
 		cb(0, boost::any(!is_busy()));
@@ -504,6 +508,22 @@ NCPInstanceBase::set_property(
 		if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonEnabled)) {
 			mEnabled = any_to_bool(value);
 			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {
+			bool isup = any_to_bool(value);
+			if (isup != mPrimaryInterface->is_online()) {
+				if (isup) {
+					get_control_interface().attach(cb);
+				} else {
+					if (ncp_state_is_joining_or_joined(get_ncp_state())) {
+						// This isn't quite what we want, but the subclass
+						// should be overriding this anyway.
+						get_control_interface().reset();
+					}
+				}
+			} else {
+				cb(0);
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonAutoAssociateAfterReset)) {
 			mAutoResume = any_to_bool(value);

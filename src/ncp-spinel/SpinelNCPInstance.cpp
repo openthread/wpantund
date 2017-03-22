@@ -751,6 +751,40 @@ SpinelNCPInstance::set_property(
 				cb(kWPANTUNDStatus_InvalidArgument);
 			}
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {
+			bool isup = any_to_bool(value);
+			if (isup) {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_IF_UP,
+						true
+					))
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_STACK_UP,
+						true
+					))
+					.finish()
+				);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_STACK_UP,
+						false
+					))
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_IF_UP,
+						false
+					))
+					.finish()
+				);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 			Data eui64_value = any_to_data(value);
 

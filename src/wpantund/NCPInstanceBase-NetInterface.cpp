@@ -34,6 +34,37 @@
 using namespace nl;
 using namespace wpantund;
 
+void
+NCPInstanceBase::link_state_changed(bool isUp, bool isRunning)
+{
+	syslog(LOG_INFO, "Primary link state changed: UP=%d RUNNING=%d", isUp, isRunning);
+
+	// The big take away from this callback is "isUp",
+	// because theoretically we are the one who is in charge
+	// of "isRunning". We interpret isUp as meaning if
+	// we should autoconnect or not.
+
+	if (isUp) {
+		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, true);
+
+		if (!mEnabled) {
+			set_property(kWPANTUNDProperty_DaemonEnabled, true);
+		} else if (get_ncp_state() == COMMISSIONED) {
+			set_property(kWPANTUNDProperty_InterfaceUp, true);
+		}
+	} else {
+		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, false);
+		set_property(kWPANTUNDProperty_InterfaceUp, false);
+	}
+}
+
+void
+NCPInstanceBase::legacy_link_state_changed(bool isUp, bool isRunning)
+{
+	syslog(LOG_INFO, "Legacy link state changed: UP=%d RUNNING=%d", isUp, isRunning);
+
+	// TODO: Not sure what the best course of action is here.
+}
 
 int
 NCPInstanceBase::set_online(bool x)
@@ -139,6 +170,7 @@ NCPInstanceBase::enable_legacy_interface(void)
 {
 	if (!static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(mPrimaryInterface->get_interface_name()+"-L"));
+		mLegacyInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::legacy_link_state_changed, this, _1, _2));
 	}
 }
 
