@@ -260,6 +260,7 @@ protected:
 	bool mAutoDeepSleep;
 	int mAutoDeepSleepTimeout; // In seconds
 	uint16_t mCommissionerPort;
+	bool mExternalNetifManagement;
 
 private:
 	NCPState mNCPState;

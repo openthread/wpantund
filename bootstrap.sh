@@ -111,7 +111,7 @@ then
 		--includedir=/system/include \
 		--oldincludedir=/system/include \
 		--disable-debug \
-		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -frtti -Wno-c++11-narrowing" \
+		CXXFLAGS="-fexceptions -Wno-non-virtual-dtor -Wno-c++11-narrowing" \
 		CPPFLAGS="-Wno-date-time -Wno-unused-parameter -Wno-missing-field-initializers -Wno-sign-compare" \
 		DBUS_CFLAGS="-Iexternal/dbus" \
 		DBUS_LIBS="-ldbus" \
@@ -121,6 +121,9 @@ then
 		ac_cv_func_fgetln=no \
 		ac_cv_header_util_h=no \
 		--with-boost=internal \
+		--with-ipc-binder \
+		--without-ipc-dbus \
+		--disable-wpanctl \
 	|| die autoandr
 fi
 

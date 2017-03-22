@@ -155,7 +155,9 @@ NCPInstanceBase::reset_interface(void)
 
 	set_commissioniner(0, 0, 0);
 
-	mPrimaryInterface->reset();
+	if (!mExternalNetifManagement) {
+		mPrimaryInterface->reset();
+	}
 
 	// The global address table must be cleared upon reset.
 	mGlobalAddresses.clear();

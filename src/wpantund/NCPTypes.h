@@ -23,9 +23,17 @@
 #include <stdint.h>
 #include "time-utils.h"
 #include <string>
+#include <arpa/inet.h>
 
 namespace nl {
 namespace wpantund {
+
+/** std::map<struct in6_addr, GlobalAddressEntry> */
+#define kWPANTUNDProperty_InternalAddressTable              "Internal:AddressTable"
+/** std::list<LinkRoute> */
+#define kWPANTUNDProperty_InternalRouteTable                "Internal:RouteTable"
+/** nl::wpantund::NetworkId */
+#define kWPANTUNDProperty_InternalNetworkId                 "Internal:NetworkId"
 
 enum NCPState {
 	UNINITIALIZED,
@@ -74,10 +82,15 @@ struct GlobalAddressEntry {
 	std::string get_description() const;
 };
 
+struct LinkRoute {
+	struct in6_addr mPrefix;
+	uint8_t mPrefixLen;
+};
+
 struct EnergyScanResultEntry
 {
 	uint8_t mChannel;
-	int8_t 	mMaxRssi;
+	int8_t  mMaxRssi;
 };
 
 std::string address_flags_to_string(uint8_t flags);

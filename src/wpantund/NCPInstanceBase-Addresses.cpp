@@ -62,7 +62,10 @@ NCPInstanceBase::clear_nonpermanent_global_addresses()
 				continue;
 			}
 
-			mPrimaryInterface->remove_address(&iter->first);
+			if (!mExternalNetifManagement) {
+				mPrimaryInterface->remove_address(&iter->first);
+			}
+
 			mGlobalAddresses.erase(iter);
 
 			// The following assignment is needed to avoid
@@ -89,7 +92,9 @@ NCPInstanceBase::restore_global_addresses()
 		}
 		mGlobalAddresses.insert(*iter);
 
-		mPrimaryInterface->add_address(&iter->first);
+		if (!mExternalNetifManagement) {
+			mPrimaryInterface->add_address(&iter->first);
+		}
 	}
 }
 
@@ -124,7 +129,9 @@ void
 NCPInstanceBase::remove_address(const struct in6_addr &address)
 {
 	mGlobalAddresses.erase(address);
-	mPrimaryInterface->remove_address(&address);
+	if (!mExternalNetifManagement) {
+		mPrimaryInterface->remove_address(&address);
+	}
 }
 
 bool
@@ -160,46 +167,50 @@ NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struc
 void
 NCPInstanceBase::address_was_added(const struct in6_addr& addr, int prefix_len)
 {
-	char addr_cstr[INET6_ADDRSTRLEN] = "::";
-	inet_ntop(
-		AF_INET6,
-		&addr,
-		addr_cstr,
-		sizeof(addr_cstr)
-	);
+	if (!mExternalNetifManagement) {
+		char addr_cstr[INET6_ADDRSTRLEN] = "::";
+		inet_ntop(
+			AF_INET6,
+			&addr,
+			addr_cstr,
+			sizeof(addr_cstr)
+		);
 
-	syslog(LOG_NOTICE, "\"%s\" was added to \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
+		syslog(LOG_NOTICE, "\"%s\" was added to \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
 
-	if (mGlobalAddresses.count(addr) == 0) {
-		const GlobalAddressEntry entry = {
-			UINT32_MAX,          // .mValidLifetime
-			TIME_DISTANT_FUTURE, // .mValidLifetimeExpiration
-			UINT32_MAX,          // .mPreferredLifetime
-			TIME_DISTANT_FUTURE, // .mPreferredLifetimeExpiration
-			0,                   // .mFlags
-			1,                   // .mUserAdded
-		};
+		if (mGlobalAddresses.count(addr) == 0) {
+			const GlobalAddressEntry entry = {
+				UINT32_MAX,          // .mValidLifetime
+				TIME_DISTANT_FUTURE, // .mValidLifetimeExpiration
+				UINT32_MAX,          // .mPreferredLifetime
+				TIME_DISTANT_FUTURE, // .mPreferredLifetimeExpiration
+				0,                   // .mFlags
+				1,                   // .mUserAdded
+			};
 
-		mGlobalAddresses[addr] = entry;
+			mGlobalAddresses[addr] = entry;
+		}
 	}
 }
 
 void
 NCPInstanceBase::address_was_removed(const struct in6_addr& addr, int prefix_len)
 {
-	char addr_cstr[INET6_ADDRSTRLEN] = "::";
-	inet_ntop(
-		AF_INET6,
-		&addr,
-		addr_cstr,
-		sizeof(addr_cstr)
-	);
+	if (!mExternalNetifManagement) {
+		char addr_cstr[INET6_ADDRSTRLEN] = "::";
+		inet_ntop(
+			AF_INET6,
+			&addr,
+			addr_cstr,
+			sizeof(addr_cstr)
+		);
 
-	if ((mGlobalAddresses.count(addr) != 0)
-	 && (mPrimaryInterface->is_online() || !mGlobalAddresses[addr].mUserAdded)
-	) {
-		mGlobalAddresses.erase(addr);
+		if ((mGlobalAddresses.count(addr) != 0)
+		 && (mPrimaryInterface->is_online() || !mGlobalAddresses[addr].mUserAdded)
+		) {
+			mGlobalAddresses.erase(addr);
+		}
+
+		syslog(LOG_NOTICE, "\"%s\" was removed from \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
 	}
-
-	syslog(LOG_NOTICE, "\"%s\" was removed from \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
 }

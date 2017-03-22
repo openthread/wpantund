@@ -49,7 +49,14 @@
 #include "SuperSocket.h"
 #include "Timer.h"
 
+#if BUILD_IPC_DBUS
 #include "DBUSIPCServer.h"
+#endif
+
+#if BUILD_IPC_BINDER
+#include "BinderIPCServer.h"
+#endif
+
 #include "NCPControlInterface.h"
 #include "NCPInstance.h"
 
@@ -692,12 +699,21 @@ main(int argc, char * argv[])
 			settings = settings_for_ncp_control_interface;
 		}
 
-		// Set up DBUSIPCServer
+#if BUILD_IPC_DBUS
 		try {
 			ipc_server_list.push_back(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
 		} catch(std::exception x) {
 			syslog(LOG_ERR, "Unable to start DBUSIPCServer \"%s\"",x.what());
 		}
+#endif
+
+#if BUILD_IPC_BINDER
+		try {
+			ipc_server_list.push_back(shared_ptr<nl::wpantund::IPCServer>(new BinderIPCServer()));
+		} catch(std::exception x) {
+			syslog(LOG_ERR, "Unable to start BinderIPCServer \"%s\"",x.what());
+		}
+#endif
 
 		/*** Add other IPCServers here! ***/
 

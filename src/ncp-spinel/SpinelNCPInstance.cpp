@@ -372,6 +372,48 @@ static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_
 	return ret;
 }
 
+static int unpack_spinel_role(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t spinelRole;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&spinelRole
+	);
+
+	if (len > 0)
+	{
+		switch (spinelRole) {
+		case SPINEL_NET_ROLE_DETACHED:
+			value = std::string(kWPANTUNDRole_Detached);
+			break;
+
+		case SPINEL_NET_ROLE_CHILD:
+			value = std::string(kWPANTUNDRole_EndDevice);
+			break;
+
+		case SPINEL_NET_ROLE_ROUTER:
+			value = std::string(kWPANTUNDRole_Router);
+			break;
+
+		case SPINEL_NET_ROLE_LEADER:
+			value = std::string(kWPANTUNDRole_Leader);
+			break;
+
+		default:
+			value = std::string(kWPANTUNDRole_Unknown);
+			break;
+		}
+		ret = kWPANTUNDStatus_Ok;
+	}
+
+	return ret;
+}
+
 void
 SpinelNCPInstance::get_property(
 	const std::string& key,
@@ -414,6 +456,9 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+
+//	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsConnected)) {
+//		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SINGLETON, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRLOC16)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
@@ -463,6 +508,20 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadDebugTestAssert)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_TEST_ASSERT, SPINEL_DATATYPE_BOOL_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRole)) {
+		if (mEnabled) {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_ROLE)
+				)
+				.set_reply_unpacker(unpack_spinel_role)
+				.finish()
+			);
+		} else {
+			cb(0, boost::any(std::string(kWPANTUNDRole_Detached)));
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {

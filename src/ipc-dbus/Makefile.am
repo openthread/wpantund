@@ -31,6 +31,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 dbusconfdir = $(DBUS_CONFDIR)
 
+if BUILD_IPC_DBUS
+
 dbusconf_DATA = wpantund.conf
 
 noinst_LTLIBRARIES = libwpantund-dbus.la
@@ -49,6 +51,8 @@ libwpantund_dbus_la_SOURCES = \
 
 libwpantund_dbus_la_LIBADD =  $(DBUS_LIBS)
 libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-libwpantund_dbus_la_CXXFLAGS = $(BOOST_CXXFLAGS)
+libwpantund_dbus_la_CXXFLAGS = $(RTTI_CXXFLAGS) $(BOOST_CXXFLAGS)
 
 pkginclude_HEADERS = wpan-dbus-v0.h wpan-dbus-v1.h
+
+endif

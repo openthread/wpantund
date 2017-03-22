@@ -58,7 +58,7 @@ SOURCE_VERSION=m4_esyscmd([
 
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
+AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/ipc-binder/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
 
 # Set up AC_CONFIG_FILES for all of the available plugins.
 AC_CONFIG_FILES(m4_normalize(m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[src/ncp-[]THIS_PLUGIN/Makefile ])))
@@ -161,6 +161,8 @@ fi
 AC_PROG_CC([],AC_MSG_ERROR(["A working C compiler is required"]))
 AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 
+AX_CXX_COMPILE_STDCXX_11
+
 AC_HEADER_STDC
 AC_HEADER_TIME
 
@@ -190,6 +192,51 @@ NL_CHECK_DBUS
 NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR([Unable to find a usable implementation of boost::signals2 (not even our internal copy)]))
 NL_CHECK_READLINE
 NL_CHECK_PTS
+
+AC_ARG_WITH(
+	[ipc-binder],
+	AC_HELP_STRING([--with-ipc-binder], ["Don't use Binder for IPC (Android)"]),
+	[],
+	[with_ipc_binder=no]
+)
+
+AC_ARG_WITH(
+	[ipc-dbus],
+	AC_HELP_STRING([--without-ipc-dbus], ["Don't use D-Bus for IPC"]),
+	[],
+	[with_ipc_dbus=yes]
+)
+
+AC_ARG_ENABLE(
+	[wpanctl],
+	AC_HELP_STRING([--disable-wpanctl], ["Don't build wpanctl"]),
+	[],
+	[enable_wpanctl=${with_ipc_dbus}]
+)
+
+if test "x$with_ipc_binder" = "xyes" ; then
+	AC_CHECK_TOOL(AIDL_CPP, aidl-cpp)
+	test -n "x$ac_cv_prog_AIDL_CPP" || AC_MSG_ERROR([Unable to find program 'aidl-cpp'])
+	AC_DEFINE_UNQUOTED([BUILD_IPC_BINDER], [1], [Set if building with Binder (android) IPC support])
+
+	BINDER_CPPFLAGS="${BINDER_CPPFLAGS--I${ANDROID_BUILD_TOP}/system/core/base/include}"
+	BINDER_LIBS="${BINDER_LIBS--lbase -llog -lbinder -lutils}"
+fi # with_ipc_binder
+
+if test "x$with_ipc_dbus" != "xno" ; then
+	AC_DEFINE_UNQUOTED([BUILD_IPC_DBUS], [1], [Set if building with D-Bus IPC support])
+fi # with_ipc_binder
+
+AC_SUBST(BINDER_CPPFLAGS)
+AC_SUBST(BINDER_LIBS)
+AC_SUBST(AIDL_CPP_FLAGS)
+
+RTTI_CXXFLAGS=${RTTI_CXXFLAGS--frtti}
+AC_SUBST(RTTI_CXXFLAGS)
+
+AM_CONDITIONAL([BUILD_IPC_BINDER],[test "x${with_ipc_binder}" = "xyes"])
+AM_CONDITIONAL([BUILD_IPC_DBUS],[test "x${with_ipc_dbus}" != "xno"])
+AM_CONDITIONAL([BUILD_WPANCTL],[test "x${enable_wpanctl}" != "xno"])
 
 AC_DEFINE_UNQUOTED([__STDC_LIMIT_MACROS], [1], [Needed by C++])
 AC_DEFINE_UNQUOTED([__STDC_CONSTANT_MACROS], [1], [Needed by C++])
@@ -280,7 +327,9 @@ echo ""
 echo "= Summary ====================================================================="
 echo ""
 echo "ConnMan Plugin ................. ${with_connman-no}"
-echo "Using libreadline .............. ${with_readline-???}"
+echo "Using libreadline/libedit ...... ${with_readline-no}"
+echo "Using D-Bus for IPC ............ ${with_ipc_dbus-???}"
+echo "Using Binder for IPC ........... ${with_ipc_binder-???}"
 echo "Boost .......................... ${with_boost-???}"
 echo "NCP plugins to build ........... ${building_ncp_plugins-none}"
 echo "Default NCP Plugin ............. ${default_ncp_plugin}"

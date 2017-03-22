@@ -20,6 +20,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/util \
 	-I$(top_srcdir)/src/ipc-dbus \
+	-I$(top_srcdir)/src/ipc-binder \
 	-I$(top_srcdir)/third_party/fgetln \
 	-I$(top_srcdir)/third_party/pt \
 	-I$(top_srcdir)/third_party/assert-macros \
@@ -97,8 +98,19 @@ wpantund_SOURCES = \
 	../util/sec-random.c \
 	$(NULL)
 
-wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
-wpantund_LDADD += ../ipc-dbus/libwpantund-dbus.la
+wpantund_LDADD = $(MISSING_LIBADD)
+wpantund_CPPFLAGS = $(AM_CPPFLAGS)
+wpantund_CXXFLAGS = $(AM_CXXFLAGS) $(RTTI_CXXFLAGS) $(BOOST_CXXFLAGS)
+
+if BUILD_IPC_DBUS
+wpantund_LDADD += $(DBUS_LIBS) ../ipc-dbus/libwpantund-dbus.la
+wpantund_CPPFLAGS += $(DBUS_CFLAGS)
+endif
+
+if BUILD_IPC_BINDER
+wpantund_LDADD += $(BINDER_LIBS) ../ipc-binder/libwpantund-binder.la ../ipc-binder/libwpantund-binder-rtti.la
+wpantund_CPPFLAGS += $(BINDER_CPPFLAGS)
+endif
 
 if STATIC_LINK_NCP_PLUGIN
 wpantund_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@.la
@@ -107,8 +119,6 @@ wpantund_LDADD += $(LIBDL_LIBS)
 wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 endif
 
-wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-wpantund_CXXFLAGS = $(BOOST_CXXFLAGS)
 
 SOURCE_VERSION=$(shell                                            \
 	git describe --dirty --always --match "[0-9].*" 2> /dev/null  \

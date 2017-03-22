@@ -89,12 +89,12 @@ NCP_SOURCES = \
 if STATIC_LINK_NCP_PLUGIN
 noinst_LTLIBRARIES = libncp-spinel.la
 libncp_spinel_la_SOURCES = $(NCP_SOURCES)
-libncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+libncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@ $(RTTI_CXXFLAGS)
 else
 mypkglibexec_LTLIBRARIES = ncp-spinel.la
 ncp_spinel_la_LDFLAGS = -module -avoid-version -shared
 ncp_spinel_la_SOURCES = $(NCP_SOURCES)
-ncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+ncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@ $(RTTI_CXXFLAGS)
 endif
 
 endif #BUILD_PLUGIN_NCP_SPINEL
