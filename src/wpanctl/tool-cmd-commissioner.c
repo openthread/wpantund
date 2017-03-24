@@ -250,6 +250,10 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 fprintf(stderr, "%s: warning: PSK consists an invalid character\n", argv[0]);
             }
 
+            if (!is_uppercase_or_digit(psk, psk_len)) {
+                fprintf(stderr, "%s: warning: PSK should consist only uppercase letters and digits\n", argv[0]);
+            }
+
             if (gInterfaceName[0] == 0) {
                 fprintf(stderr,
                         "%s: error: No WPAN interface set (use the `cd` command, or the `-I` argument for `wpanctl`).\n",
