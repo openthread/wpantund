@@ -73,6 +73,8 @@ typedef enum {
 #define WPANTUND_NCPERROR_TO_STATUS(x)	(wpantund_status_t)((((int)x)&WPANTUND_NCPERROR_MASK)|kWPANTUNDStatus_NCPError_First)
 #define WPANTUND_STATUS_TO_NCPERROR(x)	((x)&WPANTUND_NCPERROR_MASK)
 
+extern const char* wpantund_status_to_cstr(int status);
+
 __END_DECLS
 
 #endif

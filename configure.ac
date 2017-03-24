@@ -58,7 +58,7 @@ SOURCE_VERSION=m4_esyscmd([
 
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile third_party/Makefile)
+AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
 
 # Set up AC_CONFIG_FILES for all of the available plugins.
 AC_CONFIG_FILES(m4_normalize(m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[src/ncp-[]THIS_PLUGIN/Makefile ])))
@@ -179,6 +179,9 @@ dnl Raspberry Pi's clock_gettime() function is in librt.
 dnl This should only pick it up if necessary.
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
+
+CHECK_MISSING_FUNC([strlcpy])
+CHECK_MISSING_FUNC([strlcat])
 
 AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlcat stpncpy vsnprintf vsprintf snprintf getdtablesize getloadavg])
 
