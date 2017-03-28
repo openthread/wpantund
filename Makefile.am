@@ -39,6 +39,7 @@ DISTCLEANFILES =                       \
 EXTRA_DIST =                           \
 	.default-version                   \
 	.gitignore                         \
+	.gitattributes                     \
 	.uncrustify.cfg                    \
 	bootstrap.sh                       \
 	README.md                          \
