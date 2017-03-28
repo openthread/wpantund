@@ -67,6 +67,7 @@ public:
 		uint16_t  mRloc16;
 		uint8_t   mLinkQualityIn;
 		int8_t    mAverageRssi;
+                int8_t    mLastRssi;
 		bool      mRxOnWhenIdle : 1;
 		bool      mSecureDataRequest : 1;
 		bool      mFullFunction : 1;
