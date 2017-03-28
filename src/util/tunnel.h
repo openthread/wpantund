@@ -37,22 +37,9 @@
 
 __BEGIN_DECLS
 extern int tunnel_open(const char* tun_name);
-extern int tunnel_get_name(
-    int fd, char* name, int maxlen);
-extern int tunnel_set_mtu(
-    int fd, uint16_t mtu);
-extern int tunnel_add_address(
-    int fd, const uint8_t addr[16], int prefixlen);
-extern int tunnel_remove_address(
-    int fd, const uint8_t addr[16]);
+extern int tunnel_get_name(int fd, char* name, int maxlen);
+extern int tunnel_set_hwaddr(int fd, uint8_t *addr, int addr_len);
 extern void tunnel_close(int fd);
-extern int tunnel_bring_online(int fd);
-extern int tunnel_bring_offline(int fd);
-extern bool tunnel_is_online(int fd);
-extern int tunnel_add_route(
-    int fd, const uint8_t route[16], int prefixlen);
-extern int tunnel_remove_route(
-    int fd, const uint8_t route[16], int prefixlen);
 __END_DECLS
 
 

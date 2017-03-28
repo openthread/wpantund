@@ -63,6 +63,8 @@
 #define kWPANTUNDProperty_NCPSleepyPollInterval  "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                "NCP:RSSI"
 
+#define kWPANTUNDProperty_InterfaceUp            "Interface:Up"
+
 #define kWPANTUNDProperty_NetworkName            "Network:Name"
 #define kWPANTUNDProperty_NetworkXPANID          "Network:XPANID"
 #define kWPANTUNDProperty_NetworkPANID           "Network:PANID"
@@ -70,6 +72,7 @@
 #define kWPANTUNDProperty_NetworkKey             "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
+#define kWPANTUNDProperty_NetworkIsConnected  "Network:IsConnected"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"

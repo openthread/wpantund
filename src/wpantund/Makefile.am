@@ -78,6 +78,7 @@ wpantund_SOURCES = \
 	../util/IPv6PacketMatcher.cpp \
 	../util/IPv6Helpers.cpp \
 	../util/tunnel.c \
+	../util/netif-mgmt.c \
 	../util/config-file.c \
 	../util/socket-utils.c \
 	../util/any-to.cpp \

@@ -103,6 +103,7 @@ public:
 
 	virtual void leave(CallbackWithStatus cb = NilReturn()) = 0;
 
+	//! Deprecated. Set kWPANTUNDProperty_InterfaceUp to true instead.
 	virtual void attach(CallbackWithStatus cb = NilReturn()) = 0;
 
 	virtual void reset(CallbackWithStatus cb = NilReturn()) = 0;
@@ -204,7 +205,6 @@ public:
 	    CallbackWithStatus cb = NilReturn()
 	) = 0;
 
-
 public:
 	// ========================================================================
 	// Convenience methods
@@ -222,7 +222,6 @@ public:
 	static bool translate_deprecated_property(std::string& key, boost::any& value);
 
 	static bool translate_deprecated_property(std::string& key);
-
 
 public:
 	// ========================================================================
