@@ -195,7 +195,7 @@ int
 netif_mgmt_get_ifindex(int reqfd, const char* if_name) {
 	int ret = -1;
 
-#ifdef SIOIFINDEX
+#ifdef SIOGIFINDEX
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
