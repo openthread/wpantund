@@ -68,6 +68,8 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 			break;
 		}
 
+		mPrimaryInterface->set_up(false);
+
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
 			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
 
