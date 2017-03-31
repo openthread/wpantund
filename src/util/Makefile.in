@@ -208,6 +208,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MISSING_CPPFLAGS = @MISSING_CPPFLAGS@
+MISSING_LIBADD = @MISSING_LIBADD@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -294,6 +296,8 @@ EXTRA_DIST = \
 	string-utils.c \
 	time-utils.c \
 	tunnel.c \
+	netif-mgmt.c \
+	netif-mgmt.h \
 	DBUSHelpers.cpp \
 	Data.cpp \
 	EventHandler.cpp \

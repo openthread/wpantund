@@ -138,12 +138,14 @@ am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) \
 	wpantund-NCPInstanceBase-Addresses.$(OBJEXT) \
 	wpantund-NCPInstanceBase-AsyncIO.$(OBJEXT) \
 	wpantund-NCPTypes.$(OBJEXT) wpantund-NetworkRetain.$(OBJEXT) \
-	wpantund-Pcap.$(OBJEXT) wpantund-IPv6PacketMatcher.$(OBJEXT) \
+	wpantund-Pcap.$(OBJEXT) wpantund-wpan-error.$(OBJEXT) \
+	wpantund-IPv6PacketMatcher.$(OBJEXT) \
 	wpantund-IPv6Helpers.$(OBJEXT) wpantund-tunnel.$(OBJEXT) \
-	wpantund-config-file.$(OBJEXT) wpantund-socket-utils.$(OBJEXT) \
-	wpantund-any-to.$(OBJEXT) wpantund-string-utils.$(OBJEXT) \
-	wpantund-time-utils.$(OBJEXT) wpantund-nlpt-select.$(OBJEXT) \
-	wpantund-Data.$(OBJEXT) wpantund-SocketWrapper.$(OBJEXT) \
+	wpantund-netif-mgmt.$(OBJEXT) wpantund-config-file.$(OBJEXT) \
+	wpantund-socket-utils.$(OBJEXT) wpantund-any-to.$(OBJEXT) \
+	wpantund-string-utils.$(OBJEXT) wpantund-time-utils.$(OBJEXT) \
+	wpantund-nlpt-select.$(OBJEXT) wpantund-Data.$(OBJEXT) \
+	wpantund-SocketWrapper.$(OBJEXT) \
 	wpantund-SocketAdapter.$(OBJEXT) wpantund-UnixSocket.$(OBJEXT) \
 	wpantund-SuperSocket.$(OBJEXT) wpantund-EventHandler.$(OBJEXT) \
 	wpantund-TunnelIPv6Interface.$(OBJEXT) \
@@ -153,7 +155,7 @@ wpantund_OBJECTS = $(am_wpantund_OBJECTS)
 am__DEPENDENCIES_1 =
 @STATIC_LINK_NCP_PLUGIN_FALSE@am__DEPENDENCIES_2 =  \
 @STATIC_LINK_NCP_PLUGIN_FALSE@	$(am__DEPENDENCIES_1)
-wpantund_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+wpantund_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	../ipc-dbus/libwpantund-dbus.la $(am__append_1) \
 	$(am__DEPENDENCIES_2)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -341,6 +343,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MISSING_CPPFLAGS = @MISSING_CPPFLAGS@
+MISSING_LIBADD = @MISSING_LIBADD@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -421,12 +425,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = \
+	$(CPPFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/util \
 	-I$(top_srcdir)/src/ipc-dbus \
 	-I$(top_srcdir)/third_party/fgetln \
 	-I$(top_srcdir)/third_party/pt \
 	-I$(top_srcdir)/third_party/assert-macros \
+	$(MISSING_CPPFLAGS) \
 	$(NULL)
 
 DISTCLEANFILES = \
@@ -453,18 +459,20 @@ wpantund_SOURCES = wpantund.cpp wpantund.h IPCServer.h NCPConstants.h \
 	RunawayResetBackoffManager.cpp RunawayResetBackoffManager.h \
 	NCPInstanceBase-NetInterface.cpp NCPInstanceBase-Addresses.cpp \
 	NCPInstanceBase-AsyncIO.cpp NCPTypes.h NCPTypes.cpp \
-	NetworkRetain.h NetworkRetain.cpp Pcap.h Pcap.cpp \
+	NetworkRetain.h NetworkRetain.cpp Pcap.h Pcap.cpp wpan-error.c \
 	../util/IPv6PacketMatcher.cpp ../util/IPv6Helpers.cpp \
-	../util/tunnel.c ../util/config-file.c ../util/socket-utils.c \
-	../util/any-to.cpp ../util/string-utils.c ../util/time-utils.c \
+	../util/tunnel.c ../util/netif-mgmt.c ../util/config-file.c \
+	../util/socket-utils.c ../util/any-to.cpp \
+	../util/string-utils.c ../util/time-utils.c \
 	../util/nlpt-select.c ../util/Data.cpp \
 	../util/SocketWrapper.cpp ../util/SocketAdapter.cpp \
 	../util/UnixSocket.cpp ../util/SuperSocket.cpp \
 	../util/EventHandler.cpp ../util/TunnelIPv6Interface.cpp \
 	../util/ValueMap.cpp ../util/Timer.cpp ../util/sec-random.c \
 	$(NULL) $(top_builddir)/$(subdir)/version.c
-wpantund_LDADD = $(DBUS_LIBS) ../ipc-dbus/libwpantund-dbus.la \
-	$(am__append_1) $(am__append_2)
+wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS) \
+	../ipc-dbus/libwpantund-dbus.la $(am__append_1) \
+	$(am__append_2)
 @STATIC_LINK_NCP_PLUGIN_FALSE@wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
 wpantund_CXXFLAGS = $(BOOST_CXXFLAGS)
@@ -593,6 +601,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-ValueMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-any-to.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-config-file.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-netif-mgmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-nlpt-select.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-sec-random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-socket-utils.Po@am__quote@
@@ -600,6 +609,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-time-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-tunnel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-wpan-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-wpantund.Po@am__quote@
 
 .c.o:
@@ -623,6 +633,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
+wpantund-wpan-error.o: wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.o -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-wpan-error.Tpo $(DEPDIR)/wpantund-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund-wpan-error.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+
+wpantund-wpan-error.obj: wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.obj -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-wpan-error.Tpo $(DEPDIR)/wpantund-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund-wpan-error.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+
 wpantund-tunnel.o: ../util/tunnel.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-tunnel.o -MD -MP -MF $(DEPDIR)/wpantund-tunnel.Tpo -c -o wpantund-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-tunnel.Tpo $(DEPDIR)/wpantund-tunnel.Po
@@ -636,6 +660,20 @@ wpantund-tunnel.obj: ../util/tunnel.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/tunnel.c' object='wpantund-tunnel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
+
+wpantund-netif-mgmt.o: ../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.o -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-netif-mgmt.Tpo $(DEPDIR)/wpantund-netif-mgmt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund-netif-mgmt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+
+wpantund-netif-mgmt.obj: ../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.obj -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-netif-mgmt.Tpo $(DEPDIR)/wpantund-netif-mgmt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund-netif-mgmt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
 
 wpantund-config-file.o: ../util/config-file.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-config-file.o -MD -MP -MF $(DEPDIR)/wpantund-config-file.Tpo -c -o wpantund-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c

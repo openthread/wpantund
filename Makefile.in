@@ -290,6 +290,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MISSING_CPPFLAGS = @MISSING_CPPFLAGS@
+MISSING_LIBADD = @MISSING_LIBADD@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -392,6 +394,7 @@ DISTCLEANFILES = \
 EXTRA_DIST = \
 	.default-version                   \
 	.gitignore                         \
+	.gitattributes                     \
 	.uncrustify.cfg                    \
 	bootstrap.sh                       \
 	README.md                          \
@@ -892,3 +895,4 @@ uninstall-am:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+EXTRA_DIST += Android.mk etc/android/Android.mk etc/android/doxygen.cfg etc/android/src/Android.mk etc/android/src/config.h etc/android/src/ipc-dbus/Android.mk etc/android/src/ncp-spinel/Android.mk etc/android/src/wpanctl/Android.mk etc/android/src/wpanctl/version.c etc/android/src/wpantund/Android.mk etc/android/src/wpantund/version.c # Added by autoandr
