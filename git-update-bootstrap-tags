@@ -84,10 +84,12 @@ do
 		SHOULD_PUSH=${SHOULD_PUSH-false}
 		;;
 	--debug) set -x ;;
+	--*) die "Unknown argument $1" ;;
 	--)
         shift
 		break
 		;;
+	-*) die "Unknown argument $1" ;;
 	*)
 		break
         ;;
