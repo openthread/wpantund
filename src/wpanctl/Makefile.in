@@ -123,7 +123,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_wpanctl_OBJECTS = wpanctl-wpanctl.$(OBJEXT) \
 	wpanctl-config-file.$(OBJEXT) wpanctl-string-utils.$(OBJEXT) \
-	wpanctl-wpanctl-utils.$(OBJEXT) \
+	wpanctl-wpan-error.$(OBJEXT) wpanctl-wpanctl-utils.$(OBJEXT) \
 	wpanctl-tool-cmd-scan.$(OBJEXT) \
 	wpanctl-tool-cmd-join.$(OBJEXT) \
 	wpanctl-tool-cmd-form.$(OBJEXT) wpanctl-tool-cmd-mfg.$(OBJEXT) \
@@ -281,6 +281,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MISSING_CPPFLAGS = @MISSING_CPPFLAGS@
+MISSING_LIBADD = @MISSING_LIBADD@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -371,19 +373,19 @@ AM_CPPFLAGS = \
 
 DISTCLEANFILES = .deps Makefile
 wpanctl_SOURCES = wpanctl.c wpanctl-cmds.h ../util/config-file.c \
-	../util/string-utils.c wpanctl-utils.c tool-cmd-scan.c \
-	tool-cmd-join.c tool-cmd-form.c tool-cmd-mfg.c \
-	tool-cmd-leave.c tool-cmd-permit-join.c tool-cmd-list.c \
-	tool-cmd-status.c tool-cmd-resume.c tool-cmd-reset.c \
-	tool-cmd-getprop.c tool-cmd-setprop.c \
-	tool-cmd-begin-low-power.c tool-cmd-begin-net-wake.c \
-	tool-cmd-cd.c tool-cmd-poll.c tool-cmd-config-gateway.c \
-	tool-cmd-host-did-wake.c tool-cmd-add-route.c \
-	tool-cmd-remove-route.c wpanctl-utils.h tool-cmd-scan.h \
-	tool-cmd-join.h tool-cmd-form.h tool-cmd-leave.h \
-	tool-cmd-mfg.h tool-cmd-permit-join.h tool-cmd-list.h \
-	tool-cmd-status.h tool-cmd-resume.h tool-cmd-reset.h \
-	tool-cmd-getprop.h tool-cmd-setprop.h \
+	../util/string-utils.c ../wpantund/wpan-error.c \
+	wpanctl-utils.c tool-cmd-scan.c tool-cmd-join.c \
+	tool-cmd-form.c tool-cmd-mfg.c tool-cmd-leave.c \
+	tool-cmd-permit-join.c tool-cmd-list.c tool-cmd-status.c \
+	tool-cmd-resume.c tool-cmd-reset.c tool-cmd-getprop.c \
+	tool-cmd-setprop.c tool-cmd-begin-low-power.c \
+	tool-cmd-begin-net-wake.c tool-cmd-cd.c tool-cmd-poll.c \
+	tool-cmd-config-gateway.c tool-cmd-host-did-wake.c \
+	tool-cmd-add-route.c tool-cmd-remove-route.c wpanctl-utils.h \
+	tool-cmd-scan.h tool-cmd-join.h tool-cmd-form.h \
+	tool-cmd-leave.h tool-cmd-mfg.h tool-cmd-permit-join.h \
+	tool-cmd-list.h tool-cmd-status.h tool-cmd-resume.h \
+	tool-cmd-reset.h tool-cmd-getprop.h tool-cmd-setprop.h \
 	tool-cmd-begin-low-power.h tool-cmd-begin-net-wake.h \
 	tool-cmd-cd.h tool-cmd-poll.h tool-cmd-config-gateway.h \
 	tool-cmd-host-did-wake.h tool-cmd-add-route.h \
@@ -521,6 +523,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-setprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-wpan-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-wpanctl-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-wpanctl.Po@am__quote@
 
@@ -586,6 +589,20 @@ wpanctl-string-utils.obj: ../util/string-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/string-utils.c' object='wpanctl-string-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
+
+wpanctl-wpan-error.o: ../wpantund/wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-wpan-error.o -MD -MP -MF $(DEPDIR)/wpanctl-wpan-error.Tpo -c -o wpanctl-wpan-error.o `test -f '../wpantund/wpan-error.c' || echo '$(srcdir)/'`../wpantund/wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-wpan-error.Tpo $(DEPDIR)/wpanctl-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../wpantund/wpan-error.c' object='wpanctl-wpan-error.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-wpan-error.o `test -f '../wpantund/wpan-error.c' || echo '$(srcdir)/'`../wpantund/wpan-error.c
+
+wpanctl-wpan-error.obj: ../wpantund/wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-wpan-error.obj -MD -MP -MF $(DEPDIR)/wpanctl-wpan-error.Tpo -c -o wpanctl-wpan-error.obj `if test -f '../wpantund/wpan-error.c'; then $(CYGPATH_W) '../wpantund/wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/../wpantund/wpan-error.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-wpan-error.Tpo $(DEPDIR)/wpanctl-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../wpantund/wpan-error.c' object='wpanctl-wpan-error.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-wpan-error.obj `if test -f '../wpantund/wpan-error.c'; then $(CYGPATH_W) '../wpantund/wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/../wpantund/wpan-error.c'; fi`
 
 wpanctl-wpanctl-utils.o: wpanctl-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-wpanctl-utils.o -MD -MP -MF $(DEPDIR)/wpanctl-wpanctl-utils.Tpo -c -o wpanctl-wpanctl-utils.o `test -f 'wpanctl-utils.c' || echo '$(srcdir)/'`wpanctl-utils.c

@@ -154,7 +154,8 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;
-	require_noerr(ret, on_error);
+
+	check_noerr(ret);
 
 	// TODO: We should do a scan to make sure we pick a good channel
 	//       and don't have a panid collision.
@@ -169,6 +170,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 			// Make sure the channel is the supported channel set.
 			if (mInstance->mSupprotedChannels.find(channel) == mInstance->mSupprotedChannels.end()) {
 				syslog(LOG_ERR, "Channel %d is not supported by NCP. Supported channels mask is %08x",
+					channel,
 					mInstance->get_default_channel_mask()
 				);
 				ret = kWPANTUNDStatus_InvalidArgument;

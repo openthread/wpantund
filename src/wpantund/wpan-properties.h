@@ -63,6 +63,8 @@
 #define kWPANTUNDProperty_NCPSleepyPollInterval  "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                "NCP:RSSI"
 
+#define kWPANTUNDProperty_InterfaceUp            "Interface:Up"
+
 #define kWPANTUNDProperty_NetworkName            "Network:Name"
 #define kWPANTUNDProperty_NetworkXPANID          "Network:XPANID"
 #define kWPANTUNDProperty_NetworkPANID           "Network:PANID"
@@ -70,6 +72,7 @@
 #define kWPANTUNDProperty_NetworkKey             "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
+#define kWPANTUNDProperty_NetworkIsConnected  "Network:IsConnected"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
@@ -94,8 +97,10 @@
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID        "Thread:PreferredRouterID"
 
+#define kWPANTUNDProperty_OpenThreadLogLevel                   "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString  "OpenThread:MsgBufferCounters:AsString"
+#define kWPANTUNDProperty_OpenThreadDebugTestAssert            "OpenThread:Debug:TestAssert"
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList         "Debug:IPv6:GlobalIPAddressList"
 
@@ -187,6 +192,7 @@
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16               "RLOC16"
 #define kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn        "LinkQualityIn"
 #define kWPANTUNDValueMapKey_NetworkTopology_AverageRssi          "AverageRssi"
+#define kWPANTUNDValueMapKey_NetworkTopology_LastRssi             "LastRssi"
 #define kWPANTUNDValueMapKey_NetworkTopology_Age                  "Age"
 #define kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle         "RxOnWhenIdle"
 #define kWPANTUNDValueMapKey_NetworkTopology_FullFunction         "FullFunction"

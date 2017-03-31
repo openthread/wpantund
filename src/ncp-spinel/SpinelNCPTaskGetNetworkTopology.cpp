@@ -36,14 +36,16 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::SpinelNCPTaskGetNetworkTopology(
 	CallbackWithStatusArg1 cb,
 	Type table_type,
 	ResultFormat result_format
-):	SpinelNCPTask(instance, cb), mType(table_type), mTable(), mResultFormat(result_format)
+) : SpinelNCPTask(instance, cb), mType(table_type), mTable(), mResultFormat(result_format)
 {
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(const uint8_t *data_in, spinel_size_t data_len,
-															Table& child_table)
-{
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	Table& child_table
+) {
 	int ret = kWPANTUNDStatus_Ok;
 
 	child_table.clear();
@@ -62,7 +64,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(const uint8_t *
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			"T("
+			"t("
 				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
 				SPINEL_DATATYPE_UINT16_S        // Rloc16
 				SPINEL_DATATYPE_UINT32_S        // Timeout
@@ -71,6 +73,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(const uint8_t *
 				SPINEL_DATATYPE_UINT8_S         // Link Quality In
 				SPINEL_DATATYPE_INT8_S          // Average RSS
 				SPINEL_DATATYPE_UINT8_S         // Mode (flags)
+				SPINEL_DATATYPE_INT8_S          // Last Rssi
 			")",
 			&eui64,
 			&child_info.mRloc16,
@@ -79,7 +82,8 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(const uint8_t *
 			&child_info.mNetworkDataVersion,
 			&child_info.mLinkQualityIn,
 			&child_info.mAverageRssi,
-			&mode
+			&mode,
+			&child_info.mLastRssi
 		);
 
 		if (len <= 0)
@@ -127,7 +131,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_neighbor_table(const uint8_
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			"T("
+			"t("
 				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
 				SPINEL_DATATYPE_UINT16_S        // Rloc16
 				SPINEL_DATATYPE_UINT32_S        // Age
@@ -137,6 +141,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_neighbor_table(const uint8_
 				SPINEL_DATATYPE_BOOL_S          // Is Child
 				SPINEL_DATATYPE_UINT32_S        // Link Frame Counter
 				SPINEL_DATATYPE_UINT32_S        // MLE Frame Counter
+				SPINEL_DATATYPE_INT8_S          // Last Rssi
 			")",
 			&eui64,
 			&neighbor_info.mRloc16,
@@ -146,7 +151,8 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_neighbor_table(const uint8_
 			&mode,
 			&is_child,
 			&neighbor_info.mLinkFrameCounter,
-			&neighbor_info.mMleFrameCounter
+			&neighbor_info.mMleFrameCounter,
+			&neighbor_info.mLastRssi
 		);
 
 		if (len <= 0)
@@ -296,6 +302,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			 kWPANTUNDValueMapKey_NetworkTopology_NetworkDataVersion  ": %-3d, "
 			 kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn       ": %-2d, "
 			 kWPANTUNDValueMapKey_NetworkTopology_AverageRssi         ": %-3d, "
+			 kWPANTUNDValueMapKey_NetworkTopology_LastRssi            ": %-3d, "
 			 kWPANTUNDValueMapKey_NetworkTopology_Timeout             ": %-5u, "
 			 kWPANTUNDValueMapKey_NetworkTopology_Age                 ": %-5u, "
 			 kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle        ": %s, "
@@ -308,6 +315,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			mNetworkDataVersion,
 			mLinkQualityIn,
 			mAverageRssi,
+			mLastRssi,
 			mTimeout,
 			mAge,
 			mRxOnWhenIdle ? "yes" : "no",
@@ -322,6 +330,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			 kWPANTUNDValueMapKey_NetworkTopology_RLOC16             ": %04x, "
 			 kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn      ": %-2d, "
 			 kWPANTUNDValueMapKey_NetworkTopology_AverageRssi        ": %-3d, "
+			 kWPANTUNDValueMapKey_NetworkTopology_LastRssi           ": %-3d, "
 			 kWPANTUNDValueMapKey_NetworkTopology_Age                ": %-5u, "
 			 kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter   ": %-5u, "
 			 kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter    ": %-5u, "
@@ -335,6 +344,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			mRloc16,
 			mLinkQualityIn,
 			mAverageRssi,
+			mLastRssi,
 			mAge,
 			mLinkFrameCounter,
 			mMleFrameCounter,
@@ -352,38 +362,39 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 ValueMap
 SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 {
-    ValueMap entryMap;
-    uint64_t addr;
-    
-    addr  = (uint64_t) mExtAddress[7];
-    addr |= (uint64_t) mExtAddress[6] << 8;
-    addr |= (uint64_t) mExtAddress[5] << 16;
-    addr |= (uint64_t) mExtAddress[4] << 24;
-    addr |= (uint64_t) mExtAddress[3] << 32;
-    addr |= (uint64_t) mExtAddress[2] << 40;
-    addr |= (uint64_t) mExtAddress[1] << 48;
-    addr |= (uint64_t) mExtAddress[0] << 56;
+	ValueMap entryMap;
+	uint64_t addr;
+
+	addr  = (uint64_t) mExtAddress[7];
+	addr |= (uint64_t) mExtAddress[6] << 8;
+	addr |= (uint64_t) mExtAddress[5] << 16;
+	addr |= (uint64_t) mExtAddress[4] << 24;
+	addr |= (uint64_t) mExtAddress[3] << 32;
+	addr |= (uint64_t) mExtAddress[2] << 40;
+	addr |= (uint64_t) mExtAddress[1] << 48;
+	addr |= (uint64_t) mExtAddress[0] << 56;
 
 #define SPINEL_TOPO_MAP_INSERT(KEY, VAL) entryMap.insert( std::pair<std::string, boost::any>( KEY, VAL ) )
-    
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_ExtAddress,         addr               );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_RLOC16,             mRloc16            );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn,      mLinkQualityIn     );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_AverageRssi,        mAverageRssi       );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_Age,                mAge               );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle,       mRxOnWhenIdle      );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_FullFunction,       mFullFunction      );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest,  mSecureDataRequest );
-    SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData,    mFullNetworkData   );
 
-    if (mType == kChildTable) {
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_ExtAddress,         addr               );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_RLOC16,             mRloc16            );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn,      mLinkQualityIn     );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_AverageRssi,        mAverageRssi       );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_LastRssi,           mLastRssi          );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_Age,                mAge               );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle,       mRxOnWhenIdle      );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_FullFunction,       mFullFunction      );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest,  mSecureDataRequest );
+	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData,    mFullNetworkData   );
+
+	if (mType == kChildTable) {
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_Timeout,            mTimeout            );
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_NetworkDataVersion, mNetworkDataVersion );
-    } else {    
+	} else {
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter, mLinkFrameCounter );
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter,  mMleFrameCounter  );
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_IsChild,          mIsChild          );
-    }
-    
-    return entryMap;
+	}
+
+	return entryMap;
 }

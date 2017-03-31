@@ -353,7 +353,6 @@ static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_
 {
 	spinel_ssize_t len;
 	uint32_t lower, higher;
-	uint64_t val;
 	int ret = kWPANTUNDStatus_Failure;
 
 	len = spinel_datatype_unpack(
@@ -461,6 +460,9 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6LinkLocalAddress) && !IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_LL_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadDebugTestAssert)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_TEST_ASSERT, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -574,6 +576,9 @@ SpinelNCPInstance::get_property(
 				SpinelNCPTaskGetMsgBufferCounters::kResultFormat_String
 			)
 		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
@@ -746,6 +751,40 @@ SpinelNCPInstance::set_property(
 				cb(kWPANTUNDStatus_InvalidArgument);
 			}
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {
+			bool isup = any_to_bool(value);
+			if (isup) {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_IF_UP,
+						true
+					))
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_STACK_UP,
+						true
+					))
+					.finish()
+				);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_STACK_UP,
+						false
+					))
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_NET_IF_UP,
+						false
+					))
+					.finish()
+				);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 			Data eui64_value = any_to_data(value);
 
@@ -909,6 +948,18 @@ SpinelNCPInstance::set_property(
 					.finish()
 				);
 			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
+			uint8_t logLevel = static_cast<uint8_t>(any_to_int(value));
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, logLevel);
+
+			mSettings[kWPANTUNDProperty_OpenThreadLogLevel] = SettingsEntry(command);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(command)
+				.finish()
+			);
 
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
@@ -1278,7 +1329,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			len = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
-				"T(6CbC).",
+				"t(6CbC)",
 				&addr,
 				&prefix_len,
 				&stable,
@@ -1348,7 +1399,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			ret = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
-				SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_DATA_S,
+				SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_DATA_S,
 				&frame_ptr,
 				&frame_len,
 				&meta_ptr,

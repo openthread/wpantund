@@ -25,6 +25,7 @@
 #define __wpantund__TunnelInterface__
 
 #include "tunnel.h"
+#include "netif-mgmt.h"
 #include <cstdio>
 #include <string>
 #include <errno.h>
@@ -47,10 +48,16 @@ public:
 
 	int get_last_error(void);
 
+	bool is_up(void);
+	int set_up(bool isUp);
+
+	bool is_running(void);
+	int set_running(bool isRunning);
+
+	// This "online" is a bit of a mashup of "up" and "running".
+	// This is going to be phased out.
 	bool is_online(void);
 	int set_online(bool isOnline);
-
-
 
 	const struct in6_addr& get_realm_local_address()const;
 
@@ -72,14 +79,22 @@ public: // Signals
 	boost::signals2::signal<void(const struct in6_addr&, int)> mAddressWasAdded;
 	boost::signals2::signal<void(const struct in6_addr&, int)> mAddressWasRemoved;
 
+	// void linkStateChanged(isUp, isRunning);
+	boost::signals2::signal<void(bool, bool)> mLinkStateChanged;
+
 private:
 	void setup_signals();
 
+	void on_link_state_changed(bool isUp, bool isRunning);
 private:
 	std::string mInterfaceName;
 	int mLastError;
 
 	int mNetlinkFD;
+	int mNetifMgmtFD;
+
+	bool mIsRunning;
+	bool mIsUp;
 
 	std::set<struct in6_addr> mAddresses;
 };

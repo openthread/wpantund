@@ -58,7 +58,7 @@ SOURCE_VERSION=m4_esyscmd([
 
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile third_party/Makefile)
+AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
 
 # Set up AC_CONFIG_FILES for all of the available plugins.
 AC_CONFIG_FILES(m4_normalize(m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[src/ncp-[]THIS_PLUGIN/Makefile ])))
@@ -180,6 +180,9 @@ dnl This should only pick it up if necessary.
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
 
+CHECK_MISSING_FUNC([strlcpy])
+CHECK_MISSING_FUNC([strlcat])
+
 AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlcat stpncpy vsnprintf vsprintf snprintf getdtablesize getloadavg])
 
 NL_DEBUG
@@ -194,13 +197,8 @@ AC_DEFINE_UNQUOTED([__STDC_CONSTANT_MACROS], [1], [Needed by C++])
 AC_DEFINE_UNQUOTED([ASSERT_MACROS_USE_SYSLOG], 1, [Define to 1 to have assertmacros.h use syslog])
 AC_DEFINE_UNQUOTED([ASSERT_MACROS_SQUELCH], 0, [Define to 0 to explicitly prevent squelching assert printouts])
 
-NL_CHECK_CONNMAN([
-	NL_CHECK_GLIB(
-		[],
-		AC_MSG_ERROR(["Found ConnMan headers, but couldn't find GLIB"])
-	)
-])
-AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" = "xyes"])
+NL_CHECK_CONNMAN
+AM_CONDITIONAL([BUILD_CONNMAN_PLUGIN],[test "x${with_connman}" != "xno"])
 
 
 AM_CONDITIONAL([HOST_IS_LINUX],[(case "${host_os}" in *linux*) true ;; *) false ;; esac)])

@@ -68,6 +68,8 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 			break;
 		}
 
+		mPrimaryInterface->set_up(false);
+
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
 			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
 
@@ -144,7 +146,7 @@ int
 SpinelNCPInstance::vprocess_resume(int event, va_list args)
 {
 	Data command;
-	bool is_commissioned;
+	bool is_commissioned = false;
 	int ret;
 
 	EH_BEGIN_SUB(&mSubPT);
@@ -157,13 +159,15 @@ SpinelNCPInstance::vprocess_resume(int event, va_list args)
 	require(command.size() < sizeof(mOutboundBuffer), on_error);
 	memcpy(mOutboundBuffer, command.data(), command.size());
 	mOutboundBufferLen = static_cast<spinel_ssize_t>(command.size());
+
 	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
 	CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
 
 	ret = peek_ncp_callback_status(event, args);
-	require_noerr(ret, on_error);
 
-	{
+	check_noerr(ret);
+
+	if (ret == 0) {
 		unsigned int key = va_arg(args, unsigned int);
 		const uint8_t* data_in = va_arg(args, const uint8_t*);
 		spinel_size_t data_len = va_arg_small(args, spinel_size_t);
@@ -517,14 +521,14 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 					syslog(LOG_WARNING,
 						"Spinel command for restoring property \"%s\" does not fit in outbound buffer (require %d bytes but only %u bytes available)",
 						mSettingsIter->first.c_str(),
-						mSettingsIter->second.mSpinelCommand.size(),
-						sizeof(GetInstance(this)->mOutboundBuffer)
+						(int)mSettingsIter->second.mSpinelCommand.size(),
+						(unsigned int)sizeof(GetInstance(this)->mOutboundBuffer)
 					);
 
 					continue;
 				}
 
-				GetInstance(this)->mOutboundBufferLen = mSettingsIter->second.mSpinelCommand.size();
+				GetInstance(this)->mOutboundBufferLen = (spinel_ssize_t)mSettingsIter->second.mSpinelCommand.size();
 				memcpy(GetInstance(this)->mOutboundBuffer, mSettingsIter->second.mSpinelCommand.data(), mSettingsIter->second.mSpinelCommand.size());
 
 				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
