@@ -86,22 +86,66 @@ nl::wpantund::SpinelNCPTaskDeepSleep::vprocess_event(int event, va_list args)
 			syslog(LOG_ERR, "DeepSleep: set_ncp_power(false) failed.");
 
 			// Turning off the power manually didn't work for some reason.
-			// Turn it back on and we will try to do it via the API.
+			// Turn it back on and we will try to do it via the API, below.
 			mInstance->set_ncp_power(true);
 		}
 	}
 
 	if (mInstance->get_ncp_state() != DEEP_SLEEP) {
-		syslog(LOG_NOTICE, "DeepSleep: Putting NCP to sleep.");
 
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-			SPINEL_PROP_POWER_STATE,
-			SPINEL_POWER_STATE_DEEP_SLEEP
-		);
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-		ret = mNextCommandRet;
-		require_noerr(ret, on_error);
+		// We only try to put the NCP into a deep sleep state
+		// if it advertises that it supports this sort of
+		// power management. Otherwise, we simply try to put
+		// the chip into a low power state.
+		if (mInstance->mCapabilities.count(SPINEL_CAP_POWER_SAVE)) {
+			syslog(LOG_NOTICE, "DeepSleep: Putting NCP to sleep.");
+
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+				SPINEL_PROP_POWER_STATE,
+				SPINEL_POWER_STATE_DEEP_SLEEP
+			);
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+			ret = mNextCommandRet;
+			require_noerr(ret, on_error);
+		} else {
+			syslog(LOG_WARNING, "DeepSleep: No support for CAP_POWER_SAVE. Will attempt to change configuration to reduce power.");
+
+			// Turn off the thread stack
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_NET_STACK_UP,
+				false
+			);
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+			// Turn off the interface
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_NET_IF_UP,
+				false
+			);
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+			// Turn off the phy
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_PHY_ENABLED,
+				false
+			);
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+			// Wait for half a second after the last ncp-generated event
+			// just to make sure we have received everthing it wanted to
+			// tell us. We have to do this because we aren't really putting
+			// the NCP into a deep sleep mode, so it might still send us
+			// some asynchronous updates triggered from the above three
+			// commands.
+			do {
+				EH_WAIT_UNTIL(!IS_EVENT_FROM_NCP(event));
+				EH_WAIT_UNTIL_WITH_TIMEOUT(0.5, IS_EVENT_FROM_NCP(event));
+			} while(!eh_did_timeout);
+		}
 
 		mInstance->change_ncp_state(DEEP_SLEEP);
 	}
