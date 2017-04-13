@@ -251,15 +251,6 @@ private:
 	// Task management
 	std::list<boost::shared_ptr<SpinelNCPTask> > mTaskQueue;
 
-	enum
-	{
-		kMaxTimeBetweenNoMemStatus = 60000, // (in ms) time between NOMEM status to consider it back-to-back.
-		kMaxNonMemCountToReset = 15,        // Number of back-to-back NOMEM status to reset
-	};
-
-	cms_t mLastTimeNoMemStatus;
-	uint16_t mNoMemStatusCounter;
-
 }; // class SpinelNCPInstance
 
 extern class SpinelNCPInstance* gNCPInstance;
