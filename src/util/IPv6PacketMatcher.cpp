@@ -43,6 +43,7 @@ const uint8_t IPv6PacketMatcherRule::SUBTYPE_ICMP_NEIGHBOR_ADV = 136;
 const uint8_t IPv6PacketMatcherRule::SUBTYPE_ICMP_NEIGHBOR_SOL = 135;
 const uint8_t IPv6PacketMatcherRule::SUBTYPE_ICMP_ROUTER_SOL = 133;
 const uint8_t IPv6PacketMatcherRule::SUBTYPE_ICMP_ROUTER_ADV = 134;
+const uint8_t IPv6PacketMatcherRule::SUBTYPE_ICMP_REDIRECT = 137;
 
 #define IPV6_HEADER_LENGTH              40
 #define IPV6_TCP_HEADER_CHECKSUM_OFFSET (IPV6_HEADER_LENGTH + 16)
