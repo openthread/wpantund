@@ -30,7 +30,7 @@
 #include "wpan-dbus-v1.h"
 #include "string-utils.h"
 
-const char setprop_cmd_syntax[] = "[args] <property-name> <property-value>";
+const char setprop_cmd_syntax[] = "<property-name> [args] <property-value>";
 
 static const arg_list_item_t setprop_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
