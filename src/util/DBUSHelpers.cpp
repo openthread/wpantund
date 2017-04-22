@@ -139,7 +139,7 @@ DBUSHelpers::any_from_dbus_iter(DBusMessageIter *iter)
 		ret = v;
 	} break;
 	case DBUS_TYPE_UINT64: {
-		uint16_t v;
+		uint64_t v;
 		dbus_message_iter_get_basic(iter, &v);
 		ret = v;
 	} break;
