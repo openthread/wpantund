@@ -16,6 +16,7 @@
 #
 
 SUBDIRS =                \
+	border-agent-proxy   \
 	missing              \
 	util                 \
 	wpanctl              \

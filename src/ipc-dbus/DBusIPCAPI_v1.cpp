@@ -33,6 +33,8 @@
 
 #include <dbus/dbus.h>
 
+#include "border-agent-proxy/bap-utils.h"
+
 #include "wpan-dbus-v1.h"
 #include "DBusIPCAPI_v1.h"
 #include "wpan-error.h"
@@ -146,6 +148,18 @@ DBusIPCAPI_v1::add_interface(NCPControlInterface* interface)
 			this,
 			interface,
 			_1
+		)
+	);
+
+	interface->mOnBorderAgentProxyStream.connect(
+		boost::bind(
+			&DBusIPCAPI_v1::received_border_agent_proxy_stream,
+			this,
+			interface,
+			_1,
+			_2,
+			_3,
+			_4
 		)
 	);
 
@@ -326,6 +340,35 @@ ipc_append_energy_scan_result_dict(
 	append_dict_entry(&dict, "RSSI", DBUS_TYPE_BYTE, &maxRssi);
 
 	dbus_message_iter_close_container(iter, &dict);
+}
+
+void
+DBusIPCAPI_v1::received_border_agent_proxy_stream(NCPControlInterface* interface,
+		const uint8_t* buf, uint16_t len, uint16_t locator, uint16_t port)
+{
+	DBusMessageIter iter;
+	DBusMessage* message;
+
+	message = dbus_message_new_method_call(
+		BORDER_AGENT_DBUS_NAME,
+		BORDER_AGENT_DBUS_OBJECT,
+		BORDER_AGENT_DBUS_INTERFACE,
+		BORDER_AGENT_DBUS_METHOD_RECEIVE
+	);
+
+	dbus_message_append_args(
+			message,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buf, len,
+			DBUS_TYPE_UINT16, &locator,
+			DBUS_TYPE_UINT16, &port,
+			DBUS_TYPE_INVALID);
+
+	if (!dbus_connection_send(mConnection, message, NULL))
+	{
+		syslog(LOG_WARNING, "DBusAPIv1:BAProxyStream: sending failed");
+	}
+
+	dbus_message_unref(message);
 }
 
 void

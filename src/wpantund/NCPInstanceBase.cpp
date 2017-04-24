@@ -259,6 +259,7 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_NetworkPANID);
 	properties.insert(kWPANTUNDProperty_NetworkXPANID);
 	properties.insert(kWPANTUNDProperty_NetworkKey);
+	properties.insert(kWPANTUNDProperty_NetworkPSKc);
 	properties.insert(kWPANTUNDProperty_NetworkKeyIndex);
 	properties.insert(kWPANTUNDProperty_NetworkNodeType);
 	properties.insert(kWPANTUNDProperty_NCPState);
@@ -637,6 +638,16 @@ NCPInstanceBase::signal_property_changed(
 	const boost::any& value
 ) {
 	get_control_interface().mOnPropertyChanged(key, value);
+}
+
+void
+NCPInstanceBase::signal_border_agent_proxy_stream(
+	const uint8_t* buf,
+	uint16_t len,
+	uint16_t locator,
+	uint16_t port
+) {
+	get_control_interface().mOnBorderAgentProxyStream(buf, len, locator, port);
 }
 
 // ----------------------------------------------------------------------------

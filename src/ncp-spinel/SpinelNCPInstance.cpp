@@ -401,6 +401,9 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PSKC, SPINEL_DATATYPE_DATA_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
 
@@ -468,6 +471,9 @@ SpinelNCPInstance::get_property(
 		} else {
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
 		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnable)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_BA_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -691,10 +697,22 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPANID)) {
 			uint16_t panid = any_to_int(value);
 
+			mPanid = panid;
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_MAC_15_4_PANID, panid)
+				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
+			Data network_pskc = any_to_data(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_PSKC, network_pskc.data(), network_pskc.size())
 				)
 				.finish()
 			);
@@ -806,6 +824,7 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
 			Data xpanid = any_to_data(value);
 
+			mXPanid = any_to_uint64(value);
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
@@ -853,6 +872,18 @@ SpinelNCPInstance::set_property(
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID, routerId)
 				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnable)) {
+			bool isEnabled = any_to_bool(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_BA_PROXY_ENABLED, isEnabled);
+
+			mSettings[kWPANTUNDProperty_BorderAgentProxyEnable] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(command)
 				.finish()
 			);
 
@@ -958,6 +989,24 @@ SpinelNCPInstance::set_property(
 				.add_command(command)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyStream)) {
+			Data packet = any_to_data(value);
+
+			uint16_t port = *(uint16_t*)(packet.data() + packet.size() - sizeof(port));
+			port = ntohs(port);
+			uint16_t locator = *(uint16_t*)(packet.data() + packet.size() - sizeof(locator) - sizeof(port));
+			locator = ntohs(locator);
+			packet.resize(packet.size() - sizeof(locator) - sizeof(port));
+
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
+					SPINEL_PROP_THREAD_BA_PROXY_STREAM, packet.data(), packet.size(), locator, port);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+					);
 
 		} else {
 			NCPInstanceBase::set_property(key, value, cb);
@@ -1191,6 +1240,13 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			signal_property_changed(kWPANTUNDProperty_NetworkXPANID, xpanid);
 		}
 
+	} else if (key == SPINEL_PROP_NET_PSKC) {
+		nl::Data network_pskc(value_data_ptr, value_data_len);
+		if (network_pskc != mNetworkPSKc) {
+			mNetworkPSKc = network_pskc;
+			signal_property_changed(kWPANTUNDProperty_NetworkPSKc, mNetworkPSKc);
+		}
+
 	} else if (key == SPINEL_PROP_NET_MASTER_KEY) {
 		nl::Data network_key(value_data_ptr, value_data_len);
 		if (ncp_state_is_joining_or_joined(get_ncp_state())) {
@@ -1416,6 +1472,30 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 					.append_ppi_field(PCAP_PPI_TYPE_SPINEL, meta_ptr, meta_len)
 					.append_payload(frame_ptr, frame_len)
 			);
+		}
+
+	} else if ((key == SPINEL_PROP_THREAD_BA_PROXY_STREAM)) {
+		const uint8_t* frame_ptr(NULL);
+		unsigned int frame_len(0);
+		uint16_t locator;
+		uint16_t port;
+		spinel_ssize_t ret;
+
+		ret = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S,
+			&frame_ptr,
+			&frame_len,
+			&locator,
+			&port
+		);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		// Analyze the packet to determine if it should be dropped.
+		if ((ret > 0)) {
+			signal_border_agent_proxy_stream(frame_ptr, frame_len, locator, port);
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {

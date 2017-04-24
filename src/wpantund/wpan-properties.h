@@ -73,6 +73,7 @@
 #define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
 #define kWPANTUNDProperty_NetworkIsConnected  "Network:IsConnected"
+#define kWPANTUNDProperty_NetworkPSKc            "Network:PSKc"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
@@ -110,6 +111,9 @@
 #define kWPANTUNDProperty_JamDetectionWindow                   "JamDetection:Window"
 #define kWPANTUNDProperty_JamDetectionBusyPeriod               "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap       "JamDetection:Debug:HistoryBitmap"
+
+#define kWPANTUNDProperty_BorderAgentProxyEnable               "BorderAgentProxy:Enabled"
+#define kWPANTUNDProperty_BorderAgentProxyStream               "BorderAgentProxy:Stream"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"

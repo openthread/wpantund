@@ -241,6 +241,10 @@ private:
 
 	int mSubPTIndex;
 
+	uint16_t mPanid;
+	uint64_t mXPanid;
+
+	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
 

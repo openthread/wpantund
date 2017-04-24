@@ -251,6 +251,11 @@ typedef struct
 
 typedef struct
 {
+    uint8_t bytes[16];
+} spinel_net_pskc_t;
+
+typedef struct
+{
     uint8_t bytes[6];
 } spinel_eui48_t;
 
@@ -681,6 +686,8 @@ typedef enum
     SPINEL_PROP_NET_KEY_SWITCH_GUARDTIME
                                      = SPINEL_PROP_NET__BEGIN + 10, ///< [L]
 
+    SPINEL_PROP_NET_PSKC             = SPINEL_PROP_NET__BEGIN + 11, ///< [D]
+
     SPINEL_PROP_NET__END             = 0x50,
 
     SPINEL_PROP_THREAD__BEGIN          = 0x50,
@@ -809,6 +816,33 @@ typedef enum
      */
     SPINEL_PROP_THREAD_STABLE_LEADER_NETWORK_DATA
                                        = SPINEL_PROP_THREAD_EXT__BEGIN + 14,
+
+    /// Thread joiner data
+    /** Format `A(T(ULE))`
+    *  PSKd, joiner timeout, eui64 (optional)
+    */
+    SPINEL_PROP_THREAD_JOINERS         = SPINEL_PROP_THREAD_EXT__BEGIN + 15,
+
+    /// Thread commissioner enable
+    /** Format `b`
+     *
+     * Default value is `false`.
+     */
+    SPINEL_PROP_THREAD_COMMISSIONER_ENABLED
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 16,
+
+    /// Thread border agent proxy enable
+    /** Format `b`
+     *
+     * Default value is `false`.
+     */
+    SPINEL_PROP_THREAD_BA_PROXY_ENABLED
+                                       = SPINEL_PROP_THREAD_EXT__BEGIN + 17,
+
+    /// Thread border agent proxy stream
+    /** Format `dSS`
+     */
+    SPINEL_PROP_THREAD_BA_PROXY_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 18,
 
     SPINEL_PROP_THREAD_EXT__END        = 0x1600,
 
