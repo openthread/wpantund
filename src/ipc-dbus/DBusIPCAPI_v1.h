@@ -77,9 +77,11 @@ private:
 
 	// ------------------------------------------------------------------------
 
-	void property_changed(NCPControlInterface* interface,const std::string& key, const boost::any& value);
+	void property_changed(NCPControlInterface* interface, const std::string& key, const boost::any& value);
 	void received_beacon(NCPControlInterface* interface, const WPAN::NetworkInstance& network);
 	void received_energy_scan_result(NCPControlInterface* interface, const EnergyScanResultEntry& energy_scan_result);
+	void received_border_agent_proxy_stream(NCPControlInterface* interface, const uint8_t* buf,
+			uint16_t len, uint16_t locator, uint16_t port);
 
 	// ------------------------------------------------------------------------
 
