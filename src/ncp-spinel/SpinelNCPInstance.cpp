@@ -300,6 +300,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_THREAD_BA_PROXY)) {
+		properties.insert(kWPANTUNDProperty_BorderAgentProxyEnabled);
+		properties.insert(kWPANTUNDProperty_BorderAgentProxyStream);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
 	{
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
@@ -472,7 +477,7 @@ SpinelNCPInstance::get_property(
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
 		}
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnable)) {
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnabled)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_BA_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
@@ -875,17 +880,22 @@ SpinelNCPInstance::set_property(
 				.finish()
 			);
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnable)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnabled)) {
 			bool isEnabled = any_to_bool(value);
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_BA_PROXY_ENABLED, isEnabled);
 
-			mSettings[kWPANTUNDProperty_BorderAgentProxyEnable] = SettingsEntry(command, SPINEL_CAP_JAM_DETECT);
+			mSettings[kWPANTUNDProperty_BorderAgentProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_BA_PROXY);
 
-			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-				.set_callback(cb)
-				.add_command(command)
-				.finish()
-			);
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_BA_PROXY))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 			bool isEnabled = any_to_bool(value);
