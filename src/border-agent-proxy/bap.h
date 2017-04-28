@@ -32,7 +32,15 @@
 extern "C" {
 #endif
 
+/**
+ * This function pointer is called when a CoAP message ready for border agent.
+ */
 typedef void(*PacketHandler)(const uint8_t* aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort, void* aContext);
+
+/**
+ * This function pointer is called when PSKc is changed.
+ */
+typedef void(*PSKcHandler)(const uint8_t* aPSKc, void* aContext);
 
 /**
  */
@@ -45,8 +53,15 @@ int otBorderAgentProxySend(const uint8_t* aBuffer, uint16_t aLength, uint16_t aL
 
 /**
  * start border agent proxy service.
+ *
+ * @param[in]   aPacketHandler  A pointer to the function to be called to handle the CoAP message.
+ * @param[in]   aPSKcHandler    A pointer to the function to be called when PSKc is changed.
+ *
+ * @returns Error code.
+ * @retval  0   Successfully started the border agent proxy.
+ * @retval  -1  Failed to start the border agent proxy.
  */
-int otBorderAgentProxyStart(PacketHandler aPacketHandler, void* aContext);
+int otBorderAgentProxyStart(PacketHandler aPacketHandler, PSKcHandler aPSKcHandler, void* aContext);
 
 /**
  * stop border agent proxy service.

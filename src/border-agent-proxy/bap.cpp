@@ -16,8 +16,7 @@
  * limitations under the License.
  *
  *    Description:
- *		This file implements the main program entry point for the
- *		WPAN control utility, `wpanctl`.
+ *      This file implements the border agent proxy library.
  *
  */
 
@@ -43,6 +42,15 @@ extern "C" {
 #include "util/Data.h"
 #include "bap.h"
 
+/**
+ * This string is used to filter the property changed signal from wpantund.
+ */
+const char* kDBusMatchPropChanged = "type='signal',interface='"WPANTUND_DBUS_APIv1_INTERFACE"',"
+                                    "member='"WPANTUND_IF_SIGNAL_PROP_CHANGED"'";
+const char* kDBusMatchStreamReceive = "type='method',interface='"BORDER_AGENT_DBUS_INTERFACE"',"
+                                      "member='"BORDER_AGENT_DBUS_METHOD_RECEIVE"',"
+                                      "path='"BORDER_AGENT_DBUS_OBJECT"'";
+
 static char sInterfaceName[IFNAMSIZ];
 static char sInterfaceDBusName[DBUS_MAXIMUM_NAME_LENGTH + 1];
 static char sInterfaceDBusPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
@@ -50,9 +58,37 @@ static uint8_t sPSKc[sizeof(spinel_net_pskc_t)];
 
 static DBusConnection* sConn = NULL;
 static PacketHandler sPacketHandler = NULL;
+static PSKcHandler   sPSKcHandler = NULL;
 
 typedef std::map<DBusWatch*, bool> WatchMap;
 static WatchMap sWatches;
+
+DBusHandlerResult handleProperyChangedSingal(DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+    DBusMessageIter iter;
+    int ret;
+    const char* key;
+    const uint8_t* pskc;
+
+    printf("handle property changed\n");
+    require(dbus_message_is_signal(message, WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_SIGNAL_PROP_CHANGED), bail);
+
+    dbus_message_iter_init(message, &iter);
+    dbus_message_iter_get_basic(&iter, &key);
+    require(key && !strcmp(key, kWPANTUNDProperty_NetworkPSKc), bail);
+    dbus_message_iter_next(&iter);
+    {
+        DBusMessageIter subIter;
+        int count = 0;
+        dbus_message_iter_recurse(&iter, &subIter);
+        dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
+    }
+
+    sPSKcHandler(pskc, user_data);
+
+bail:
+    return DBUS_HANDLER_RESULT_HANDLED;
+}
 
 DBusHandlerResult dbus_message_handler(
         DBusConnection *connection,
@@ -106,7 +142,7 @@ static int bap_enable_border_agent_proxy(dbus_bool_t enable)
 {
     int ret = 0;
     DBusMessage *message = NULL;
-    const char *property_name = kWPANTUNDProperty_BorderAgentProxyEnable;
+    const char *property_name = kWPANTUNDProperty_BorderAgentProxyEnabled;
 
     message = dbus_message_new_method_call(
             sInterfaceDBusName,
@@ -156,7 +192,7 @@ bail:
     return ret;
 }
 
-int otBorderAgentProxyStart(PacketHandler aPacketHandler, void* aContext)
+int otBorderAgentProxyStart(PacketHandler aPacketHandler, PSKcHandler aPSKcHandler, void* aContext)
 {
     int ret = 0;
     DBusError error;
@@ -189,6 +225,7 @@ int otBorderAgentProxyStart(PacketHandler aPacketHandler, void* aContext)
             aContext), bail, ret = -1);
 
     sPacketHandler = aPacketHandler;
+    sPSKcHandler = aPSKcHandler;
 
     require_action(dbus_connection_set_watch_functions(
             sConn,
@@ -196,6 +233,12 @@ int otBorderAgentProxyStart(PacketHandler aPacketHandler, void* aContext)
             bap_remove_dbus_watch,
             bap_toggle_dbus_watch,
             NULL, NULL), bail, ret = -1);
+
+    dbus_bus_add_match(sConn, kDBusMatchPropChanged, &error);
+    dbus_bus_add_match(sConn, kDBusMatchStreamReceive, &error);
+    require(!dbus_error_is_set(&error), bail);
+    require_action(dbus_connection_add_filter(sConn, handleProperyChangedSingal, aContext, NULL),
+                   bail, ret = -1);
 
     bap_enable_border_agent_proxy(TRUE);
 
