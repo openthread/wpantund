@@ -241,6 +241,7 @@ private:
 
 	int mSubPTIndex;
 
+	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
 

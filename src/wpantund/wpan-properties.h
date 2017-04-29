@@ -72,7 +72,8 @@
 #define kWPANTUNDProperty_NetworkKey             "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
-#define kWPANTUNDProperty_NetworkIsConnected  "Network:IsConnected"
+#define kWPANTUNDProperty_NetworkIsConnected     "Network:IsConnected"
+#define kWPANTUNDProperty_NetworkPSKc            "Network:PSKc"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
