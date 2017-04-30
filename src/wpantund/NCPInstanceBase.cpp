@@ -640,6 +640,16 @@ NCPInstanceBase::signal_property_changed(
 	get_control_interface().mOnPropertyChanged(key, value);
 }
 
+void
+NCPInstanceBase::signal_border_agent_proxy_stream(
+	const uint8_t* buf,
+	uint16_t len,
+	uint16_t locator,
+	uint16_t port
+) {
+	get_control_interface().mOnBorderAgentProxyStream(buf, len, locator, port);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 
