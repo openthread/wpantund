@@ -401,6 +401,9 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PSKC, SPINEL_DATATYPE_DATA_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
 
@@ -695,6 +698,17 @@ SpinelNCPInstance::set_property(
 				.set_callback(cb)
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_MAC_15_4_PANID, panid)
+				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
+			Data network_pskc = any_to_data(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_PSKC, network_pskc.data(), network_pskc.size())
 				)
 				.finish()
 			);
@@ -1189,6 +1203,13 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if ((value_data_len == 8) && 0 != memcmp(xpanid.data(), mCurrentNetworkInstance.xpanid, 8)) {
 			memcpy(mCurrentNetworkInstance.xpanid, xpanid.data(), 8);
 			signal_property_changed(kWPANTUNDProperty_NetworkXPANID, xpanid);
+		}
+
+	} else if (key == SPINEL_PROP_NET_PSKC) {
+		nl::Data network_pskc(value_data_ptr, value_data_len);
+		if (network_pskc != mNetworkPSKc) {
+			mNetworkPSKc = network_pskc;
+			signal_property_changed(kWPANTUNDProperty_NetworkPSKc, mNetworkPSKc);
 		}
 
 	} else if (key == SPINEL_PROP_NET_MASTER_KEY) {

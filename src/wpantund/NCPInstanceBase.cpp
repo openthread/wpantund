@@ -259,6 +259,7 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_NetworkPANID);
 	properties.insert(kWPANTUNDProperty_NetworkXPANID);
 	properties.insert(kWPANTUNDProperty_NetworkKey);
+	properties.insert(kWPANTUNDProperty_NetworkPSKc);
 	properties.insert(kWPANTUNDProperty_NetworkKeyIndex);
 	properties.insert(kWPANTUNDProperty_NetworkNodeType);
 	properties.insert(kWPANTUNDProperty_NCPState);
