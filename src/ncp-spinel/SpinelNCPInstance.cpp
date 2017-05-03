@@ -410,6 +410,9 @@ SpinelNCPInstance::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SAVED, SPINEL_DATATYPE_BOOL_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
 
@@ -449,6 +452,9 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadDeviceMode)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_MODE, SPINEL_DATATYPE_UINT8_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_ML_PREFIX, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -845,6 +851,15 @@ SpinelNCPInstance::set_property(
 				.finish()
 			);
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
+			uint8_t role = any_to_int(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_NET_ROLE, role))
+				.finish()
+			);
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadPreferredRouterID)) {
 			uint8_t routerId = any_to_int(value);
 
@@ -853,6 +868,15 @@ SpinelNCPInstance::set_property(
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID, routerId)
 				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadDeviceMode)) {
+			uint8_t mode = any_to_int(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_MODE, mode))
 				.finish()
 			);
 
