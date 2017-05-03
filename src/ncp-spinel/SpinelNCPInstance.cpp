@@ -162,7 +162,7 @@ nl::wpantund::peek_ncp_callback_status(int event, va_list args)
 }
 
 SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
-	NCPInstanceBase(settings), mControlInterface(this)
+	NCPInstanceBase(settings), mControlInterface(this), mPanid(0xffff)
 {
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
