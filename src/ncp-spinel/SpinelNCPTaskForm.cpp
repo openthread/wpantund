@@ -41,7 +41,7 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 ):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
 {
 	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
-		uint16_t panid = instance->mPanid;
+		uint16_t panid = instance->mCurrentNetworkInstance.panid;
 
 		if (panid == 0xffff)
 		{
@@ -52,7 +52,12 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	}
 
 	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		uint64_t xpanid = instance->mXPanid;
+		uint64_t xpanid;
+
+		memcpy(&xpanid, instance->mCurrentNetworkInstance.hwaddr, sizeof(xpanid));
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		reverse_bytes((uint8_t *)xpanid, sizeof(xpanid));
+#endif
 
 		if (xpanid == 0)
 		{

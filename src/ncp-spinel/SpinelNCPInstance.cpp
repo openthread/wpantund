@@ -162,7 +162,7 @@ nl::wpantund::peek_ncp_callback_status(int event, va_list args)
 }
 
 SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
-	NCPInstanceBase(settings), mControlInterface(this), mPanid(0xffff)
+	NCPInstanceBase(settings), mControlInterface(this)
 {
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
@@ -694,7 +694,7 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPANID)) {
 			uint16_t panid = any_to_int(value);
 
-			mPanid = panid;
+			mCurrentNetworkInstance.panid = panid;
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
@@ -821,7 +821,7 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
 			Data xpanid = any_to_data(value);
 
-			mXPanid = any_to_uint64(value);
+			memcpy(mCurrentNetworkInstance.hwaddr, xpanid.data(), xpanid.size());
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
