@@ -52,12 +52,7 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	}
 
 	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		uint64_t xpanid;
-
-		memcpy(&xpanid, instance->mCurrentNetworkInstance.hwaddr, sizeof(xpanid));
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		reverse_bytes((uint8_t *)xpanid, sizeof(xpanid));
-#endif
+		uint64_t xpanid = instance->mCurrentNetworkInstance.get_xpanid_as_uint64();
 
 		if (xpanid == 0)
 		{

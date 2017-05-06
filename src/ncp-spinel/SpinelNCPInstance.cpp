@@ -694,7 +694,6 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPANID)) {
 			uint16_t panid = any_to_int(value);
 
-			mCurrentNetworkInstance.panid = panid;
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
@@ -821,7 +820,6 @@ SpinelNCPInstance::set_property(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
 			Data xpanid = any_to_data(value);
 
-			memcpy(mCurrentNetworkInstance.hwaddr, xpanid.data(), xpanid.size());
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
 				.add_command(
