@@ -114,6 +114,9 @@
 #define kWPANTUNDProperty_JamDetectionBusyPeriod               "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap       "JamDetection:Debug:HistoryBitmap"
 
+#define kWPANTUNDProperty_BorderAgentProxyEnabled              "BorderAgentProxy:Enabled"
+#define kWPANTUNDProperty_BorderAgentProxyStream               "BorderAgentProxy:Stream"
+
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"
 #define kWPANTUNDProperty_NestLabs_NCPTransmitHookActive       "com.nestlabs.internal:NCP:TransmitHookActive"
