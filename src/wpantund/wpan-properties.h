@@ -74,6 +74,7 @@
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
 #define kWPANTUNDProperty_NetworkIsConnected     "Network:IsConnected"
 #define kWPANTUNDProperty_NetworkPSKc            "Network:PSKc"
+#define kWPANTUNDProperty_NetworkRole            "Network:Role"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
@@ -97,6 +98,7 @@
 #define kWPANTUNDProperty_ThreadStableNetworkData        "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID        "Thread:PreferredRouterID"
+#define kWPANTUNDProperty_ThreadDeviceMode               "Thread:DeviceMode"
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                   "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters          "OpenThread:MsgBufferCounters"
