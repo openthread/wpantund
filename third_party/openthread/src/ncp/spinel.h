@@ -809,7 +809,7 @@ typedef enum
     /** Format: `C`
      */
     SPINEL_PROP_THREAD_CHILD_COUNT_MAX = SPINEL_PROP_THREAD_EXT__BEGIN + 12,
-   
+
     /// Leader network data
     /** Format: `D` - Read only
      */
