@@ -224,13 +224,6 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
-	virtual void signal_border_agent_proxy_stream(
-			const uint8_t* buf,
-			uint16_t len,
-			uint16_t locator,
-			uint16_t port
-	);
-
 	virtual void signal_property_changed(
 	    const std::string& key,
 	    const boost::any& value = boost::any()

@@ -1487,6 +1487,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		uint16_t locator;
 		uint16_t port;
 		spinel_ssize_t ret;
+		Data data;
 
 		ret = spinel_datatype_unpack(
 			value_data_ptr,
@@ -1502,7 +1503,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 		// Analyze the packet to determine if it should be dropped.
 		if ((ret > 0)) {
-			signal_border_agent_proxy_stream(frame_ptr, frame_len, locator, port);
+			// append frame
+			data.append(frame_ptr, frame_len);
+			// pack the locator in big endian.
+			data.push_back(locator >> 8);
+			data.push_back(locator & 0xff);
+			// pack the port in big endian.
+			data.push_back(port >> 8);
+			data.push_back(port & 0xff);
+			signal_property_changed(kWPANTUNDProperty_BorderAgentProxyStream, data);
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {

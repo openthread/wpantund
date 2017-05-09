@@ -149,18 +149,6 @@ DBusIPCAPI_v1::add_interface(NCPControlInterface* interface)
 		)
 	);
 
-	interface->mOnBorderAgentProxyStream.connect(
-		boost::bind(
-			&DBusIPCAPI_v1::received_border_agent_proxy_stream,
-			this,
-			interface,
-			_1,
-			_2,
-			_3,
-			_4
-		)
-	);
-
 	interface->mOnEnergyScanResult.connect(
 		boost::bind(
 			&DBusIPCAPI_v1::received_energy_scan_result,
@@ -338,47 +326,6 @@ ipc_append_energy_scan_result_dict(
 	append_dict_entry(&dict, "RSSI", DBUS_TYPE_BYTE, &maxRssi);
 
 	dbus_message_iter_close_container(iter, &dict);
-}
-
-void
-DBusIPCAPI_v1::received_border_agent_proxy_stream(NCPControlInterface* interface,
-		const uint8_t* buf, uint16_t len, uint16_t locator, uint16_t port)
-{
-	DBusMessageIter iter;
-	DBusMessage* signal;
-	std::string path;
-	const char* key = kWPANTUNDProperty_BorderAgentProxyStream;
-	std::string key_as_path = kWPANTUNDProperty_BorderAgentProxyStream;
-
-	key_as_path.replace(key_as_path.find(':'), 1, 1, '/');
-	path = path_for_iface(interface) + "/Property/" + key_as_path;
-
-	syslog(LOG_INFO, "DBusAPIv1:BAProxyStream: %s - locator: %x, port: %u", path.c_str(), locator, port);
-
-	signal = dbus_message_new_signal(
-			path.c_str(),
-			WPANTUND_DBUS_APIv1_INTERFACE,
-			WPANTUND_IF_SIGNAL_PROP_CHANGED
-			);
-
-	if (signal) {
-		dbus_message_append_args(
-				signal,
-				DBUS_TYPE_STRING, &key,
-				DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buf, len,
-				DBUS_TYPE_UINT16, &locator,
-				DBUS_TYPE_UINT16, &port,
-				DBUS_TYPE_INVALID);
-
-		if (!dbus_connection_send(mConnection, signal, NULL))
-		{
-			syslog(LOG_WARNING, "DBusAPIv1:BAProxyStream: sending failed");
-		}
-
-		dbus_message_unref(signal);
-	} else {
-		syslog(LOG_WARNING, "DBusAPIv1:BAProxyStream: failed to create signal");
-	}
 }
 
 void

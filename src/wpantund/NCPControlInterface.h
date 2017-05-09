@@ -229,7 +229,6 @@ public:
 
 	//! Fires whenever value of certain properties changed (e.g. NodeType).
 	boost::signals2::signal<void(const std::string& key, const boost::any& value)> mOnPropertyChanged;
-	boost::signals2::signal<void(const uint8_t* buf, uint16_t len, uint16_t locator, uint16_t port)> mOnBorderAgentProxyStream;
 
 public:
 	// ========================================================================
