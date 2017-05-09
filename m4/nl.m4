@@ -40,6 +40,17 @@ AC_DEFUN([NL_DEBUG], [
 	AM_CONDITIONAL([VERBOSE_DEBUG],[test "x$enable_debug" = "xverbose"])
 ])
 
+AC_DEFUN([CHECK_MISSING_FUNC], [
+    AC_CHECK_FUNC($1, [], [
+        nl_cv_missing_$1=yes
+        MISSING_CPPFLAGS="${MISSING_CPPFLAGS} "'-include $(top_srcdir)/src/missing/$1/$1.h'
+        MISSING_LIBADD="${MISSING_LIBADD} "'$(top_builddir)/src/missing/$1/lib$1.la'
+    ])
+    AM_CONDITIONAL(m4_toupper(MISSING_$1), [test "${nl_cv_missing_$1}" = "yes"])
+])
+AC_SUBST(MISSING_CPPFLAGS)
+AC_SUBST(MISSING_LIBADD)
+
 AC_DEFUN([NL_EXPORT_DYNAMIC], [
 	prev_LDFLAGS="${LDFLAGS}"
 	LDFLAGS="-Wl,--export-dynamic"

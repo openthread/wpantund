@@ -49,7 +49,6 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 {
 	EH_BEGIN_SUB(&mSubPT);
 
-
 	while(!mEnabled) {
 		// If the association state is uninitialized, fail early.
 		if (get_ncp_state() == UNINITIALIZED) {
@@ -58,15 +57,20 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 		}
 
 		// Wait for any tasks or commands to complete.
-		EH_REQUIRE_WITHIN(
+		EH_WAIT_UNTIL_WITH_TIMEOUT(
 			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-			mEnabled || is_busy(),
-			timeout_error
+			mEnabled || !is_busy()
 		);
 
 		if (mEnabled) {
 			break;
 		}
+
+		require(!is_initializing_ncp(), timeout_error);
+
+		reset_tasks(kWPANTUNDStatus_Canceled);
+
+		mPrimaryInterface->set_up(false);
 
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
 			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));

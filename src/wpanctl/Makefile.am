@@ -33,6 +33,7 @@ wpanctl_SOURCES = \
 	wpanctl-cmds.h \
 	../util/config-file.c \
 	../util/string-utils.c \
+	../wpantund/wpan-error.c \
 	wpanctl-utils.c \
 	tool-cmd-scan.c \
 	tool-cmd-join.c \

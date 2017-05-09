@@ -75,9 +75,13 @@
 
 #include <exception>
 #include <algorithm>
+#include <memory>
 
 #include "any-to.h"
 #include "sec-random.h"
+
+#include <boost/shared_ptr.hpp>
+using ::boost::shared_ptr;
 
 #if HAVE_PWD_H
 #include <pwd.h>
@@ -494,7 +498,8 @@ main(int argc, char * argv[])
 	int zero_cms_in_a_row_count = 0;
 	const char* config_file = SYSCONFDIR "/wpantund.conf";
 	const char* alt_config_file = SYSCONFDIR "/wpan-tunnel-driver.conf";
-	nl::wpantund::IPCServer *ipc_server = NULL;
+	std::list<shared_ptr<nl::wpantund::IPCServer> > ipc_server_list;
+
 	nl::wpantund::NCPInstance *ncp_instance = NULL;
 	std::map<std::string, std::string> cmd_line_settings;
 
@@ -687,9 +692,20 @@ main(int argc, char * argv[])
 			settings = settings_for_ncp_control_interface;
 		}
 
-		//require_string(settings.count(kWPANTUNDProperty_ConfigNCPSocketPath) == 1, bail, "Missing "kWPANTUNDProperty_ConfigNCPSocketPath);
+		// Set up DBUSIPCServer
+		try {
+			ipc_server_list.push_back(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
+		} catch(std::exception x) {
+			syslog(LOG_ERR, "Unable to start DBUSIPCServer \"%s\"",x.what());
+		}
 
-		ipc_server = new DBUSIPCServer();
+		/*** Add other IPCServers here! ***/
+
+		// Always fail if we have no IPCServers.
+		if (ipc_server_list.empty()) {
+			syslog(LOG_ERR, "No viable IPC server.");
+			goto bail;
+		}
 
 		ncp_instance = NCPInstance::alloc(settings);
 
@@ -800,6 +816,7 @@ main(int argc, char * argv[])
 		cms_t cms_timeout(max_main_loop_timeout);
 		int max_fd(-1);
 		struct timeval timeout;
+		std::list<shared_ptr<nl::wpantund::IPCServer> >::iterator ipc_iter;
 
 		FD_ZERO(&gReadableFDs);
 		FD_ZERO(&gWritableFDs);
@@ -807,8 +824,11 @@ main(int argc, char * argv[])
 
 		// Update the FD masks and timeouts
 		ncp_instance->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
-		ipc_server->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
 		Timer::update_timeout(&cms_timeout);
+
+		for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
+			(*ipc_iter)->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
+		}
 
 		require_string(max_fd < FD_SETSIZE, bail, "Too many file descriptors");
 
@@ -892,7 +912,9 @@ main(int argc, char * argv[])
 		Timer::process();
 
 		// Process any necessary IPC actions.
-		ipc_server->process();
+		for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
+			(*ipc_iter)->process();
+		}
 
 		// Process the NCP instance.
 		ncp_instance->process();
@@ -904,7 +926,9 @@ main(int argc, char * argv[])
 			if ((value.type() == boost::any(std::string()).type())
 			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
 			) {
-				ipc_server->add_interface(&ncp_instance->get_control_interface());
+				for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
+					(*ipc_iter)->add_interface(&ncp_instance->get_control_interface());
+				}
 				interface_added = true;
 			}
 		}

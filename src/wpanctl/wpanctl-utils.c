@@ -422,44 +422,6 @@ bail:
 	return ret;
 }
 
-const char*
-wpantund_status_to_cstr(int status)
-{
-	if (status<0) {
-		return strerror(status);
-	}
-	if (WPANTUND_STATUS_IS_NCPERROR(status)) {
-		return "NCP-Specific Errorcode";
-	}
-	switch(status) {
-	case kWPANTUNDStatus_Ok: return "Ok";
-	case kWPANTUNDStatus_Failure: return "Failure";
-	case kWPANTUNDStatus_Timeout: return "Timeout";
-	case kWPANTUNDStatus_SocketReset: return "SocketReset";
-	case kWPANTUNDStatus_InvalidArgument: return "InvalidArgument";
-	case kWPANTUNDStatus_Busy: return "Busy";
-	case kWPANTUNDStatus_InvalidWhenDisabled: return "InvalidWhenDisabled";
-	case kWPANTUNDStatus_InvalidForCurrentState: return "InvalidForCurrentState";
-	case kWPANTUNDStatus_PropertyEmpty: return "PropertyEmpty";
-	case kWPANTUNDStatus_InvalidType: return "InvalidType";
-	case kWPANTUNDStatus_FeatureNotSupported: return "FeatureNotSupported";
-	case kWPANTUNDStatus_FeatureNotImplemented: return "FeatureNotImplemented";
-	case kWPANTUNDStatus_PropertyNotFound: return "PropertyNotFound";
-	case kWPANTUNDStatus_Canceled: return "Canceled";
-	case kWPANTUNDStatus_InProgress: return "InProgress";
-	case kWPANTUNDStatus_NCP_Crashed: return "NCPCrashed";
-	case kWPANTUNDStatus_JoinFailedAtScan: return "JoinFailedAtScan";
-	case kWPANTUNDStatus_JoinFailedAtAuthenticate: return "JoinFailedAtAuthenticate";
-	case kWPANTUNDStatus_Already: return "Already";
-	case kWPANTUNDStatus_TryAgainLater: return "TryAgainLater";
-	case kWPANTUNDStatus_InvalidRange: return "InvalidRange";
-	case kWPANTUNDStatus_MissingXPANID: return "MissingXPANID";
-	case kWPANTUNDStatus_InterfaceNotFound: return "InterfaceNotFound";
-	default: break;
-	}
-	return "";
-}
-
 void print_error_diagnosis(int error)
 {
 	switch(error) {

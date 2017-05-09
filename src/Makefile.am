@@ -16,6 +16,7 @@
 #
 
 SUBDIRS =                \
+	missing              \
 	util                 \
 	wpanctl              \
 	ipc-dbus             \

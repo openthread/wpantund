@@ -69,7 +69,6 @@ struct wpan_network_info_s {
 	uint8_t hwaddr[8];
 };
 
-const char* wpantund_status_to_cstr(int status);
 void print_error_diagnosis(int error);
 int parse_network_info_from_iter(struct wpan_network_info_s *network_info, DBusMessageIter *iter);
 int parse_energy_scan_result_from_iter(int16_t *channel, int8_t *maxRssi, DBusMessageIter *iter);

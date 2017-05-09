@@ -77,7 +77,7 @@ private:
 
 	// ------------------------------------------------------------------------
 
-	void property_changed(NCPControlInterface* interface,const std::string& key, const boost::any& value);
+	void property_changed(NCPControlInterface* interface, const std::string& key, const boost::any& value);
 	void received_beacon(NCPControlInterface* interface, const WPAN::NetworkInstance& network);
 	void received_energy_scan_result(NCPControlInterface* interface, const EnergyScanResultEntry& energy_scan_result);
 

@@ -22,6 +22,8 @@ EXTRA_DIST = \
 	string-utils.c \
 	time-utils.c \
 	tunnel.c \
+	netif-mgmt.c \
+	netif-mgmt.h \
 	DBUSHelpers.cpp \
 	Data.cpp \
 	EventHandler.cpp \

@@ -44,6 +44,7 @@ struct IPv6PacketMatcherRule {
 	static const uint8_t SUBTYPE_ICMP_NEIGHBOR_SOL;
 	static const uint8_t SUBTYPE_ICMP_ROUTER_ADV;
 	static const uint8_t SUBTYPE_ICMP_ROUTER_SOL;
+	static const uint8_t SUBTYPE_ICMP_REDIRECT;
 
 	uint8_t type;
 	uint8_t subtype;

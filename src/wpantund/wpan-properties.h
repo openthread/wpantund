@@ -63,6 +63,8 @@
 #define kWPANTUNDProperty_NCPSleepyPollInterval  "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                "NCP:RSSI"
 
+#define kWPANTUNDProperty_InterfaceUp            "Interface:Up"
+
 #define kWPANTUNDProperty_NetworkName            "Network:Name"
 #define kWPANTUNDProperty_NetworkXPANID          "Network:XPANID"
 #define kWPANTUNDProperty_NetworkPANID           "Network:PANID"
@@ -70,6 +72,8 @@
 #define kWPANTUNDProperty_NetworkKey             "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
 #define kWPANTUNDProperty_NetworkIsCommissioned  "Network:IsCommissioned"
+#define kWPANTUNDProperty_NetworkIsConnected     "Network:IsConnected"
+#define kWPANTUNDProperty_NetworkPSKc            "Network:PSKc"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress   "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress   "IPv6:MeshLocalAddress"
@@ -108,6 +112,9 @@
 #define kWPANTUNDProperty_JamDetectionWindow                   "JamDetection:Window"
 #define kWPANTUNDProperty_JamDetectionBusyPeriod               "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap       "JamDetection:Debug:HistoryBitmap"
+
+#define kWPANTUNDProperty_BorderAgentProxyEnabled              "BorderAgentProxy:Enabled"
+#define kWPANTUNDProperty_BorderAgentProxyStream               "BorderAgentProxy:Stream"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort         "com.nestlabs.internal:Network:PassthruPort"
@@ -190,6 +197,7 @@
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16               "RLOC16"
 #define kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn        "LinkQualityIn"
 #define kWPANTUNDValueMapKey_NetworkTopology_AverageRssi          "AverageRssi"
+#define kWPANTUNDValueMapKey_NetworkTopology_LastRssi             "LastRssi"
 #define kWPANTUNDValueMapKey_NetworkTopology_Age                  "Age"
 #define kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle         "RxOnWhenIdle"
 #define kWPANTUNDValueMapKey_NetworkTopology_FullFunction         "FullFunction"
