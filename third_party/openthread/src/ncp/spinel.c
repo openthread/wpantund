@@ -1167,6 +1167,22 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE";
         break;
 
+    case SPINEL_PROP_THREAD_JOINERS:
+        ret = "SPINEL_PROP_THREAD_JOINERS";
+        break;
+
+    case SPINEL_PROP_THREAD_COMMISSIONER_ENABLED:
+        ret = "SPINEL_PROP_THREAD_COMMISSIONER_ENABLED";
+        break;
+
+    case SPINEL_PROP_THREAD_BA_PROXY_ENABLED:
+        ret = "SPINEL_PROP_THREAD_BA_PROXY_ENABLED";
+        break;
+
+    case SPINEL_PROP_THREAD_BA_PROXY_STREAM:
+        ret = "SPINEL_PROP_THREAD_BA_PROXY_STREAM";
+        break;
+
     case SPINEL_PROP_THREAD_RLOC16_DEBUG_PASSTHRU:
         ret = "PROP_THREAD_RLOC16_DEBUG_PASSTHRU";
         break;
