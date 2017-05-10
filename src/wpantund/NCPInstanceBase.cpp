@@ -165,11 +165,13 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 		rule.clear();
 		// Don't forward neighbor advertisement or neighbor solicitation
-		// traffic.
+		// or redirect traffic.
 		rule.type = IPv6PacketMatcherRule::TYPE_ICMP;
 		rule.subtype = IPv6PacketMatcherRule::SUBTYPE_ICMP_NEIGHBOR_ADV;
 		mDropFirewall.insert(rule);
 		rule.subtype = IPv6PacketMatcherRule::SUBTYPE_ICMP_NEIGHBOR_SOL;
+		mDropFirewall.insert(rule);
+		rule.subtype = IPv6PacketMatcherRule::SUBTYPE_ICMP_REDIRECT;
 		mDropFirewall.insert(rule);
 	}
 }
@@ -257,6 +259,7 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_NetworkPANID);
 	properties.insert(kWPANTUNDProperty_NetworkXPANID);
 	properties.insert(kWPANTUNDProperty_NetworkKey);
+	properties.insert(kWPANTUNDProperty_NetworkPSKc);
 	properties.insert(kWPANTUNDProperty_NetworkKeyIndex);
 	properties.insert(kWPANTUNDProperty_NetworkNodeType);
 	properties.insert(kWPANTUNDProperty_NCPState);
