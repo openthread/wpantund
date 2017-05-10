@@ -43,7 +43,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#ifndef __APPLE__
+#ifdef __linux__
 #include <linux/if_tun.h>
 #endif
 
@@ -73,6 +73,61 @@
 #define TUNNEL_TUNTAP_DEVICE               "/dev/net/tun"
 #endif
 
+#if defined(UTUN_CONTROL_NAME)
+static int
+utun_open_(const char* tun_name)
+{
+	int fd = -1;
+	int error = 0;
+	struct sockaddr_ctl addr;
+	struct ctl_info info;
+
+	fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
+
+	/* get/set the id */
+	memset(&info, 0, sizeof(info));
+	strncpy(info.ctl_name, UTUN_CONTROL_NAME, strlen(UTUN_CONTROL_NAME));
+	error = ioctl(fd, CTLIOCGINFO, &info);
+
+	if (error) {
+		int errno_copy = errno;
+		close(fd);
+		fd = -1;
+		errno = errno_copy;
+		goto bail;
+	}
+
+	addr.sc_id = info.ctl_id;
+	addr.sc_len = sizeof(addr);
+	addr.sc_family = AF_SYSTEM;
+	addr.ss_sysaddr = AF_SYS_CONTROL;
+	addr.sc_unit = 0;  /* allocate dynamically */
+
+	if (strncmp(tun_name, "utun", 4) == 0) {
+		addr.sc_unit = (int)strtol(tun_name + 4, NULL, 10) + 1;
+	}
+
+	error = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
+
+	if (error && errno == EBUSY) {
+		// Unit already taken, fall back
+		addr.sc_unit = 0;  /* allocate dynamically */
+		error = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
+	}
+
+	if (error) {
+		int errno_copy = errno;
+		close(fd);
+		fd = -1;
+		errno = errno_copy;
+		goto bail;
+	}
+
+bail:
+	return fd;
+}
+#endif
+
 int
 tunnel_open(const char* tun_name)
 {
@@ -86,68 +141,36 @@ tunnel_open(const char* tun_name)
 	syslog(LOG_INFO, "Opening tun interface socket with name \"%s\"", tun_name);
 
 #if defined(UTUN_CONTROL_NAME)
-	int error = 0;
-	fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
-	struct sockaddr_ctl addr;
-
-	/* get/set the id */
-	struct ctl_info info;
-	memset(&info, 0, sizeof(info));
-	strncpy(info.ctl_name, UTUN_CONTROL_NAME, strlen(UTUN_CONTROL_NAME));
-	error = ioctl(fd, CTLIOCGINFO, &info);
-
-	if (error) {
-		syslog(LOG_ERR, "Failed to open utun interface: %s", strerror(errno));
-		close(fd);
-		fd = -1;
-		goto bail;
-	}
-
-	addr.sc_id = info.ctl_id;
-	addr.sc_len = sizeof(addr);
-	addr.sc_family = AF_SYSTEM;
-	addr.ss_sysaddr = AF_SYS_CONTROL;
-	addr.sc_unit = 0;  /* allocate dynamically */
-
-	if (strncmp(tun_name, "utun", 4) == 0)
-		addr.sc_unit = (int)strtol(tun_name + 4, NULL, 10) + 1;
-
-	error = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
-
-	if (error && errno == EBUSY) {
-		addr.sc_unit = 0;  /* allocate dynamically */
-		error = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
-	}
-
-	if (error) {
-		syslog(LOG_ERR, "Failed to open tun interface: %s", strerror(errno));
-		close(fd);
-		fd = -1;
-		goto bail;
-	}
-
-	goto bail;
-
-#else
-
+	if (strncmp(tun_name, "utun", 4) == 0) {
+		// Use built-in UTUN driver
+		fd = utun_open_(tun_name);
+	} else
+#endif
+	{
 #ifdef __APPLE__
-	if (strncmp(tun_name, "utun", 4) == 0)
-		tun_name = "tun0";
-	asprintf(&device, "/dev/%s", tun_name);
+		// Use TunTapOSX http://tuntaposx.sourceforge.net/
+		if (strncmp(tun_name, "tun", 3) == 0) {
+			asprintf(&device, "/dev/%s", tun_name);
+			syslog(LOG_WARNING, "Attempting to open \"%s\", which requires the TUN driver from <http://tuntaposx.sourceforge.net/>. Use \"utun\" prefix to use built-in driver.", device);
+		} else {
+			syslog(LOG_ERR, "Unsupported tunnel name \"%s\". Use \"utunX\" or \"tunX\", where X is a number between 0 and 9.", tun_name);
+			goto bail;
+		}
 #else
-	device = strdup(TUNNEL_TUNTAP_DEVICE);
+		// Use hard-coded TUNTAP endpoint
+		device = strdup(TUNNEL_TUNTAP_DEVICE);
 #endif
 
-	require(NULL != device, bail);
+		require(NULL != device, bail);
 
-	fd = open(device, O_RDWR | O_NONBLOCK);
+		fd = open(device, O_RDWR | O_NONBLOCK);
+	}
 
 	if (0 > fd) {
+		perror("tunnel_open");
 		syslog(LOG_ERR, "Failed to open tun interface: %s", strerror(errno));
-		perror("open-tun");
 		goto bail;
 	}
-#endif
 
 #ifdef TUNSETIFF
 	struct ifreq ifr = { .ifr_flags = IFF_TUN | IFF_NO_PI };
