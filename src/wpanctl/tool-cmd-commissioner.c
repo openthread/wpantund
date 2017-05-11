@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include "wpanctl-utils.h"
 #include "tool-cmd-setprop.h"
+#include "tool-cmd-getprop.h"
 #include "assert-macros.h"
 #include "args.h"
 #include "assert-macros.h"
@@ -55,8 +56,8 @@ int tool_cmd_commissioner(int argc, char* argv[])
     DBusConnection* connection = NULL;
     DBusMessage *message = NULL;
     DBusMessage *reply = NULL;
+    DBusMessageIter iter;
     DBusError error;
-    const char* property_name = NULL;
     const char* ext_addr = NULL;
     const char* psk = NULL;
     int psk_len = 0;
@@ -65,7 +66,6 @@ int tool_cmd_commissioner(int argc, char* argv[])
     const char* invalid_psk_characters = INVALID_PSK_CHARACTERS;
     const char* property_commissioner_enabled = kWPANTUNDProperty_ThreadCommissionerEnabled;
     const char* property_commissioner_enabled_value = "false";
-
     char path[DBUS_MAXIMUM_NAME_LENGTH+1];
     char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
 
@@ -97,7 +97,84 @@ int tool_cmd_commissioner(int argc, char* argv[])
 
         case 's':
             //state
-            ret = ERRORCODE_NOT_IMPLEMENTED;
+            ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
+            if (gInterfaceName[0] == 0) {
+                fprintf(stderr,
+                        "%s: error: No WPAN interface set (use the `cd` command, or the `-I` argument for `wpanctl`).\n",
+                        argv[0]);
+                ret = ERRORCODE_BADARG;
+                goto bail;
+            }
+            connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
+
+            if (!connection) {
+                dbus_error_free(&error);
+                dbus_error_init(&error);
+                connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
+            }
+            require_string(connection != NULL, bail, error.message);
+
+            if (ret != 0) {
+                print_error_diagnosis(ret);
+                goto bail;
+            }
+            snprintf(path,
+                     sizeof(path),
+                     "%s/%s",
+                     WPANTUND_DBUS_PATH,
+                     gInterfaceName);
+
+            message = dbus_message_new_method_call(
+                interface_dbus_name,
+                path,
+                WPANTUND_DBUS_APIv1_INTERFACE,
+                WPANTUND_IF_CMD_PROP_GET
+            );
+
+            dbus_message_append_args(
+                message,
+                DBUS_TYPE_STRING, &property_commissioner_enabled,
+                DBUS_TYPE_INVALID
+            );
+
+            reply = dbus_connection_send_with_reply_and_block(
+                connection,
+                message,
+                timeout,
+                &error
+            );
+
+            if (!reply) {
+                fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
+                ret = ERRORCODE_TIMEOUT;
+                goto bail;
+            }
+            dbus_message_iter_init(reply, &iter);
+
+            // Get return code
+            dbus_message_iter_get_basic(&iter, &ret);
+
+            if (ret) {
+                const char* error_cstr = NULL;
+
+                // Try to see if there is an error explanation we can extract
+                dbus_message_iter_next(&iter);
+                if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING) {
+                    dbus_message_iter_get_basic(&iter, &error_cstr);
+                }
+
+                if(!error_cstr || error_cstr[0] == 0) {
+                    error_cstr = (ret<0)?strerror(-ret):"Get failed";
+                }
+
+                fprintf(stderr, "%s: %s (%d)\n", property_commissioner_enabled, error_cstr, ret);
+                goto bail;
+            }
+            dbus_message_iter_next(&iter);
+
+            dbus_bool_t en;
+            dbus_message_iter_get_basic(&iter, &en);
+            fprintf(stderr, "%s\n", en ? "enabled" : "disabled");
             goto bail;
 
         case 't':
@@ -143,26 +220,26 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 path,
                 WPANTUND_DBUS_APIv1_INTERFACE,
                 WPANTUND_IF_CMD_PROP_SET
-                );
+            );
 
             dbus_message_append_args(
                 message,
                 DBUS_TYPE_STRING, &property_commissioner_enabled,
                 DBUS_TYPE_INVALID
-                );
+            );
 
             dbus_message_append_args(
                 message,
                 DBUS_TYPE_STRING, &property_commissioner_enabled_value,
                 DBUS_TYPE_INVALID
-                );
+            );
 
             reply = dbus_connection_send_with_reply_and_block(
                 connection,
                 message,
                 timeout,
                 &error
-                );
+            );
 
             if (!reply) {
                 fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
@@ -173,7 +250,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
             dbus_message_get_args(reply, &error,
                                   DBUS_TYPE_INT32, &ret,
                                   DBUS_TYPE_INVALID
-                                  );
+            );
 
             if (!ret) {
                 fprintf(stderr, "Commissioner command applied.\n");
@@ -287,7 +364,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 path,
                 WPANTUND_DBUS_APIv1_INTERFACE,
                 WPANTUND_IF_CMD_JOINER_ADD
-                );
+            );
 
             if (psk) {
                 uint8_t psk_bytes[psk_len];
@@ -300,13 +377,13 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     message,
                     DBUS_TYPE_STRING, &psk,
                     DBUS_TYPE_INVALID
-                    );
+                );
 
                 dbus_message_append_args(
                     message,
                     DBUS_TYPE_UINT32, &joiner_timeout,
                     DBUS_TYPE_INVALID
-                    );
+                );
 
                 if (ext_addr) {
                     uint8_t addr_bytes[EXT_ADDRESS_LENGTH];
@@ -314,13 +391,15 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     uint8_t *p_addr_bytes = addr_bytes;
                     int length = parse_string_into_data(addr_bytes,
                                                         EXT_ADDRESS_LENGTH,
-                                                        ext_addr);
+                                                        ext_addr
+                    );
+
                     assert(length == EXT_ADDRESS_LENGTH);
                     dbus_message_append_args(
                         message,
                         DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &p_addr_bytes, length,
                         DBUS_TYPE_INVALID
-                        );
+                    );
                 }
 
                 reply = dbus_connection_send_with_reply_and_block(
@@ -328,7 +407,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
                     message,
                     timeout,
                     &error
-                    );
+                );
 
                 if (!reply) {
                     fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
@@ -339,7 +418,8 @@ int tool_cmd_commissioner(int argc, char* argv[])
                 dbus_message_get_args(reply, &error,
                                       DBUS_TYPE_INT32, &ret,
                                       DBUS_TYPE_INVALID
-                                      );
+                );
+
                 if (!ret) {
                     fprintf(stderr, "Joiner added.\n");
                 } else {
@@ -352,14 +432,17 @@ int tool_cmd_commissioner(int argc, char* argv[])
 
 
 bail:
-    if (connection)
+    if (connection) {
         dbus_connection_unref(connection);
+    }
 
-    if (message)
+    if (message) {
         dbus_message_unref(message);
+    }
 
-    if (reply)
+    if (reply) {
         dbus_message_unref(reply);
+    }
 
     dbus_error_free(&error);
 
