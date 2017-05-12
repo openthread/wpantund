@@ -1227,7 +1227,7 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 			DBUS_TYPE_UINT32, &joiner_timeout,
 			DBUS_TYPE_INVALID
 		);
-    }
+	}
 
 	require(did_succeed, bail);
 	require(psk != NULL, bail);
