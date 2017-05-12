@@ -109,6 +109,13 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void joiner_add(
+		const char *psk,
+		uint32_t joiner_timeout,
+		const uint8_t *addr,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void data_poll(CallbackWithStatus cb = NilReturn());
 	virtual void host_did_wake(CallbackWithStatus cb = NilReturn());
 

@@ -76,6 +76,8 @@
 #define WPANTUND_IF_CMD_PROP_SET              "PropSet"
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
 
+#define WPANTUND_IF_CMD_JOINER_ADD             "JoinerAdd"
+
 // ============================================================================
 // NestLabs Internal API Interface
 

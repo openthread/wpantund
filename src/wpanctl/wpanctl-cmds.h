@@ -41,6 +41,7 @@
 #include "tool-cmd-add-route.h"
 #include "tool-cmd-remove-route.h"
 #include "tool-cmd-pcap.h"
+#include "tool-cmd-commissioner.h"
 
 #include "wpanctl-utils.h"
 
@@ -99,6 +100,11 @@
 		"remove-route", \
 		"Remove external route prefix", \
 		&tool_cmd_remove_route \
+	}, \
+	{ \
+		"commissioner", \
+		"Commissioner commands", \
+		&tool_cmd_commissioner \
 	}, \
 	{ \
 		"list", \

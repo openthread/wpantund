@@ -32,6 +32,7 @@
 #include "string-utils.h"
 #include "any-to.h"
 #include "time-utils.h"
+#include "commissioner-utils.h"
 
 #include <cstring>
 #include <algorithm>
@@ -303,6 +304,56 @@ SpinelNCPControlInterface::add_external_route(
 		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 		.finish()
 	);
+
+bail:
+	return;
+}
+
+void
+SpinelNCPControlInterface::joiner_add(
+		const char *psk,
+		uint32_t joiner_timeout,
+		const uint8_t *addr,
+		CallbackWithStatus cb
+) {
+
+	require_action(psk != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+
+	if (addr) {
+		mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_UTF8_S
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_EUI64_S
+				),
+				SPINEL_PROP_THREAD_JOINERS,
+				psk,
+				joiner_timeout,
+				addr
+			))
+			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
+			.finish()
+		);
+	}
+	else {
+		mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_UTF8_S
+					SPINEL_DATATYPE_UINT32_S
+				),
+				SPINEL_PROP_THREAD_JOINERS,
+				psk,
+				joiner_timeout
+			))
+			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
+			.finish()
+		);
+	}
 
 bail:
 	return;

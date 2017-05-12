@@ -43,6 +43,7 @@
 
 #include "DBUSHelpers.h"
 #include "any-to.h"
+#include "commissioner-utils.h"
 
 using namespace DBUSHelpers;
 using namespace nl;
@@ -77,6 +78,8 @@ DBusIPCAPI_v1::init_callback_tables()
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_ADD, interface_route_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
@@ -1192,6 +1195,57 @@ bail:
 	return ret;
 }
 
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_add_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	const uint8_t* ext_addr = NULL;
+	int ext_addr_len = 0;
+	const char* psk = NULL;
+	int psk_len = 0;
+	uint32_t joiner_timeout = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_STRING, &psk,
+		DBUS_TYPE_UINT32, &joiner_timeout,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	if (!did_succeed) {
+		// No extended address specified
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_INVALID
+		);
+	}
+
+	require(did_succeed, bail);
+	require(psk != NULL, bail);
+
+	dbus_message_ref(message);
+	interface->joiner_add(
+		psk,
+		joiner_timeout,
+		ext_addr,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+
+	return ret;
+}
 
 DBusHandlerResult
 DBusIPCAPI_v1::message_handler(
