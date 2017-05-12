@@ -44,7 +44,7 @@ static const arg_list_item_t commissioner_option_list[] = {
     {'d', "stop", NULL, "Stop native commissioner"},
     {'a', "joiner-add", NULL, "Add joiner"},
     {'r', "joiner-remove", NULL, "Remove joiner"},
-    {'s', "state", NULL, "State information"},
+    {'s', "status", NULL, "Status information"},
     {0}
 };
 
@@ -78,7 +78,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
             {"stop", no_argument, 0, 'd'},
             {"joiner-add", no_argument, 0, 'a'},
             {"remove", required_argument, 0, 'r'},
-            {"state", no_argument, 0, 's'},
+            {"status", no_argument, 0, 's'},
             {0, 0, 0, 0}
         };
 
@@ -96,7 +96,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
             goto bail;
 
         case 's':
-            //state
+            // status
             ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
             if (gInterfaceName[0] == 0) {
                 fprintf(stderr,
@@ -187,7 +187,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
             property_commissioner_enabled_value = "true";
             // intentionally pass through
         case 'd':
-            //stop (disabled)
+            // stop (disabled)
             ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
             if (gInterfaceName[0] == 0) {
                 fprintf(stderr,
