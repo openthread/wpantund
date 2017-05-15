@@ -244,6 +244,7 @@ private:
 	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
+	bool mXPANIDWasExplicitlySet;
 
 	bool mResetIsExpected;
 

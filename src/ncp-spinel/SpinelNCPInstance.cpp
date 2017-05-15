@@ -170,6 +170,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 
 	mIsPcapInProgress = false;
 	mSettings.clear();
+	mXPANIDWasExplicitlySet = false;
 
 	if (!settings.empty()) {
 		int status;
@@ -844,6 +845,8 @@ SpinelNCPInstance::set_property(
 				)
 				.finish()
 			);
+
+			mXPANIDWasExplicitlySet = true;
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
 			Data network_key = any_to_data(value);
