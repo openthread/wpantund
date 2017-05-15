@@ -160,13 +160,14 @@ Based-on: `git rev-parse $REV`" || die
 		git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${source_ref} ${autoconf_ref} || {
 			if git status --porcelain | grep '^UU'
 			then
+				say "Resolving conflicts using source ref as truth"
 				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${source_ref}"
 				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${autoconf_ref}"
 				git commit -m "${COMMIT_LOG}" || die
 			else
 				git merge --abort || die
 				git checkout "${source_ref}@{0}" || die
-				git merge --allow-unrelated-histories -m "TEMPORARY COMMIT, DO NOT PUSH" "${autoconf_ref}" || die
+				git merge --allow-unrelated-histories -m '*** SCRIPT-GENERATED TEMPORARY COMMIT, DO NOT PUSH ***' "${autoconf_ref}" || die
 				git checkout "${full_ref}" || die
 				# Expected to fail:
 				git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${source_ref} ${autoconf_ref} && die 'Why didn'"'"'t this work the first time???'
@@ -175,6 +176,7 @@ Based-on: `git rev-parse $REV`" || die
 			fi
 		}
 	else
+		say "No pre-exisitng full ref, starting a new one"
 		git checkout -B "${full_ref}" "${source_ref}"
 		git merge --allow-unrelated-histories -m "${COMMIT_LOG}" ${autoconf_ref} || die
 	fi
