@@ -74,6 +74,7 @@
 #define kWPANTUNDProperty_NetworkIsConnected                    "Network:IsConnected"
 #define kWPANTUNDProperty_NetworkPSKc                           "Network:PSKc"
 #define kWPANTUNDProperty_NetworkRole                           "Network:Role"
+#define kWPANTUNDProperty_NetworkPartitionId                    "Network:PartitionId"
 
 #define kWPANTUNDProperty_IPv6LinkLocalAddress                  "IPv6:LinkLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalAddress                  "IPv6:MeshLocalAddress"
