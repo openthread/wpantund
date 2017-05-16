@@ -1767,6 +1767,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		mLocalPrefixes.clear();
 		while (value_data_len > 0) {
 			spinel_ssize_t len = 0;
 			struct in6_addr *addr = NULL;
@@ -1974,6 +1975,9 @@ bail:
 void
 SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags)
 {
+	struct in6_addr addr;
+	memcpy(&addr, prefix, sizeof(in6_addr));
+	add_prefix(addr, UINT32_MAX, UINT32_MAX, flags);
 	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
 	  && !lookup_address_for_prefix(NULL, *prefix, prefix_len)
 	) {
@@ -2037,6 +2041,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 		uint8_t prefix_len = 0;
 		bool stable;
 		uint8_t flags = 0;
+		bool isLocal;
 		static const char flag_lookup[] = "ppPSDCRM";
 
 		spinel_datatype_unpack(

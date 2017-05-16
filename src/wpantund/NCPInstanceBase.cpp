@@ -266,6 +266,8 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_IPv6LinkLocalAddress);
 	properties.insert(kWPANTUNDProperty_IPv6AllAddresses);
 
+	properties.insert(kWPANTUNDProperty_ThreadOnMeshPrefixes);
+
 	properties.insert(kWPANTUNDProperty_DaemonAutoAssociateAfterReset);
 	properties.insert(kWPANTUNDProperty_DaemonAutoDeepSleep);
 	properties.insert(kWPANTUNDProperty_DaemonReadyForHostSleep);
@@ -436,6 +438,19 @@ NCPInstanceBase::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkNodeType)) {
 		cb(0, boost::any(node_type_to_string(mNodeType)));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOnMeshPrefixes)) {
+		std::list<std::string> result;
+		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator it;
+		static const char flag_lookup[] = "ppPSDCRM";
+		char address_string[INET6_ADDRSTRLEN];
+		for ( it = mLocalPrefixes.begin();
+			  it != mLocalPrefixes.end();
+			  it++ ) {
+			inet_ntop(AF_INET6,	&it->first,	address_string, sizeof(address_string));
+			result.push_back(std::string(address_string) + "  " + flags_to_string(it->second.mFlags, flag_lookup).c_str());
+		}
+		cb(0, boost::any(result));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6AllAddresses)
 		|| strcaseequal(key.c_str(), kWPANTUNDProperty_DebugIPv6GlobalIPAddressList)

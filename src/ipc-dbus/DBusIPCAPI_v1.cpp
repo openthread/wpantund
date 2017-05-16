@@ -1183,12 +1183,17 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_bool_t default_route = FALSE;
+	dbus_bool_t preferred = TRUE;
+	dbus_bool_t slaac = TRUE;
+	dbus_bool_t on_mesh = TRUE;
 	uint32_t preferred_lifetime = 0;
 	uint32_t valid_lifetime = 0;
 	uint8_t *prefix(NULL);
 	int prefix_len_in_bytes(0);
 	struct in6_addr address = {};
 	bool did_succeed(false);
+	int16_t priority_raw;
+	NCPControlInterface::OnMeshPrefixPriority priority(NCPControlInterface::PREFIX_MEDIUM_PREFERENCE);
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
@@ -1196,6 +1201,10 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
 		DBUS_TYPE_UINT32, &preferred_lifetime,
 		DBUS_TYPE_UINT32, &valid_lifetime,
+		DBUS_TYPE_BOOLEAN, &preferred,
+		DBUS_TYPE_BOOLEAN, &slaac,
+		DBUS_TYPE_BOOLEAN, &on_mesh,
+		DBUS_TYPE_INT16, &priority_raw,
 		DBUS_TYPE_INVALID
 	);
 
@@ -1204,6 +1213,12 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	require(prefix_len_in_bytes >= 0, bail);
 
 	memcpy(address.s6_addr, prefix, prefix_len_in_bytes);
+
+	if  (priority_raw > 0) {
+		priority = NCPControlInterface::PREFIX_HIGH_PREFERENCE;
+	} else if (priority_raw < 0) {
+		priority = NCPControlInterface::PREFIX_LOW_PREFRENCE;
+	}
 
 	dbus_message_ref(message);
 
@@ -1216,6 +1231,10 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		interface->add_on_mesh_prefix(
 			&address,
 			default_route,
+			preferred,
+			slaac,
+			on_mesh,
+			priority,
 			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
 		);
 	}

@@ -67,6 +67,7 @@ wpantund_SOURCES = \
 	RunawayResetBackoffManager.h \
 	NCPInstanceBase-NetInterface.cpp \
 	NCPInstanceBase-Addresses.cpp \
+	NCPInstanceBase-Prefixes.cpp \
 	NCPInstanceBase-AsyncIO.cpp \
 	NCPTypes.h \
 	NCPTypes.cpp \
