@@ -168,6 +168,9 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mSupprotedChannels.clear();
 
+	mSetSteeringDataWhenJoinable = false;
+	memset(mSteeringDataAddress, 0xff, sizeof(mSteeringDataAddress));
+
 	mIsPcapInProgress = false;
 	mSettings.clear();
 	mXPANIDWasExplicitlySet = false;
@@ -601,6 +604,12 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable)) {
+		cb(0, boost::any(mSetSteeringDataWhenJoinable));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataAddress)) {
+		cb(0, boost::any(nl::Data(mSteeringDataAddress, sizeof(mSteeringDataAddress))));
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
@@ -1041,6 +1050,22 @@ SpinelNCPInstance::set_property(
 				.add_command(command)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable)) {
+			mSetSteeringDataWhenJoinable = any_to_bool(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataAddress)) {
+			Data address = any_to_data(value);
+			wpantund_status_t status = kWPANTUNDStatus_Ok;
+
+			if (address.size() != sizeof(mSteeringDataAddress)) {
+				status = kWPANTUNDStatus_InvalidArgument;
+			} else {
+				memcpy(mSteeringDataAddress, address.data(), sizeof(mSteeringDataAddress));
+			}
+
+			cb (status);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyStream)) {
 			Data packet = any_to_data(value);
