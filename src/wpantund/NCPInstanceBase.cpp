@@ -444,8 +444,9 @@ NCPInstanceBase::property_get_value(
 		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator it;
 		static const char flag_lookup[] = "ppPSDCRM";
 		char address_string[INET6_ADDRSTRLEN];
-		for ( it = mLocalPrefixes.begin();
-			  it != mLocalPrefixes.end();
+
+		for ( it = mOnMeshPrefixes.begin();
+			  it != mOnMeshPrefixes.end();
 			  it++ ) {
 			inet_ntop(AF_INET6,	&it->first,	address_string, sizeof(address_string));
 			result.push_back(std::string(address_string) + "  " + flags_to_string(it->second.mFlags, flag_lookup).c_str());

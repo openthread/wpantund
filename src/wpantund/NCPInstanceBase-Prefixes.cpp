@@ -39,12 +39,12 @@ NCPInstanceBase::add_prefix(const struct in6_addr &address, uint32_t valid_lifet
 {
 	GlobalAddressEntry entry = GlobalAddressEntry();
 
-	if (mLocalPrefixes.count(address)) {
+	if (mOnMeshPrefixes.count(address)) {
 		syslog(LOG_INFO, "Updating IPv6 prefix...");
-		entry = mLocalPrefixes[address];
+		entry = mOnMeshPrefixes[address];
 	} else {
 		syslog(LOG_INFO, "Adding IPv6 prefix...");
-		mLocalPrefixes.insert(std::pair<struct in6_addr, GlobalAddressEntry>(address, entry));
+		mOnMeshPrefixes.insert(std::pair<struct in6_addr, GlobalAddressEntry>(address, entry));
 	}
 
 	entry.mValidLifetime = valid_lifetime;
@@ -57,6 +57,6 @@ NCPInstanceBase::add_prefix(const struct in6_addr &address, uint32_t valid_lifet
 		? TIME_DISTANT_FUTURE
 		: time_get_monotonic() + preferred_lifetime
 	);
-    entry.mFlags = flags;
-	mLocalPrefixes[address] = entry;
+	entry.mFlags = flags;
+	mOnMeshPrefixes[address] = entry;
 }

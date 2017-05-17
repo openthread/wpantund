@@ -148,7 +148,7 @@ protected:
 
 private:
 
-	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags);
+	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal);
 
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);

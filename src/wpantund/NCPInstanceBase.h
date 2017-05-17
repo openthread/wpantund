@@ -146,7 +146,6 @@ public:
 
 
 	void add_address(const struct in6_addr &address, uint8_t prefix = 64, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX);
-
 	void remove_address(const struct in6_addr &address);
 
 	void refresh_global_addresses(void);
@@ -161,7 +160,6 @@ public:
 	bool lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len_in_bits = 64);
 
 	int join_multicast_group(const std::string &group_name);
-
 
 public:
 	// ========================================================================
@@ -246,7 +244,7 @@ protected:
 	struct nlpt mDriverToNCPPumpPT;
 
 	std::map<struct in6_addr, GlobalAddressEntry> mGlobalAddresses;
-	std::map<struct in6_addr, GlobalAddressEntry> mLocalPrefixes;
+	std::map<struct in6_addr, GlobalAddressEntry> mOnMeshPrefixes;
 
 	IPv6PacketMatcherRule mCommissioningRule;
 	IPv6PacketMatcher mInsecureFirewall;
