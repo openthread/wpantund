@@ -1784,7 +1784,9 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 				return;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
+			if (key != SPINEL_PROP_STREAM_DEBUG) {
+				syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
+			}
 
 			return handle_ncp_spinel_value_is(key, value_data_ptr, value_data_len);
 		}
