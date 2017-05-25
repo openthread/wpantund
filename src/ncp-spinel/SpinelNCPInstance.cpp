@@ -1551,7 +1551,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			);
 		}
 
-	} else if ((key == SPINEL_PROP_THREAD_BA_PROXY_STREAM)) {
+	} else if (key == SPINEL_PROP_THREAD_BA_PROXY_STREAM) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
 		uint16_t locator;

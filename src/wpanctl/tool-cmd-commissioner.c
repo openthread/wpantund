@@ -305,7 +305,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
 					goto bail;
 				}
 				if (strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1) != EXT_ADDRESS_LENGTH_CHAR) {
-					fprintf(stderr, "%s: error: Wrong address length.%d \n", argv[0], strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1));
+					fprintf(stderr, "%s: error: Wrong address length.%zu \n", argv[0], strnlen(ext_addr, EXT_ADDRESS_LENGTH_CHAR+1));
 					ret = ERRORCODE_BADARG;
 					goto bail;
 				}
