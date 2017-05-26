@@ -217,6 +217,10 @@ public:
 
 	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
 
+	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
+
+	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
+
 	virtual void signal_property_changed(const std::string& key, const boost::any& value = boost::any());
 
 	wpantund_status_t set_ncp_version_string(const std::string& version_string);

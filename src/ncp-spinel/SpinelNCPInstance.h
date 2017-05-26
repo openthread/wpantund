@@ -155,16 +155,10 @@ public:
 
 	virtual std::set<std::string> get_supported_property_keys()const;
 
-	virtual void property_get_value(
-	    const std::string& key,
-	    CallbackWithStatusArg1 cb
-	);
-
-	virtual void property_set_value(
-	    const std::string& key,
-	    const boost::any& value,
-	    CallbackWithStatus cb
-	);
+	virtual void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
+	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
 
 	virtual cms_t get_ms_to_next_event(void);
 

@@ -281,3 +281,23 @@ DummyNCPControlInterface::property_set_value(
 	syslog(LOG_INFO, "property_set_value: key: \"%s\"", key.c_str());
 	mNCPInstance->property_set_value(key, value, cb);
 }
+
+void
+DummyNCPControlInterface::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_insert_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_insert_value(key, value, cb);
+}
+
+void
+DummyNCPControlInterface::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_remove_value(key, value, cb);
+}

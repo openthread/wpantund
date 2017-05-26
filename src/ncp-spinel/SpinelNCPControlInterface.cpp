@@ -616,8 +616,6 @@ SpinelNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
 	cb(kWPANTUNDStatus_Ok);
 }
 
-
-
 // ----------------------------------------------------------------------------
 // MARK: -
 
@@ -638,7 +636,24 @@ SpinelNCPControlInterface::property_set_value(
 	mNCPInstance->property_set_value(key, value, cb);
 }
 
-<<<<<<< HEAD
+void
+SpinelNCPControlInterface::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->property_insert_value(key, value, cb);
+}
+
+void
+SpinelNCPControlInterface::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->property_remove_value(key, value, cb);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 
@@ -685,6 +700,3 @@ SpinelNCPControlInterface::convert_external_route_priority_to_flags(ExternalRout
 
 	return flags;
 }
-=======
-
->>>>>>> Fix spacing/alignment and use tab for indentation

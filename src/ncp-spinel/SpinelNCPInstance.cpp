@@ -460,6 +460,9 @@ SpinelNCPInstance::property_get_value(
 	const std::string& key,
 	CallbackWithStatusArg1 cb
 ) {
+	if (!is_initializing_ncp()) {
+		syslog(LOG_INFO, "property_get_value: key: \"%s\"", key.c_str());
+	}
 
 #define SIMPLE_SPINEL_GET(prop__, type__)                                \
 	start_new_task(SpinelNCPTaskSendCommand::Factory(this)               \
@@ -1189,7 +1192,57 @@ SpinelNCPInstance::property_set_value(
 		syslog(LOG_ERR,"property_set_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 	}
+}
 
+void
+SpinelNCPInstance::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_insert_value: key: \"%s\"", key.c_str());
+
+	if (!mEnabled) {
+		cb(kWPANTUNDStatus_InvalidWhenDisabled);
+		return;
+	}
+
+	try {
+		NCPInstanceBase::property_insert_value(key, value, cb);
+	} catch (const boost::bad_any_cast &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_insert_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	} catch (const std::invalid_argument &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_insert_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
+}
+
+void
+SpinelNCPInstance::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
+
+	try {
+		NCPInstanceBase::property_remove_value(key, value, cb);
+	} catch (const boost::bad_any_cast &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_remove_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	} catch (const std::invalid_argument &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_remove_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
 }
 
 void

@@ -128,6 +128,18 @@ public:
 		CallbackWithStatus cb
 	) = 0;
 
+	virtual void property_insert_value(
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
+	) = 0;
+
+	virtual void property_remove_value(
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
+	) = 0;
+
 	virtual void add_on_mesh_prefix(
 		const struct in6_addr *prefix,
 		bool defaultRoute,

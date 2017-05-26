@@ -640,6 +640,26 @@ NCPInstanceBase::property_set_value(
 }
 
 void
+NCPInstanceBase::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_ERR, "property_insert_value: Property not supported or not insert-value capable \"%s\"", key.c_str());
+	cb(kWPANTUNDStatus_PropertyNotFound);
+}
+
+void
+NCPInstanceBase::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_ERR, "property_remove_value: Property not supported or not remove-value capable \"%s\"", key.c_str());
+	cb(kWPANTUNDStatus_PropertyNotFound);
+}
+
+void
 NCPInstanceBase::signal_property_changed(
 	const std::string& key,
 	const boost::any& value
