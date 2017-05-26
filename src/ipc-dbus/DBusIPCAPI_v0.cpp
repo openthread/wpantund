@@ -81,6 +81,8 @@ DBusIPCAPI_v0::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_STOP_SCAN, interface_stop_scan_handler);
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_GET_PROP, interface_get_prop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_SET_PROP, interface_set_prop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_INSERT_PROP, interface_insert_prop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_REMOVE_PROP, interface_remove_prop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_RESET, interface_reset_handler);
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_STATUS, interface_status_handler);
 	INTERFACE_CALLBACK_CONNECT(WPAN_IFACE_CMD_ACTIVE_SCAN, interface_active_scan_handler);
@@ -884,6 +886,84 @@ DBusIPCAPI_v0::interface_set_prop_handler(
 
 	dbus_message_ref(message);
 	interface->property_set_value(
+		property_key,
+		property_value,
+		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1,
+					message)
+		);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v0::interface_insert_prop_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "InsertProp: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+	interface->property_insert_value(
+		property_key,
+		property_value,
+		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1,
+					message)
+		);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v0::interface_remove_prop_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "RemoveProp: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+	interface->property_remove_value(
 		property_key,
 		property_value,
 		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1,
