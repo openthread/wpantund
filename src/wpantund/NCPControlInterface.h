@@ -92,32 +92,40 @@ public:
 
 	virtual void join(
 		const ValueMap& options,
-	    CallbackWithStatus cb = NilReturn()
+		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 	virtual void form(
 		const ValueMap& options,
-	    CallbackWithStatus cb = NilReturn()
+		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
-	virtual void leave(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void leave(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 	//! Deprecated. Set kWPANTUNDProperty_InterfaceUp to true instead.
-	virtual void attach(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void attach(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void reset(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void reset(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void refresh_state(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void refresh_state(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 	virtual void property_get_value(
-	    const std::string& key,
-	    CallbackWithStatusArg1 cb
+		const std::string& key,
+		CallbackWithStatusArg1 cb
 	) = 0;
 
 	virtual void property_set_value(
-	    const std::string& key,
-	    const boost::any& value,
-	    CallbackWithStatus cb
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
 	) = 0;
 
 	virtual void add_on_mesh_prefix(
@@ -166,9 +174,14 @@ public:
 	// ========================================================================
 	// Scan-related Member Functions
 
-	virtual void netscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void netscan_start(
+		const ValueMap& options,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void netscan_stop(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void netscan_stop(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 	boost::signals2::signal<void(const WPAN::NetworkInstance&)> mOnNetScanBeacon;
 
@@ -176,9 +189,14 @@ public:
 	// ========================================================================
 	// EnergyScan-related Member Functions
 
-	virtual void energyscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void energyscan_start(
+		const ValueMap& options,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void energyscan_stop(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void energyscan_stop(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 	boost::signals2::signal<void(const EnergyScanResultEntry&)> mOnEnergyScanResult;
 
@@ -186,11 +204,17 @@ public:
 	// ========================================================================
 	// Power-related Member Functions
 
-	virtual void begin_low_power(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void begin_low_power(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void host_did_wake(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void host_did_wake(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
-	virtual void data_poll(CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void data_poll(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 
 public:
@@ -204,11 +228,11 @@ public:
 	) = 0;
 
 	virtual void permit_join(
-	    int seconds = 15 * 60,
-	    uint8_t commissioning_traffic_type = 0xFF,
-	    in_port_t commissioning_traffic_port = 0,
-	    bool network_wide = false,
-	    CallbackWithStatus cb = NilReturn()
+		int seconds = 15 * 60,
+		uint8_t commissioning_traffic_type = 0xFF,
+		in_port_t commissioning_traffic_port = 0,
+		bool network_wide = false,
+		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 public:
@@ -219,7 +243,7 @@ public:
 
 	int property_set_value(const std::string& key, const boost::any& value);
 
-	virtual std::string get_name();
+	virtual std::string get_name(void);
 
 public:
 	// ========================================================================

@@ -59,7 +59,7 @@ DummyNCPControlInterface::DummyNCPControlInterface(DummyNCPInstance* instance_po
 void
 DummyNCPControlInterface::join(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 	// TODO: Writeme!
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -68,7 +68,7 @@ DummyNCPControlInterface::join(
 void
 DummyNCPControlInterface::form(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 
 	// TODO: Writeme!
@@ -180,11 +180,11 @@ DummyNCPControlInterface::joiner_add(
 
 void
 DummyNCPControlInterface::permit_join(
-    int seconds,
-    uint8_t traffic_type,
-    in_port_t traffic_port,
-    bool network_wide,
-    CallbackWithStatus cb
+	int seconds,
+	uint8_t traffic_type,
+	in_port_t traffic_port,
+	bool network_wide,
+	CallbackWithStatus cb
 )
 {
 	// TODO: Writeme!
@@ -193,16 +193,16 @@ DummyNCPControlInterface::permit_join(
 
 void
 DummyNCPControlInterface::netscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Start network scan
 }
 
 void
 DummyNCPControlInterface::mfg(
-    const std::string& mfg_command,
-    CallbackWithStatusArg1 cb
+	const std::string& mfg_command,
+	CallbackWithStatusArg1 cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented, 0); // TODO: Start mfg run
 }
@@ -215,8 +215,8 @@ DummyNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 
 void
 DummyNCPControlInterface::energyscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -263,9 +263,9 @@ DummyNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
 
 void
 DummyNCPControlInterface::property_get_value(
-    const std::string& in_key, CallbackWithStatusArg1 cb
-    )
-{
+	const std::string& in_key,
+	CallbackWithStatusArg1 cb
+) {
 	if (!mNCPInstance->is_initializing_ncp()) {
 		syslog(LOG_INFO, "property_get_value: key: \"%s\"", in_key.c_str());
 	}
@@ -274,12 +274,10 @@ DummyNCPControlInterface::property_get_value(
 
 void
 DummyNCPControlInterface::property_set_value(
-    const std::string&                      key,
-    const boost::any&                       value,
-    CallbackWithStatus      cb
-    )
-{
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
 	syslog(LOG_INFO, "property_set_value: key: \"%s\"", key.c_str());
 	mNCPInstance->property_set_value(key, value, cb);
-
 }
