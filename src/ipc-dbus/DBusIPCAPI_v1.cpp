@@ -95,8 +95,10 @@ DBusIPCAPI_v1::init_callback_tables()
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MFG, interface_mfg_handler);
 
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_get_prop_handler);
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_set_prop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_prop_get_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_prop_set_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_INSERT, interface_prop_insert_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_REMOVE, interface_prop_remove_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TO_FD, interface_pcap_to_fd_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
@@ -817,7 +819,7 @@ DBusIPCAPI_v1::interface_mfg_handler(
 }
 
 DBusHandlerResult
-DBusIPCAPI_v1::interface_get_prop_handler(
+DBusIPCAPI_v1::interface_prop_get_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
 ) {
@@ -856,7 +858,7 @@ DBusIPCAPI_v1::interface_get_prop_handler(
 }
 
 DBusHandlerResult
-DBusIPCAPI_v1::interface_set_prop_handler(
+DBusIPCAPI_v1::interface_prop_set_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
 ) {
@@ -883,6 +885,94 @@ DBusIPCAPI_v1::interface_set_prop_handler(
 	dbus_message_ref(message);
 
 	interface->property_set_value(
+		property_key,
+		property_value,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_prop_insert_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "PropeInsert: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+
+	interface->property_insert_value(
+		property_key,
+		property_value,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_prop_remove_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "PropRemove: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+
+	interface->property_remove_value(
 		property_key,
 		property_value,
 		boost::bind(
