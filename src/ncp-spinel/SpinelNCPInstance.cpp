@@ -182,7 +182,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 		for(iter = settings.begin(); iter != settings.end(); iter++) {
 			if (!NCPInstanceBase::setup_property_supported_by_class(iter->first)) {
 				status = static_cast<NCPControlInterface&>(get_control_interface())
-					.set_property(iter->first, iter->second);
+					.property_set_value(iter->first, iter->second);
 
 				if (status != 0) {
 					syslog(LOG_WARNING, "Attempt to set property \"%s\" failed with err %d", iter->first.c_str(), status);
@@ -456,7 +456,7 @@ unpack_thread_off_mesh_routes(const uint8_t *data_in, spinel_size_t data_len, bo
 }
 
 void
-SpinelNCPInstance::get_property(
+SpinelNCPInstance::property_get_value(
 	const std::string& key,
 	CallbackWithStatusArg1 cb
 ) {
@@ -763,20 +763,20 @@ SpinelNCPInstance::get_property(
 		if (cntr_key != 0) {
 			SIMPLE_SPINEL_GET(cntr_key, SPINEL_DATATYPE_UINT32_S);
 		} else {
-			NCPInstanceBase::get_property(key, cb);
+			NCPInstanceBase::property_get_value(key, cb);
 		}
 	} else {
-		NCPInstanceBase::get_property(key, cb);
+		NCPInstanceBase::property_get_value(key, cb);
 	}
 }
 
 void
-SpinelNCPInstance::set_property(
+SpinelNCPInstance::property_set_value(
 	const std::string& key,
 	const boost::any& value,
 	CallbackWithStatus cb
 ) {
-	syslog(LOG_INFO, "set_property: key: \"%s\"", key.c_str());
+	syslog(LOG_INFO, "property_set_value: key: \"%s\"", key.c_str());
 
 	// If we are disabled, then the only property we
 	// are allowed to set is kWPANTUNDProperty_DaemonEnabled.
@@ -1175,18 +1175,18 @@ SpinelNCPInstance::set_property(
 					);
 
 		} else {
-			NCPInstanceBase::set_property(key, value, cb);
+			NCPInstanceBase::property_set_value(key, value, cb);
 		}
 
 	} catch (const boost::bad_any_cast &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR,"property_set_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 	} catch (const std::invalid_argument &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR,"property_set_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 	}
 

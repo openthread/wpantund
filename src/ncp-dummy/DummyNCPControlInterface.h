@@ -78,9 +78,9 @@ public:
 
 	virtual void refresh_state(CallbackWithStatus cb = NilReturn());
 
-	virtual void get_property(
+	virtual void property_get_value(
 	    const std::string& key, CallbackWithStatusArg1 cb);
-	virtual void set_property(
+	virtual void property_set_value(
 	    const std::string&                      key,
 	    const boost::any&                       value,
 	    CallbackWithStatus      cb);

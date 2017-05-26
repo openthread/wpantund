@@ -301,7 +301,7 @@ NCPInstanceBase::get_supported_property_keys() const
 }
 
 void
-NCPInstanceBase::get_property(
+NCPInstanceBase::property_get_value(
 	const std::string& in_key,
 	CallbackWithStatusArg1 cb
 ) {
@@ -487,7 +487,7 @@ NCPInstanceBase::get_property(
 		cb(0, mask_string);
 
 	} else if (StatCollector::is_a_stat_property(key)) {
-		get_stat_collector().get_property(key, cb);
+		get_stat_collector().property_get_value(key, cb);
 
 	} else {
 		cb(kWPANTUNDStatus_PropertyNotFound, boost::any(std::string("Property Not Found")));
@@ -495,7 +495,7 @@ NCPInstanceBase::get_property(
 }
 
 void
-NCPInstanceBase::set_property(
+NCPInstanceBase::property_set_value(
 	const std::string& key,
 	const boost::any& value,
 	CallbackWithStatus cb
@@ -611,23 +611,23 @@ NCPInstanceBase::set_property(
 			cb(0);
 
 		} else if (StatCollector::is_a_stat_property(key)) {
-			get_stat_collector().set_property(key, value, cb);
+			get_stat_collector().property_set_value(key, value, cb);
 
 		} else {
-			syslog(LOG_ERR,"set_property: Unsupported property \"%s\"", key.c_str());
+			syslog(LOG_ERR,"property_set_value: Unsupported property \"%s\"", key.c_str());
 			cb(kWPANTUNDStatus_PropertyNotFound);
 		}
 
 	} catch (const boost::bad_any_cast &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR,"property_set_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 
 	} catch (const std::invalid_argument &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR,"property_set_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 	}
 }

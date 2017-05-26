@@ -262,24 +262,24 @@ DummyNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
 // MARK: -
 
 void
-DummyNCPControlInterface::get_property(
+DummyNCPControlInterface::property_get_value(
     const std::string& in_key, CallbackWithStatusArg1 cb
     )
 {
 	if (!mNCPInstance->is_initializing_ncp()) {
-		syslog(LOG_INFO, "get_property: key: \"%s\"", in_key.c_str());
+		syslog(LOG_INFO, "property_get_value: key: \"%s\"", in_key.c_str());
 	}
-	mNCPInstance->get_property(in_key, cb);
+	mNCPInstance->property_get_value(in_key, cb);
 }
 
 void
-DummyNCPControlInterface::set_property(
+DummyNCPControlInterface::property_set_value(
     const std::string&                      key,
     const boost::any&                       value,
     CallbackWithStatus      cb
     )
 {
-	syslog(LOG_INFO, "set_property: key: \"%s\"", key.c_str());
-	mNCPInstance->set_property(key, value, cb);
+	syslog(LOG_INFO, "property_set_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_set_value(key, value, cb);
 
 }
