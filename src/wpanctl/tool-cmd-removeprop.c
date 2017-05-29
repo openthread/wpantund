@@ -21,11 +21,11 @@
 #include <config.h>
 #endif
 
-#include "tool-cmd-setprop.h"
+#include "tool-cmd-removeprop.h"
 #include "tool-updateprop.h"
 #include "wpan-dbus-v1.h"
 
-int tool_cmd_setprop(int argc, char* argv[])
+int tool_cmd_removeprop(int argc, char* argv[])
 {
-	return tool_updateprop(WPANTUND_IF_CMD_PROP_SET, argc, argv);
+	return tool_updateprop(WPANTUND_IF_CMD_PROP_REMOVE, argc, argv);
 }
