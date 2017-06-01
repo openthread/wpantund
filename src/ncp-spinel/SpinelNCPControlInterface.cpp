@@ -295,7 +295,7 @@ SpinelNCPControlInterface::add_external_route(
 				SPINEL_DATATYPE_BOOL_S
 				SPINEL_DATATYPE_UINT8_S
 			),
-			SPINEL_PROP_THREAD_LOCAL_ROUTES,
+			SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
 			prefix,
 			prefix_len_in_bits,
 			true,
@@ -380,7 +380,7 @@ SpinelNCPControlInterface::remove_external_route(
 				SPINEL_DATATYPE_BOOL_S
 				SPINEL_DATATYPE_UINT8_S
 			),
-			SPINEL_PROP_THREAD_LOCAL_ROUTES,
+			SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
 			prefix,
 			prefix_len_in_bits,
 			true,
