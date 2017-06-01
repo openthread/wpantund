@@ -41,6 +41,8 @@
 
 #define kWPANTUNDProperty_Spinel_CounterPrefix		"NCP:Counter:"
 
+#define kWPANTUND_Whitelist_RssiOverrideDisabled    127
+
 using namespace nl;
 using namespace wpantund;
 
@@ -297,6 +299,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_SPINEL_ERR");
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+		properties.insert(kWPANTUNDProperty_MACWhitelistEnabled);
+		properties.insert(kWPANTUNDProperty_MACWhitelistEntries);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
 		properties.insert(kWPANTUNDProperty_JamDetectionStatus);
 		properties.insert(kWPANTUNDProperty_JamDetectionEnable);
@@ -346,7 +353,8 @@ SpinelNCPInstance::get_ms_to_next_event(void)
 	return cms;
 }
 
-static void convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, const boost::any& value)
+static void
+convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, const boost::any& value)
 {
 	uint8_t router_id = 0;
 
@@ -357,7 +365,82 @@ static void convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, c
 	cb(status, router_id);
 }
 
-static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+static int
+unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	spinel_ssize_t len;
+	ValueMap entry;
+	std::list<ValueMap> result_as_val_map;
+	std::list<std::string> result_as_string;
+	const spinel_eui64_t *eui64 = NULL;
+	int8_t rssi = 0;
+
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0)
+	{
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_EUI64_S   // Extended address
+				SPINEL_DATATYPE_INT8_S    // Rssi
+			),
+			&eui64,
+			&rssi
+		);
+
+		if (len <= 0)
+		{
+			ret = kWPANTUNDStatus_Failure;
+			break;
+		}
+
+		if (as_val_map) {
+			entry.clear();
+			entry[kWPANTUNDValueMapKey_Whitelist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
+
+			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
+				entry[kWPANTUNDValueMapKey_Whitelist_Rssi] = rssi;
+			}
+
+			result_as_val_map.push_back(entry);
+
+		} else {
+			char c_string[500];
+			int index;
+
+			index = snprintf(c_string, sizeof(c_string), "%02X%02X%02X%02X%02X%02X%02X%02X",
+							 eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
+							 eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7]);
+
+			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
+				if (index >= 0 && index < sizeof(c_string)) {
+					snprintf(c_string + index, sizeof(c_string) - index, "   fixed-rssi:%d", rssi);
+				}
+			}
+
+			result_as_string.push_back(std::string(c_string));
+		}
+
+		data_len -= len;
+		data_in += len;
+	}
+
+	if (ret == kWPANTUNDStatus_Ok) {
+
+		if (as_val_map) {
+			value = result_as_val_map;
+		} else {
+			value = result_as_string;
+		}
+	}
+
+	return ret;
+}
+
+static int
+unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
 {
 	spinel_ssize_t len;
 	uint32_t lower, higher;
@@ -573,6 +656,41 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadDebugTestAssert)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_TEST_ASSERT, SPINEL_DATATYPE_BOOL_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEnabled)) {
+		if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("MAC whitelist feature not supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_WHITELIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
+		if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("MAC whitelist feature not supported by NCP")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_WHITELIST)
+				)
+				.set_reply_unpacker(boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false))
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntriesAsValMap)) {
+		if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("MAC whitelist feature not supported by NCP")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_WHITELIST)
+				)
+				.set_reply_unpacker(boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true))
+				.finish()
+			);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -1028,6 +1146,25 @@ SpinelNCPInstance::property_set_value(
 				);
 			}
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEnabled)) {
+			bool isEnabled = any_to_bool(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(
+							SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+							SPINEL_PROP_MAC_WHITELIST_ENABLED,
+							isEnabled
+						)
+					)
+					.finish()
+				);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 			bool isEnabled = any_to_bool(value);
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_JAM_DETECT_ENABLE, isEnabled);
@@ -1208,7 +1345,34 @@ SpinelNCPInstance::property_insert_value(
 	}
 
 	try {
-		NCPInstanceBase::property_insert_value(key, value, cb);
+		if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
+			Data ext_address = any_to_data(value);
+			int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
+
+			if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				if (ext_address.size() == sizeof(spinel_eui64_t)) {
+					start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(
+							SpinelPackData(
+								SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
+								SPINEL_PROP_MAC_WHITELIST,
+								ext_address.data(),
+								rssi
+							)
+						)
+						.finish()
+					);
+				} else {
+					cb(kWPANTUNDStatus_InvalidArgument);
+				}
+			}
+
+		} else {
+			NCPInstanceBase::property_insert_value(key, value, cb);
+		}
 	} catch (const boost::bad_any_cast &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
@@ -1231,7 +1395,33 @@ SpinelNCPInstance::property_remove_value(
 	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
 
 	try {
-		NCPInstanceBase::property_remove_value(key, value, cb);
+		if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
+			Data ext_address = any_to_data(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				if (ext_address.size() == sizeof(spinel_eui64_t)) {
+					start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(
+							SpinelPackData(
+								SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
+								SPINEL_PROP_MAC_WHITELIST,
+								ext_address.data()
+							)
+						)
+						.finish()
+					);
+				} else {
+					cb(kWPANTUNDStatus_InvalidArgument);
+				}
+			}
+
+		} else {
+			NCPInstanceBase::property_remove_value(key, value, cb);
+		}
+
 	} catch (const boost::bad_any_cast &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.

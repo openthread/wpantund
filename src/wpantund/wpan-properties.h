@@ -111,6 +111,10 @@
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList          "Debug:IPv6:GlobalIPAddressList"
 
+#define kWPANTUNDProperty_MACWhitelistEnabled                   "MAC:Whitelist:Enabled"
+#define kWPANTUNDProperty_MACWhitelistEntries                   "MAC:Whitelist:Entries"
+#define kWPANTUNDProperty_MACWhitelistEntriesAsValMap           "MAC:Whitelist:Entries:AsValMap"
+
 #define kWPANTUNDProperty_JamDetectionStatus                    "JamDetection:Status"
 #define kWPANTUNDProperty_JamDetectionEnable                    "JamDetection:Enable"
 #define kWPANTUNDProperty_JamDetectionRssiThreshold             "JamDetection:RssiThreshold"
@@ -133,7 +137,6 @@
 #define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist         "com.nestlabs.internal:NetworkWake:Blacklist"
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower   "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake        "com.nestlabs.internal:Hack:AlwaysResetToWake"
-
 
 #define kWPANTUNDProperty_Stat_Prefix                           "Stat:"
 #define kWPANTUNDProperty_StatRX                                "Stat:RX"
@@ -197,6 +200,10 @@
 // ----------------------------------------------------------------------------
 
 // Values for value map keys
+
+#define kWPANTUNDValueMapKey_Whitelist_ExtAddress               "ExtAddress"
+#define kWPANTUNDValueMapKey_Whitelist_Rssi                     "FixedRssi"
+
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"
 #define kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn      "LinkQualityIn"
