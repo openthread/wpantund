@@ -190,6 +190,15 @@ typedef enum
     SPINEL_POWER_STATE_ONLINE           = 4,
 } spinel_power_state_t;
 
+typedef enum
+{
+    SPINEL_HOST_POWER_STATE_OFFLINE     = 0,
+    SPINEL_HOST_POWER_STATE_DEEP_SLEEP  = 1,
+    SPINEL_HOST_POWER_STATE_RESERVED    = 2,
+    SPINEL_HOST_POWER_STATE_LOW_POWER   = 3,
+    SPINEL_HOST_POWER_STATE_ONLINE      = 4,
+} spinel_host_power_state_t;
+
 enum
 {
     SPINEL_NET_FLAG_ON_MESH             = (1 << 0),
@@ -399,6 +408,7 @@ typedef enum
     SPINEL_PROP_LOCK                    = 9,        ///< PropLock [b]
     SPINEL_PROP_HBO_MEM_MAX             = 10,       ///< Max offload mem [S]
     SPINEL_PROP_HBO_BLOCK_MAX           = 11,       ///< Max offload block [S]
+    SPINEL_PROP_HOST_POWER_STATE        = 12,       ///< Host MCU power state [C]
 
     SPINEL_PROP_BASE_EXT__BEGIN         = 0x1000,
 
@@ -443,7 +453,7 @@ typedef enum
      * number and flags fields MUST be present, the GPIO name (if present)
      * would be ignored. This command can only be used to modify the
      * configuration of GPIOs which are already exposed---it cannot be used
-     * by the host to add addional GPIOs.
+     * by the host to add additional GPIOs.
      */
     SPINEL_PROP_GPIO_CONFIG             = SPINEL_PROP_BASE_EXT__BEGIN + 0,
 
@@ -715,8 +725,8 @@ typedef enum
                                         = SPINEL_PROP_THREAD__BEGIN + 8, ///< [D]
     SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION
                                         = SPINEL_PROP_THREAD__BEGIN + 9,  ///< [S]
-    SPINEL_PROP_THREAD_ON_MESH_NETS     = SPINEL_PROP_THREAD__BEGIN + 10, ///< array(ipv6prefix,prefixlen,stable,flags) [A(t(6CbC))]
-    SPINEL_PROP_THREAD_LOCAL_ROUTES     = SPINEL_PROP_THREAD__BEGIN + 11, ///< array(ipv6prefix,prefixlen,stable,flags) [A(t(6CbC))]
+    SPINEL_PROP_THREAD_ON_MESH_NETS     = SPINEL_PROP_THREAD__BEGIN + 10, ///< array(ipv6prefix,prefixlen,stable,flags,isLocal) [A(t(6CbCb))]
+    SPINEL_PROP_THREAD_OFF_MESH_ROUTES  = SPINEL_PROP_THREAD__BEGIN + 11, ///< array(ipv6prefix,prefixlen,stable,flags,isLocal) [A(t(6CbCb))]
     SPINEL_PROP_THREAD_ASSISTING_PORTS  = SPINEL_PROP_THREAD__BEGIN + 12, ///< array(portn) [A(S)]
     SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE
                                         = SPINEL_PROP_THREAD__BEGIN + 13, ///< [b]
@@ -1100,11 +1110,11 @@ typedef enum
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_PKT_DUP         = SPINEL_PROP_CNTR__BEGIN + 114,
 
-    /// The number of unicast packets recived.
+    /// The number of unicast packets received.
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_PKT_UNICAST     = SPINEL_PROP_CNTR__BEGIN + 115,
 
-    /// The number of broadcast packets recived.
+    /// The number of broadcast packets received.
     /** Format: `L` (Read-only) */
     SPINEL_PROP_CNTR_RX_PKT_BROADCAST   = SPINEL_PROP_CNTR__BEGIN + 116,
 
@@ -1165,8 +1175,8 @@ typedef enum
      *      `S`, (MleBuffers)             The number of buffers in the MLE send queue.
      *      `S`, (ArpMessages)            The number of messages in the ARP send queue.
      *      `S`, (ArpBuffers)             The number of buffers in the ARP send queue.
-     *      `S`, (CoapClientMessages)     The number of messages in the CoAP client send queue.
-     *      `S`, (CoapClientBuffers)      The number of buffers in the CoAP client send queue.
+     *      `S`, (CoapMessages)           The number of messages in the CoAP send queue.
+     *      `S`, (CoapBuffers)            The number of buffers in the CoAP send queue.
      */
     SPINEL_PROP_MSG_BUFFER_COUNTERS     = SPINEL_PROP_CNTR__BEGIN + 400,
 
@@ -1313,6 +1323,11 @@ typedef char spinel_datatype_t;
                                         SPINEL_DATATYPE_UTF8_S /* network name */                       \
                                         SPINEL_DATATYPE_DATA_WLEN_S /* xpanid */
 
+#define SPINEL_NET_DATATYPE_MAC_SCAN_RESULT_V2_S                                                        \
+                                        SPINEL_NET_DATATYPE_MAC_SCAN_RESULT_V1_S                        \
+                                        SPINEL_DATATYPE_DATA_WLEN_S /* steering data */
+
+
 #define SPINEL_MAX_UINT_PACKED          2097151
 
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_pack(uint8_t *data_out, spinel_size_t data_len,
@@ -1338,6 +1353,8 @@ SPINEL_API_EXTERN const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key
 SPINEL_API_EXTERN const char *spinel_net_role_to_cstr(uint8_t net_role);
 
 SPINEL_API_EXTERN const char *spinel_status_to_cstr(spinel_status_t status);
+
+SPINEL_API_EXTERN const char *spinel_capability_to_cstr(unsigned int capability);
 
 // ----------------------------------------------------------------------------
 
