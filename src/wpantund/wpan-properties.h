@@ -212,4 +212,11 @@
 #define kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter    "MleFrameCounter"
 #define kWPANTUNDValueMapKey_NetworkTopology_IsChild            "IsChild"
 
+#define kWPANTUNDValueMapKey_Scan_Period                        "Scan:Period"
+#define kWPANTUNDValueMapKey_Scan_ChannelMask                   "Scan:ChannelMask"
+#define kWPANTUNDValueMapKey_Scan_Discover                      "Scan:Discover"
+#define kWPANTUNDValueMapKey_Scan_JoinerFalg                    "Scan:JoinerFlag"
+#define kWPANTUNDValueMapKey_Scan_EnableFiltering               "Scan:EnableFiltering"
+#define kWPANTUNDValueMapKey_Scan_PANIDFilter                   "Scan:PANID"
+
 #endif

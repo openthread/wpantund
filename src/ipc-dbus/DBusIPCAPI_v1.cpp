@@ -88,6 +88,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_HOST_DID_WAKE, interface_host_did_wake_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_STOP, interface_net_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_START, interface_net_scan_start_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DISCOVER_SCAN_STOP, interface_discover_scan_stop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DISCOVER_SCAN_START, interface_discover_scan_start_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_STOP, interface_energy_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_START, interface_energy_scan_start_handler);
 
@@ -745,6 +747,22 @@ DBusIPCAPI_v1::interface_net_scan_stop_handler(
 }
 
 DBusHandlerResult
+DBusIPCAPI_v1::interface_discover_scan_stop_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	interface->netscan_stop(boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+									 this, _1, message));
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
 DBusIPCAPI_v1::interface_energy_scan_stop_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
@@ -899,8 +917,55 @@ DBusIPCAPI_v1::interface_net_scan_start_handler(
 	);
 
 	if (channel_mask) {
-		options[kWPANTUNDProperty_NCPChannelMask] = channel_mask;
+		options[kWPANTUNDValueMapKey_Scan_ChannelMask] = channel_mask;
 	}
+
+	interface->netscan_start(
+		options,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_discover_scan_start_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	ValueMap options;
+	NCPControlInterface::ChannelMask channel_mask = 0;
+	dbus_bool_t joiner_flag = FALSE;
+	dbus_bool_t enable_filtering = FALSE;
+	uint16_t pan_id_filter = 0xffff;
+
+	dbus_message_ref(message);
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_BOOLEAN, &joiner_flag,
+		DBUS_TYPE_BOOLEAN, &enable_filtering,
+		DBUS_TYPE_UINT16, &pan_id_filter,
+		DBUS_TYPE_INVALID
+	);
+
+	options[kWPANTUNDValueMapKey_Scan_Discover] = true;
+
+	if (channel_mask) {
+		options[kWPANTUNDValueMapKey_Scan_ChannelMask] = channel_mask;
+	}
+
+	options[kWPANTUNDValueMapKey_Scan_JoinerFalg] = joiner_flag ? true : false;
+	options[kWPANTUNDValueMapKey_Scan_EnableFiltering] = enable_filtering ? true : false;
+	options[kWPANTUNDValueMapKey_Scan_PANIDFilter] = pan_id_filter;
 
 	interface->netscan_start(
 		options,

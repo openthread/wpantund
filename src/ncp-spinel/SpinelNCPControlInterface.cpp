@@ -487,16 +487,56 @@ SpinelNCPControlInterface::netscan_start(
     CallbackWithStatus cb
 ) {
 	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
+	SpinelNCPTaskScan::ScanType scan_type;
+	int scan_period = 0; 			   // per channel in ms
+	bool joiner_flag = false;          // Scan for joiner only devices (used in discover scan).
+	bool enable_filtering = false;     // Enable scan result filtering (used in discover scan).
+	uint16_t pan_id_filter = 0xffff;   // PANID used for filtering, 0xFFFF to disable (used in discover scan.)
 
-	if (options.count(kWPANTUNDProperty_NCPChannelMask)) {
-		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));
+	// Channel mask
+	if (options.count(kWPANTUNDValueMapKey_Scan_ChannelMask)) {
+		channel_mask = any_to_int(options.at(kWPANTUNDValueMapKey_Scan_ChannelMask));
+	}
+
+	// Scan type
+	if (options.count(kWPANTUNDValueMapKey_Scan_Discover)) {
+		scan_type = SpinelNCPTaskScan::kScanTypeDiscover;
+
+		if (options.count(kWPANTUNDValueMapKey_Scan_JoinerFalg)) {
+			joiner_flag = any_to_bool(options.at(kWPANTUNDValueMapKey_Scan_JoinerFalg));
+		}
+
+		if (options.count(kWPANTUNDValueMapKey_Scan_EnableFiltering)) {
+			enable_filtering = any_to_bool(options.at(kWPANTUNDValueMapKey_Scan_EnableFiltering));
+		}
+
+		if (options.count(kWPANTUNDValueMapKey_Scan_PANIDFilter)) {
+			pan_id_filter = static_cast<uint16_t>(any_to_int(options.at(kWPANTUNDValueMapKey_Scan_PANIDFilter)));
+		}
+
+	} else {
+		scan_type = SpinelNCPTaskScan::kScanTypeNet;
+	}
+
+	// Scan period
+	if (options.count(kWPANTUNDValueMapKey_Scan_Period)) {
+		scan_period = any_to_int(options.at(kWPANTUNDValueMapKey_Scan_Period));
+	}
+
+	if (scan_period <= 0) {
+		scan_period = SpinelNCPTaskScan::kDefaultScanPeriod;
 	}
 
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskScan(
 			mNCPInstance,
 			boost::bind(cb,_1),
-			channel_mask
+			channel_mask,
+			scan_period,
+			scan_type,
+			joiner_flag,
+			enable_filtering,
+			pan_id_filter
 		)
 	));
 }

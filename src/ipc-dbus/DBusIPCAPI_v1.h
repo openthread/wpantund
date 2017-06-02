@@ -163,6 +163,16 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_discover_scan_start_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_discover_scan_stop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_energy_scan_start_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
