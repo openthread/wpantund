@@ -1194,6 +1194,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				break;
 			}
 			capabilities.insert(value);
+			syslog(LOG_INFO, "[-NCP-]: Capability (%s, %d)", spinel_capability_to_cstr(value), value);
 
 			data_ptr += parse_len;
 			data_len -= parse_len;
