@@ -1618,13 +1618,17 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
 		SpinelNCPTaskGetNetworkTopology::Table child_table;
 		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+		int num_children = 0;
 
 		SpinelNCPTaskGetNetworkTopology::prase_child_table(value_data_ptr, value_data_len, child_table);
 
 		for (it = child_table.begin(); it != child_table.end(); it++)
 		{
-			syslog(LOG_INFO, "[-NCP-] Child: %s", it->get_as_string().c_str());
+			num_children++;
+			syslog(LOG_INFO, "[-NCP-] Child: %02d %s", num_children, it->get_as_string().c_str());
 		}
+		syslog(LOG_INFO, "[-NCP-] Child: Total %d child%s", num_children, (num_children > 1) ? "ren" : "");
+
 	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
 		char net_data_cstr_buf[540];
 		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
