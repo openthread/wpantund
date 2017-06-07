@@ -130,6 +130,9 @@ public:
 	/******************* NCPMfgInterface_v1 ********************/
 	virtual void mfg(const std::string& mfg_command, CallbackWithStatusArg1 cb = NilReturn());
 
+	static ExternalRoutePriority convert_flags_to_external_route_priority(uint8_t flags);
+	static uint8_t convert_external_route_priority_to_flags(ExternalRoutePriority priority);
+
 private:
 
 	SpinelNCPInstance* mNCPInstance;

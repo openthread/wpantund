@@ -264,27 +264,10 @@ SpinelNCPControlInterface::add_external_route(
 	ExternalRoutePriority priority,
 	CallbackWithStatus cb
 ) {
-    const static int kPreferenceOffset = 6;
-	uint8_t flags = 0;
-
 	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(prefix_len_in_bits >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(prefix_len_in_bits <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
-
-	switch (priority) {
-	case ROUTE_HIGH_PREFERENCE:
-		flags = (1 << kPreferenceOffset);
-		break;
-
-	case ROUTE_MEDIUM_PREFERENCE:
-		flags = 0;
-		break;
-
-	case ROUTE_LOW_PREFRENCE:
-		flags = (3 << kPreferenceOffset);
-		break;
-	}
 
 	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
 		.set_callback(cb)
@@ -299,7 +282,7 @@ SpinelNCPControlInterface::add_external_route(
 			prefix,
 			prefix_len_in_bits,
 			true,
-			flags
+			convert_external_route_priority_to_flags(priority)
 		))
 		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 		.finish()
@@ -658,4 +641,51 @@ SpinelNCPControlInterface::set_property(
 {
 	syslog(LOG_INFO, "set_property: key: \"%s\"", key.c_str());
 	mNCPInstance->set_property(key, value, cb);
+}
+
+// ----------------------------------------------------------------------------
+// MARK: -
+
+SpinelNCPControlInterface::ExternalRoutePriority
+SpinelNCPControlInterface::convert_flags_to_external_route_priority(uint8_t flags)
+{
+	ExternalRoutePriority priority = ROUTE_MEDIUM_PREFERENCE;
+
+	switch ((flags & SPINEL_NET_FLAG_PREFERENCE_MASK) >> SPINEL_NET_FLAG_PREFERENCE_OFFSET) {
+		case 1:
+			priority = ROUTE_HIGH_PREFERENCE;
+			break;
+
+		case 3:
+			priority = ROUTE_LOW_PREFRENCE;
+			break;
+
+		case 0:
+			priority = ROUTE_MEDIUM_PREFERENCE;
+			break;
+	}
+
+	return priority;
+}
+
+uint8_t
+SpinelNCPControlInterface::convert_external_route_priority_to_flags(ExternalRoutePriority priority)
+{
+	uint8_t flags;
+
+	switch (priority) {
+	case ROUTE_HIGH_PREFERENCE:
+		flags = (1 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
+		break;
+
+	case ROUTE_MEDIUM_PREFERENCE:
+		flags = (0 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
+		break;
+
+	case ROUTE_LOW_PREFRENCE:
+		flags = (3 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
+		break;
+	}
+
+	return flags;
 }
