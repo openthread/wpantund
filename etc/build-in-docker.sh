@@ -21,8 +21,10 @@ DIR="`dirname $0`"
 
 "${DIR}"/run-in-docker.sh -i 'DIR="`pwd`" &&
 mkdir -p /build &&
-cd /build && "${DIR}"/configure --enable-all-restricted-plugins --with-connman --with-readline &&
-make -j `nproc` distcheck AM_DEFAULT_VERBOSITY=1
+cd /build && "${DIR}"/bootstrap.sh &&
+"${DIR}"/configure --sysconfdir=/etc &&
+make -j `nproc` &&
+sudo make install
 ' || exit 1
 
 "${DIR}"/run-in-docker.sh -i 'DIR="`pwd`" &&
