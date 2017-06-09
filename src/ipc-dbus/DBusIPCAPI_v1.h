@@ -214,6 +214,16 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_peek_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_poke_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 private:
 	typedef DBusHandlerResult (interface_handler_cb)(
 		NCPControlInterface*,

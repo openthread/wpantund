@@ -238,6 +238,21 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+public:
+	// ========================================================================
+	// Debug-related Member Functions
+
+	virtual void peek(
+		uint32_t address,
+		uint16_t count,
+		CallbackWithStatusArg1 cb = NilReturn()
+	) = 0;
+
+	virtual void poke(
+		uint32_t address,
+		Data bytes,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
 
 public:
 	// ========================================================================

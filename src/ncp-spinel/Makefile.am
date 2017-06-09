@@ -76,6 +76,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp \
 	SpinelNCPTaskLeave.h \
+	SpinelNCPTaskPeek.cpp \
+	SpinelNCPTaskPeek.h \
 	SpinelNCPTaskScan.cpp \
 	SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp \

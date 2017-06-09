@@ -95,6 +95,7 @@ class SpinelNCPInstance : public NCPInstanceBase {
 	friend class SpinelNCPTaskForm;
 	friend class SpinelNCPTaskScan;
 	friend class SpinelNCPTaskLeave;
+	friend class SpinelNCPTaskPeek;
 	friend class SpinelNCPTaskSendCommand;
 	friend class SpinelNCPTaskGetNetworkTopology;
 	friend class SpinelNCPTaskGetMsgBufferCounters;

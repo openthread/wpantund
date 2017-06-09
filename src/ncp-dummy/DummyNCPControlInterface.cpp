@@ -305,3 +305,15 @@ DummyNCPControlInterface::property_remove_value(
 	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
 	mNCPInstance->property_remove_value(key, value, cb);
 }
+
+void
+DummyNCPControlInterface::peek(uint32_t address, uint16_t count, CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented, std::string("No peeking!"));
+}
+
+void
+DummyNCPControlInterface::poke(uint32_t address, Data bytes, CallbackWithStatus cb)
+{
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
