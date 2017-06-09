@@ -46,17 +46,23 @@ using namespace wpantund;
 std::string
 NCPControlInterface::external_route_priority_to_string(ExternalRoutePriority route_priority)
 {
+	const char *ret = "unknown";
+
 	switch(route_priority) {
 		case ROUTE_LOW_PREFRENCE:
-			return std::string("low preference");
+			ret = "low";
+			break;
 
 		case ROUTE_MEDIUM_PREFERENCE:
-			return std::string("Medium (normal) preference");
+			ret = "medium(normal)";
+			break;
 
 		case ROUTE_HIGH_PREFERENCE:
-			return std::string("High preference");
+			ret = "high";
+			break;
 	}
-	return std::string("Unknown route preference");
+
+	return ret;
 }
 
 NCPControlInterface::~NCPControlInterface() {

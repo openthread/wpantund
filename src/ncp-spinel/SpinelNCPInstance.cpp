@@ -252,6 +252,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
+		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -380,6 +381,80 @@ static int unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_
 	return ret;
 }
 
+static int
+unpack_thread_off_mesh_routes(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+
+	int ret = kWPANTUNDStatus_Ok;
+	std::list<std::string> result;
+
+	while (data_len > 0)
+	{
+		spinel_ssize_t len;
+		struct in6_addr *route_prefix = NULL;
+		uint8_t prefix_len;
+		bool is_stable;
+		uint8_t flags;
+		bool is_local;
+		bool next_hop_is_this_device;
+
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_IPv6ADDR_S      // Route Prefix
+				SPINEL_DATATYPE_UINT8_S         // Prefix Length (in bits)
+				SPINEL_DATATYPE_BOOL_S          // isStable
+				SPINEL_DATATYPE_UINT8_S         // Flags
+				SPINEL_DATATYPE_BOOL_S          // IsLocal
+				SPINEL_DATATYPE_BOOL_S          // NextHopIsThisDevice
+			),
+			&route_prefix,
+			&prefix_len,
+			&is_stable,
+			&flags,
+			&is_local,
+			&next_hop_is_this_device
+		);
+
+		if (len <= 0) {
+			ret = kWPANTUNDStatus_Failure;
+			break;
+		} else {
+			char address_string[INET6_ADDRSTRLEN];
+			char c_string[200];
+			NCPControlInterface::ExternalRoutePriority priority;
+
+			priority = SpinelNCPControlInterface::convert_flags_to_external_route_priority(flags);
+
+			inet_ntop(AF_INET6,	route_prefix, address_string, sizeof(address_string));
+
+			snprintf(c_string, sizeof(c_string),
+				"%s/%d, stable:%s, local:%s, next_hop:%s, priority:%s (flags:0x%02x)",
+				address_string,
+				prefix_len,
+				is_stable ? "yes" : "no",
+				is_local ? "yes" : "no",
+				next_hop_is_this_device ? "this_device" : "off-mesh",
+				SpinelNCPControlInterface::external_route_priority_to_string(priority).c_str(),
+				flags
+			);
+
+			result.push_back(c_string);
+		}
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (ret == kWPANTUNDStatus_Ok) {
+		value = result;
+	}
+
+	return ret;
+}
+
 void
 SpinelNCPInstance::get_property(
 	const std::string& key,
@@ -468,6 +543,16 @@ SpinelNCPInstance::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOffMeshRoutes)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_OFF_MESH_ROUTES)
+			)
+			.set_reply_unpacker(unpack_thread_off_mesh_routes)
+			.finish()
+		);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_COMMISSIONER_ENABLED, SPINEL_DATATYPE_BOOL_S);

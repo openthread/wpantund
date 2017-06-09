@@ -77,7 +77,6 @@ public:
 	// ========================================================================
 	// Static Functions
 
-
 	static std::string external_route_priority_to_string(ExternalRoutePriority route_priority);
 
 public:
