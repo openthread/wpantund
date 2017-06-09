@@ -922,7 +922,7 @@ main(int argc, char * argv[])
 		// We only expose the interface via IPC after it is
 		// successfully initialized for the first time.
 		if (!interface_added) {
-			const boost::any value = ncp_instance->get_control_interface().get_property(kWPANTUNDProperty_NCPState);
+			const boost::any value = ncp_instance->get_control_interface().property_get_value(kWPANTUNDProperty_NCPState);
 			if ((value.type() == boost::any(std::string()).type())
 			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
 			) {

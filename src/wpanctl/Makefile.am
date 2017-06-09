@@ -47,6 +47,8 @@ wpanctl_SOURCES = \
 	tool-cmd-reset.c \
 	tool-cmd-getprop.c \
 	tool-cmd-setprop.c \
+	tool-cmd-insertprop.c \
+	tool-cmd-removeprop.c \
 	tool-cmd-begin-low-power.c \
 	tool-cmd-begin-net-wake.c \
 	tool-cmd-cd.c \
@@ -55,6 +57,7 @@ wpanctl_SOURCES = \
 	tool-cmd-host-did-wake.c \
 	tool-cmd-add-route.c \
 	tool-cmd-remove-route.c \
+	tool-updateprop.c \
 	wpanctl-utils.h \
 	tool-cmd-scan.h \
 	tool-cmd-join.h \
@@ -68,6 +71,8 @@ wpanctl_SOURCES = \
 	tool-cmd-reset.h \
 	tool-cmd-getprop.h \
 	tool-cmd-setprop.h \
+	tool-cmd-insertprop.h \
+	tool-cmd-removeprop.h \
 	tool-cmd-begin-low-power.h \
 	tool-cmd-begin-net-wake.h \
 	tool-cmd-cd.h \
@@ -80,6 +85,7 @@ wpanctl_SOURCES = \
 	tool-cmd-pcap.c \
 	tool-cmd-commissioner.h \
 	tool-cmd-commissioner.c \
+	tool-updateprop.h \
 	$(NULL)
 
 wpanctl_LDADD = \

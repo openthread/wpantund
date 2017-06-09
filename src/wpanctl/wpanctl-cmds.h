@@ -35,6 +35,8 @@
 #include "tool-cmd-host-did-wake.h"
 #include "tool-cmd-getprop.h"
 #include "tool-cmd-setprop.h"
+#include "tool-cmd-insertprop.h"
+#include "tool-cmd-removeprop.h"
 #include "tool-cmd-cd.h"
 #include "tool-cmd-poll.h"
 #include "tool-cmd-config-gateway.h"
@@ -136,16 +138,29 @@
 	}, \
 	{ \
 		"getprop", \
-		"Get a property.", \
+		"Get a property (alias: `get`).", \
 		&tool_cmd_getprop \
 	}, \
 	{ "get", "", &tool_cmd_getprop, 1 }, \
 	{ \
 		"setprop", \
-		"Set a property.", \
+		"Set a property (alias: `set`).", \
 		&tool_cmd_setprop \
 	}, \
 	{ "set", "", &tool_cmd_setprop, 1 }, \
+	{ \
+		"insertprop", \
+		"Insert value in a list-oriented property (alias: `insert`, `add`).", \
+		&tool_cmd_insertprop \
+	}, \
+	{ "insert", "", &tool_cmd_insertprop, 1 }, \
+	{ "add", "", &tool_cmd_insertprop, 1 }, \
+	{ \
+		"removeprop", \
+		"Remove value from a list-oriented property (alias: `remove`).", \
+		&tool_cmd_removeprop \
+	}, \
+	{ "remove", "", &tool_cmd_removeprop, 1 }, \
 	{ \
 		"begin-net-wake", \
 		"Initiate a network wakeup", \

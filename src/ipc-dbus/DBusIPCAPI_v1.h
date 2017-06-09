@@ -143,12 +143,23 @@ private:
 		DBusMessage *        message
 	);
 
-	DBusHandlerResult interface_get_prop_handler(
+	DBusHandlerResult interface_prop_get_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
 
-	DBusHandlerResult interface_set_prop_handler(
+	DBusHandlerResult interface_prop_set_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_prop_insert_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+
+	DBusHandlerResult interface_prop_remove_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);

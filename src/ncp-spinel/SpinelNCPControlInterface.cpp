@@ -70,7 +70,7 @@ SpinelNCPControlInterface::SpinelNCPControlInterface(SpinelNCPInstance* instance
 void
 SpinelNCPControlInterface::join(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskJoin(
@@ -84,7 +84,7 @@ SpinelNCPControlInterface::join(
 void
 SpinelNCPControlInterface::form(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskForm(
@@ -379,12 +379,12 @@ bail:
 
 void
 SpinelNCPControlInterface::permit_join(
-    int seconds,
-    uint8_t traffic_type,
-    in_port_t traffic_port,
-    bool network_wide,
-    CallbackWithStatus cb
-    )
+	int seconds,
+	uint8_t traffic_type,
+	in_port_t traffic_port,
+	bool network_wide,
+	CallbackWithStatus cb
+	)
 {
 	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
 	bool should_update_steering_data = false;
@@ -466,8 +466,8 @@ bail:
 
 void
 SpinelNCPControlInterface::netscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
 	SpinelNCPTaskScan::ScanType scan_type;
@@ -532,8 +532,8 @@ SpinelNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 
 void
 SpinelNCPControlInterface::energyscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
 
@@ -565,8 +565,8 @@ SpinelNCPControlInterface::get_name() {
 
 void
 SpinelNCPControlInterface::mfg(
-    const std::string& mfg_command,
-    CallbackWithStatusArg1 cb
+	const std::string& mfg_command,
+	CallbackWithStatusArg1 cb
 ) {
 	mNCPInstance->start_new_task(
 		SpinelNCPTaskSendCommand::Factory(mNCPInstance)
@@ -616,31 +616,42 @@ SpinelNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
 	cb(kWPANTUNDStatus_Ok);
 }
 
-
-
 // ----------------------------------------------------------------------------
 // MARK: -
 
 void
-SpinelNCPControlInterface::get_property(
-    const std::string& in_key, CallbackWithStatusArg1 cb
-    )
-{
-	if (!mNCPInstance->is_initializing_ncp()) {
-		syslog(LOG_INFO, "get_property: key: \"%s\"", in_key.c_str());
-	}
-	mNCPInstance->get_property(in_key, cb);
+SpinelNCPControlInterface::property_get_value(
+	const std::string& in_key,
+	CallbackWithStatusArg1 cb
+) {
+	mNCPInstance->property_get_value(in_key, cb);
 }
 
 void
-SpinelNCPControlInterface::set_property(
-    const std::string&                      key,
-    const boost::any&                       value,
-    CallbackWithStatus      cb
-    )
-{
-	syslog(LOG_INFO, "set_property: key: \"%s\"", key.c_str());
-	mNCPInstance->set_property(key, value, cb);
+SpinelNCPControlInterface::property_set_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->property_set_value(key, value, cb);
+}
+
+void
+SpinelNCPControlInterface::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->property_insert_value(key, value, cb);
+}
+
+void
+SpinelNCPControlInterface::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->property_remove_value(key, value, cb);
 }
 
 // ----------------------------------------------------------------------------

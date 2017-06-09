@@ -17,15 +17,11 @@
  *
  */
 
-#if HAVE_CONFIG_H
-#include <config.h>
+#ifndef WPANCTL_TOOL_CMD_INSERTPROP_H
+#define WPANCTL_TOOL_CMD_INSERTPROP_H
+
+#include "wpanctl-utils.h"
+
+int tool_cmd_insertprop(int argc, char* argv[]);
+
 #endif
-
-#include "tool-cmd-setprop.h"
-#include "tool-updateprop.h"
-#include "wpan-dbus-v1.h"
-
-int tool_cmd_setprop(int argc, char* argv[])
-{
-	return tool_updateprop(WPANTUND_IF_CMD_PROP_SET, argc, argv);
-}
