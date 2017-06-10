@@ -25,7 +25,6 @@
 #include "SocketWrapper.h"
 #include "SocketAsyncOp.h"
 
-#include <boost/enable_shared_from_this.hpp>
 #include <queue>
 #include <set>
 #include <map>
@@ -38,9 +37,7 @@ namespace wpantund {
 class SpinelNCPInstance;
 
 class SpinelNCPTask
-	: public boost::enable_shared_from_this<SpinelNCPTask>
-	, public boost::signals2::trackable
-	, public nl::EventHandler
+	: public nl::EventHandler
 {
 public:
 	SpinelNCPTask(SpinelNCPInstance* _instance, CallbackWithStatusArg1 cb);

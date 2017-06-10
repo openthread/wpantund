@@ -33,7 +33,6 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include <boost/signals2/signal.hpp>
 #include <boost/any.hpp>
 #include <list>
 #include <arpa/inet.h>

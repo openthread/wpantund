@@ -21,6 +21,7 @@
 #define wpantund_NCPMfgInterface_v0_h
 
 #include "NCPControlInterface.h"
+#include "Signals.h"
 
 namespace nl {
 namespace wpantund {
@@ -42,7 +43,7 @@ public:
 	virtual void mfg_channelcal(uint8_t channel, uint32_t duration,  CallbackWithStatus cb) = 0;
 	virtual void mfg_channelcal_get(uint8_t channel, CallbackWithStatusArg1 cb) = 0;
 
-	boost::signals2::signal<void(Data, uint8_t, int8_t)> mOnMfgRXPacket;
+	OnMfgRXPacket mOnMfgRXPacket;
 };
 
 }; // namespace wpantund

@@ -25,7 +25,6 @@
 
 #include <dbus/dbus.h>
 
-#include <boost/bind.hpp>
 #include <boost/any.hpp>
 #include <boost/function.hpp>
 

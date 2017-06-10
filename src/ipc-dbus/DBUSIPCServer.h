@@ -26,8 +26,6 @@
 #include "IPCServer.h"
 #include <map>
 #include <dbus/dbus.h>
-#include <boost/signals2/signal.hpp>
-#include <boost/bind.hpp>
 
 #include "DBusIPCAPI_v0.h"
 #include "DBusIPCAPI_v1.h"

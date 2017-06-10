@@ -34,7 +34,7 @@
 #include "UnixSocket.h"
 #include <set>
 #include "IPv6Helpers.h"
-#include <boost/signals2/signal.hpp>
+#include "Signals.h"
 
 class TunnelIPv6Interface : public nl::UnixSocket
 {
@@ -79,11 +79,11 @@ public:
 
 public: // Signals
 
-	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasAdded;
-	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasRemoved;
+	nl::wpantund::AddressWasAdded mAddressWasAdded;
+	nl::wpantund::AddressWasRemoved mAddressWasRemoved;
 
 	// void linkStateChanged(isUp, isRunning);
-	boost::signals2::signal<void(bool, bool)> mLinkStateChanged;
+	nl::wpantund::LinkStateChanged  mLinkStateChanged;
 
 private:
 	void setup_signals(void);

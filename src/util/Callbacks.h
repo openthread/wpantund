@@ -35,9 +35,9 @@
 #include <string>
 #include <vector>
 
-#include <boost/signals2/signal.hpp>
 #include <boost/bind.hpp>
 #include <boost/any.hpp>
+#include <boost/function.hpp>
 
 #include "NilReturn.h"
 
@@ -46,8 +46,6 @@ namespace nl {
 typedef boost::function<void(void)> CallbackSimple;
 typedef boost::function<void(int)> CallbackWithStatus;
 typedef boost::function<void(int, const boost::any&)> CallbackWithStatusArg1;
-
-typedef boost::signals2::signal<void(int)> SignalWithStatus;
 
 static inline void
 split_cb_on_status(int status, CallbackSimple cb_success, CallbackWithStatus cb_error = nl::NilReturn())

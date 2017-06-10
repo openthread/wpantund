@@ -25,13 +25,11 @@
 
 #include <dbus/dbus.h>
 
-#include <boost/bind.hpp>
 #include <boost/any.hpp>
 #include <boost/function.hpp>
 
 #include "NetworkInstance.h"
 #include "NCPTypes.h"
-#include "Data.h"
 #include "time-utils.h"
 
 namespace nl {

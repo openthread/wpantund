@@ -22,7 +22,6 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <boost/signals2/signal.hpp>
 
 #include "assert-macros.h"
 #include "time-utils.h"
