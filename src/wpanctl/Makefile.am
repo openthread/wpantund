@@ -24,6 +24,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/assert-macros \
 	$(NULL)
 
+@CODE_COVERAGE_RULES@
+
 DISTCLEANFILES = .deps Makefile
 
 bin_PROGRAMS = wpanctl

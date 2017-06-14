@@ -51,6 +51,25 @@ AC_DEFUN([CHECK_MISSING_FUNC], [
 AC_SUBST(MISSING_CPPFLAGS)
 AC_SUBST(MISSING_LIBADD)
 
+AC_DEFUN([NL_CHECK_LINKER_ARG], [
+	prev_LDFLAGS="${LDFLAGS}"
+	LDFLAGS="$1"
+	AC_MSG_CHECKING([if linker supports "$1"])
+	AC_LINK_IFELSE([$2],
+		[
+			LDFLAGS="${prev_LDFLAGS}"
+			AC_MSG_RESULT([yes])
+			$3
+		],
+		[
+			LDFLAGS="${prev_LDFLAGS}"
+			AC_MSG_RESULT([no])
+			$4
+		]
+	)
+	unset prev_LDFLAGS
+])
+
 AC_DEFUN([NL_EXPORT_DYNAMIC], [
 	prev_LDFLAGS="${LDFLAGS}"
 	LDFLAGS="-Wl,--export-dynamic"
@@ -66,6 +85,53 @@ AC_DEFUN([NL_EXPORT_DYNAMIC], [
 	AC_MSG_RESULT([\"$EXPORT_DYNAMIC_LDFLAGS\"])
 	AC_SUBST(EXPORT_DYNAMIC_LDFLAGS)
 	AC_LANG_POP(C)
+])
+
+AC_DEFUN([NL_FUZZ_SOURCE],[AC_LANG_SOURCE([[#include <stdint.h>
+#include <stdlib.h>
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) { return 0; }]])])
+
+AC_DEFUN([NL_FUZZ_TARGETS],[
+AM_CONDITIONAL([ENABLE_FUZZ_TARGETS],[(case "${enable_fuzz_targets}" in yes) true ;; *) false ;; esac)])
+
+if test "x$enable_fuzz_targets" = "xyes"
+then
+	if test "${FUZZ_CFLAGS+set}" != "set"
+	then
+	AC_PROG_CXX()
+	AC_LANG_PUSH(C++)
+	FUZZ_CPPFLAGS=${FUZZ_CPPFLAGS--DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1}
+	AC_CHECK_LIB(Fuzzer,main,[],AC_MSG_ERROR([Cannot find libFuzzer]))
+	NL_CHECK_LINKER_ARG(
+		[-fsanitize=fuzzer,address],[NL_FUZZ_SOURCE],
+		[
+			FUZZ_CFLAGS=${FUZZ_CFLAGS--fsanitize=fuzzer,address}
+			FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS--fsanitize=fuzzer,address}
+			FUZZ_LDFLAGS=${FUZZ_LDFLAGS--fsanitize=fuzzer,address}
+			FUZZ_LIBS=${FUZZ_LIBS-}
+		],
+		[
+			NL_CHECK_LINKER_ARG(
+				[-fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address -lFuzzer],[NL_FUZZ_SOURCE],
+				[
+					FUZZ_CFLAGS=${FUZZ_CFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
+					FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
+					FUZZ_LDFLAGS=${FUZZ_LDFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
+					FUZZ_LIBS=${FUZZ_LIBS--lFuzzer}
+				],
+				AC_MSG_ERROR([Cannot figure out how to enable libFuzzer])
+			)
+		]
+	)
+	AC_LANG_POP(C++)
+	fi
+fi
+
+AC_SUBST(FUZZ_CFLAGS)
+AC_SUBST(FUZZ_CXXFLAGS)
+AC_SUBST(FUZZ_CPPFLAGS)
+AC_SUBST(FUZZ_LDFLAGS)
+AC_SUBST(FUZZ_LIBS)
 ])
 
 AC_DEFUN([NL_CHECK_BOOST_SIGNALS2], [
