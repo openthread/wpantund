@@ -1729,7 +1729,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 		syslog(LOG_INFO,"[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
 
-		if ( ncp_state_is_joining(get_ncp_state())
+		if ( ncp_state_is_joining_or_joined(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)
 		) {
 			change_ncp_state(ASSOCIATED);
