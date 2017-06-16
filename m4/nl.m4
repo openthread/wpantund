@@ -92,6 +92,13 @@ AC_DEFUN([NL_FUZZ_SOURCE],[AC_LANG_SOURCE([[#include <stdint.h>
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) { return 0; }]])])
 
 AC_DEFUN([NL_FUZZ_TARGETS],[
+AC_ARG_ENABLE(
+   fuzz-targets,
+   AC_HELP_STRING(
+       [--enable-fuzz-targets],
+       [Enable all fuzz targets.]
+   )
+)
 AM_CONDITIONAL([ENABLE_FUZZ_TARGETS],[(case "${enable_fuzz_targets}" in yes) true ;; *) false ;; esac)])
 
 if test "x$enable_fuzz_targets" = "xyes"
