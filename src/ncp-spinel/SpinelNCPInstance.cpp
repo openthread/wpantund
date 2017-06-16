@@ -566,6 +566,9 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPTXPower)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_TX_POWER, SPINEL_DATATYPE_INT8_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPFrequency)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_FREQ, SPINEL_DATATYPE_INT32_S);
 
@@ -924,6 +927,18 @@ SpinelNCPInstance::property_set_value(
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_CCA_THRESHOLD, cca);
 
 			mSettings[kWPANTUNDProperty_NCPCCAThreshold] = SettingsEntry(command);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(command)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPTXPower)) {
+			int tx_power = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_INT8_S), SPINEL_PROP_PHY_TX_POWER, tx_power);
+
+			mSettings[kWPANTUNDProperty_NCPTXPower] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
