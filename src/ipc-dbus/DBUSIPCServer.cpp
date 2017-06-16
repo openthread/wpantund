@@ -31,10 +31,6 @@
 #include <stdio.h>
 #include "DBUSIPCServer.h"
 #include <dbus/dbus.h>
-#if USING_GLIB
-#include <glib.h>
-#include <glib-object.h>
-#endif
 #include <string.h>
 #include "NCPControlInterface.h"
 #include "assert-macros.h"

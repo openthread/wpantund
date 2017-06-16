@@ -52,3 +52,21 @@ libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
 libwpantund_dbus_la_CXXFLAGS = $(BOOST_CXXFLAGS)
 
 pkginclude_HEADERS = wpan-dbus-v0.h wpan-dbus-v1.h
+
+if USE_PCH
+BUILT_SOURCES  = $(top_builddir)/$(subdir)/ipc-dbus-all$(PCH_EXT)
+CLEANFILES     = $(top_builddir)/$(subdir)/ipc-dbus-all$(PCH_EXT) $(top_builddir)/$(subdir)/ipc-dbus-all.h
+$(top_builddir)/$(subdir)/ipc-dbus-all.h: Makefile
+	find `dirname $@` -name '*.cpp' \
+		| xargs -n 1 grep '^#include' \
+		| grep -v -e 'version' -e 'sigcontext' -e 'wpantund\.cpp' \
+		| awk '{printf "%s\t%d\n", $$0, NR }' \
+		| sort -t'	' -k1,1 -u \
+		| sort -t'	' -k2,2 -n \
+		| cut -d'	' -f 1 > $@
+
+$(top_builddir)/$(subdir)/ipc-dbus-all$(PCH_EXT): $(top_builddir)/$(subdir)/ipc-dbus-all.h Makefile
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_la_CPPFLAGS) $(CPPFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS) $(CXXFLAGS) -fPIC -DPIC $(CXX_PCH_INPUT_FLAG) $< -o $@
+
+libwpantund_dbus_la_CXXFLAGS += $(CXX_PCH_INCLUDE_FLAG) $(top_builddir)/$(subdir)/ipc-dbus-all$(PCH_INCLUDE_EXT)
+endif # if USE_PCH

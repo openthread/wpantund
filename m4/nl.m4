@@ -149,6 +149,62 @@ AC_DEFUN([NL_CHECK_BOOST_SIGNALS2], [
 	AC_LANG_POP([C++])
 ])
 
+AC_DEFUN([NL_USE_PCH],[
+AC_ARG_ENABLE(
+   pch,
+   AC_HELP_STRING(
+       [--disable-pch],
+       [Disable the use of precompiled headers (default: auto)]
+   )
+)
+
+if test "x$enable_pch" != "xno"
+then
+	AC_MSG_CHECKING([how to make compiler use precompiled headers])
+	cxx_version="`${CXX} --version 2>&1`"
+	echo "${cxx_version}" 1>&AS_MESSAGE_LOG_FD
+	case "${cxx_version}" in
+		*clang*)
+			CXX_PCH_INPUT_FLAG=${CXX_PCH_INPUT_FLAG--emit-pch}
+			CXX_PCH_INCLUDE_FLAG=${CXX_PCH_INCLUDE_FLAG--include-pch}
+			PCH_EXT=.h.pch
+			PCH_INCLUDE_EXT=.h.pch
+			enable_pch=yes
+			AC_MSG_RESULT([clang-style])
+			;;
+		*gcc* | *g++*)
+			CXX_PCH_INPUT_FLAG=${CXX_PCH_INPUT_FLAG-}
+			CXX_PCH_INCLUDE_FLAG=${CXX_PCH_INCLUDE_FLAG--H -Winvalid-pch -include}
+			PCH_EXT=.h.gch
+			PCH_INCLUDE_EXT=.h
+			AC_MSG_RESULT([gcc-style])
+
+			# GCC PCH is explicitly opt-in at the moment, since this
+			# approach doesn't yet seem to improve build times.
+			if test "x$enable_pch" != "xyes"
+			then enable_pch=no
+			fi
+			;;
+		*)
+			AC_MSG_RESULT([unknown])
+			if test "x$enable_pch" == "xyes"
+			then AC_MSG_ERROR([Precompiled headers not supported with this compiler])
+			else enable_pch=no
+			fi
+			;;
+	esac
+	unset cxx_version
+fi
+
+AC_SUBST(PCH_EXT)
+AC_SUBST(PCH_INCLUDE_EXT)
+AC_SUBST(CXX_PCH_INPUT_FLAG)
+AC_SUBST(CXX_PCH_INCLUDE_FLAG)
+
+AM_CONDITIONAL([USE_PCH],[(case "${enable_pch}" in yes) true ;; *) false ;; esac)])
+])
+
+
 AC_DEFUN([NL_CHECK_READLINE], [
 	AC_LANG_PUSH([C])
 

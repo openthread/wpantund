@@ -97,4 +97,28 @@ ncp_spinel_la_SOURCES = $(NCP_SOURCES)
 ncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
 endif
 
+
+if USE_PCH
+BUILT_SOURCES  = $(top_builddir)/$(subdir)/ncp-spinel-all$(PCH_EXT)
+CLEANFILES     = $(top_builddir)/$(subdir)/ncp-spinel-all$(PCH_EXT) $(top_builddir)/$(subdir)/ncp-spinel-all.h
+$(top_builddir)/$(subdir)/ncp-spinel-all.h: Makefile
+	find `dirname $@` -name '*.cpp' \
+		| xargs -n 1 grep '^#include' \
+		| grep -v -e 'version' -e 'sigcontext' -e 'wpantund\.cpp' \
+		| awk '{printf "%s\t%d\n", $$0, NR }' \
+		| sort -t'	' -k1,1 -u \
+		| sort -t'	' -k2,2 -n \
+		| cut -d'	' -f 1 > $@
+
+$(top_builddir)/$(subdir)/ncp-spinel-all$(PCH_EXT): $(top_builddir)/$(subdir)/ncp-spinel-all.h Makefile
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS) $(CODE_COVERAGE_CPPFLAGS) -fPIC -DPIC $(CXX_PCH_INPUT_FLAG) $< -o $@
+
+if STATIC_LINK_NCP_PLUGIN
+libncp_spinel_la_CXXFLAGS += $(CXX_PCH_INCLUDE_FLAG) $(top_builddir)/$(subdir)/ncp-spinel-all$(PCH_INCLUDE_EXT)
+else
+ncp_spinel_la_CXXFLAGS += $(CXX_PCH_INCLUDE_FLAG) $(top_builddir)/$(subdir)/ncp-spinel-all$(PCH_INCLUDE_EXT)
+endif
+endif # if USE_PCH
+
+
 endif #BUILD_PLUGIN_NCP_SPINEL

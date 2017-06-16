@@ -164,6 +164,8 @@ AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 AC_HEADER_STDC
 AC_HEADER_TIME
 
+NL_USE_PCH
+
 AC_CHECK_HEADERS([unistd.h errno.h stdbool.h], [], AC_MSG_ERROR(["Missing a required header."]))
 
 AC_CHECK_HEADERS([sys/un.h sys/wait.h pty.h pwd.h execinfo.h asm/sigcontext.h sys/prctl.h])
@@ -285,6 +287,8 @@ echo "Boost .......................... ${with_boost-???}"
 echo "NCP plugins to build ........... ${building_ncp_plugins-none}"
 echo "Default NCP Plugin ............. ${default_ncp_plugin}"
 echo "Static link NCP plugin ......... ${enable_static_link_ncp_plugin-no}"
+echo "Fuzzing Targets ................ ${enable_fuzz_targets-no}"
+echo "Using Precompiled Headers  ..... ${enable_pch-no}"
 echo ""
 
 if test "x${with_readline}" != "xyes"

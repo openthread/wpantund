@@ -19,6 +19,7 @@
 
 DIR="`dirname $0`"
 
+
 "${DIR}"/run-in-docker.sh -i 'DIR="`pwd`" &&
 mkdir -p /build &&
 cd /build && "${DIR}"/configure --enable-all-restricted-plugins --with-connman --with-readline &&
