@@ -161,6 +161,8 @@ fi
 AC_PROG_CC([],AC_MSG_ERROR(["A working C compiler is required"]))
 AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 
+NL_FUZZ_TARGETS
+
 AC_HEADER_STDC
 AC_HEADER_TIME
 
@@ -254,7 +256,6 @@ AC_DEFINE_UNQUOTED([WPANTUND_DEFAULT_NCP_PLUGIN], ["${default_ncp_plugin}"], [Se
 AM_CONDITIONAL(STATIC_LINK_NCP_PLUGIN,[test "x${enable_static_link_ncp_plugin}" = "xyes"])
 
 building_ncp_plugins=""
-
 
 m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[
 	if test "x${enable_ncp_[]m4_translit(THIS_PLUGIN,[-],[_])}" = "xyes"
