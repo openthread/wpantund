@@ -261,6 +261,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
+	properties.insert(kWPANTUNDProperty_NCPRXTotalTime);
+	properties.insert(kWPANTUNDProperty_NCPTXTotalTime);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -709,6 +711,12 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPTXTotalTime)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_TX_TOTAL_TIME, SPINEL_DATATYPE_UINT32_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRXTotalTime)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_RX_TOTAL_TIME, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRLOC16)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
