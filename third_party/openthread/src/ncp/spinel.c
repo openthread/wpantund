@@ -1350,6 +1350,17 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_UART_XON_XOFF:
         ret = "PROP_UART_XON_XOFF";
+
+    case SPINEL_PROP_TX_TOTAL_TIME:
+        ret = "PROP_TX_TOTAL_TIME";
+        break;
+
+    case SPINEL_PROP_RX_TOTAL_TIME:
+        ret = "PROP_RX_TOTAL_TIME";
+        break;
+
+    case SPINEL_PROP_GPIO_CONFIG:
+        ret = "PROP_GPIO_CONFIG";
         break;
 
     case SPINEL_PROP_15_4_PIB_PHY_CHANNELS_SUPPORTED:
