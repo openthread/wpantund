@@ -134,6 +134,10 @@ public:
 	virtual void add_on_mesh_prefix(
 		const struct in6_addr *prefix,
 		bool defaultRoute,
+		bool preferred,
+		bool slaac,
+		bool onMesh,
+		OnMeshPrefixPriority priority,
 		CallbackWithStatus cb = NilReturn()
 	);
 

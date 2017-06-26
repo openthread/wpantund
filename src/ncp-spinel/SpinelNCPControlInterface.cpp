@@ -185,19 +185,48 @@ void
 SpinelNCPControlInterface::add_on_mesh_prefix(
 	const struct in6_addr *prefix,
 	bool defaultRoute,
+	bool preferred,
+	bool slaac,
+	bool onMesh,
+	OnMeshPrefixPriority priority,
 	CallbackWithStatus cb
 ) {
+	const static int kPreferenceOffset = 6;
 	uint8_t flags = 0;
 	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
 
 	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
+	switch (priority) {
+	case ROUTE_HIGH_PREFERENCE:
+		flags = (1 << kPreferenceOffset);
+		break;
+
+	case ROUTE_MEDIUM_PREFERENCE:
+		flags = 0;
+		break;
+
+	case ROUTE_LOW_PREFRENCE:
+		flags = (3 << kPreferenceOffset);
+		break;
+	}
+
 	if (defaultRoute) {
 		flags |= SPINEL_NET_FLAG_DEFAULT_ROUTE;
 	}
 
-	flags |= SPINEL_NET_FLAG_PREFERRED | SPINEL_NET_FLAG_SLAAC | SPINEL_NET_FLAG_ON_MESH;
+	if (preferred) {
+		flags |= SPINEL_NET_FLAG_PREFERRED;
+	}
+
+	if (slaac) {
+		flags |= SPINEL_NET_FLAG_SLAAC;
+	}
+
+	if (onMesh) {
+		flags |= SPINEL_NET_FLAG_ON_MESH;
+	}
 
 	factory.set_callback(cb);
 	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);

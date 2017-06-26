@@ -136,6 +136,12 @@ public:
 
 public:
 	// ========================================================================
+	// MARK: On Mesh Prefix Management
+
+	void add_prefix(const struct in6_addr &address, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX, uint8_t flags = 0);
+
+public:
+	// ========================================================================
 	// MARK: Global Address Management
 
 
@@ -238,6 +244,7 @@ protected:
 	struct nlpt mDriverToNCPPumpPT;
 
 	std::map<struct in6_addr, GlobalAddressEntry> mGlobalAddresses;
+	std::map<struct in6_addr, GlobalAddressEntry> mOnMeshPrefixes;
 
 	IPv6PacketMatcherRule mCommissioningRule;
 	IPv6PacketMatcher mInsecureFirewall;

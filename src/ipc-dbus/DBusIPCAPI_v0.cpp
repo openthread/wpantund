@@ -633,6 +633,11 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 	dbus_message_ref(message);
 
 	dbus_bool_t defaultRoute = FALSE;
+	dbus_bool_t preferred = TRUE;
+	dbus_bool_t slaac = TRUE;
+	dbus_bool_t onMesh = TRUE;
+	int16_t priority_raw;
+	NCPControlInterface::OnMeshPrefixPriority priority;
 	uint32_t preferredLifetime = 0;
 	uint32_t validLifetime = 0;
 	uint8_t *prefix = NULL;
@@ -655,6 +660,8 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 
 	memcpy(addr.s6_addr, prefix, prefixLen);
 
+	priority = NCPControlInterface::PREFIX_MEDIUM_PREFERENCE;
+
 	if (validLifetime == 0) {
 		interface->remove_on_mesh_prefix(
 			&addr,
@@ -664,6 +671,10 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 		interface->add_on_mesh_prefix(
 			&addr,
 			defaultRoute,
+			preferred,
+			slaac,
+			onMesh,
+			priority,
 			boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
 		);
 	}

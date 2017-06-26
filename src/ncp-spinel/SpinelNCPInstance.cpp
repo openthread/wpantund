@@ -1782,28 +1782,31 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		mOnMeshPrefixes.clear();
 		while (value_data_len > 0) {
 			spinel_ssize_t len = 0;
 			struct in6_addr *addr = NULL;
 			uint8_t prefix_len = 0;
 			bool stable;
 			uint8_t flags = 0;
+			bool isLocal;
 
 			len = spinel_datatype_unpack(
 				value_data_ptr,
 				value_data_len,
-				"t(6CbC)",
+				"t(6CbCb)",
 				&addr,
 				&prefix_len,
 				&stable,
-				&flags
+				&flags,
+				&isLocal
 			);
 
 			if (len < 1) {
 				break;
 			}
 
-			refresh_on_mesh_prefix(addr, prefix_len, stable, flags);
+			refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
 
 			value_data_ptr += len;
 			value_data_len -= len;
@@ -1987,8 +1990,13 @@ bail:
 }
 
 void
-SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags)
+SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal)
 {
+	if (!isLocal) {
+		struct in6_addr addr;
+		memcpy(&addr, prefix, sizeof(in6_addr));
+		add_prefix(addr, UINT32_MAX, UINT32_MAX, flags);
+	}
 	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
 	  && !lookup_address_for_prefix(NULL, *prefix, prefix_len)
 	) {
@@ -2052,21 +2060,23 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 		uint8_t prefix_len = 0;
 		bool stable;
 		uint8_t flags = 0;
+		bool isLocal;
 		static const char flag_lookup[] = "ppPSDCRM";
 
 		spinel_datatype_unpack(
 			value_data_ptr,
 			value_data_len,
-			"6CbC",
+			"6CbCb",
 			&addr,
 			&prefix_len,
 			&stable,
-			&flags
+			&flags,
+			&isLocal
 		);
 
 		syslog(LOG_NOTICE, "On-Mesh Network Added: %s/%d flags:%s", in6_addr_to_string(*addr).c_str(), prefix_len, flags_to_string(flags, flag_lookup).c_str());
 
-		refresh_on_mesh_prefix(addr, prefix_len, stable, flags);
+		refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
