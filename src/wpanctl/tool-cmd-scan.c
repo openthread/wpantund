@@ -47,6 +47,7 @@ int gScannedNetworkCount = 0;
 struct wpan_network_info_s gScannedNetworks[SCANNED_NET_BUFFER_SIZE];
 
 static bool sEnergyScan;
+static bool sMleDiscoverScan;
 
 static void
 print_scan_header(void)
@@ -54,15 +55,13 @@ print_scan_header(void)
 	if (sEnergyScan) {
 		printf("    Ch | RSSI\n");
 		printf("   ----+-------\n");
-
-		return;
+	} else if (sMleDiscoverScan) {
+		printf(	"   | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
+		printf(	"---+--------------------+--------+----+------------------+------------------+------\n");
+	} else {
+		printf(	"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
+		printf(	"---+----------+--------------------+--------+----+------------------+------------------+------\n");
 	}
-
-	printf(
-		"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
-	printf(
-		"---+----------+--------------------+--------+----+------------------+------------------+------\n");
-
 }
 
 static DBusHandlerResult
@@ -96,7 +95,9 @@ dbus_beacon_handler(
 		printf("  ");
 	}
 
-	printf(" | %s", network_info.allowing_join ? "     YES" : "      NO");
+	if (!sMleDiscoverScan) {
+		printf(" | %s", network_info.allowing_join ? "     YES" : "      NO");
+	}
 
 	if (network_info.network_name[0]) {
 		printf(" | \"%s\"%s",
@@ -184,7 +185,6 @@ int tool_cmd_scan(int argc, char *argv[])
 	DBusError error;
 	int32_t scan_period = 0;
 	uint32_t channel_mask = 0;
-	bool discover_scan = false;
 	dbus_bool_t joiner_flag = FALSE;
 	dbus_bool_t enable_filtering = FALSE;
 	uint16_t pan_id_filter = 0xffff;
@@ -192,6 +192,7 @@ int tool_cmd_scan(int argc, char *argv[])
 	dbus_error_init(&error);
 
 	sEnergyScan = false;
+	sMleDiscoverScan = false;
 
 	while (1) {
 		static struct option long_options[] = {
@@ -233,7 +234,7 @@ int tool_cmd_scan(int argc, char *argv[])
 			break;
 
 		case 'd':
-			discover_scan = true;
+			sMleDiscoverScan = true;
 			break;
 
 		case 'j':
@@ -311,7 +312,7 @@ int tool_cmd_scan(int argc, char *argv[])
 		if (sEnergyScan) {
 			method_name = WPANTUND_IF_CMD_ENERGY_SCAN_START;
 		} else {
-			if (discover_scan) {
+			if (sMleDiscoverScan) {
 				method_name = WPANTUND_IF_CMD_DISCOVER_SCAN_START;
 			} else {
 				method_name = WPANTUND_IF_CMD_NET_SCAN_START;
@@ -331,7 +332,7 @@ int tool_cmd_scan(int argc, char *argv[])
 			DBUS_TYPE_INVALID
 		);
 
-		if (discover_scan) {
+		if (sMleDiscoverScan) {
 			dbus_message_append_args(
 				message,
 				DBUS_TYPE_BOOLEAN, &joiner_flag,
