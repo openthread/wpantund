@@ -313,8 +313,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_THREAD_BA_PROXY)) {
-		properties.insert(kWPANTUNDProperty_BorderAgentProxyEnabled);
+	if (mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY)) {
+		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
@@ -702,8 +702,8 @@ SpinelNCPInstance::property_get_value(
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
 		}
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnabled)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_BA_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -1144,13 +1144,13 @@ SpinelNCPInstance::property_set_value(
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_MODE, mode))
 				.finish()
 			);
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyEnabled)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
 			bool isEnabled = any_to_bool(value);
-			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_BA_PROXY_ENABLED, isEnabled);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, isEnabled);
 
-			mSettings[kWPANTUNDProperty_BorderAgentProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_BA_PROXY);
+			mSettings[kWPANTUNDProperty_TmfProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_TMF_PROXY);
 
-			if (!mCapabilities.count(SPINEL_CAP_THREAD_BA_PROXY))
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY))
 			{
 				cb(kWPANTUNDStatus_FeatureNotSupported);
 			} else {
@@ -1311,7 +1311,7 @@ SpinelNCPInstance::property_set_value(
 
 			cb (status);
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_BorderAgentProxyStream)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyStream)) {
 			Data packet = any_to_data(value);
 
 			uint16_t port = (packet[packet.size() - sizeof(port)] << 8 | packet[packet.size() - sizeof(port) + 1]);
@@ -1321,7 +1321,7 @@ SpinelNCPInstance::property_set_value(
 			packet.resize(packet.size() - sizeof(locator) - sizeof(port));
 
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
-					SPINEL_PROP_THREAD_BA_PROXY_STREAM, packet.data(), packet.size(), locator, port);
+					SPINEL_PROP_THREAD_TMF_PROXY_STREAM, packet.data(), packet.size(), locator, port);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 					.set_callback(cb)
@@ -1902,7 +1902,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			);
 		}
 
-	} else if (key == SPINEL_PROP_THREAD_BA_PROXY_STREAM) {
+	} else if (key == SPINEL_PROP_THREAD_TMF_PROXY_STREAM) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
 		uint16_t locator;
@@ -1932,7 +1932,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			// pack the port in big endian.
 			data.push_back(port >> 8);
 			data.push_back(port & 0xff);
-			signal_property_changed(kWPANTUNDProperty_BorderAgentProxyStream, data);
+			signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {
