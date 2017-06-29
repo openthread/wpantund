@@ -116,6 +116,10 @@
 #define kWPANTUNDProperty_MACWhitelistEntries                   "MAC:Whitelist:Entries"
 #define kWPANTUNDProperty_MACWhitelistEntriesAsValMap           "MAC:Whitelist:Entries:AsValMap"
 
+#define kWPANTUNDProperty_MACBlacklistEnabled                   "MAC:Blacklist:Enabled"
+#define kWPANTUNDProperty_MACBlacklistEntries                   "MAC:Blacklist:Entries"
+#define kWPANTUNDProperty_MACBlacklistEntriesAsValMap           "MAC:Blacklist:Entries:AsValMap"
+
 #define kWPANTUNDProperty_JamDetectionStatus                    "JamDetection:Status"
 #define kWPANTUNDProperty_JamDetectionEnable                    "JamDetection:Enable"
 #define kWPANTUNDProperty_JamDetectionRssiThreshold             "JamDetection:RssiThreshold"
