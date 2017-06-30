@@ -176,6 +176,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mIsPcapInProgress = false;
 	mSettings.clear();
 	mXPANIDWasExplicitlySet = false;
+	mThreadMode = 0;
 
 	if (!settings.empty()) {
 		int status;
@@ -198,6 +199,29 @@ SpinelNCPInstance::~SpinelNCPInstance()
 {
 }
 
+std::string
+SpinelNCPInstance::thread_mode_to_string(uint8_t mode)
+{
+	char c_string[400];
+
+	snprintf(
+		c_string,
+		sizeof(c_string),
+		"RxOnWhenIdle:%s, FFD:%s, FullNetData:%s, SecDataReq:%s",
+		((mode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0)     ? "yes" : "no",
+		((mode & SPINEL_THREAD_MODE_FULL_FUNCTION_DEV) != 0)   ? "yes" : "no",
+		((mode & SPINEL_THREAD_MODE_FULL_NETWORK_DATA) != 0)   ? "yes" : "no",
+		((mode & SPINEL_THREAD_MODE_SECURE_DATA_REQUEST) != 0) ? "yes" : "no"
+	);
+
+	return c_string;
+}
+
+uint8_t
+SpinelNCPInstance::get_thread_mode(void)
+{
+	return mThreadMode;
+}
 
 bool
 SpinelNCPInstance::setup_property_supported_by_class(const std::string& prop_name)
@@ -238,8 +262,13 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 
+	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
+		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_0)) {
 		properties.insert(kWPANTUNDProperty_ThreadRLOC16);
+		properties.insert(kWPANTUNDProperty_ThreadDeviceMode);
 		properties.insert(kWPANTUNDProperty_ThreadRouterID);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderAddress);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderRouterID);
@@ -601,6 +630,22 @@ unpack_thread_off_mesh_routes(const uint8_t *data_in, spinel_size_t data_len, bo
 }
 
 void
+SpinelNCPInstance::update_node_type(NodeType new_node_type)
+{
+	if (mNodeType != new_node_type) {
+		syslog(
+			LOG_NOTICE,
+			"Node type change: \"%s\" -> \"%s\"",
+			node_type_to_string(mNodeType).c_str(),
+			node_type_to_string(new_node_type).c_str()
+		);
+
+		mNodeType = new_node_type;
+		signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
+	}
+}
+
+void
 SpinelNCPInstance::property_get_value(
 	const std::string& key,
 	CallbackWithStatusArg1 cb
@@ -642,6 +687,13 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPSleepyPollInterval)) {
+		if (!mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Sleepy role is not supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_DATA_POLL_PERIOD, SPINEL_DATATYPE_UINT32_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
@@ -1167,6 +1219,23 @@ SpinelNCPInstance::property_set_value(
 
 			} else {
 				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPSleepyPollInterval)) {
+			uint32_t period = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_MAC_DATA_POLL_PERIOD, period);
+
+			mSettings[kWPANTUNDProperty_NCPSleepyPollInterval] = SettingsEntry(command, SPINEL_CAP_ROLE_SLEEPY);
+
+			if (!mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkXPANID)) {
@@ -1899,27 +1968,44 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 		if (value == SPINEL_NET_ROLE_CHILD) {
-			if (mNodeType != END_DEVICE) {
-				mNodeType = END_DEVICE;
-				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
+			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+				update_node_type(END_DEVICE);
+			} else {
+				update_node_type(SLEEPY_END_DEVICE);
 			}
 
 		} else if (value == SPINEL_NET_ROLE_ROUTER) {
-			if (mNodeType != ROUTER) {
-				mNodeType = ROUTER;
-				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
-			}
+			update_node_type(ROUTER);
 
 		} else if (value == SPINEL_NET_ROLE_LEADER) {
-			if (mNodeType != LEADER) {
-				mNodeType = LEADER;
-				signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
-			}
+			update_node_type(LEADER);
 
 		} else if (value == SPINEL_NET_ROLE_DETACHED) {
+			update_node_type(UNKNOWN);
 			if (ncp_state_is_associated(get_ncp_state())) {
 				change_ncp_state(ISOLATED);
 			}
+		}
+
+	} else if (key == SPINEL_PROP_THREAD_MODE) {
+		uint8_t value;
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+		syslog(LOG_INFO,"[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
+		mThreadMode = value;
+
+		switch (mNodeType)
+		{
+		case END_DEVICE:
+		case SLEEPY_END_DEVICE:
+			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+				update_node_type(END_DEVICE);
+			} else {
+				update_node_type(SLEEPY_END_DEVICE);
+			}
+			break;
+
+		default:
+			break;
 		}
 
 	} else if (key == SPINEL_PROP_NET_STACK_UP) {
