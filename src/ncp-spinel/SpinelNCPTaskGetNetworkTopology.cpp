@@ -41,7 +41,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::SpinelNCPTaskGetNetworkTopology(
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_table(
 	const uint8_t *data_in,
 	spinel_size_t data_len,
 	Table& child_table
@@ -109,7 +109,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_child_table(
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::prase_neighbor_table(const uint8_t *data_in, spinel_size_t data_len,
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len,
 																			 Table& neighbor_table)
 {
 	int ret = kWPANTUNDStatus_Ok;
@@ -234,10 +234,10 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list
 
 	if (mType == kChildTable) {
 		require(prop_key == SPINEL_PROP_THREAD_CHILD_TABLE, on_error);
-		prase_child_table(data_in, data_len, mTable);
+		parse_child_table(data_in, data_len, mTable);
 	} else {
 		require(prop_key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE, on_error);
-		prase_neighbor_table(data_in, data_len, mTable);
+		parse_neighbor_table(data_in, data_len, mTable);
 	}
 
 	ret = kWPANTUNDStatus_Ok;
