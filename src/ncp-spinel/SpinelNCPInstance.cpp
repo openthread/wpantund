@@ -1970,7 +1970,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
 		int num_children = 0;
 
-		SpinelNCPTaskGetNetworkTopology::prase_child_table(value_data_ptr, value_data_len, child_table);
+		SpinelNCPTaskGetNetworkTopology::parse_child_table(value_data_ptr, value_data_len, child_table);
 
 		for (it = child_table.begin(); it != child_table.end(); it++)
 		{
