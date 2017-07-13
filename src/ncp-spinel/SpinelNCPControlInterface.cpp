@@ -51,6 +51,7 @@
 #include "SpinelNCPTaskForm.h"
 #include "SpinelNCPTaskLeave.h"
 #include "SpinelNCPTaskScan.h"
+#include "SpinelNCPTaskPeek.h"
 #include "SpinelNCPTaskSendCommand.h"
 
 using namespace nl;
@@ -729,3 +730,51 @@ SpinelNCPControlInterface::convert_external_route_priority_to_flags(ExternalRout
 
 	return flags;
 }
+
+// ----------------------------------------------------------------------------
+// MARK: -
+
+void
+SpinelNCPControlInterface::peek(uint32_t address, uint16_t count, CallbackWithStatusArg1 cb)
+{
+	if (mNCPInstance->mCapabilities.count(SPINEL_CAP_PEEK_POKE)) {
+		mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskPeek(
+				mNCPInstance,
+				cb,
+				address,
+				count
+			)
+		));
+
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported, std::string("Feature not supported by NCP. No peeking!"));
+	}
+}
+
+void
+SpinelNCPControlInterface::poke(uint32_t address, Data bytes, CallbackWithStatus cb)
+{
+	if (mNCPInstance->mCapabilities.count(SPINEL_CAP_PEEK_POKE)) {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD(
+						SPINEL_DATATYPE_UINT32_S   // Address
+						SPINEL_DATATYPE_UINT16_S   // Count
+						SPINEL_DATATYPE_DATA_S     // Bytes
+					),
+					SPINEL_CMD_POKE,
+					address,
+					bytes.size(),
+					bytes.data(),
+					bytes.size()
+				))
+				.finish()
+		);
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotImplemented);
+	}
+}
+

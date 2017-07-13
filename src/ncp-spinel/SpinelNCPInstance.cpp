@@ -2445,6 +2445,23 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 		}
 		break;
 
+	case SPINEL_CMD_PEEK_RET:
+		{
+			uint32_t address;
+			uint16_t count;
+			spinel_ssize_t ret;
+
+			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiLS", NULL, NULL, &address, &count);
+
+			__ASSERT_MACROS_check(ret != -1);
+
+			if (ret > 0) {
+				syslog(LOG_INFO, "[NCP->] CMD_PEEK_RET(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
+			}
+		}
+		break;
+
+
 	default:
 		break;
 	}

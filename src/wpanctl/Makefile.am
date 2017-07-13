@@ -85,6 +85,10 @@ wpanctl_SOURCES = \
 	tool-cmd-remove-route.h \
 	tool-cmd-pcap.h \
 	tool-cmd-pcap.c \
+	tool-cmd-peek.h \
+	tool-cmd-peek.c \
+	tool-cmd-poke.h \
+	tool-cmd-poke.c \
 	tool-cmd-commissioner.h \
 	tool-cmd-commissioner.c \
 	tool-updateprop.h \
