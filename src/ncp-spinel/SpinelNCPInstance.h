@@ -150,6 +150,8 @@ private:
 
 	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal);
 
+	void update_node_type(NodeType node_type);
+
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 
@@ -165,6 +167,10 @@ public:
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);
 
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
+
+	static std::string thread_mode_to_string(uint8_t mode);
+
+	uint8_t get_thread_mode(void);
 
 	virtual void process(void);
 
@@ -220,6 +226,7 @@ private:
 	boost::function<void(int)> mOutboundCallback;
 
 	int mTXPower;
+	uint8_t mThreadMode;
 
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
