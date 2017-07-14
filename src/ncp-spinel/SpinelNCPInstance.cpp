@@ -2246,7 +2246,8 @@ SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefi
 		memcpy(&addr, prefix, sizeof(in6_addr));
 		add_prefix(addr, UINT32_MAX, UINT32_MAX, flags);
 	}
-	if ( ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
+	if (!isLocal
+	  && ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
 	  && !lookup_address_for_prefix(NULL, *prefix, prefix_len)
 	) {
 		SpinelNCPTaskSendCommand::Factory factory(this);
