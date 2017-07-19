@@ -207,13 +207,21 @@ SpinelNCPInstance::thread_mode_to_string(uint8_t mode)
 	snprintf(
 		c_string,
 		sizeof(c_string),
-		"RxOnWhenIdle:%s, FFD:%s, FullNetData:%s, SecDataReq:%s",
+		"RxOnWhenIdle:%s FFD:%s FullNetData:%s SecDataReq:%s",
 		((mode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0)     ? "yes" : "no",
 		((mode & SPINEL_THREAD_MODE_FULL_FUNCTION_DEV) != 0)   ? "yes" : "no",
 		((mode & SPINEL_THREAD_MODE_FULL_NETWORK_DATA) != 0)   ? "yes" : "no",
 		((mode & SPINEL_THREAD_MODE_SECURE_DATA_REQUEST) != 0) ? "yes" : "no"
 	);
 
+	return c_string;
+}
+
+std::string
+SpinelNCPInstance::on_mesh_prefix_flags_to_string(uint8_t flags)
+{
+	char c_string[100];
+	snprintf(c_string, sizeof(c_string), "%s(0x%02x)", flags_to_string(flags, "ppPSDCRM").c_str(), flags);
 	return c_string;
 }
 
@@ -642,6 +650,61 @@ SpinelNCPInstance::update_node_type(NodeType new_node_type)
 
 		mNodeType = new_node_type;
 		signal_property_changed(kWPANTUNDProperty_NetworkNodeType, node_type_to_string(mNodeType));
+	}
+}
+
+
+void
+SpinelNCPInstance::update_link_local_address(struct in6_addr *addr)
+{
+	if (NULL != addr
+	  && (0 != memcmp(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress)))
+	) {
+		if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+			remove_address(mNCPLinkLocalAddress);
+		}
+
+		memcpy((void*)mNCPLinkLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPLinkLocalAddress));
+
+		if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+			add_address(mNCPLinkLocalAddress);
+		}
+
+		signal_property_changed(kWPANTUNDProperty_IPv6LinkLocalAddress, in6_addr_to_string(*addr));
+	}
+}
+
+void
+SpinelNCPInstance::update_mesh_local_address(struct in6_addr *addr)
+{
+	if (addr
+	 && buffer_is_nonzero(addr->s6_addr, 8)
+	 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
+	) {
+		if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+			remove_address(mNCPMeshLocalAddress);
+		}
+		memcpy((void*)mNCPMeshLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPMeshLocalAddress));
+		signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
+		add_address(mNCPMeshLocalAddress);
+	}
+}
+
+void
+SpinelNCPInstance::update_mesh_local_prefix(struct in6_addr *addr)
+{
+	if (addr
+	 && buffer_is_nonzero(addr->s6_addr, 8)
+	 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
+	) {
+		if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
+			remove_address(mNCPMeshLocalAddress);
+		}
+		memcpy((void*)mNCPV6Prefix, (void*)addr, sizeof(mNCPV6Prefix));
+		struct in6_addr prefix_addr (mNCPMeshLocalAddress);
+		// Zero out the lower 64 bits.
+		memset(prefix_addr.s6_addr+8, 0, 8);
+		signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalPrefix, in6_addr_to_string(prefix_addr) + "/64");
 	}
 }
 
@@ -1701,7 +1764,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	if (key == SPINEL_PROP_LAST_STATUS) {
 		spinel_status_t status = SPINEL_STATUS_OK;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
-		syslog(LOG_INFO,"[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
+		syslog(LOG_INFO, "[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
 		if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
 			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
 			process_event(EVENT_NCP_RESET, status);
@@ -1732,9 +1795,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NCP_VERSION) {
 		const char* ncp_version = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &ncp_version);
-
 		set_ncp_version_string(ncp_version);
-
 
 	} else if (key == SPINEL_PROP_INTERFACE_TYPE) {
 		unsigned int interface_type = 0;
@@ -1744,7 +1805,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol type (%d)", interface_type);
 			change_ncp_state(FAULT);
 		}
-
 
 	} else if (key == SPINEL_PROP_PROTOCOL_VERSION) {
 		unsigned int protocol_version_major = 0;
@@ -1786,6 +1846,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NET_NETWORK_NAME) {
 		const char* value = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
+		syslog(LOG_INFO, "[-NCP-]: Network name \"%s\"", value);
 		if (value && (mCurrentNetworkInstance.name != value)) {
 			mCurrentNetworkInstance.name = value;
 			signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
@@ -1793,58 +1854,34 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_IPV6_LL_ADDR) {
 		struct in6_addr *addr = NULL;
+
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if ( NULL != addr
-		  && (0 != memcmp(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress)))
-		) {
-			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-				remove_address(mNCPLinkLocalAddress);
-			}
-
-			memcpy((void*)mNCPLinkLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPLinkLocalAddress));
-
-			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-				add_address(mNCPLinkLocalAddress);
-			}
-
-			signal_property_changed(kWPANTUNDProperty_IPv6LinkLocalAddress, in6_addr_to_string(*addr));
+		if (addr != NULL) {
+			syslog(LOG_INFO, "[-NCP-]: Link-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
 		}
+		update_link_local_address(addr);
 
 	} else if (key == SPINEL_PROP_IPV6_ML_ADDR) {
 		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr
-		 && buffer_is_nonzero(addr->s6_addr, 8)
-		 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
-		) {
-			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
-				remove_address(mNCPMeshLocalAddress);
-			}
-			memcpy((void*)mNCPMeshLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPMeshLocalAddress));
-			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
-			add_address(mNCPMeshLocalAddress);
+		if (addr != NULL) {
+			syslog(LOG_INFO, "[-NCP-]: Mesh-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
 		}
+		update_mesh_local_address(addr);
 
 	} else if (key == SPINEL_PROP_IPV6_ML_PREFIX) {
 		struct in6_addr *addr = NULL;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr
-		 && buffer_is_nonzero(addr->s6_addr, 8)
-		 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
-		) {
-			if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
-				remove_address(mNCPMeshLocalAddress);
-			}
-			memcpy((void*)mNCPV6Prefix, (void*)addr, sizeof(mNCPV6Prefix));
-			struct in6_addr prefix_addr (mNCPMeshLocalAddress);
-			// Zero out the lower 64 bits.
-			memset(prefix_addr.s6_addr+8, 0, 8);
-			signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalPrefix, in6_addr_to_string(prefix_addr) + "/64");
+		if (addr != NULL) {
+			syslog(LOG_INFO, "[-NCP-]: Mesh-local prefix \"%s\"", (in6_addr_to_string(*addr) + "/64").c_str());
 		}
+		update_mesh_local_prefix(addr);
 
 	} else if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
 		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
 		std::map<struct in6_addr, GlobalAddressEntry> global_addresses(mGlobalAddresses);
+		const struct in6_addr *addr = NULL;
+		int num_address = 0;
 
 		while (value_data_len > 0) {
 			const uint8_t *entry_ptr = NULL;
@@ -1854,12 +1891,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (len < 1) {
 				break;
 			}
-			global_addresses.erase(*reinterpret_cast<const struct in6_addr*>(entry_ptr));
+
+			addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
+			syslog(LOG_INFO, "[-NCP-]: IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
+			num_address++;
+			global_addresses.erase(*addr);
 			handle_ncp_spinel_value_inserted(key, entry_ptr, entry_len);
 
 			value_data_ptr += len;
 			value_data_len -= len;
 		}
+
+		syslog(LOG_INFO, "[-NCP-]: IPv6 address: Total %d address%s", num_address, (num_address > 1) ? "es" : "");
 
 		// Since this was the whole list, we need
 		// to remove the addresses that weren't in
@@ -1885,6 +1928,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_MAC_15_4_PANID) {
 		uint16_t panid;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &panid);
+		syslog(LOG_INFO, "[-NCP-]: PANID 0x%04X", panid);
 		if (panid != mCurrentNetworkInstance.panid) {
 			mCurrentNetworkInstance.panid = panid;
 			signal_property_changed(kWPANTUNDProperty_NetworkPANID, panid);
@@ -1892,6 +1936,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_NET_XPANID) {
 		nl::Data xpanid(value_data_ptr, value_data_len);
+		char cstr_buf[200];
+		encode_data_into_string(value_data_ptr, value_data_len, cstr_buf, sizeof(cstr_buf), 0);
+		syslog(LOG_INFO, "[-NCP-] XPANID 0x%s", cstr_buf);
+
 		if ((value_data_len == 8) && 0 != memcmp(xpanid.data(), mCurrentNetworkInstance.xpanid, 8)) {
 			memcpy(mCurrentNetworkInstance.xpanid, xpanid.data(), 8);
 			signal_property_changed(kWPANTUNDProperty_NetworkXPANID, xpanid);
@@ -1924,6 +1972,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_PHY_CHAN) {
 		unsigned int value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
+		syslog(LOG_INFO, "[-NCP-]: Channel %d", value);
 		if (value != mCurrentNetworkInstance.channel) {
 			mCurrentNetworkInstance.channel = value;
 			signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
@@ -1948,6 +1997,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_PHY_TX_POWER) {
 		int8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
+		syslog(LOG_INFO, "[-NCP-]: Tx power %d", value);
 		if (value != mTXPower) {
 			mTXPower = value;
 			signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
@@ -1959,7 +2009,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NET_ROLE) {
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-		syslog(LOG_INFO,"[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+		syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
 
 		if ( ncp_state_is_joining_or_joined(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)
@@ -1990,7 +2040,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_MODE) {
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-		syslog(LOG_INFO,"[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
+		syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
 		mThreadMode = value;
 
 		switch (mNodeType)
@@ -2011,6 +2061,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NET_STACK_UP) {
 		bool is_stack_up;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
+		syslog(LOG_INFO, "[-NCP-]: Stack is %sup", is_stack_up ? "" : "not ");
 
 		if (is_stack_up) {
 			if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
@@ -2025,12 +2076,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_NET_IF_UP) {
 		bool is_if_up;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_if_up);
+		syslog(LOG_INFO, "[-NCP-]: Interface is %sup", is_if_up ? "" : "not ");
 
 		if (ncp_state_is_interface_up(get_ncp_state()) && !is_if_up) {
 			change_ncp_state(OFFLINE);
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		int num_prefix = 0;
 		mOnMeshPrefixes.clear();
 		while (value_data_len > 0) {
 			spinel_ssize_t len = 0;
@@ -2054,6 +2107,19 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (len < 1) {
 				break;
 			}
+
+			syslog(
+				LOG_INFO,
+				"[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s",
+				num_prefix,
+				in6_addr_to_string(*addr).c_str(),
+				prefix_len,
+				stable ? "yes" : "no",
+				isLocal ? "yes" : "no",
+				on_mesh_prefix_flags_to_string(flags).c_str()
+			);
+
+			num_prefix++;
 
 			refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
 
@@ -2231,7 +2297,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
 		char net_data_cstr_buf[540];
 		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
-		syslog(LOG_INFO, "[-NCP-] Leader network data: %s", net_data_cstr_buf);
+		syslog(LOG_INFO, "[-NCP-] Leader network data: [%s]", net_data_cstr_buf);
 	}
 
 bail:
@@ -2252,7 +2318,7 @@ SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefi
 		SpinelNCPTaskSendCommand::Factory factory(this);
 		struct in6_addr addr = make_slaac_addr_from_eui64(prefix->s6_addr, mMACAddress);
 
-		syslog(LOG_NOTICE, "Pushing a new address %s/%d to the NCP", in6_addr_to_string(addr).c_str(), prefix_len);
+		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to the NCP", in6_addr_to_string(addr).c_str(), prefix_len);
 
 		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 
@@ -2294,14 +2360,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 				static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
 				if (IN6_IS_ADDR_LINKLOCAL(addr)) {
 					if (0 != memcmp(rloc_bytes, addr->s6_addr+8, sizeof(rloc_bytes))) {
-						handle_ncp_spinel_value_is(SPINEL_PROP_IPV6_LL_ADDR, addr->s6_addr, sizeof(*addr));
+						update_link_local_address(addr);
 					}
 				} else if (0 == memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix))) {
 					if (0 != memcmp(rloc_bytes, addr->s6_addr+8, sizeof(rloc_bytes))) {
-						handle_ncp_spinel_value_is(SPINEL_PROP_IPV6_ML_ADDR, addr->s6_addr, sizeof(*addr));
+						update_mesh_local_address(addr);
 					}
 				} else {
-					add_address(*addr, 64, valid_lifetime, preferred_lifetime);
+					add_address(*addr, prefix_len, valid_lifetime, preferred_lifetime);
 				}
 			}
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
@@ -2310,7 +2376,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 		bool stable;
 		uint8_t flags = 0;
 		bool isLocal;
-		static const char flag_lookup[] = "ppPSDCRM";
 
 		spinel_datatype_unpack(
 			value_data_ptr,
@@ -2323,7 +2388,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 			&isLocal
 		);
 
-		syslog(LOG_NOTICE, "On-Mesh Network Added: %s/%d flags:%s", in6_addr_to_string(*addr).c_str(), prefix_len, flags_to_string(flags, flag_lookup).c_str());
+		syslog(
+			LOG_NOTICE,
+			"[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s",
+			in6_addr_to_string(*addr).c_str(),
+			prefix_len,
+			stable ? "yes" : "no",
+			isLocal ? "yes" : "no",
+			on_mesh_prefix_flags_to_string(flags).c_str()
+		);
 
 		refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
 	}
