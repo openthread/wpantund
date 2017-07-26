@@ -232,6 +232,7 @@ private:
 
 	int mTXPower;
 	uint8_t mThreadMode;
+	bool mIsCommissioned;
 
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;

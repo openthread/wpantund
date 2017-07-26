@@ -177,6 +177,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mSettings.clear();
 	mXPANIDWasExplicitlySet = false;
 	mThreadMode = 0;
+	mIsCommissioned = false;
 
 	if (!settings.empty()) {
 		int status;
@@ -762,7 +763,7 @@ SpinelNCPInstance::property_get_value(
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SAVED, SPINEL_DATATYPE_BOOL_S);
+		cb(kWPANTUNDStatus_Ok, boost::any(mIsCommissioned));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
@@ -2011,7 +2012,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 		syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
 
-		if ( ncp_state_is_joining_or_joined(get_ncp_state())
+		if (ncp_state_is_joining_or_joined(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)
 		) {
 			change_ncp_state(ASSOCIATED);
@@ -2058,6 +2059,17 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			break;
 		}
 
+	} else if (key == SPINEL_PROP_NET_SAVED) {
+		bool is_commissioned;
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
+		syslog(LOG_INFO, "[-NCP-]: NetSaved (NCP is commissioned?) \"%s\" ", is_commissioned ? "yes" : "no");
+		mIsCommissioned = is_commissioned;
+		if (mIsCommissioned && (get_ncp_state() == OFFLINE)) {
+			change_ncp_state(COMMISSIONED);
+		} else if (!mIsCommissioned && (get_ncp_state() == COMMISSIONED)) {
+			change_ncp_state(OFFLINE);
+		}
+
 	} else if (key == SPINEL_PROP_NET_STACK_UP) {
 		bool is_stack_up;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
@@ -2069,7 +2081,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 		} else {
 			if (!ncp_state_is_joining(get_ncp_state())) {
-				change_ncp_state(OFFLINE);
+				change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
 			}
 		}
 
@@ -2079,7 +2091,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		syslog(LOG_INFO, "[-NCP-]: Interface is %sup", is_if_up ? "" : "not ");
 
 		if (ncp_state_is_interface_up(get_ncp_state()) && !is_if_up) {
-			change_ncp_state(OFFLINE);
+			change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
@@ -2424,6 +2436,7 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 	if (ncp_state_is_associated(new_ncp_state)
 	 && !ncp_state_is_associated(old_ncp_state)
 	) {
+		mIsCommissioned = true;
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 			.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_LADDR))
 			.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_ML_ADDR))
