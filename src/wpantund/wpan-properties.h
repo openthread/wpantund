@@ -105,7 +105,6 @@
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadSteeringDataAddress         "OpenThread:SteeringData:Address"
-#define kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable "OpenThread:SteeringData:SetWhenJoinable"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters           "OpenThread:MsgBufferCounters"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString   "OpenThread:MsgBufferCounters:AsString"
 #define kWPANTUNDProperty_OpenThreadDebugTestAssert             "OpenThread:Debug:TestAssert"

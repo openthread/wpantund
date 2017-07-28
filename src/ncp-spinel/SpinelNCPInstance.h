@@ -237,7 +237,6 @@ private:
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
 
-	bool mSetSteeringDataWhenJoinable;
 	uint8_t mSteeringDataAddress[8];
 
 	SettingsMap mSettings;
