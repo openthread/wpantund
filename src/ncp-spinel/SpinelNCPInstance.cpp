@@ -170,8 +170,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mSupprotedChannels.clear();
 
-	mSetSteeringDataWhenJoinable = false;
-	memset(mSteeringDataAddress, 0xff, sizeof(mSteeringDataAddress));
+	memset(mSteeringDataAddress, 0, sizeof(mSteeringDataAddress));
 
 	mIsPcapInProgress = false;
 	mSettings.clear();
@@ -1027,11 +1026,12 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable)) {
-		cb(0, boost::any(mSetSteeringDataWhenJoinable));
-
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataAddress)) {
-		cb(0, boost::any(nl::Data(mSteeringDataAddress, sizeof(mSteeringDataAddress))));
+		if (mCapabilities.count(SPINEL_CAP_OOB_STEERING_DATA)) {
+			cb(0, boost::any(nl::Data(mSteeringDataAddress, sizeof(mSteeringDataAddress))));
+		} else {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Steering Data OOB control is not supported by NCP")));
+		}
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
@@ -1545,21 +1545,63 @@ SpinelNCPInstance::property_set_value(
 				.finish()
 			);
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable)) {
-			mSetSteeringDataWhenJoinable = any_to_bool(value);
-			cb(kWPANTUNDStatus_Ok);
-
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataAddress)) {
-			Data address = any_to_data(value);
+			Data data = any_to_data(value);
 			wpantund_status_t status = kWPANTUNDStatus_Ok;
 
-			if (address.size() != sizeof(mSteeringDataAddress)) {
-				status = kWPANTUNDStatus_InvalidArgument;
+			if (data.size() == sizeof(mSteeringDataAddress)) {
+				memcpy(mSteeringDataAddress, data.data(), sizeof(mSteeringDataAddress));
 			} else {
-				memcpy(mSteeringDataAddress, address.data(), sizeof(mSteeringDataAddress));
+				// If the data length does not match an extended address, then
+				// `data` should be all zero (to clear steering data) or it should
+				// be all `0xff` (to set the steering data to accept all).
+
+				if (!buffer_is_nonzero(data.data(), data.size())) {
+					memset(mSteeringDataAddress, 0, sizeof(mSteeringDataAddress));
+				} else {
+					uint8_t *data_buf = data.data();
+					size_t data_len = data.size();
+
+					while (data_len--) {
+						if (*data_buf++ != 0xff) {
+							status = kWPANTUNDStatus_InvalidArgument;
+							break;
+						}
+					}
+
+					if (status == kWPANTUNDStatus_Ok) {
+						memset(mSteeringDataAddress, 0xff, sizeof(mSteeringDataAddress));
+					}
+				}
 			}
 
-			cb (status);
+			// If the input value could be parsed successfully,
+			// set the `SPINEL_CAP_OOB_STEERING_DATA` property
+			// also save it in the settings to ensure it is
+			// re-applied after an NCP reset.
+
+			if (status != kWPANTUNDStatus_Ok) {
+				cb(status);
+			} else {
+				Data command = SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_EUI64_S),
+					SPINEL_PROP_THREAD_STEERING_DATA,
+					mSteeringDataAddress
+				);
+
+				mSettings[kWPANTUNDProperty_OpenThreadSteeringDataAddress] = SettingsEntry(command, SPINEL_CAP_OOB_STEERING_DATA);
+
+				if (mCapabilities.count(SPINEL_CAP_OOB_STEERING_DATA)) {
+					start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(command)
+						.finish()
+					);
+
+				} else {
+					cb(kWPANTUNDStatus_FeatureNotSupported);
+				}
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyStream)) {
 			Data packet = any_to_data(value);
@@ -2144,6 +2186,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		uint16_t assisting_port(0);
 
 		if (is_assisting != get_current_network_instance().joinable) {
+			// TODO: ABTIN Make this into a method that does check more and trigger changes for the steering data...
 			mCurrentNetworkInstance.joinable = is_assisting;
 			signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
 		}
@@ -2310,6 +2353,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		char net_data_cstr_buf[540];
 		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
 		syslog(LOG_INFO, "[-NCP-] Leader network data: [%s]", net_data_cstr_buf);
+
+	} else if (key == SPINEL_PROP_THREAD_STEERING_DATA) {
+		char cstr_buf[40];
+		encode_data_into_string(value_data_ptr, value_data_len, cstr_buf, sizeof(cstr_buf), 0);
+		syslog(LOG_INFO, "[-NCP-] Steering data: [%s]", cstr_buf);
 	}
 
 bail:
