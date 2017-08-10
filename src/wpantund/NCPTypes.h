@@ -63,17 +63,6 @@ enum GlobalAddressFlags {
 	GA_REQUEST_FAILED  = 0x80,
 };
 
-struct GlobalAddressEntry {
-	uint32_t mValidLifetime;
-	time_t mValidLifetimeExpiration;
-	uint32_t mPreferredLifetime;
-	time_t mPreferredLifetimeExpiration;
-	uint8_t mFlags;
-	uint8_t mUserAdded:1;
-
-	std::string get_description() const;
-};
-
 struct EnergyScanResultEntry
 {
 	uint8_t mChannel;

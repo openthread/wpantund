@@ -90,3 +90,41 @@ DummyNCPInstance::get_control_interface()
 {
 	return mControlInterface;
 }
+
+void
+DummyNCPInstance::add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::remove_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+	bool stable, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+	bool stable, CallbackWithStatus cb)
+{
+	return;
+}

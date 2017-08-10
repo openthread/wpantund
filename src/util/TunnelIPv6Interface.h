@@ -67,7 +67,10 @@ public:
 	bool add_route(const struct in6_addr *route, int prefixlen = 64);
 	bool remove_route(const struct in6_addr *route, int prefixlen = 64);
 
-	virtual void reset();
+	bool join_multicast_address(const struct in6_addr *addr);
+	bool leave_multicast_address(const struct in6_addr *addr);
+
+	virtual void reset(void);
 	virtual ssize_t write(const void* data, size_t len);
 	virtual ssize_t read(void* data, size_t len);
 
@@ -76,16 +79,19 @@ public:
 
 public: // Signals
 
-	boost::signals2::signal<void(const struct in6_addr&, int)> mAddressWasAdded;
-	boost::signals2::signal<void(const struct in6_addr&, int)> mAddressWasRemoved;
+	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasAdded;
+	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasRemoved;
 
 	// void linkStateChanged(isUp, isRunning);
 	boost::signals2::signal<void(bool, bool)> mLinkStateChanged;
 
 private:
-	void setup_signals();
+	void setup_signals(void);
 
 	void on_link_state_changed(bool isUp, bool isRunning);
+	void on_address_added(const struct in6_addr &address, uint8_t prefix_len);
+	void on_address_removed(const struct in6_addr &address, uint8_t prefix_len);
+
 private:
 	std::string mInterfaceName;
 	int mLastError;
@@ -96,6 +102,19 @@ private:
 	bool mIsRunning;
 	bool mIsUp;
 
-	std::set<struct in6_addr> mAddresses;
+	struct Entry {
+		int mPrefixLen;
+		enum State {
+			kWaitingToAdd,            // Waiting to add the address on interface when it becomes online
+			kWaitingForAddConfirm,    // Address was added, waiting for callback to confirm the address add
+		} mState;
+
+		Entry(State state = kWaitingToAdd, int prefix_len = 64) :
+			mPrefixLen(prefix_len),
+			mState(state) { }
+	};
+
+	std::map<struct in6_addr, Entry> mUnicastAddresses;
+	std::map<struct in6_addr, Entry> mMulticastAddresses;
 };
 #endif /* defined(__wpantund__TunnelInterface__) */

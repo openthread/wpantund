@@ -47,6 +47,7 @@
 #define kWPANTUNDProperty_DaemonAutoFirmwareUpdate              "Daemon:AutoFirmwareUpdate"
 #define kWPANTUNDProperty_DaemonAutoDeepSleep                   "Daemon:AutoDeepSleep"
 #define kWPANTUNDProperty_DaemonFaultReason                     "Daemon:FaultReason"
+#define kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix   "Daemon:SetDefaultRouteForAutoAddedPrefix"
 
 #define kWPANTUNDProperty_NCPVersion                            "NCP:Version"
 #define kWPANTUNDProperty_NCPState                              "NCP:State"
@@ -80,6 +81,7 @@
 #define kWPANTUNDProperty_IPv6MeshLocalAddress                  "IPv6:MeshLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalPrefix                   "IPv6:MeshLocalPrefix"
 #define kWPANTUNDProperty_IPv6AllAddresses                      "IPv6:AllAddresses"
+#define kWPANTUNDProperty_IPv6MulticastAddresses                "IPv6:MulticastAddresses"
 
 #define kWPANTUNDProperty_ThreadRLOC16                          "Thread:RLOC16"
 #define kWPANTUNDProperty_ThreadRouterID                        "Thread:RouterID"

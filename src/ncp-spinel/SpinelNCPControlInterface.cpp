@@ -192,16 +192,14 @@ SpinelNCPControlInterface::add_on_mesh_prefix(
 	OnMeshPrefixPriority priority,
 	CallbackWithStatus cb
 ) {
-	const static int kPreferenceOffset = 6;
 	uint8_t flags = 0;
-	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
 
 	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
 	switch (priority) {
 	case ROUTE_HIGH_PREFERENCE:
-		flags = (1 << kPreferenceOffset);
+		flags = (1 << SpinelNCPInstance::OnMeshPrefixEntry::kPreferenceOffset);
 		break;
 
 	case ROUTE_MEDIUM_PREFERENCE:
@@ -209,44 +207,27 @@ SpinelNCPControlInterface::add_on_mesh_prefix(
 		break;
 
 	case ROUTE_LOW_PREFRENCE:
-		flags = (3 << kPreferenceOffset);
+		flags = (3 << SpinelNCPInstance::OnMeshPrefixEntry::kPreferenceOffset);
 		break;
 	}
 
 	if (defaultRoute) {
-		flags |= SPINEL_NET_FLAG_DEFAULT_ROUTE;
+		flags |= SpinelNCPInstance::OnMeshPrefixEntry::kFlagDefaultRoute;
 	}
 
 	if (preferred) {
-		flags |= SPINEL_NET_FLAG_PREFERRED;
+		flags |= SpinelNCPInstance::OnMeshPrefixEntry::kFlagPreferred;
 	}
 
 	if (slaac) {
-		flags |= SPINEL_NET_FLAG_SLAAC;
+		flags |= SpinelNCPInstance::OnMeshPrefixEntry::kFlagSLAAC;
 	}
 
 	if (onMesh) {
-		flags |= SPINEL_NET_FLAG_ON_MESH;
+		flags |= SpinelNCPInstance::OnMeshPrefixEntry::kFlagOnMesh;
 	}
 
-	factory.set_callback(cb);
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
-
-	factory.add_command(SpinelPackData(
-		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-			SPINEL_DATATYPE_IPv6ADDR_S
-			SPINEL_DATATYPE_UINT8_S
-			SPINEL_DATATYPE_BOOL_S
-			SPINEL_DATATYPE_UINT8_S
-		),
-		SPINEL_PROP_THREAD_ON_MESH_NETS,
-		prefix,
-		IPV6_NETWORK_PREFIX_LENGTH,
-		true,
-		flags
-	));
-
-	mNCPInstance->start_new_task(factory.finish());
+	mNCPInstance->on_mesh_prefix_was_added(SpinelNCPInstance::kOriginUser, *prefix, 64, flags, true, cb);
 
 bail:
 	return;
@@ -257,30 +238,10 @@ SpinelNCPControlInterface::remove_on_mesh_prefix(
 	const struct in6_addr *prefix,
 	CallbackWithStatus cb
 ) {
-	uint8_t flags = 0;
-	SpinelNCPTaskSendCommand::Factory factory(mNCPInstance);
-
 	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
-	factory.set_callback(cb);
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
-
-	factory.add_command(SpinelPackData(
-		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-			SPINEL_DATATYPE_IPv6ADDR_S
-			SPINEL_DATATYPE_UINT8_S
-			SPINEL_DATATYPE_BOOL_S
-			SPINEL_DATATYPE_UINT8_S
-		),
-		SPINEL_PROP_THREAD_ON_MESH_NETS,
-		prefix,
-		IPV6_NETWORK_PREFIX_LENGTH,
-		true,
-		flags
-	));
-
-	mNCPInstance->start_new_task(factory.finish());
+	mNCPInstance->on_mesh_prefix_was_removed(SpinelNCPInstance::kOriginUser, *prefix, 64, cb);
 
 bail:
 	return;
@@ -408,6 +369,13 @@ bail:
 }
 
 void
+SpinelNCPControlInterface::handle_permit_join_timeout(Timer *timer, int seconds)
+{
+	syslog(LOG_NOTICE, "PermitJoin: Timeout interval of %d seconds expired", seconds);
+	permit_join(0);
+}
+
+void
 SpinelNCPControlInterface::permit_join(
 	int seconds,
 	uint8_t traffic_type,
@@ -454,6 +422,9 @@ SpinelNCPControlInterface::permit_join(
 
 		memcpy(steering_data_addr, mNCPInstance->mSteeringDataAddress, sizeof(steering_data_addr));
 
+		mPermitJoinTimer.schedule(Timer::kOneSecond * seconds,
+				boost::bind(&SpinelNCPControlInterface::handle_permit_join_timeout, this, _1, seconds));
+
 	} else {
 
 		factory.add_command(SpinelPackData(
@@ -462,6 +433,8 @@ SpinelNCPControlInterface::permit_join(
 		));
 
 		memset(steering_data_addr, 0, sizeof(steering_data_addr));
+
+		mPermitJoinTimer.cancel();
 	}
 
 	if (should_update_steering_data) {
@@ -476,20 +449,25 @@ SpinelNCPControlInterface::permit_join(
 
 bail:
 	if (ret) {
+		syslog(LOG_ERR, "PermitJoin: failed with error %d", ret);
 		cb(ret);
 	} else {
-		if (!should_update_steering_data) {
-			syslog(LOG_NOTICE, "PermitJoin: seconds=%d type=%d port=%d", seconds, traffic_type, ntohs(traffic_port));
+		if (seconds > 0) {
+			if (!should_update_steering_data) {
+				syslog(LOG_NOTICE, "PermitJoin: seconds=%d type=%d port=%d", seconds, traffic_type, ntohs(traffic_port));
+			} else {
+				syslog(
+					LOG_NOTICE,
+					"PermitJoin: seconds=%d type=%d port=%d, steering_data_addr=%02X%02X%02X%02X%02X%02X%02X%02X",
+					seconds,
+					traffic_type,
+					ntohs(traffic_port),
+					steering_data_addr[0], steering_data_addr[1], steering_data_addr[2], steering_data_addr[3],
+					steering_data_addr[4], steering_data_addr[5], steering_data_addr[6], steering_data_addr[7]
+				);
+			}
 		} else {
-			syslog(
-				LOG_NOTICE,
-				"PermitJoin: seconds=%d type=%d port=%d, steering_data_addr=%02X%02X%02X%02X%02X%02X%02X%02X",
-				seconds,
-				traffic_type,
-				ntohs(traffic_port),
-				steering_data_addr[0], steering_data_addr[1], steering_data_addr[2], steering_data_addr[3],
-				steering_data_addr[4], steering_data_addr[5], steering_data_addr[6], steering_data_addr[7]
-			);
+			syslog(LOG_NOTICE, "PermitJoin: Becoming non-joinable");
 		}
 	}
 }

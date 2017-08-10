@@ -38,6 +38,7 @@
 #include "SpinelNCPTaskGetMsgBufferCounters.h"
 #include "any-to.h"
 #include "spinel-extra.h"
+#include "IPv6Helpers.h"
 
 #define kWPANTUNDProperty_Spinel_CounterPrefix		"NCP:Counter:"
 
@@ -215,14 +216,6 @@ SpinelNCPInstance::thread_mode_to_string(uint8_t mode)
 		((mode & SPINEL_THREAD_MODE_SECURE_DATA_REQUEST) != 0) ? "yes" : "no"
 	);
 
-	return c_string;
-}
-
-std::string
-SpinelNCPInstance::on_mesh_prefix_flags_to_string(uint8_t flags)
-{
-	char c_string[100];
-	snprintf(c_string, sizeof(c_string), "%s(0x%02x)", flags_to_string(flags, "ppPSDCRM").c_str(), flags);
 	return c_string;
 }
 
@@ -605,17 +598,14 @@ unpack_thread_off_mesh_routes(const uint8_t *data_in, spinel_size_t data_len, bo
 			ret = kWPANTUNDStatus_Failure;
 			break;
 		} else {
-			char address_string[INET6_ADDRSTRLEN];
 			char c_string[200];
 			NCPControlInterface::ExternalRoutePriority priority;
 
 			priority = SpinelNCPControlInterface::convert_flags_to_external_route_priority(flags);
 
-			inet_ntop(AF_INET6,	route_prefix, address_string, sizeof(address_string));
-
 			snprintf(c_string, sizeof(c_string),
 				"%s/%d, stable:%s, local:%s, next_hop:%s, priority:%s (flags:0x%02x)",
-				address_string,
+				in6_addr_to_string(*route_prefix).c_str(),
 				prefix_len,
 				is_stable ? "yes" : "no",
 				is_local ? "yes" : "no",
@@ -654,23 +644,13 @@ SpinelNCPInstance::update_node_type(NodeType new_node_type)
 	}
 }
 
-
 void
 SpinelNCPInstance::update_link_local_address(struct in6_addr *addr)
 {
 	if (NULL != addr
 	  && (0 != memcmp(mNCPLinkLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPLinkLocalAddress)))
 	) {
-		if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-			remove_address(mNCPLinkLocalAddress);
-		}
-
 		memcpy((void*)mNCPLinkLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPLinkLocalAddress));
-
-		if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-			add_address(mNCPLinkLocalAddress);
-		}
-
 		signal_property_changed(kWPANTUNDProperty_IPv6LinkLocalAddress, in6_addr_to_string(*addr));
 	}
 }
@@ -682,12 +662,13 @@ SpinelNCPInstance::update_mesh_local_address(struct in6_addr *addr)
 	 && buffer_is_nonzero(addr->s6_addr, 8)
 	 && (0 != memcmp(mNCPMeshLocalAddress.s6_addr, addr->s6_addr, sizeof(mNCPMeshLocalAddress)))
 	) {
-		if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
-			remove_address(mNCPMeshLocalAddress);
-		}
 		memcpy((void*)mNCPMeshLocalAddress.s6_addr, (void*)addr->s6_addr, sizeof(mNCPMeshLocalAddress));
 		signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalAddress, in6_addr_to_string(*addr));
-		add_address(mNCPMeshLocalAddress);
+
+		// If mesh-local prefix gets changed we go through the
+		// list of IPv6 addresses and filter/remove any previously
+		// added RLOC addresses.
+		filter_addresses();
 	}
 }
 
@@ -698,14 +679,16 @@ SpinelNCPInstance::update_mesh_local_prefix(struct in6_addr *addr)
 	 && buffer_is_nonzero(addr->s6_addr, 8)
 	 && (0 != memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix)))
 	) {
-		if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress))) {
-			remove_address(mNCPMeshLocalAddress);
-		}
 		memcpy((void*)mNCPV6Prefix, (void*)addr, sizeof(mNCPV6Prefix));
 		struct in6_addr prefix_addr (mNCPMeshLocalAddress);
 		// Zero out the lower 64 bits.
 		memset(prefix_addr.s6_addr+8, 0, 8);
 		signal_property_changed(kWPANTUNDProperty_IPv6MeshLocalPrefix, in6_addr_to_string(prefix_addr) + "/64");
+
+		// If mesh-local prefix gets changed we go through the
+		// list of IPv6 addresses and filter/remove any previously
+		// added RLOC addresses.
+		filter_addresses();
 	}
 }
 
@@ -1879,8 +1862,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		update_mesh_local_prefix(addr);
 
 	} else if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
-		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
-		std::map<struct in6_addr, GlobalAddressEntry> global_addresses(mGlobalAddresses);
+		std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
+		std::map<struct in6_addr, UnicastAddressEntry> unicast_addresses(mUnicastAddresses);
 		const struct in6_addr *addr = NULL;
 		int num_address = 0;
 
@@ -1896,7 +1879,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
 			syslog(LOG_INFO, "[-NCP-]: IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
 			num_address++;
-			global_addresses.erase(*addr);
+			unicast_addresses.erase(*addr);
 			handle_ncp_spinel_value_inserted(key, entry_ptr, entry_len);
 
 			value_data_ptr += len;
@@ -1905,12 +1888,44 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 		syslog(LOG_INFO, "[-NCP-]: IPv6 address: Total %d address%s", num_address, (num_address > 1) ? "es" : "");
 
-		// Since this was the whole list, we need
-		// to remove the addresses that weren't in
-		// the list.
-		for (iter = global_addresses.begin(); iter!= global_addresses.end(); ++iter) {
-			if (!iter->second.mUserAdded) {
-				remove_address(iter->first);
+		// Since this was the whole list, we need to remove the addresses
+		// which originated from NCP that that weren't in the list.
+		for (iter = unicast_addresses.begin(); iter != unicast_addresses.end(); ++iter) {
+			if (iter->second.is_from_ncp()) {
+				unicast_address_was_removed(kOriginThreadNCP, iter->first);
+			}
+		}
+
+	} else if (key == SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE) {
+		std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
+		std::map<struct in6_addr, MulticastAddressEntry> multicast_addresses(mMulticastAddresses);
+		const struct in6_addr *addr = NULL;
+		int num_address = 0;
+
+		while (value_data_len > 0) {
+			const uint8_t *entry_ptr = NULL;
+			spinel_size_t entry_len = 0;
+			spinel_ssize_t len = 0;
+			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "D.", &entry_ptr, &entry_len);
+			if (len < 1) {
+				break;
+			}
+
+			addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
+			syslog(LOG_INFO, "[-NCP-]: Multicast IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
+			num_address++;
+			multicast_addresses.erase(*addr);
+			handle_ncp_spinel_value_inserted(key, entry_ptr, entry_len);
+
+			value_data_ptr += len;
+			value_data_len -= len;
+		}
+
+		// Since this was the whole list, we need to remove the addresses
+		// which originated from NCP that that weren't in the list.
+		for (iter = multicast_addresses.begin(); iter != multicast_addresses.end(); ++iter) {
+			if (iter->second.is_from_ncp()) {
+				multicast_address_was_left(kOriginThreadNCP, iter->first);
 			}
 		}
 
@@ -2095,48 +2110,46 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter;
+		std::map<struct in6_addr, OnMeshPrefixEntry> on_mesh_prefixes(mOnMeshPrefixes);
 		int num_prefix = 0;
-		mOnMeshPrefixes.clear();
+
 		while (value_data_len > 0) {
 			spinel_ssize_t len = 0;
-			struct in6_addr *addr = NULL;
+			struct in6_addr *prefix = NULL;
 			uint8_t prefix_len = 0;
 			bool stable;
 			uint8_t flags = 0;
-			bool isLocal;
+			bool is_local;
 
-			len = spinel_datatype_unpack(
-				value_data_ptr,
-				value_data_len,
-				"t(6CbCb)",
-				&addr,
-				&prefix_len,
-				&stable,
-				&flags,
-				&isLocal
-			);
+			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "t(6CbCb)",
+						&prefix, &prefix_len, &stable, &flags, &is_local);
 
 			if (len < 1) {
 				break;
 			}
 
-			syslog(
-				LOG_INFO,
-				"[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s",
-				num_prefix,
-				in6_addr_to_string(*addr).c_str(),
-				prefix_len,
-				stable ? "yes" : "no",
-				isLocal ? "yes" : "no",
-				on_mesh_prefix_flags_to_string(flags).c_str()
-			);
+			syslog(LOG_INFO, "[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s",
+				num_prefix,	in6_addr_to_string(*prefix).c_str(), prefix_len, stable ? "yes" : "no",
+				is_local ? "yes" : "no", on_mesh_prefix_flags_to_string(flags).c_str());
 
 			num_prefix++;
+			on_mesh_prefixes.erase(*prefix);
 
-			refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
+			if (!is_local) {
+				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
+			}
 
 			value_data_ptr += len;
 			value_data_len -= len;
+		}
+
+		// Since this was the whole list, we need to remove any prefixes
+		// which originated from NCP that that weren't in the new list.
+		for (iter = on_mesh_prefixes.begin(); iter != on_mesh_prefixes.end(); ++iter) {
+			if (iter->second.is_from_ncp()) {
+				on_mesh_prefix_was_removed(kOriginThreadNCP, iter->first, iter->second.get_prefix_len());
+			}
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
@@ -2317,45 +2330,6 @@ bail:
 }
 
 void
-SpinelNCPInstance::refresh_on_mesh_prefix(struct in6_addr *prefix, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal)
-{
-	if (!isLocal) {
-		struct in6_addr addr;
-		memcpy(&addr, prefix, sizeof(in6_addr));
-		add_prefix(addr, UINT32_MAX, UINT32_MAX, flags);
-	}
-	if (!isLocal
-	  && ((flags & (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC)) == (SPINEL_NET_FLAG_ON_MESH | SPINEL_NET_FLAG_SLAAC))
-	  && !lookup_address_for_prefix(NULL, *prefix, prefix_len)
-	) {
-		SpinelNCPTaskSendCommand::Factory factory(this);
-		struct in6_addr addr = make_slaac_addr_from_eui64(prefix->s6_addr, mMACAddress);
-
-		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to the NCP", in6_addr_to_string(addr).c_str(), prefix_len);
-
-		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
-
-		factory.add_command(
-			SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix Length
-					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
-					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
-				),
-				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				&addr,
-				prefix_len,
-				UINT32_MAX,
-				UINT32_MAX
-			)
-		);
-
-		start_new_task(factory.finish());
-	}
-}
-
-void
 SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
@@ -2366,52 +2340,37 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 
 			spinel_datatype_unpack(value_data_ptr, value_data_len, "6CLL", &addr, &prefix_len, &valid_lifetime, &preferred_lifetime);
 
-			if (addr != NULL
-				&& buffer_is_nonzero(addr->s6_addr, 8)
-				&& !IN6_IS_ADDR_UNSPECIFIED(addr)
-			) {
-				static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
-				if (IN6_IS_ADDR_LINKLOCAL(addr)) {
-					if (0 != memcmp(rloc_bytes, addr->s6_addr+8, sizeof(rloc_bytes))) {
-						update_link_local_address(addr);
-					}
-				} else if (0 == memcmp(mNCPV6Prefix, addr, sizeof(mNCPV6Prefix))) {
-					if (0 != memcmp(rloc_bytes, addr->s6_addr+8, sizeof(rloc_bytes))) {
-						update_mesh_local_address(addr);
-					}
-				} else {
-					add_address(*addr, prefix_len, valid_lifetime, preferred_lifetime);
+			if (addr != NULL) {
+				if (!should_filter_address(*addr, prefix_len)) {
+					unicast_address_was_added(kOriginThreadNCP, *addr, prefix_len, valid_lifetime, preferred_lifetime);
 				}
 			}
-	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+
+	} else if (key == SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE) {
 		struct in6_addr *addr = NULL;
+
+		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
+
+		if ((addr != NULL) && !IN6_IS_ADDR_UNSPECIFIED(addr)) {
+			multicast_address_was_joined(kOriginThreadNCP, *addr);
+		}
+
+	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
+		struct in6_addr *prefix = NULL;
 		uint8_t prefix_len = 0;
 		bool stable;
 		uint8_t flags = 0;
-		bool isLocal;
+		bool is_local;
 
-		spinel_datatype_unpack(
-			value_data_ptr,
-			value_data_len,
-			"6CbCb",
-			&addr,
-			&prefix_len,
-			&stable,
-			&flags,
-			&isLocal
-		);
+		spinel_datatype_unpack(value_data_ptr, value_data_len, "6CbCb",
+			&prefix, &prefix_len, &stable, &flags, &is_local);
 
-		syslog(
-			LOG_NOTICE,
-			"[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s",
-			in6_addr_to_string(*addr).c_str(),
-			prefix_len,
-			stable ? "yes" : "no",
-			isLocal ? "yes" : "no",
-			on_mesh_prefix_flags_to_string(flags).c_str()
-		);
+		syslog(LOG_INFO, "[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s", in6_addr_to_string(*prefix).c_str(),
+			prefix_len,	stable ? "yes" : "no", is_local ? "yes" : "no",	on_mesh_prefix_flags_to_string(flags).c_str());
 
-		refresh_on_mesh_prefix(addr, prefix_len, stable, flags, isLocal);
+		if (!is_local) {
+			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
+		}
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
@@ -2556,93 +2515,205 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 	process_event(EVENT_NCP(command), cmd_data_ptr[0], cmd_data_ptr, cmd_data_len);
 }
 
-void
-SpinelNCPInstance::address_was_added(const struct in6_addr& addr, int prefix_len)
+bool
+SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t prefix_len)
 {
-	if (!is_address_known(addr) && !IN6_IS_ADDR_LINKLOCAL(&addr)) {
-		SpinelNCPTaskSendCommand::Factory factory(this);
-		uint8_t flags = SPINEL_NET_FLAG_SLAAC
-					  | SPINEL_NET_FLAG_ON_MESH
-					  | SPINEL_NET_FLAG_PREFERRED;
-		CallbackWithStatus callback;
+	static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
+	bool should_filter = false;
 
-		NCPInstanceBase::address_was_added(addr, prefix_len);
+	// Filter RLOC link-local or mesh-local addresses
 
-		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	if (0 == memcmp(rloc_bytes, addr.s6_addr + 8, sizeof(rloc_bytes))) {
+		if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
+			should_filter = true;
+		}
 
-		callback = boost::bind(&SpinelNCPInstance::check_operation_status, this, "address_was_added()", _1);
-		factory.set_callback(callback);
-
-		factory.add_command(
-			SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix Length
-					SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
-					SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
-				),
-				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				&addr,
-				prefix_len,
-				UINT32_MAX,
-				UINT32_MAX
-			)
-		);
-
-		factory.add_command(
-			SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix Length
-					SPINEL_DATATYPE_BOOL_S       // Stable?
-					SPINEL_DATATYPE_UINT8_S      // Flags
-				),
-				SPINEL_PROP_THREAD_ON_MESH_NETS,
-				&addr,
-				prefix_len,
-				true,
-				flags
-			)
-		);
-
-		start_new_task(factory.finish());
+		if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))
+			&& (0 == memcmp(mNCPV6Prefix, &addr, sizeof(mNCPV6Prefix)))
+		) {
+			should_filter = true;
+		}
 	}
+
+	return should_filter;
 }
 
 void
-SpinelNCPInstance::address_was_removed(const struct in6_addr& addr, int prefix_len)
+SpinelNCPInstance::filter_addresses(void)
 {
-	if (mPrimaryInterface->is_online() && is_address_known(addr)) {
-		SpinelNCPTaskSendCommand::Factory factory(this);
+	std::map<struct in6_addr, UnicastAddressEntry> unicast_addresses(mUnicastAddresses);
+	std::map<struct in6_addr, UnicastAddressEntry>::iterator iter;
 
-		factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	// We create a copy of mUnicastAddress map to iterate over
+	// since `mUnicastAddresses` entries can be removed while
+	// we filter and remove addresses.
 
-		factory.add_command(
-			SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-					SPINEL_DATATYPE_IPv6ADDR_S   // Address
-					SPINEL_DATATYPE_UINT8_S      // Prefix
-				),
-				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				&addr,
-				prefix_len
-			)
-		);
+	for (iter = unicast_addresses.begin(); iter != unicast_addresses.end();	++iter) {
+		if (!iter->second.is_from_ncp()) {
+			continue;
+		}
 
-		start_new_task(factory.finish());
+		if (should_filter_address(iter->first, iter->second.get_prefix_len())) {
+			unicast_address_was_removed(kOriginThreadNCP, iter->first);
+		}
 	}
+}
 
-	NCPInstanceBase::address_was_removed(addr, prefix_len);
+
+void
+SpinelNCPInstance::add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Adding address \"%s/%d\" to NCP", in6_addr_to_string(addr).c_str(), prefix_len);
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(
+		SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+				SPINEL_DATATYPE_IPv6ADDR_S   // Address
+				SPINEL_DATATYPE_UINT8_S      // Prefix Length
+				SPINEL_DATATYPE_UINT32_S     // Valid Lifetime
+				SPINEL_DATATYPE_UINT32_S     // Preferred Lifetime
+			),
+			SPINEL_PROP_IPV6_ADDRESS_TABLE,
+			&addr,
+			prefix_len,
+			UINT32_MAX,
+			UINT32_MAX
+		)
+	);
+
+	start_new_task(factory.finish());
 }
 
 void
-SpinelNCPInstance::check_operation_status(std::string operation, int status)
+SpinelNCPInstance::remove_unicast_address_on_ncp(const struct in6_addr& addr, uint8_t prefix_len, CallbackWithStatus cb)
 {
-	if (status == kWPANTUNDStatus_Timeout)
-	{
-		syslog(LOG_ERR, "Timed out while performing \"%s\" - Resetting NCP.", operation.c_str());
-		ncp_is_misbehaving();
-	}
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Removing address \"%s/%d\" from NCP", in6_addr_to_string(addr).c_str(), prefix_len);
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(
+		SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+				SPINEL_DATATYPE_IPv6ADDR_S   // Address
+				SPINEL_DATATYPE_UINT8_S      // Prefix
+			),
+			SPINEL_PROP_IPV6_ADDRESS_TABLE,
+			&addr,
+			prefix_len
+		)
+	);
+
+	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Adding multicast address \"%s\" on NCP", in6_addr_to_string(addr).c_str());
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(
+		SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+				SPINEL_DATATYPE_IPv6ADDR_S   // Address
+			),
+			SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE,
+			&addr
+		)
+	);
+
+	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Removing multicast address \"%s\" from NCP", in6_addr_to_string(addr).c_str());
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(
+		SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+				SPINEL_DATATYPE_IPv6ADDR_S   // Address
+			),
+			SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE,
+			&addr
+		)
+	);
+
+	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+	bool stable, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Adding on-mesh prefix \"%s/%d\" to NCP", in6_addr_to_string(prefix).c_str(), prefix_len);
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_ON_MESH_NETS,
+		&prefix,
+		prefix_len,
+		stable,
+		flags
+	));
+
+	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+	bool stable, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Removing on-mesh prefix \"%s/%d\" to NCP", in6_addr_to_string(prefix).c_str(), prefix_len);
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_ON_MESH_NETS,
+		&prefix,
+		prefix_len,
+		stable,
+		flags
+	));
+
+	start_new_task(factory.finish());
 }
 
 bool

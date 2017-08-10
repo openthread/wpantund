@@ -26,6 +26,7 @@
 #include "nlpt.h"
 #include "Callbacks.h"
 #include "EventHandler.h"
+#include "Timer.h"
 
 #include <queue>
 #include <set>
@@ -201,8 +202,10 @@ public:
 	static uint8_t convert_external_route_priority_to_flags(ExternalRoutePriority priority);
 
 private:
+	void handle_permit_join_timeout(Timer *timer, int seconds);
 
 	SpinelNCPInstance *mNCPInstance;
+	Timer mPermitJoinTimer;
 
 };
 

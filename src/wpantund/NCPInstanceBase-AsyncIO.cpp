@@ -209,7 +209,7 @@ NCPInstanceBase::process(void)
 	mPcapManager.process();
 
 	if (get_upgrade_status() != EINPROGRESS) {
-		refresh_global_addresses();
+		refresh_address_entries();
 
 		require_noerr(ret = mPrimaryInterface->process(), socket_failure);
 
