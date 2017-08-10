@@ -38,7 +38,6 @@ EXTRA_DIST =                                         \
 	../../third_party/openthread/NOTICE              \
 	../../third_party/openthread/README.google       \
 	../../third_party/openthread/README.md           \
-	../../third_party/openthread/src/ncp/PROTOCOL.md \
 	../../third_party/openthread/src/ncp/spinel.c    \
 	../../third_party/openthread/src/ncp/spinel.h    \
 	../../third_party/openthread/tools/spi-hdlc-adapter/README.md          \
