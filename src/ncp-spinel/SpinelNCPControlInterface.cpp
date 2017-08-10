@@ -408,6 +408,13 @@ bail:
 }
 
 void
+SpinelNCPControlInterface::handle_permit_join_timeout(Timer *timer, int seconds)
+{
+	syslog(LOG_NOTICE, "PermitJoin: Timeout interval of %d seconds expired", seconds);
+	permit_join(0);
+}
+
+void
 SpinelNCPControlInterface::permit_join(
 	int seconds,
 	uint8_t traffic_type,
@@ -454,6 +461,9 @@ SpinelNCPControlInterface::permit_join(
 
 		memcpy(steering_data_addr, mNCPInstance->mSteeringDataAddress, sizeof(steering_data_addr));
 
+		mPermitJoinTimer.schedule(Timer::kOneSecond * seconds,
+				boost::bind(&SpinelNCPControlInterface::handle_permit_join_timeout, this, _1, seconds));
+
 	} else {
 
 		factory.add_command(SpinelPackData(
@@ -462,6 +472,8 @@ SpinelNCPControlInterface::permit_join(
 		));
 
 		memset(steering_data_addr, 0, sizeof(steering_data_addr));
+
+		mPermitJoinTimer.cancel();
 	}
 
 	if (should_update_steering_data) {
@@ -476,20 +488,25 @@ SpinelNCPControlInterface::permit_join(
 
 bail:
 	if (ret) {
+		syslog(LOG_ERR, "PermitJoin: failed with error %d", ret);
 		cb(ret);
 	} else {
-		if (!should_update_steering_data) {
-			syslog(LOG_NOTICE, "PermitJoin: seconds=%d type=%d port=%d", seconds, traffic_type, ntohs(traffic_port));
+		if (seconds > 0) {
+			if (!should_update_steering_data) {
+				syslog(LOG_NOTICE, "PermitJoin: seconds=%d type=%d port=%d", seconds, traffic_type, ntohs(traffic_port));
+			} else {
+				syslog(
+					LOG_NOTICE,
+					"PermitJoin: seconds=%d type=%d port=%d, steering_data_addr=%02X%02X%02X%02X%02X%02X%02X%02X",
+					seconds,
+					traffic_type,
+					ntohs(traffic_port),
+					steering_data_addr[0], steering_data_addr[1], steering_data_addr[2], steering_data_addr[3],
+					steering_data_addr[4], steering_data_addr[5], steering_data_addr[6], steering_data_addr[7]
+				);
+			}
 		} else {
-			syslog(
-				LOG_NOTICE,
-				"PermitJoin: seconds=%d type=%d port=%d, steering_data_addr=%02X%02X%02X%02X%02X%02X%02X%02X",
-				seconds,
-				traffic_type,
-				ntohs(traffic_port),
-				steering_data_addr[0], steering_data_addr[1], steering_data_addr[2], steering_data_addr[3],
-				steering_data_addr[4], steering_data_addr[5], steering_data_addr[6], steering_data_addr[7]
-			);
+			syslog(LOG_NOTICE, "PermitJoin: Becoming non-joinable");
 		}
 	}
 }
