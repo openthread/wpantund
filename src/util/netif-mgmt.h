@@ -49,6 +49,10 @@ extern int netif_mgmt_remove_ipv6_address(int fd, const char* if_name, const uin
 
 extern int netif_mgmt_add_ipv6_route(int fd, const char* if_name, const uint8_t route[16], int prefixlen);
 extern int netif_mgmt_remove_ipv6_route(int fd, const char* if_name, const uint8_t route[16], int prefixlen);
+
+extern int netif_mgmt_join_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16]);
+extern int netif_mgmt_leave_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16]);
+
 __END_DECLS
 
 

@@ -54,6 +54,17 @@ protected:
 	virtual char ncp_to_driver_pump();
 	virtual char driver_to_ncp_pump();
 
+protected:
+	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb);
+	virtual void remove_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb);
+
+	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
+	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
+
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+					CallbackWithStatus cb);
+	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+					CallbackWithStatus cb);
 
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);

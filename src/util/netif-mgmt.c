@@ -452,3 +452,83 @@ netif_mgmt_remove_ipv6_route(int reqfd, const char* if_name, const uint8_t route
 bail:
 	return ret;
 }
+
+int
+netif_mgmt_join_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16])
+{
+	int ret = -1;
+	struct ipv6_mreq imreq;
+	unsigned int value = 1;
+	memset(&imreq, 0, sizeof(imreq));
+
+	require(reqfd >= 0, bail);
+
+	memcpy(&imreq.ipv6mr_multiaddr.s6_addr, addr, 16);
+
+	value = 1;
+	ret = setsockopt(
+		reqfd,
+		IPPROTO_IPV6,
+		IPV6_MULTICAST_LOOP,
+		&value,
+		sizeof(value)
+	);
+	require_noerr(ret, bail);
+
+	ret = netif_mgmt_get_ifindex(reqfd, if_name);
+	require_string(ret >= 0, bail, strerror(errno));
+
+	imreq.ipv6mr_interface = ret;
+
+	ret = setsockopt(
+		reqfd,
+		IPPROTO_IPV6,
+		IPV6_JOIN_GROUP,
+		&imreq,
+		sizeof(imreq)
+	);
+	require_noerr(ret, bail);
+
+bail:
+	return ret;
+}
+
+int
+netif_mgmt_leave_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16])
+{
+	int ret = -1;
+	struct ipv6_mreq imreq;
+	unsigned int value = 1;
+	memset(&imreq, 0, sizeof(imreq));
+
+	require(reqfd >= 0, bail);
+
+	memcpy(&imreq.ipv6mr_multiaddr.s6_addr, addr, 16);
+
+	value = 1;
+	ret = setsockopt(
+		reqfd,
+		IPPROTO_IPV6,
+		IPV6_MULTICAST_LOOP,
+		&value,
+		sizeof(value)
+	);
+	require_noerr(ret, bail);
+
+	ret = netif_mgmt_get_ifindex(reqfd, if_name);
+	require_string(ret >= 0, bail, strerror(errno));
+
+	imreq.ipv6mr_interface = ret;
+
+	ret = setsockopt(
+		reqfd,
+		IPPROTO_IPV6,
+		IPV6_LEAVE_GROUP,
+		&imreq,
+		sizeof(imreq)
+	);
+	require_noerr(ret, bail);
+
+bail:
+	return ret;
+}

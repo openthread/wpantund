@@ -377,17 +377,3 @@ nl::wpantund::string_to_ncp_state(const std::string& state_string)
 	// Unknown
 	return UNINITIALIZED;
 }
-
-std::string
-GlobalAddressEntry::get_description() const
-{
-	char c_string[200];
-
-	snprintf(c_string, sizeof(c_string), "valid: %u  preferred: %u  flags: %s (0x%02X)",
-				mValidLifetime,
-				mPreferredLifetime,
-				address_flags_to_string(mFlags).c_str(),
-				mFlags);
-
-	return std::string(c_string);
-}

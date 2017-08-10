@@ -140,17 +140,25 @@ protected:
 	void handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state);
 
-	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
-	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
+	bool should_filter_address(const struct in6_addr &address, uint8_t prefix_len);
+	void filter_addresses(void);
 
-	void check_operation_status(std::string operation, int status);
+	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len,
+					CallbackWithStatus cb = NilReturn());
+	virtual void remove_unicast_address_on_ncp(const struct in6_addr& addr, uint8_t prefix_len,
+					CallbackWithStatus cb = NilReturn());
+
+	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
+	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
+
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+					CallbackWithStatus cb = NilReturn());
+	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+					bool stable, CallbackWithStatus cb = NilReturn());
 
 	uint32_t get_default_channel_mask(void);
 
 private:
-
-	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal);
-
 	void update_node_type(NodeType node_type);
 	void update_link_local_address(struct in6_addr *addr);
 	void update_mesh_local_address(struct in6_addr *addr);
@@ -173,7 +181,6 @@ public:
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
 
 	static std::string thread_mode_to_string(uint8_t mode);
-	static std::string on_mesh_prefix_flags_to_string(uint8_t flags);
 
 	uint8_t get_thread_mode(void);
 

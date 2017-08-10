@@ -32,6 +32,7 @@
 #include "SuperSocket.h"
 #include "wpantund.h"
 #include "any-to.h"
+#include "IPv6Helpers.h"
 
 using namespace nl;
 using namespace wpantund;
@@ -54,8 +55,6 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mPowerFD_PowerOff = '0';
 	mPowerFD_PowerOn = '1';
 
-	mMCFD = -1;
-
 	NLPT_INIT(&mNCPToDriverPumpPT);
 	NLPT_INIT(&mDriverToNCPPumpPT);
 
@@ -65,8 +64,10 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mAutoUpdateFirmware = false;
 	mAutoResume = true;
 	mAutoDeepSleep = false;
+	mSetDefaultRouteForAutoAddedPrefix = false;
 	mIsInitializingNCP = false;
 	mNCPState = UNINITIALIZED;
+	mIsInterfaceOnline = false;
 	mNodeType = UNKNOWN;
 	mFailureCount = 0;
 	mFailureThreshold = 3;
@@ -122,8 +123,8 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSerialAdapter = mRawSerialAdapter;
 
 	mPrimaryInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(wpan_interface_name));
-	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::address_was_added, this, _1, _2));
-	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::address_was_removed, this, _1, _2));
+	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
+	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
 	mPrimaryInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::link_state_changed, this, _1, _2));
 
 	set_ncp_power(true);
@@ -189,7 +190,6 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 
 NCPInstanceBase::~NCPInstanceBase()
 {
-	close(mMCFD);
 	close(mPowerFD);
 	close(mResetFD);
 }
@@ -265,6 +265,7 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_IPv6MeshLocalAddress);
 	properties.insert(kWPANTUNDProperty_IPv6LinkLocalAddress);
 	properties.insert(kWPANTUNDProperty_IPv6AllAddresses);
+	properties.insert(kWPANTUNDProperty_IPv6MulticastAddresses);
 
 	properties.insert(kWPANTUNDProperty_ThreadOnMeshPrefixes);
 
@@ -272,6 +273,7 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_DaemonAutoDeepSleep);
 	properties.insert(kWPANTUNDProperty_DaemonReadyForHostSleep);
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
+	properties.insert(kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix);
 
 	properties.insert(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
 
@@ -374,6 +376,9 @@ NCPInstanceBase::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonTerminateOnFault)) {
 		cb(0, boost::any(mTerminateOnFault));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {
+		cb(0, boost::any(mSetDefaultRouteForAutoAddedPrefix));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkPassthruPort)) {
 		cb(0, boost::any(mCommissionerPort));
 
@@ -441,15 +446,9 @@ NCPInstanceBase::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOnMeshPrefixes)) {
 		std::list<std::string> result;
-		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator it;
-		static const char flag_lookup[] = "ppPSDCRM";
-		char address_string[INET6_ADDRSTRLEN];
-
-		for ( it = mOnMeshPrefixes.begin();
-			  it != mOnMeshPrefixes.end();
-			  it++ ) {
-			inet_ntop(AF_INET6,	&it->first,	address_string, sizeof(address_string));
-			result.push_back(std::string(address_string) + "  " + flags_to_string(it->second.mFlags, flag_lookup).c_str());
+		std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter;
+		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
 		}
 		cb(0, boost::any(result));
 
@@ -457,13 +456,17 @@ NCPInstanceBase::property_get_value(
 		|| strcaseequal(key.c_str(), kWPANTUNDProperty_DebugIPv6GlobalIPAddressList)
 	) {
 		std::list<std::string> result;
-		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator it;
-		char address_string[INET6_ADDRSTRLEN];
-		for ( it = mGlobalAddresses.begin();
-			  it != mGlobalAddresses.end();
-			  it++ ) {
-			inet_ntop(AF_INET6,	&it->first,	address_string, sizeof(address_string));
-			result.push_back(std::string(address_string)+ "  " + it->second.get_description());
+		std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
+		for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
+		}
+		cb(0, boost::any(result));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MulticastAddresses)) {
+		std::list<std::string> result;
+		std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
+		for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
 		}
 		cb(0, boost::any(result));
 
@@ -582,6 +585,10 @@ NCPInstanceBase::property_set_value(
 			if (mTerminateOnFault && (get_ncp_state() == FAULT)) {
 				reinitialize_ncp();
 			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {
+			mSetDefaultRouteForAutoAddedPrefix = any_to_bool(value);
+			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)
 			|| strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalAddress)
@@ -843,6 +850,7 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 	// (Special case of InterfaceUp -> InterfaceDown)
 	} else if (ncp_state_is_commissioned(old_ncp_state)
 		&& !ncp_state_is_commissioned(new_ncp_state)
+		&& !ncp_state_is_joining(new_ncp_state)
 		&& !ncp_state_is_sleeping(new_ncp_state)
 		&& (new_ncp_state != UNINITIALIZED)
 	) {
@@ -851,10 +859,9 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 
 	// Uninitialized -> Offline
 	// If we are transitioning from uninitialized to offline,
-	// and we have global addresses, then need to clear them out.
+	// we clear all addresses/prefixes.
 	} else if (old_ncp_state == UNINITIALIZED
 		&& new_ncp_state == OFFLINE
-		&& !mGlobalAddresses.empty()
 	) {
 		reset_interface();
 
