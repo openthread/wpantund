@@ -69,8 +69,8 @@ NetworkRetain::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_
 		recall_network_info();
 	}
 
-	// Joined --> Offline
-	else if (ncp_state_has_joined(old_ncp_state) && (new_ncp_state == OFFLINE)) {
+	// Commissioned --> Offline
+	else if (ncp_state_is_commissioned(old_ncp_state) && (new_ncp_state == OFFLINE)) {
 		erase_network_info();
 	}
 
