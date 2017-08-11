@@ -72,6 +72,8 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
+	mInstance->mIsCommissioned = false;
+
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
 		SPINEL_PROP_NET_STACK_UP,
