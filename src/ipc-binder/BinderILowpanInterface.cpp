@@ -67,7 +67,7 @@ BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPCo
 	mIpcServer(ipcServer),
 	mInterface(*interface)
 {
-	interface->mOnPropertyChanged.connect(
+	mOnPropertyChangedConnection = interface->mOnPropertyChanged.connect(
 		boost::bind(
 			&BinderILowpanInterface::onPropertyChanged,
 			this,
@@ -76,7 +76,7 @@ BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPCo
 		)
 	);
 
-	interface->mOnNetScanBeacon.connect(
+	mOnNetScanBeaconConnection = interface->mOnNetScanBeacon.connect(
 		boost::bind(
 			&BinderILowpanInterface::onNetScanBeacon,
 			this,
@@ -84,7 +84,7 @@ BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPCo
 		)
 	);
 
-	interface->mOnEnergyScanResult.connect(
+	mOnEnergyScanResultConnection = interface->mOnEnergyScanResult.connect(
 		boost::bind(
 			&BinderILowpanInterface::onEnergyScanResult,
 			this,
@@ -95,30 +95,9 @@ BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPCo
 
 BinderILowpanInterface::~BinderILowpanInterface()
 {
-	mInterface.mOnPropertyChanged.disconnect(
-		boost::bind(
-			&BinderILowpanInterface::onPropertyChanged,
-			this,
-			_1,
-			_2
-		)
-	);
-
-	mInterface.mOnNetScanBeacon.disconnect(
-		boost::bind(
-			&BinderILowpanInterface::onNetScanBeacon,
-			this,
-			_1
-		)
-	);
-
-	mInterface.mOnEnergyScanResult.disconnect(
-		boost::bind(
-			&BinderILowpanInterface::onEnergyScanResult,
-			this,
-			_1
-		)
-	);
+	mOnPropertyChangedConnection.disconnect();
+	mOnNetScanBeaconConnection.disconnect();
+	mOnEnergyScanResultConnection.disconnect();
 }
 
 void

@@ -105,6 +105,10 @@ private:
 
 	std::mutex mMutex;
 
+	boost::signals2::connection mOnPropertyChangedConnection;
+	boost::signals2::connection mOnNetScanBeaconConnection;
+	boost::signals2::connection mOnEnergyScanResultConnection;
+
 	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>> mListeners;
 
 	::android::sp<::android::net::lowpan::ILowpanNetScanCallback> mNetScanListener;
