@@ -56,6 +56,8 @@ using namespace android;
 using namespace android::binder;
 using namespace android::net::lowpan;
 
+using ::android::binder::Status;
+
 BinderIPCServer::BinderIPCServer()
 {
 	if (socketpair(PF_UNIX, SOCK_DGRAM, 0, mMainThreadTickleFd) < 0) {
@@ -90,9 +92,16 @@ BinderIPCServer::~BinderIPCServer()
 int
 BinderIPCServer::add_interface(NCPControlInterface* instance)
 {
+	Status status;
 	std::string name = instance->get_name();
+	::android::sp<ILowpanInterface> instanceHandle(new BinderILowpanInterface(*this, instance));
 
-	mManagerService->addInterface(::android::sp<ILowpanInterface>(new BinderILowpanInterface(*this, instance)));
+	status = mManagerService->addInterface(instanceHandle);
+
+	if (!status.isOk()) {
+		syslog(LOG_ERR, "Unable to add interface to lowpan-service: %s", (const char*)status.toString8());
+		return kWPANTUNDStatus_Failure;
+	}
 
 	mControlInterfaceMap[name] = instance;
 

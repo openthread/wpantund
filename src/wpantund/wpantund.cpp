@@ -943,7 +943,10 @@ main(int argc, char * argv[])
 			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
 			) {
 				for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
-					(*ipc_iter)->add_interface(&ncp_instance->get_control_interface());
+					const int ret = (*ipc_iter)->add_interface(&ncp_instance->get_control_interface());
+					if (ret != kWPANTUNDStatus_Ok) {
+						gRet = EXIT_FAILURE;
+					}
 				}
 				interface_added = true;
 			}

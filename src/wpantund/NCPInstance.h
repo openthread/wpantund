@@ -54,11 +54,11 @@
 #include "wpan-error.h"
 #include "StatCollector.h"
 
-#define ERRORCODE_OK            (0)
-#define ERRORCODE_HELP          (1)
+#define ERRORCODE_OK            EXIT_SUCCESS // 0
+#define ERRORCODE_UNKNOWN       EXIT_FAILURE // 1
 #define ERRORCODE_BADARG        (2)
 #define ERRORCODE_NOCOMMAND     (3)
-#define ERRORCODE_UNKNOWN       (4)
+#define ERRORCODE_HELP          (4)
 #define ERRORCODE_BADCOMMAND    (5)
 #define ERRORCODE_NOREADLINE    (6)
 #define ERRORCODE_QUIT          (7)
