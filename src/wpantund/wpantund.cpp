@@ -520,6 +520,7 @@ main(int argc, char * argv[])
 	// Always ignore SIGPIPE.
 	signal(SIGPIPE, SIG_IGN);
 
+#if WPANTUND_BACKTRACE
 	{
 		struct sigaction sigact = { };
 		sigact.sa_sigaction = &signal_critical;
@@ -530,6 +531,7 @@ main(int argc, char * argv[])
 		sigaction(SIGILL, &sigact, (struct sigaction *)NULL);
 		sigaction(SIGABRT, &sigact, (struct sigaction *)NULL);
 	}
+#endif
 
 	openlog(basename(argv[0]), LOG_PERROR | LOG_PID | LOG_CONS, LOG_DAEMON);
 
