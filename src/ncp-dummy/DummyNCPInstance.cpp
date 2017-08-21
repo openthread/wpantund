@@ -128,3 +128,17 @@ DummyNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint
 {
 	return;
 }
+
+void
+DummyNCPInstance::add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+	bool stable, CallbackWithStatus cb)
+{
+	return;
+}
+
+void
+DummyNCPInstance::remove_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+	bool stable, CallbackWithStatus cb)
+{
+	return;
+}

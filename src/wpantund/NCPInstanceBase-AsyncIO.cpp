@@ -153,6 +153,10 @@ NCPInstanceBase::get_ms_to_next_event(void)
 		}
 	}
 
+	if (mRequestRouteRefresh) {
+		ret = 0;
+	}
+
 	if (ret < 0) {
 		ret = 0;
 	}
@@ -209,7 +213,7 @@ NCPInstanceBase::process(void)
 	mPcapManager.process();
 
 	if (get_upgrade_status() != EINPROGRESS) {
-		refresh_address_entries();
+		refresh_address_route_prefix_entries();
 
 		require_noerr(ret = mPrimaryInterface->process(), socket_failure);
 

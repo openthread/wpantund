@@ -249,34 +249,52 @@ bail:
 
 void
 SpinelNCPControlInterface::add_external_route(
-	const struct in6_addr *prefix,
-	int prefix_len_in_bits,
+	const struct in6_addr *route,
+	int prefix_len,
 	int domain_id,
 	ExternalRoutePriority priority,
 	CallbackWithStatus cb
 ) {
-	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(prefix_len_in_bits >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(prefix_len_in_bits <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(route != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
-	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-		.set_callback(cb)
-		.add_command(SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-				SPINEL_DATATYPE_IPv6ADDR_S
-				SPINEL_DATATYPE_UINT8_S
-				SPINEL_DATATYPE_BOOL_S
-				SPINEL_DATATYPE_UINT8_S
-			),
-			SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
-			prefix,
-			prefix_len_in_bits,
-			true,
-			convert_external_route_priority_to_flags(priority)
-		))
-		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-		.finish()
+	mNCPInstance->route_was_added(
+		SpinelNCPInstance::kOriginUser,
+		*route,
+		prefix_len,
+		priority,
+		true,     // stable
+		0,        // rlco16 (ignored for user added routes)
+		true,     // next_hop_is_host
+		cb
+	);
+
+bail:
+	return;
+}
+
+void
+SpinelNCPControlInterface::remove_external_route(
+	const struct in6_addr *route,
+	int prefix_len,
+	int domain_id,
+	CallbackWithStatus cb
+) {
+	require_action(route != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(prefix_len <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+
+	mNCPInstance->route_was_removed(
+		SpinelNCPInstance::kOriginUser,
+		*route,
+		prefix_len,
+		NCPControlInterface::ROUTE_MEDIUM_PREFERENCE, // (value is ignored when removing user-added routes)
+		true,                                         // stable
+		0,                                            // rlco16 (value is ignored for user-added routes)
+		cb
 	);
 
 bail:
@@ -328,41 +346,6 @@ SpinelNCPControlInterface::joiner_add(
 			.finish()
 		);
 	}
-
-bail:
-	return;
-}
-
-void
-SpinelNCPControlInterface::remove_external_route(
-	const struct in6_addr *prefix,
-	int prefix_len_in_bits,
-	int domain_id,
-	CallbackWithStatus cb
-) {
-	require_action(prefix != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(prefix_len_in_bits >= 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(prefix_len_in_bits <= IPV6_MAX_PREFIX_LENGTH, bail, cb(kWPANTUNDStatus_InvalidArgument));
-	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
-
-	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-		.set_callback(cb)
-		.add_command(SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-				SPINEL_DATATYPE_IPv6ADDR_S
-				SPINEL_DATATYPE_UINT8_S
-				SPINEL_DATATYPE_BOOL_S
-				SPINEL_DATATYPE_UINT8_S
-			),
-			SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
-			prefix,
-			prefix_len_in_bits,
-			true,
-			0
-		))
-		.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
-		.finish()
-	);
 
 bail:
 	return;
@@ -660,53 +643,6 @@ SpinelNCPControlInterface::property_remove_value(
 	CallbackWithStatus cb
 ) {
 	mNCPInstance->property_remove_value(key, value, cb);
-}
-
-// ----------------------------------------------------------------------------
-// MARK: -
-
-SpinelNCPControlInterface::ExternalRoutePriority
-SpinelNCPControlInterface::convert_flags_to_external_route_priority(uint8_t flags)
-{
-	ExternalRoutePriority priority = ROUTE_MEDIUM_PREFERENCE;
-
-	switch ((flags & SPINEL_NET_FLAG_PREFERENCE_MASK) >> SPINEL_NET_FLAG_PREFERENCE_OFFSET) {
-		case 1:
-			priority = ROUTE_HIGH_PREFERENCE;
-			break;
-
-		case 3:
-			priority = ROUTE_LOW_PREFRENCE;
-			break;
-
-		case 0:
-			priority = ROUTE_MEDIUM_PREFERENCE;
-			break;
-	}
-
-	return priority;
-}
-
-uint8_t
-SpinelNCPControlInterface::convert_external_route_priority_to_flags(ExternalRoutePriority priority)
-{
-	uint8_t flags;
-
-	switch (priority) {
-	case ROUTE_HIGH_PREFERENCE:
-		flags = (1 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
-		break;
-
-	case ROUTE_MEDIUM_PREFERENCE:
-		flags = (0 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
-		break;
-
-	case ROUTE_LOW_PREFRENCE:
-		flags = (3 << SPINEL_NET_FLAG_PREFERENCE_OFFSET);
-		break;
-	}
-
-	return flags;
 }
 
 // ----------------------------------------------------------------------------

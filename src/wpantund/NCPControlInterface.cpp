@@ -54,7 +54,7 @@ NCPControlInterface::external_route_priority_to_string(ExternalRoutePriority rou
 			break;
 
 		case ROUTE_MEDIUM_PREFERENCE:
-			ret = "medium(normal)";
+			ret = "medium";
 			break;
 
 		case ROUTE_HIGH_PREFERENCE:

@@ -77,7 +77,7 @@ NCPInstanceBase::set_online(bool is_online)
 		ret = mPrimaryInterface->set_online(is_online);
 
 		if (is_online) {
-			restore_address_prefix_entries_on_ncp();
+			restore_address_prefix_route_entries_on_ncp();
 		}
 
 		if ((ret == 0) && static_cast<bool>(mLegacyInterface)) {
@@ -155,8 +155,8 @@ NCPInstanceBase::reset_interface(void)
 
 	mPrimaryInterface->reset();
 
-	// The global entries table (addresses, prefixes) must be cleared upon reset
-	remove_all_address_prefix_entries();
+	// All IPv6 address (unicast/multicast), on-mesh-prefixes, routes (off-mesh/interface) must be cleared upon reset.
+	remove_all_address_prefix_route_entries();
 
 	if (static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface->reset();

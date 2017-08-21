@@ -72,6 +72,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mLastChangedBusy = 0;
 	mLegacyInterfaceEnabled = false;
 	mNCPState = UNINITIALIZED;
+	mRequestRouteRefresh = false;
 	mNodeType = UNKNOWN;
 	mNodeTypeSupportsLegacy = false;
 	mSetDefaultRouteForAutoAddedPrefix = false;
@@ -272,8 +273,10 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_IPv6AllAddresses);
 	properties.insert(kWPANTUNDProperty_IPv6MulticastAddresses);
 	properties.insert(kWPANTUNDProperty_IPv6SetSLAACForAutoAddedPrefix);
+	properties.insert(kWPANTUNDProperty_IPv6InterfaceRoutes);
 
 	properties.insert(kWPANTUNDProperty_ThreadOnMeshPrefixes);
+	properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 
 	properties.insert(kWPANTUNDProperty_DaemonAutoAssociateAfterReset);
 	properties.insert(kWPANTUNDProperty_DaemonAutoDeepSleep);
@@ -461,6 +464,14 @@ NCPInstanceBase::property_get_value(
 		}
 		cb(0, boost::any(result));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOffMeshRoutes)) {
+		std::list<std::string> result;
+		std::multimap<IPv6Prefix, OffMeshRouteEntry>::const_iterator iter;
+		for (iter = mOffMeshRoutes.begin(); iter != mOffMeshRoutes.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
+		}
+		cb(0, boost::any(result));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6AllAddresses)
 		|| strcaseequal(key.c_str(), kWPANTUNDProperty_DebugIPv6GlobalIPAddressList)
 	) {
@@ -475,6 +486,14 @@ NCPInstanceBase::property_get_value(
 		std::list<std::string> result;
 		std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
 		for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
+		}
+		cb(0, boost::any(result));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6InterfaceRoutes)) {
+		std::list<std::string> result;
+		std::map<IPv6Prefix, InterfaceRouteEntry>::const_iterator iter;
+		for (iter = mInterfaceRoutes.begin(); iter != mInterfaceRoutes.end(); iter++ ) {
 			result.push_back(iter->second.get_description(iter->first, true));
 		}
 		cb(0, boost::any(result));

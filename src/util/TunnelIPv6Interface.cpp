@@ -518,15 +518,15 @@ bail:
 
 
 bool
-TunnelIPv6Interface::add_route(const struct in6_addr *route, int prefixlen)
+TunnelIPv6Interface::add_route(const struct in6_addr *route, int prefixlen, uint32_t metric)
 {
 	bool ret = false;
 
-	if (netif_mgmt_add_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen) != 0) {
+	if (netif_mgmt_add_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen, metric) != 0) {
 		mLastError = errno;
 		goto bail;
 	}
-	syslog(LOG_INFO, "Adding route prefix \"%s/%d\" -> \"%s\".",
+	syslog(LOG_INFO, "Adding route prefix \"%s/%d\" on interface \"%s\".",
 	       in6_addr_to_string(*route).c_str(), prefixlen, mInterfaceName.c_str());
 
 	ret = true;
@@ -536,16 +536,16 @@ bail:
 }
 
 bool
-TunnelIPv6Interface::remove_route(const struct in6_addr *route, int prefixlen)
+TunnelIPv6Interface::remove_route(const struct in6_addr *route, int prefixlen, uint32_t metric)
 {
 	bool ret = false;
 
-	if (netif_mgmt_remove_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen) != 0) {
+	if (netif_mgmt_remove_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen, metric) != 0) {
 		mLastError = errno;
 		goto bail;
 	}
 
-	syslog(LOG_INFO, "Removing route prefix \"%s/%d\" -> \"%s\".",
+	syslog(LOG_INFO, "Removing route prefix \"%s/%d\" on interface \"%s\".",
 	       in6_addr_to_string(*route).c_str(), prefixlen, mInterfaceName.c_str());
 
 	ret = true;

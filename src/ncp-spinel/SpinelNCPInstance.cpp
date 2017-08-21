@@ -574,77 +574,6 @@ unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len,
 	return ret;
 }
 
-static int
-unpack_thread_off_mesh_routes(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
-{
-
-	int ret = kWPANTUNDStatus_Ok;
-	std::list<std::string> result;
-
-	while (data_len > 0)
-	{
-		spinel_ssize_t len;
-		struct in6_addr *route_prefix = NULL;
-		uint8_t prefix_len;
-		bool is_stable;
-		uint8_t flags;
-		bool is_local;
-		bool next_hop_is_this_device;
-
-
-		len = spinel_datatype_unpack(
-			data_in,
-			data_len,
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_IPv6ADDR_S      // Route Prefix
-				SPINEL_DATATYPE_UINT8_S         // Prefix Length (in bits)
-				SPINEL_DATATYPE_BOOL_S          // isStable
-				SPINEL_DATATYPE_UINT8_S         // Flags
-				SPINEL_DATATYPE_BOOL_S          // IsLocal
-				SPINEL_DATATYPE_BOOL_S          // NextHopIsThisDevice
-			),
-			&route_prefix,
-			&prefix_len,
-			&is_stable,
-			&flags,
-			&is_local,
-			&next_hop_is_this_device
-		);
-
-		if (len <= 0) {
-			ret = kWPANTUNDStatus_Failure;
-			break;
-		} else {
-			char c_string[200];
-			NCPControlInterface::ExternalRoutePriority priority;
-
-			priority = SpinelNCPControlInterface::convert_flags_to_external_route_priority(flags);
-
-			snprintf(c_string, sizeof(c_string),
-				"%s/%d, stable:%s, local:%s, next_hop:%s, priority:%s (flags:0x%02x)",
-				in6_addr_to_string(*route_prefix).c_str(),
-				prefix_len,
-				is_stable ? "yes" : "no",
-				is_local ? "yes" : "no",
-				next_hop_is_this_device ? "this_device" : "off-mesh",
-				SpinelNCPControlInterface::external_route_priority_to_string(priority).c_str(),
-				flags
-			);
-
-			result.push_back(c_string);
-		}
-
-		data_in += len;
-		data_len -= len;
-	}
-
-	if (ret == kWPANTUNDStatus_Ok) {
-		value = result;
-	}
-
-	return ret;
-}
-
 void
 SpinelNCPInstance::update_node_type(NodeType new_node_type)
 {
@@ -810,16 +739,6 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
-
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOffMeshRoutes)) {
-		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-			.set_callback(cb)
-			.add_command(
-				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_OFF_MESH_ROUTES)
-			)
-			.set_reply_unpacker(unpack_thread_off_mesh_routes)
-			.finish()
-		);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_COMMISSIONER_ENABLED, SPINEL_DATATYPE_BOOL_S);
@@ -1806,6 +1725,98 @@ SpinelNCPInstance::reset_tasks(wpantund_status_t status)
 }
 
 void
+SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTE(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+{
+	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter;
+	std::multimap<IPv6Prefix, OffMeshRouteEntry> off_mesh_routes(mOffMeshRoutes);
+	int num_routes = 0;
+
+	while (value_data_len > 0) {
+		spinel_ssize_t len;
+		struct in6_addr *route_prefix = NULL;
+		uint8_t prefix_len;
+		bool is_stable;
+		uint8_t flags;
+		bool is_local;
+		bool next_hop_is_this_device;
+		uint16_t rloc16;
+		RoutePreference preference;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_IPv6ADDR_S      // Route Prefix
+				SPINEL_DATATYPE_UINT8_S         // Prefix Length (in bits)
+				SPINEL_DATATYPE_BOOL_S          // isStable
+				SPINEL_DATATYPE_UINT8_S         // Flags
+				SPINEL_DATATYPE_BOOL_S          // IsLocal
+				SPINEL_DATATYPE_BOOL_S          // NextHopIsThisDevice
+				SPINEL_DATATYPE_UINT16_S        // RLOC16
+			),
+			&route_prefix,
+			&prefix_len,
+			&is_stable,
+			&flags,
+			&is_local,
+			&next_hop_is_this_device,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		preference = convert_flags_to_route_preference(flags);
+
+		syslog(LOG_INFO, "[-NCP-]: Off-mesh route [%d] \"%s/%d\" stable:%s local:%s preference:%s, next_hop_is_this_device:%s, rloc16:0x%0x",
+			num_routes, in6_addr_to_string(*route_prefix).c_str(), prefix_len, is_stable ? "yes" : "no",
+			is_local ? "yes" : "no", NCPControlInterface::external_route_priority_to_string(preference).c_str(),
+			next_hop_is_this_device ? "yes" : "no", rloc16);
+
+		num_routes++;
+
+		if (!is_local) {
+
+			// Go through the `off_mesh_routes` list (which is the copy of mOffMeshRoutes)
+			// and check if this entry is already on the list, if so remove it.
+
+			IPv6Prefix route(*route_prefix, prefix_len);
+			OffMeshRouteEntry entry(kOriginThreadNCP, preference, is_stable, rloc16, next_hop_is_this_device);
+			iter = off_mesh_routes.lower_bound(route);
+
+			if (iter != off_mesh_routes.end()) {
+				std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator upper_iter = off_mesh_routes.upper_bound(route);
+
+				for (; iter != upper_iter; ++iter) {
+					if (iter->second == entry) {
+						off_mesh_routes.erase(iter);
+						break;
+					}
+				}
+			}
+
+			route_was_added(kOriginThreadNCP, *route_prefix, prefix_len, preference, is_stable, rloc16,
+				next_hop_is_this_device);
+		}
+
+		value_data_ptr += len;
+		value_data_len -= len;
+	}
+
+	// Since this was the whole list, we need to remove any routes
+	// which originated from NCP that that weren't in the new list.
+
+	for (iter = off_mesh_routes.begin(); iter != off_mesh_routes.end(); ++iter) {
+		if (iter->second.is_from_ncp()) {
+			route_was_removed(kOriginThreadNCP, iter->first.get_prefix(), iter->first.get_length(),
+				iter->second.get_preference(), iter->second.is_stable(), iter->second.get_rloc());
+		}
+	}
+}
+
+
+void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	const uint8_t *original_value_data_ptr = value_data_ptr;
@@ -2213,9 +2224,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				is_local ? "yes" : "no", on_mesh_prefix_flags_to_string(flags).c_str());
 
 			num_prefix++;
-			on_mesh_prefixes.erase(*prefix);
 
 			if (!is_local) {
+				on_mesh_prefixes.erase(*prefix);
 				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
 			}
 
@@ -2230,6 +2241,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 				on_mesh_prefix_was_removed(kOriginThreadNCP, iter->first, iter->second.get_prefix_len());
 			}
 		}
+
+	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
+		handle_ncp_spinel_value_is_OFF_MESH_ROUTE(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
@@ -2759,7 +2773,7 @@ SpinelNCPInstance::add_multicast_address_on_ncp(const struct in6_addr &addr, Cal
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
 
-	syslog(LOG_NOTICE, "Adding multicast address \"%s\" on NCP", in6_addr_to_string(addr).c_str());
+	syslog(LOG_NOTICE, "Adding multicast address \"%s\" to NCP", in6_addr_to_string(addr).c_str());
 
 	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
@@ -2834,7 +2848,7 @@ SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, u
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
 
-	syslog(LOG_NOTICE, "Removing on-mesh prefix \"%s/%d\" to NCP", in6_addr_to_string(prefix).c_str(), prefix_len);
+	syslog(LOG_NOTICE, "Removing on-mesh prefix \"%s/%d\" from NCP", in6_addr_to_string(prefix).c_str(), prefix_len);
 
 	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
@@ -2856,13 +2870,118 @@ SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, u
 	start_new_task(factory.finish());
 }
 
+void
+SpinelNCPInstance::add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+	bool stable, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Adding off-mesh route \"%s/%d\" with preference %s to NCP", in6_addr_to_string(route).c_str(),
+		prefix_len, NCPControlInterface::external_route_priority_to_string(preference).c_str());
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
+		&route,
+		prefix_len,
+		stable,
+		convert_route_preference_to_flags(preference)
+	));
+
+	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::remove_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+	bool stable, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Removing off-mesh route \"%s/%d\" with preference %s from NCP", in6_addr_to_string(route).c_str(),
+		prefix_len, NCPControlInterface::external_route_priority_to_string(preference).c_str());
+
+	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+	factory.set_callback(cb);
+
+	factory.add_command(SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+			SPINEL_DATATYPE_IPv6ADDR_S
+			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
+		&route,
+		prefix_len,
+		stable,
+		convert_route_preference_to_flags(preference)
+	));
+
+	start_new_task(factory.finish());
+}
+
+SpinelNCPInstance::RoutePreference
+SpinelNCPInstance::convert_flags_to_route_preference(uint8_t flags)
+{
+	RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE;
+
+	switch (flags & SPINEL_NET_FLAG_PREFERENCE_MASK) {
+	case SPINEL_ROUTE_PREFERENCE_HIGH:
+		preference = NCPControlInterface::ROUTE_HIGH_PREFERENCE;
+		break;
+
+	case SPINEL_ROUTE_PREFERENCE_MEDIUM:
+		preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE;
+		break;
+
+	case SPINEL_ROUTE_PREFERENCE_LOW:
+		preference = NCPControlInterface::ROUTE_LOW_PREFRENCE;
+		break;
+
+	default:
+		syslog(LOG_WARNING, "Invalid RoutePreference flag 0x%02x (using MEDIUM instead)", flags);
+		break;
+	}
+
+	return preference;
+}
+
+uint8_t
+SpinelNCPInstance::convert_route_preference_to_flags(RoutePreference preference)
+{
+	uint8_t flags = SPINEL_ROUTE_PREFERENCE_MEDIUM;
+
+	switch (preference) {
+	case NCPControlInterface::ROUTE_HIGH_PREFERENCE:
+		flags = SPINEL_ROUTE_PREFERENCE_HIGH;
+		break;
+
+	case NCPControlInterface::ROUTE_MEDIUM_PREFERENCE:
+		flags = SPINEL_ROUTE_PREFERENCE_MEDIUM;
+		break;
+
+	case NCPControlInterface::ROUTE_LOW_PREFRENCE:
+		flags = SPINEL_ROUTE_PREFERENCE_LOW;
+		break;
+	}
+
+	return flags;
+}
+
 bool
 SpinelNCPInstance::is_busy(void)
 {
 	return NCPInstanceBase::is_busy()
 		|| !mTaskQueue.empty();
 }
-
 
 void
 SpinelNCPInstance::process(void)
