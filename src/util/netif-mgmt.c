@@ -364,7 +364,7 @@ bail:
 }
 
 int
-netif_mgmt_add_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16], int prefixlen)
+netif_mgmt_add_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16], int prefixlen, uint32_t metric)
 {
 	int ret = -1;
 
@@ -390,7 +390,7 @@ netif_mgmt_add_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16
 	if (prefixlen == 128) {
 		rt.rtmsg_flags |= RTF_HOST;
 	}
-	rt.rtmsg_metric = 512;
+	rt.rtmsg_metric = metric;
 
 	ret = ioctl(reqfd, SIOGIFINDEX, &ifr);
 
@@ -410,7 +410,7 @@ bail:
 }
 
 int
-netif_mgmt_remove_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16], int prefixlen)
+netif_mgmt_remove_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16], int prefixlen, uint32_t metric)
 {
 	int ret = -1;
 
@@ -430,7 +430,7 @@ netif_mgmt_remove_ipv6_route(int reqfd, const char* if_name, const uint8_t route
 
 	rt.rtmsg_dst_len = prefixlen;
 	rt.rtmsg_flags = RTF_UP;
-	rt.rtmsg_metric = 512;
+	rt.rtmsg_metric = metric;
 
 	if (prefixlen == 128) {
 		rt.rtmsg_flags |= RTF_HOST;

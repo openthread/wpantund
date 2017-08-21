@@ -144,6 +144,8 @@ public:
 		kOriginUser,
 	};
 
+	typedef NCPControlInterface::ExternalRoutePriority  RoutePreference;
+
 	void unicast_address_was_added(Origin origin, const struct in6_addr &address,
 			uint8_t prefix_len = 64, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX);
 
@@ -161,38 +163,51 @@ public:
 	void on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
 			CallbackWithStatus cb = NilReturn());
 
+	void route_was_added(Origin origin, const struct in6_addr &route, uint8_t prefix_len = 64,
+			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
+			uint16_t rloc16 = 0, bool next_hop_is_host = true, CallbackWithStatus cb = NilReturn());
+
+	void route_was_removed(Origin origin, const struct in6_addr &route, uint8_t prefix_len = 64,
+			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
+			uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
+
 	bool lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len = 64);
 
 	static std::string on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed = false);
 
 protected:
-	void refresh_address_entries(void);
+	void refresh_address_route_prefix_entries(void);
 
-	void remove_all_address_prefix_entries(void);
+	void remove_all_address_prefix_route_entries(void);
 
-	void remove_ncp_originated_addresses(void);
+	void remove_ncp_originated_address_prefix_route_entries(void);
 
-	void restore_address_prefix_entries_on_ncp(void);
+	void restore_address_prefix_route_entries_on_ncp(void);
 
 protected:
 	// ========================================================================
-	// MARK: Subclass hooks related to address/prefix
+	// MARK: Subclass hooks related to address/prefix/route management
 
-	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len,
-					CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, CallbackWithStatus cb) = 0;
 
 	virtual void remove_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len,
-					CallbackWithStatus cb = NilReturn()) = 0;
+					CallbackWithStatus cb) = 0;
 
-	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb) = 0;
 
-	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn()) = 0;
+	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb) = 0;
 
 	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
-					CallbackWithStatus cb = NilReturn()) = 0;
+					CallbackWithStatus cb) = 0;
 
 	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
-					bool stable, CallbackWithStatus cb = NilReturn()) = 0;
+					bool stable, CallbackWithStatus cb) = 0;
+
+	virtual void add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+					bool stable, CallbackWithStatus cb) = 0;
+
+	virtual void remove_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+					bool stable, CallbackWithStatus cb) = 0;
 
 protected:
 	//========================================================================
@@ -275,7 +290,25 @@ protected:
 protected:
 	//==========================================================================
 	// MARK: Global entries: Unicast IPv6 addresses, multicast IPv6 addresses,
-	// on-mesh prefixes.
+	// on-mesh prefixes, routes.
+
+	class IPv6Prefix {
+	public:
+		IPv6Prefix(const in6_addr &prefix, uint8_t prefix_len);
+
+		const struct in6_addr &get_prefix(void) const { return mPrefix; }
+		uint8_t get_length(void) const { return mLength; }
+
+		bool operator==(const IPv6Prefix &another_prefix) const;
+		bool operator!=(const IPv6Prefix &another_prefix) const { return !(*this == another_prefix); }
+		bool operator<(const IPv6Prefix &another_prefix) const;
+
+		std::string to_string(void) const;
+
+	private:
+		struct in6_addr mPrefix;
+		uint8_t mLength;
+	};
 
 	class EntryBase {
 	public:
@@ -361,10 +394,56 @@ protected:
 		bool mStable;
 	};
 
+	class OffMeshRouteEntry : public EntryBase {
+	public:
+		OffMeshRouteEntry(Origin origin, RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,
+			bool stable = true, uint16_t rloc16 = 0, bool next_hop_is_host = false)
+			: EntryBase(origin), mPreference(preference), mStable(stable), mRloc(rloc16)
+			, mNextHopIsHost(next_hop_is_host) { }
+
+		uint8_t is_stable(void) const { return mStable; }
+		RoutePreference get_preference(void) const { return mPreference; }
+		uint16_t get_rloc(void) const { return mRloc; }
+		bool is_next_hop_host(void) const { return mNextHopIsHost; }
+
+		bool operator==(const OffMeshRouteEntry &entry);
+
+		std::string get_description(const IPv6Prefix &route, bool align = false) const;
+
+	private:
+		RoutePreference mPreference;
+		bool mStable;
+		uint16_t mRloc;
+		bool mNextHopIsHost;
+	};
+
+	class InterfaceRouteEntry
+	{
+	public:
+		// Mapping the 3 route preference values to Linux route metric (note that larger metric means lower priority)
+		enum {
+			kRouteMetricHigh     = 1,
+			kRouteMetricMedium   = 256,
+			kRouteMetricLow      = 512,
+		};
+
+		InterfaceRouteEntry(uint32_t metric = 512)
+			: mMetric(metric) { }
+
+		uint32_t get_metric(void) const { return mMetric; }
+
+		std::string get_description(const IPv6Prefix &route, bool align = false) const;
+
+	private:
+		uint32_t mMetric;
+	};
+
 private:
 	void add_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	void remove_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
-
+	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator find_route_entry(const IPv6Prefix &route, const OffMeshRouteEntry &entry);
+	void refresh_routes_on_interface(void);
+	bool should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric);
 	void check_ncp_entry_update_status(int status, std::string operation, CallbackWithStatus cb);
 
 protected:
@@ -372,6 +451,9 @@ protected:
 	std::map<struct in6_addr, UnicastAddressEntry> mUnicastAddresses;
 	std::map<struct in6_addr, MulticastAddressEntry> mMulticastAddresses;
 	std::map<struct in6_addr, OnMeshPrefixEntry> mOnMeshPrefixes;
+
+	std::multimap<IPv6Prefix, OffMeshRouteEntry> mOffMeshRoutes;
+	std::map<IPv6Prefix, InterfaceRouteEntry> mInterfaceRoutes;
 
 protected:
 
@@ -392,7 +474,7 @@ protected:
 	uint16_t mCommissionerPort;
 
 	// When an unicast address is added on interface, the related on-mesh prefix
-	//  is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
+	// is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
 	bool mSetDefaultRouteForAutoAddedPrefix;
 	bool mSetSLAACForAutoAddedPrefix;
@@ -401,6 +483,7 @@ private:
 	NCPState mNCPState;
 	bool mIsInitializingNCP;
 	bool mIsInterfaceOnline;
+	bool mRequestRouteRefresh;
 
 protected:
 	//! This is set to the currently used MAC address (EUI64).

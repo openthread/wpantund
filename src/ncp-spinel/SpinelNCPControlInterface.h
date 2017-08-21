@@ -149,7 +149,7 @@ public:
 
 	virtual void add_external_route(
 		const struct in6_addr *prefix,
-		int prefix_len_in_bits,
+		int prefix_len,
 		int domain_id,
 		ExternalRoutePriority priority,
 		CallbackWithStatus cb = NilReturn()
@@ -157,7 +157,7 @@ public:
 
 	virtual void remove_external_route(
 		const struct in6_addr *prefix,
-		int prefix_len_in_bits,
+		int prefix_len,
 		int domain_id,
 		CallbackWithStatus cb = NilReturn()
 	);
@@ -197,9 +197,6 @@ public:
 		const std::string& mfg_command,
 		CallbackWithStatusArg1 cb = NilReturn()
 	);
-
-	static ExternalRoutePriority convert_flags_to_external_route_priority(uint8_t flags);
-	static uint8_t convert_external_route_priority_to_flags(ExternalRoutePriority priority);
 
 private:
 	void handle_permit_join_timeout(Timer *timer, int seconds);

@@ -64,8 +64,8 @@ public:
 	bool add_address(const struct in6_addr *addr, int prefixlen = 64);
 	bool remove_address(const struct in6_addr *addr, int prefixlen = 64);
 
-	bool add_route(const struct in6_addr *route, int prefixlen = 64);
-	bool remove_route(const struct in6_addr *route, int prefixlen = 64);
+	bool add_route(const struct in6_addr *route, int prefixlen, uint32_t metric);
+	bool remove_route(const struct in6_addr *route, int prefixlen, uint32_t metric);
 
 	bool join_multicast_address(const struct in6_addr *addr);
 	bool leave_multicast_address(const struct in6_addr *addr);

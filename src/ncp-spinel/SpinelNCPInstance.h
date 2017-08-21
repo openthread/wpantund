@@ -140,21 +140,31 @@ protected:
 	void handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state);
 
+	void handle_ncp_spinel_value_is_OFF_MESH_ROUTE(const uint8_t* value_data_ptr, spinel_size_t value_data_len);
+
 	bool should_filter_address(const struct in6_addr &address, uint8_t prefix_len);
 	void filter_addresses(void);
 
 	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len,
-					CallbackWithStatus cb = NilReturn());
+					CallbackWithStatus cb);
 	virtual void remove_unicast_address_on_ncp(const struct in6_addr& addr, uint8_t prefix_len,
-					CallbackWithStatus cb = NilReturn());
+					CallbackWithStatus cb);
 
-	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
-	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
+	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
+	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 
 	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
-					CallbackWithStatus cb = NilReturn());
+					CallbackWithStatus cb);
 	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
-					bool stable, CallbackWithStatus cb = NilReturn());
+					bool stable, CallbackWithStatus cb);
+
+	virtual void add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+					bool stable, CallbackWithStatus cb);
+	virtual void remove_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
+					bool stable, CallbackWithStatus cb);
+
+	static RoutePreference convert_flags_to_route_preference(uint8_t flags);
+	static uint8_t convert_route_preference_to_flags(RoutePreference priority);
 
 	uint32_t get_default_channel_mask(void);
 
