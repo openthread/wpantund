@@ -458,7 +458,7 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			}
 		}
 
-#if VERBOSE_DEBUG || 1
+#if VERBOSE_DEBUG
 		// Very verbose debugging. Dumps out all outbound packets.
 		{
 			char readable_buffer[300];
@@ -467,7 +467,7 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			                        readable_buffer,
 			                        sizeof(readable_buffer),
 			                        0);
-			syslog(LOG_INFO, "\t↳ %s", (const char*)readable_buffer);
+			syslog(LOG_DEBUG, "\t↳ %s", (const char*)readable_buffer);
 		}
 #endif // VERBOSE_DEBUG
 
