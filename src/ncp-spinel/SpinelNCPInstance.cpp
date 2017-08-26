@@ -286,6 +286,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
+		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -2318,6 +2319,25 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_INFO, "[-NCP-] Child: %02d %s", num_children, it->get_as_string().c_str());
 		}
 		syslog(LOG_INFO, "[-NCP-] Child: Total %d child%s", num_children, (num_children > 1) ? "ren" : "");
+
+	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::Table neigh_table;
+		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+		int num_neighbor = 0;
+
+		SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(value_data_ptr, value_data_len, neigh_table);
+
+		for (it = neigh_table.begin(); it != neigh_table.end(); it++)
+		{
+			num_neighbor++;
+			syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
+		}
+		syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
+
+	} else if (key == SPINEL_PROP_NET_PARTITION_ID) {
+		uint32_t paritition_id = 0;
+		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &paritition_id);
+		syslog(LOG_INFO, "[-NCP-] Partition id: %u (0x%x)", paritition_id, paritition_id);
 
 	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
 		char net_data_cstr_buf[540];
