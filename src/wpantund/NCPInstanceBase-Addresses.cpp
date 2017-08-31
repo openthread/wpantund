@@ -519,7 +519,7 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 		cb(kWPANTUNDStatus_Already);
 	}
 
-	if (entry.is_on_mesh() && entry.is_slaac() && entry.is_stable()
+	if (entry.is_on_mesh() && entry.is_slaac()
 	    && !lookup_address_for_prefix(NULL, prefix, prefix_len)
 	) {
 		struct in6_addr address = make_slaac_addr_from_eui64(prefix.s6_addr, mMACAddress);
