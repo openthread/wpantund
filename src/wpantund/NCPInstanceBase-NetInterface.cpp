@@ -45,16 +45,16 @@ NCPInstanceBase::link_state_changed(bool isUp, bool isRunning)
 	// we should autoconnect or not.
 
 	if (isUp) {
-		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, true);
+		property_set_value(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, true);
 
 		if (!mEnabled) {
-			set_property(kWPANTUNDProperty_DaemonEnabled, true);
+			property_set_value(kWPANTUNDProperty_DaemonEnabled, true);
 		} else if (get_ncp_state() == COMMISSIONED) {
-			set_property(kWPANTUNDProperty_InterfaceUp, true);
+			property_set_value(kWPANTUNDProperty_InterfaceUp, true);
 		}
 	} else {
-		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, false);
-		set_property(kWPANTUNDProperty_InterfaceUp, false);
+		property_set_value(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, false);
+		property_set_value(kWPANTUNDProperty_InterfaceUp, false);
 	}
 }
 
@@ -67,31 +67,29 @@ NCPInstanceBase::legacy_link_state_changed(bool isUp, bool isRunning)
 }
 
 int
-NCPInstanceBase::set_online(bool x)
+NCPInstanceBase::set_online(bool is_online)
 {
-	int ret;
+	int ret = 0;
 
-	ret = mPrimaryInterface->set_online(x);
+	if (mIsInterfaceOnline != is_online) {
+		mIsInterfaceOnline = is_online;
 
-	restore_global_addresses();
+		ret = mPrimaryInterface->set_online(is_online);
 
-	if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-		add_address(mNCPLinkLocalAddress);
-	}
+		if (is_online) {
+			restore_address_prefix_entries_on_ncp();
+		}
 
-	if (buffer_is_nonzero(mNCPMeshLocalAddress.s6_addr, sizeof(mNCPMeshLocalAddress)))	{
-		add_address(mNCPMeshLocalAddress);
-	}
+		if ((ret == 0) && static_cast<bool>(mLegacyInterface)) {
+			if (is_online && mNodeTypeSupportsLegacy) {
+				ret = mLegacyInterface->set_online(true);
 
-	if ((ret == 0) && static_cast<bool>(mLegacyInterface)) {
-		if (x && mNodeTypeSupportsLegacy) {
-			ret = mLegacyInterface->set_online(true);
-
-			if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
-				mLegacyInterface->add_address(&mNCPLinkLocalAddress);
+				if (IN6_IS_ADDR_LINKLOCAL(&mNCPLinkLocalAddress)) {
+					mLegacyInterface->add_address(&mNCPLinkLocalAddress);
+				}
+			} else {
+				ret = mLegacyInterface->set_online(false);
 			}
-		} else {
-			ret = mLegacyInterface->set_online(false);
 		}
 	}
 
@@ -157,8 +155,8 @@ NCPInstanceBase::reset_interface(void)
 
 	mPrimaryInterface->reset();
 
-	// The global address table must be cleared upon reset.
-	mGlobalAddresses.clear();
+	// The global entries table (addresses, prefixes) must be cleared upon reset
+	remove_all_address_prefix_entries();
 
 	if (static_cast<bool>(mLegacyInterface)) {
 		mLegacyInterface->reset();
@@ -183,52 +181,23 @@ NCPInstanceBase::is_legacy_interface_enabled(void)
 	return false;
 }
 
-
-
 int
 NCPInstanceBase::join_multicast_group(const std::string &group_name)
 {
-	int ret = -1;
-	struct ipv6_mreq imreq;
-	unsigned int value = 1;
+	bool ret = false;
+	struct in6_addr addr;
 	struct hostent *tmp = gethostbyname2(group_name.c_str(), AF_INET6);
-	memset(&imreq, 0, sizeof(imreq));
-
-	if (mMCFD < 0) {
-		mMCFD = socket(AF_INET6, SOCK_DGRAM, 0);
-	}
-
-	require(mMCFD >= 0, skip_mcast);
 
 	require(!h_errno && tmp, skip_mcast);
 	require(tmp->h_length > 1, skip_mcast);
 
-	memcpy(&imreq.ipv6mr_multiaddr.s6_addr, tmp->h_addr_list[0], 16);
+	memcpy(addr.s6_addr, tmp->h_addr_list[0], 16);
 
-	value = 1;
-	ret = setsockopt(
-		mMCFD,
-		IPPROTO_IPV6,
-		IPV6_MULTICAST_LOOP,
-		&value,
-		sizeof(value)
-	);
-	require_noerr(ret, skip_mcast);
-
-	imreq.ipv6mr_interface = if_nametoindex(mPrimaryInterface->get_interface_name().c_str());
-
-	ret = setsockopt(
-		mMCFD,
-		IPPROTO_IPV6,
-		IPV6_JOIN_GROUP,
-		&imreq,
-		sizeof(imreq)
-	);
-	require_noerr(ret, skip_mcast);
+	ret = mPrimaryInterface->join_multicast_address(&addr);
 
 skip_mcast:
 
-	if (ret) {
+	if (ret == false) {
 		syslog(LOG_WARNING, "Failed to join multicast group \"%s\"", group_name.c_str());
 	}
 
@@ -237,9 +206,7 @@ skip_mcast:
 
 
 int
-NCPInstanceBase::set_commissioniner(
-    int seconds, uint8_t traffic_type, in_port_t traffic_port
-    )
+NCPInstanceBase::set_commissioniner(int seconds, uint8_t traffic_type, in_port_t traffic_port)
 {
 	int ret = kWPANTUNDStatus_Ok;
 

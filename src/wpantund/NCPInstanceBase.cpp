@@ -32,11 +32,10 @@
 #include "SuperSocket.h"
 #include "wpantund.h"
 #include "any-to.h"
+#include "IPv6Helpers.h"
 
 using namespace nl;
 using namespace wpantund;
-
-
 
 // ----------------------------------------------------------------------------
 // MARK: -
@@ -56,8 +55,6 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mPowerFD_PowerOff = '0';
 	mPowerFD_PowerOn = '1';
 
-	mMCFD = -1;
-
 	NLPT_INIT(&mNCPToDriverPumpPT);
 	NLPT_INIT(&mDriverToNCPPumpPT);
 
@@ -67,8 +64,10 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mAutoUpdateFirmware = false;
 	mAutoResume = true;
 	mAutoDeepSleep = false;
+	mSetDefaultRouteForAutoAddedPrefix = false;
 	mIsInitializingNCP = false;
 	mNCPState = UNINITIALIZED;
+	mIsInterfaceOnline = false;
 	mNodeType = UNKNOWN;
 	mFailureCount = 0;
 	mFailureThreshold = 3;
@@ -124,15 +123,14 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSerialAdapter = mRawSerialAdapter;
 
 	mPrimaryInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(wpan_interface_name));
-	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::address_was_added, this, _1, _2));
-	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::address_was_removed, this, _1, _2));
+	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
+	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
 	mPrimaryInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::link_state_changed, this, _1, _2));
 
 	set_ncp_power(true);
 
 	// Go ahead and start listening on ff03::1
 	join_multicast_group("ff03::1");
-
 
 	{
 		IPv6PacketMatcherRule rule;
@@ -192,21 +190,18 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 
 NCPInstanceBase::~NCPInstanceBase()
 {
-	close(mMCFD);
 	close(mPowerFD);
 	close(mResetFD);
 }
 
-
-
 const std::string &
-NCPInstanceBase::get_name()
+NCPInstanceBase::get_name(void)
 {
 	return mPrimaryInterface->get_interface_name();
 }
 
 const WPAN::NetworkInstance&
-NCPInstanceBase::get_current_network_instance(void)const
+NCPInstanceBase::get_current_network_instance(void) const
 {
 	return mCurrentNetworkInstance;
 }
@@ -248,7 +243,7 @@ NCPInstanceBase::set_ncp_version_string(const std::string& version_string)
 }
 
 std::set<std::string>
-NCPInstanceBase::get_supported_property_keys() const
+NCPInstanceBase::get_supported_property_keys(void) const
 {
 	std::set<std::string> properties;
 
@@ -270,11 +265,15 @@ NCPInstanceBase::get_supported_property_keys() const
 	properties.insert(kWPANTUNDProperty_IPv6MeshLocalAddress);
 	properties.insert(kWPANTUNDProperty_IPv6LinkLocalAddress);
 	properties.insert(kWPANTUNDProperty_IPv6AllAddresses);
+	properties.insert(kWPANTUNDProperty_IPv6MulticastAddresses);
+
+	properties.insert(kWPANTUNDProperty_ThreadOnMeshPrefixes);
 
 	properties.insert(kWPANTUNDProperty_DaemonAutoAssociateAfterReset);
 	properties.insert(kWPANTUNDProperty_DaemonAutoDeepSleep);
 	properties.insert(kWPANTUNDProperty_DaemonReadyForHostSleep);
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
+	properties.insert(kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix);
 
 	properties.insert(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
 
@@ -290,7 +289,10 @@ NCPInstanceBase::get_supported_property_keys() const
 
 	properties.insert(kWPANTUNDProperty_ConfigTUNInterfaceName);
 
-	if (mLegacyInterfaceEnabled || mNodeTypeSupportsLegacy || buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))) {
+	if (mLegacyInterfaceEnabled
+		|| mNodeTypeSupportsLegacy
+		|| buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))
+	) {
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress);
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
@@ -301,12 +303,11 @@ NCPInstanceBase::get_supported_property_keys() const
 }
 
 void
-NCPInstanceBase::get_property(
+NCPInstanceBase::property_get_value(
 	const std::string& in_key,
 	CallbackWithStatusArg1 cb
 ) {
 	std::string key = in_key;
-
 
 	if (key.empty()) {
 		/* This key is used to get the list of available properties */
@@ -340,7 +341,9 @@ NCPInstanceBase::get_property(
 		} else  if (ncp_state == OFFLINE || ncp_state == DEEP_SLEEP) {
 			cb(0, boost::any(false));
 		} else {
-			cb(kWPANTUNDStatus_TryAgainLater, boost::any(std::string("Unable to determine association state at this time")));
+			cb(kWPANTUNDStatus_TryAgainLater,
+			   boost::any(std::string("Unable to determine association state at this time"))
+			);
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyEnabled)) {
@@ -372,6 +375,9 @@ NCPInstanceBase::get_property(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonTerminateOnFault)) {
 		cb(0, boost::any(mTerminateOnFault));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {
+		cb(0, boost::any(mSetDefaultRouteForAutoAddedPrefix));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkPassthruPort)) {
 		cb(0, boost::any(mCommissionerPort));
@@ -405,7 +411,10 @@ NCPInstanceBase::get_property(
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
-		if (mLegacyInterfaceEnabled || mNodeTypeSupportsLegacy || buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))) {
+		if (mLegacyInterfaceEnabled
+			|| mNodeTypeSupportsLegacy
+			|| buffer_is_nonzero(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))
+		) {
 			cb(0, boost::any(nl::Data(mNCPV6LegacyPrefix, sizeof(mNCPV6LegacyPrefix))));
 		} else {
 			cb(kWPANTUNDStatus_FeatureNotSupported, std::string("Property is unavailable"));
@@ -435,15 +444,29 @@ NCPInstanceBase::get_property(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkNodeType)) {
 		cb(0, boost::any(node_type_to_string(mNodeType)));
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6AllAddresses) || strcaseequal(key.c_str(), kWPANTUNDProperty_DebugIPv6GlobalIPAddressList))  {
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOnMeshPrefixes)) {
 		std::list<std::string> result;
-		std::map<struct in6_addr, GlobalAddressEntry>::const_iterator it;
-		char address_string[INET6_ADDRSTRLEN];
-		for ( it = mGlobalAddresses.begin();
-			  it != mGlobalAddresses.end();
-			  it++ ) {
-			inet_ntop(AF_INET6,	&it->first,	address_string, sizeof(address_string));
-			result.push_back(std::string(address_string)+ "  " + it->second.get_description());
+		std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter;
+		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
+		}
+		cb(0, boost::any(result));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6AllAddresses)
+		|| strcaseequal(key.c_str(), kWPANTUNDProperty_DebugIPv6GlobalIPAddressList)
+	) {
+		std::list<std::string> result;
+		std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
+		for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
+		}
+		cb(0, boost::any(result));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MulticastAddresses)) {
+		std::list<std::string> result;
+		std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
+		for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end(); iter++ ) {
+			result.push_back(iter->second.get_description(iter->first, true));
 		}
 		cb(0, boost::any(result));
 
@@ -487,15 +510,16 @@ NCPInstanceBase::get_property(
 		cb(0, mask_string);
 
 	} else if (StatCollector::is_a_stat_property(key)) {
-		get_stat_collector().get_property(key, cb);
+		get_stat_collector().property_get_value(key, cb);
 
 	} else {
+		syslog(LOG_ERR, "property_get_value: Unsupported property \"%s\"", key.c_str());
 		cb(kWPANTUNDStatus_PropertyNotFound, boost::any(std::string("Property Not Found")));
 	}
 }
 
 void
-NCPInstanceBase::set_property(
+NCPInstanceBase::property_set_value(
 	const std::string& key,
 	const boost::any& value,
 	CallbackWithStatus cb
@@ -562,7 +586,13 @@ NCPInstanceBase::set_property(
 				reinitialize_ncp();
 			}
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) || strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalAddress)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {
+			mSetDefaultRouteForAutoAddedPrefix = any_to_bool(value);
+			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)
+			|| strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalAddress)
+		) {
 			if (get_ncp_state() <= OFFLINE) {
 				nl::Data prefix;
 
@@ -597,7 +627,7 @@ NCPInstanceBase::set_property(
 			mAutoDeepSleep = any_to_bool(value);
 
 			if (mAutoDeepSleep == false
-			    && mNCPState == DEEP_SLEEP
+				&& mNCPState == DEEP_SLEEP
 				&& mEnabled
 			) {
 				// Wake us up if we are asleep and deep sleep was turned off.
@@ -611,25 +641,45 @@ NCPInstanceBase::set_property(
 			cb(0);
 
 		} else if (StatCollector::is_a_stat_property(key)) {
-			get_stat_collector().set_property(key, value, cb);
+			get_stat_collector().property_set_value(key, value, cb);
 
 		} else {
-			syslog(LOG_ERR,"set_property: Unsupported property \"%s\"", key.c_str());
+			syslog(LOG_ERR, "property_set_value: Unsupported property \"%s\"", key.c_str());
 			cb(kWPANTUNDStatus_PropertyNotFound);
 		}
 
 	} catch (const boost::bad_any_cast &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR, "property_set_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 
 	} catch (const std::invalid_argument &x) {
 		// We will get a bad_any_cast exception if the property is of
 		// the wrong type.
-		syslog(LOG_ERR,"set_property: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		syslog(LOG_ERR, "property_set_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
 		cb(kWPANTUNDStatus_InvalidArgument);
 	}
+}
+
+void
+NCPInstanceBase::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_ERR, "property_insert_value: Property not supported or not insert-value capable \"%s\"", key.c_str());
+	cb(kWPANTUNDStatus_PropertyNotFound);
+}
+
+void
+NCPInstanceBase::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_ERR, "property_remove_value: Property not supported or not remove-value capable \"%s\"", key.c_str());
+	cb(kWPANTUNDStatus_PropertyNotFound);
 }
 
 void
@@ -653,8 +703,8 @@ NCPInstanceBase::set_initializing_ncp(bool x)
 			change_ncp_state(UNINITIALIZED);
 			set_ncp_power(true);
 		} else if ( (get_ncp_state() != UNINITIALIZED)
-		         && (get_ncp_state() != FAULT)
-		         && (get_ncp_state() != UPGRADING)
+				 && (get_ncp_state() != FAULT)
+				 && (get_ncp_state() != UPGRADING)
 		) {
 			handle_ncp_state_change(get_ncp_state(), UNINITIALIZED);
 		}
@@ -662,7 +712,7 @@ NCPInstanceBase::set_initializing_ncp(bool x)
 }
 
 bool
-NCPInstanceBase::is_initializing_ncp() const
+NCPInstanceBase::is_initializing_ncp(void) const
 {
 	return mIsInitializingNCP;
 }
@@ -674,7 +724,7 @@ NCPInstanceBase::get_ncp_state()const
 }
 
 bool
-NCPInstanceBase::is_state_change_valid(NCPState new_ncp_state)const
+NCPInstanceBase::is_state_change_valid(NCPState new_ncp_state) const
 {
 	// Add any invalid state transitions here so that
 	// bugs can be more quickly identified and corrected.
@@ -800,6 +850,7 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 	// (Special case of InterfaceUp -> InterfaceDown)
 	} else if (ncp_state_is_commissioned(old_ncp_state)
 		&& !ncp_state_is_commissioned(new_ncp_state)
+		&& !ncp_state_is_joining(new_ncp_state)
 		&& !ncp_state_is_sleeping(new_ncp_state)
 		&& (new_ncp_state != UNINITIALIZED)
 	) {
@@ -808,10 +859,9 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 
 	// Uninitialized -> Offline
 	// If we are transitioning from uninitialized to offline,
-	// and we have global addresses, then need to clear them out.
+	// we clear all addresses/prefixes.
 	} else if (old_ncp_state == UNINITIALIZED
 		&& new_ncp_state == OFFLINE
-		&& !mGlobalAddresses.empty()
 	) {
 		reset_interface();
 
@@ -849,10 +899,8 @@ NCPInstanceBase::reset_tasks(wpantund_status_t status)
 {
 }
 
-
 // ----------------------------------------------------------------------------
 // MARK: -
-
 
 bool
 NCPInstanceBase::is_busy(void)
@@ -884,7 +932,7 @@ NCPInstanceBase::get_stat_collector(void)
 void
 NCPInstanceBase::update_busy_indication(void)
 {
-    cms_t current_time = time_ms();
+	cms_t current_time = time_ms();
 
 	if (mWasBusy != is_busy()) {
 		if (!mWasBusy
@@ -919,7 +967,7 @@ NCPInstanceBase::update_busy_indication(void)
 }
 
 void
-NCPInstanceBase::ncp_is_misbehaving()
+NCPInstanceBase::ncp_is_misbehaving(void)
 {
 	mFailureCount++;
 	hard_reset_ncp();

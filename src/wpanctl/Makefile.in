@@ -135,6 +135,8 @@ am_wpanctl_OBJECTS = wpanctl-wpanctl.$(OBJEXT) \
 	wpanctl-tool-cmd-reset.$(OBJEXT) \
 	wpanctl-tool-cmd-getprop.$(OBJEXT) \
 	wpanctl-tool-cmd-setprop.$(OBJEXT) \
+	wpanctl-tool-cmd-insertprop.$(OBJEXT) \
+	wpanctl-tool-cmd-removeprop.$(OBJEXT) \
 	wpanctl-tool-cmd-begin-low-power.$(OBJEXT) \
 	wpanctl-tool-cmd-begin-net-wake.$(OBJEXT) \
 	wpanctl-tool-cmd-cd.$(OBJEXT) wpanctl-tool-cmd-poll.$(OBJEXT) \
@@ -142,7 +144,12 @@ am_wpanctl_OBJECTS = wpanctl-wpanctl.$(OBJEXT) \
 	wpanctl-tool-cmd-host-did-wake.$(OBJEXT) \
 	wpanctl-tool-cmd-add-route.$(OBJEXT) \
 	wpanctl-tool-cmd-remove-route.$(OBJEXT) \
-	wpanctl-tool-cmd-pcap.$(OBJEXT) wpanctl-version.$(OBJEXT)
+	wpanctl-tool-updateprop.$(OBJEXT) \
+	wpanctl-tool-cmd-pcap.$(OBJEXT) \
+	wpanctl-tool-cmd-peek.$(OBJEXT) \
+	wpanctl-tool-cmd-poke.$(OBJEXT) \
+	wpanctl-tool-cmd-commissioner.$(OBJEXT) \
+	wpanctl-version.$(OBJEXT)
 wpanctl_OBJECTS = $(am_wpanctl_OBJECTS)
 am__DEPENDENCIES_1 =
 wpanctl_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -255,6 +262,11 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXPORT_DYNAMIC_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 FGREP = @FGREP@
+FUZZ_CFLAGS = @FUZZ_CFLAGS@
+FUZZ_CPPFLAGS = @FUZZ_CPPFLAGS@
+FUZZ_CXXFLAGS = @FUZZ_CXXFLAGS@
+FUZZ_LDFLAGS = @FUZZ_LDFLAGS@
+FUZZ_LIBS = @FUZZ_LIBS@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -378,19 +390,24 @@ wpanctl_SOURCES = wpanctl.c wpanctl-cmds.h ../util/config-file.c \
 	tool-cmd-form.c tool-cmd-mfg.c tool-cmd-leave.c \
 	tool-cmd-permit-join.c tool-cmd-list.c tool-cmd-status.c \
 	tool-cmd-resume.c tool-cmd-reset.c tool-cmd-getprop.c \
-	tool-cmd-setprop.c tool-cmd-begin-low-power.c \
-	tool-cmd-begin-net-wake.c tool-cmd-cd.c tool-cmd-poll.c \
-	tool-cmd-config-gateway.c tool-cmd-host-did-wake.c \
-	tool-cmd-add-route.c tool-cmd-remove-route.c wpanctl-utils.h \
+	tool-cmd-setprop.c tool-cmd-insertprop.c tool-cmd-removeprop.c \
+	tool-cmd-begin-low-power.c tool-cmd-begin-net-wake.c \
+	tool-cmd-cd.c tool-cmd-poll.c tool-cmd-config-gateway.c \
+	tool-cmd-host-did-wake.c tool-cmd-add-route.c \
+	tool-cmd-remove-route.c tool-updateprop.c wpanctl-utils.h \
 	tool-cmd-scan.h tool-cmd-join.h tool-cmd-form.h \
 	tool-cmd-leave.h tool-cmd-mfg.h tool-cmd-permit-join.h \
 	tool-cmd-list.h tool-cmd-status.h tool-cmd-resume.h \
 	tool-cmd-reset.h tool-cmd-getprop.h tool-cmd-setprop.h \
+	tool-cmd-insertprop.h tool-cmd-removeprop.h \
 	tool-cmd-begin-low-power.h tool-cmd-begin-net-wake.h \
 	tool-cmd-cd.h tool-cmd-poll.h tool-cmd-config-gateway.h \
 	tool-cmd-host-did-wake.h tool-cmd-add-route.h \
 	tool-cmd-remove-route.h tool-cmd-pcap.h tool-cmd-pcap.c \
-	$(NULL) $(top_builddir)/$(subdir)/version.c
+	tool-cmd-peek.h tool-cmd-peek.c tool-cmd-poke.h \
+	tool-cmd-poke.c tool-cmd-commissioner.h \
+	tool-cmd-commissioner.c tool-updateprop.h $(NULL) \
+	$(top_builddir)/$(subdir)/version.c
 wpanctl_LDADD = \
 	$(DBUS_LIBS) \
 	$(LIBREADLINE_LIBS) \
@@ -505,23 +522,29 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-begin-low-power.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-begin-net-wake.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-cd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-commissioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-config-gateway.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-form.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-getprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-host-did-wake.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-insertprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-join.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-leave.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-mfg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-pcap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-peek.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-permit-join.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-poke.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-poll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-remove-route.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-removeprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-reset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-resume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-scan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-setprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-cmd-status.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-tool-updateprop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-wpan-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpanctl-wpanctl-utils.Po@am__quote@
@@ -786,6 +809,34 @@ wpanctl-tool-cmd-setprop.obj: tool-cmd-setprop.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-setprop.obj `if test -f 'tool-cmd-setprop.c'; then $(CYGPATH_W) 'tool-cmd-setprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-setprop.c'; fi`
 
+wpanctl-tool-cmd-insertprop.o: tool-cmd-insertprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-insertprop.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-insertprop.Tpo -c -o wpanctl-tool-cmd-insertprop.o `test -f 'tool-cmd-insertprop.c' || echo '$(srcdir)/'`tool-cmd-insertprop.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-insertprop.Tpo $(DEPDIR)/wpanctl-tool-cmd-insertprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-insertprop.c' object='wpanctl-tool-cmd-insertprop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-insertprop.o `test -f 'tool-cmd-insertprop.c' || echo '$(srcdir)/'`tool-cmd-insertprop.c
+
+wpanctl-tool-cmd-insertprop.obj: tool-cmd-insertprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-insertprop.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-insertprop.Tpo -c -o wpanctl-tool-cmd-insertprop.obj `if test -f 'tool-cmd-insertprop.c'; then $(CYGPATH_W) 'tool-cmd-insertprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-insertprop.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-insertprop.Tpo $(DEPDIR)/wpanctl-tool-cmd-insertprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-insertprop.c' object='wpanctl-tool-cmd-insertprop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-insertprop.obj `if test -f 'tool-cmd-insertprop.c'; then $(CYGPATH_W) 'tool-cmd-insertprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-insertprop.c'; fi`
+
+wpanctl-tool-cmd-removeprop.o: tool-cmd-removeprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-removeprop.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-removeprop.Tpo -c -o wpanctl-tool-cmd-removeprop.o `test -f 'tool-cmd-removeprop.c' || echo '$(srcdir)/'`tool-cmd-removeprop.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-removeprop.Tpo $(DEPDIR)/wpanctl-tool-cmd-removeprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-removeprop.c' object='wpanctl-tool-cmd-removeprop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-removeprop.o `test -f 'tool-cmd-removeprop.c' || echo '$(srcdir)/'`tool-cmd-removeprop.c
+
+wpanctl-tool-cmd-removeprop.obj: tool-cmd-removeprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-removeprop.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-removeprop.Tpo -c -o wpanctl-tool-cmd-removeprop.obj `if test -f 'tool-cmd-removeprop.c'; then $(CYGPATH_W) 'tool-cmd-removeprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-removeprop.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-removeprop.Tpo $(DEPDIR)/wpanctl-tool-cmd-removeprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-removeprop.c' object='wpanctl-tool-cmd-removeprop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-removeprop.obj `if test -f 'tool-cmd-removeprop.c'; then $(CYGPATH_W) 'tool-cmd-removeprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-removeprop.c'; fi`
+
 wpanctl-tool-cmd-begin-low-power.o: tool-cmd-begin-low-power.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-begin-low-power.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-begin-low-power.Tpo -c -o wpanctl-tool-cmd-begin-low-power.o `test -f 'tool-cmd-begin-low-power.c' || echo '$(srcdir)/'`tool-cmd-begin-low-power.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-begin-low-power.Tpo $(DEPDIR)/wpanctl-tool-cmd-begin-low-power.Po
@@ -898,6 +949,20 @@ wpanctl-tool-cmd-remove-route.obj: tool-cmd-remove-route.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-remove-route.obj `if test -f 'tool-cmd-remove-route.c'; then $(CYGPATH_W) 'tool-cmd-remove-route.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-remove-route.c'; fi`
 
+wpanctl-tool-updateprop.o: tool-updateprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-updateprop.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-updateprop.Tpo -c -o wpanctl-tool-updateprop.o `test -f 'tool-updateprop.c' || echo '$(srcdir)/'`tool-updateprop.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-updateprop.Tpo $(DEPDIR)/wpanctl-tool-updateprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-updateprop.c' object='wpanctl-tool-updateprop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-updateprop.o `test -f 'tool-updateprop.c' || echo '$(srcdir)/'`tool-updateprop.c
+
+wpanctl-tool-updateprop.obj: tool-updateprop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-updateprop.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-updateprop.Tpo -c -o wpanctl-tool-updateprop.obj `if test -f 'tool-updateprop.c'; then $(CYGPATH_W) 'tool-updateprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-updateprop.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-updateprop.Tpo $(DEPDIR)/wpanctl-tool-updateprop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-updateprop.c' object='wpanctl-tool-updateprop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-updateprop.obj `if test -f 'tool-updateprop.c'; then $(CYGPATH_W) 'tool-updateprop.c'; else $(CYGPATH_W) '$(srcdir)/tool-updateprop.c'; fi`
+
 wpanctl-tool-cmd-pcap.o: tool-cmd-pcap.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-pcap.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo -c -o wpanctl-tool-cmd-pcap.o `test -f 'tool-cmd-pcap.c' || echo '$(srcdir)/'`tool-cmd-pcap.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-pcap.Tpo $(DEPDIR)/wpanctl-tool-cmd-pcap.Po
@@ -911,6 +976,48 @@ wpanctl-tool-cmd-pcap.obj: tool-cmd-pcap.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-pcap.c' object='wpanctl-tool-cmd-pcap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-pcap.obj `if test -f 'tool-cmd-pcap.c'; then $(CYGPATH_W) 'tool-cmd-pcap.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-pcap.c'; fi`
+
+wpanctl-tool-cmd-peek.o: tool-cmd-peek.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-peek.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-peek.Tpo -c -o wpanctl-tool-cmd-peek.o `test -f 'tool-cmd-peek.c' || echo '$(srcdir)/'`tool-cmd-peek.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-peek.Tpo $(DEPDIR)/wpanctl-tool-cmd-peek.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-peek.c' object='wpanctl-tool-cmd-peek.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-peek.o `test -f 'tool-cmd-peek.c' || echo '$(srcdir)/'`tool-cmd-peek.c
+
+wpanctl-tool-cmd-peek.obj: tool-cmd-peek.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-peek.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-peek.Tpo -c -o wpanctl-tool-cmd-peek.obj `if test -f 'tool-cmd-peek.c'; then $(CYGPATH_W) 'tool-cmd-peek.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-peek.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-peek.Tpo $(DEPDIR)/wpanctl-tool-cmd-peek.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-peek.c' object='wpanctl-tool-cmd-peek.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-peek.obj `if test -f 'tool-cmd-peek.c'; then $(CYGPATH_W) 'tool-cmd-peek.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-peek.c'; fi`
+
+wpanctl-tool-cmd-poke.o: tool-cmd-poke.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-poke.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-poke.Tpo -c -o wpanctl-tool-cmd-poke.o `test -f 'tool-cmd-poke.c' || echo '$(srcdir)/'`tool-cmd-poke.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-poke.Tpo $(DEPDIR)/wpanctl-tool-cmd-poke.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-poke.c' object='wpanctl-tool-cmd-poke.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-poke.o `test -f 'tool-cmd-poke.c' || echo '$(srcdir)/'`tool-cmd-poke.c
+
+wpanctl-tool-cmd-poke.obj: tool-cmd-poke.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-poke.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-poke.Tpo -c -o wpanctl-tool-cmd-poke.obj `if test -f 'tool-cmd-poke.c'; then $(CYGPATH_W) 'tool-cmd-poke.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-poke.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-poke.Tpo $(DEPDIR)/wpanctl-tool-cmd-poke.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-poke.c' object='wpanctl-tool-cmd-poke.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-poke.obj `if test -f 'tool-cmd-poke.c'; then $(CYGPATH_W) 'tool-cmd-poke.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-poke.c'; fi`
+
+wpanctl-tool-cmd-commissioner.o: tool-cmd-commissioner.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-commissioner.o -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-commissioner.Tpo -c -o wpanctl-tool-cmd-commissioner.o `test -f 'tool-cmd-commissioner.c' || echo '$(srcdir)/'`tool-cmd-commissioner.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-commissioner.Tpo $(DEPDIR)/wpanctl-tool-cmd-commissioner.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-commissioner.c' object='wpanctl-tool-cmd-commissioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-commissioner.o `test -f 'tool-cmd-commissioner.c' || echo '$(srcdir)/'`tool-cmd-commissioner.c
+
+wpanctl-tool-cmd-commissioner.obj: tool-cmd-commissioner.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-tool-cmd-commissioner.obj -MD -MP -MF $(DEPDIR)/wpanctl-tool-cmd-commissioner.Tpo -c -o wpanctl-tool-cmd-commissioner.obj `if test -f 'tool-cmd-commissioner.c'; then $(CYGPATH_W) 'tool-cmd-commissioner.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-commissioner.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpanctl-tool-cmd-commissioner.Tpo $(DEPDIR)/wpanctl-tool-cmd-commissioner.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tool-cmd-commissioner.c' object='wpanctl-tool-cmd-commissioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpanctl-tool-cmd-commissioner.obj `if test -f 'tool-cmd-commissioner.c'; then $(CYGPATH_W) 'tool-cmd-commissioner.c'; else $(CYGPATH_W) '$(srcdir)/tool-cmd-commissioner.c'; fi`
 
 wpanctl-version.o: $(top_builddir)/$(subdir)/version.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpanctl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpanctl-version.o -MD -MP -MF $(DEPDIR)/wpanctl-version.Tpo -c -o wpanctl-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
@@ -1144,6 +1251,8 @@ uninstall-am: uninstall-binPROGRAMS
 
 .PRECIOUS: Makefile
 
+
+@CODE_COVERAGE_RULES@
 .INTERMEDIATE: wpanctl-version.$(OBJEXT)
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@

@@ -107,6 +107,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@HOST_IS_LINUX_TRUE@bin_PROGRAMS = spi-hdlc-adapter$(EXEEXT)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@am__append_1 = libncp-spinel.la
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@am__append_2 = libncp-spinel-fuzz.la
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@noinst_PROGRAMS = ncp-spinel-fuzz$(EXEEXT)
 subdir = src/ncp-spinel
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -149,6 +152,54 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(mypkglibexecdir)" "$(DESTDIR)$(bindir)"
 LTLIBRARIES = $(mypkglibexec_LTLIBRARIES) $(noinst_LTLIBRARIES)
+libncp_spinel_fuzz_la_LIBADD =
+am__libncp_spinel_fuzz_la_SOURCES_DIST =  \
+	SpinelNCPControlInterface.cpp SpinelNCPControlInterface.h \
+	SpinelNCPInstance.cpp SpinelNCPInstance.h \
+	SpinelNCPInstance-DataPump.cpp \
+	SpinelNCPInstance-Protothreads.cpp SpinelNCPTask.cpp \
+	SpinelNCPTask.h SpinelNCPTaskDeepSleep.cpp \
+	SpinelNCPTaskGetNetworkTopology.h \
+	SpinelNCPTaskGetNetworkTopology.cpp \
+	SpinelNCPTaskGetMsgBufferCounters.h \
+	SpinelNCPTaskGetMsgBufferCounters.cpp SpinelNCPTaskDeepSleep.h \
+	SpinelNCPTaskForm.cpp SpinelNCPTaskForm.h \
+	SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
+	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
+	SpinelNCPTaskPeek.cpp SpinelNCPTaskPeek.h \
+	SpinelNCPTaskScan.cpp SpinelNCPTaskScan.h \
+	SpinelNCPTaskSendCommand.cpp SpinelNCPTaskSendCommand.h \
+	SpinelNCPTaskWake.cpp SpinelNCPTaskWake.h \
+	$(top_srcdir)/third_party/openthread/src/ncp/spinel.c \
+	spinel-extra.c spinel-extra.h
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@am__objects_1 = libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPInstance.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTask.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-spinel.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_fuzz_la-spinel-extra.lo
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@am_libncp_spinel_fuzz_la_OBJECTS = $(am__objects_1)
+libncp_spinel_fuzz_la_OBJECTS = $(am_libncp_spinel_fuzz_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+libncp_spinel_fuzz_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@am_libncp_spinel_fuzz_la_rpath =
 libncp_spinel_la_LIBADD =
 am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPControlInterface.h SpinelNCPInstance.cpp \
@@ -162,12 +213,13 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPTaskForm.cpp SpinelNCPTaskForm.h \
 	SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
+	SpinelNCPTaskPeek.cpp SpinelNCPTaskPeek.h \
 	SpinelNCPTaskScan.cpp SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp SpinelNCPTaskSendCommand.h \
 	SpinelNCPTaskWake.cpp SpinelNCPTaskWake.h \
 	$(top_srcdir)/third_party/openthread/src/ncp/spinel.c \
 	spinel-extra.c spinel-extra.h
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@am__objects_1 = libncp_spinel_la-SpinelNCPControlInterface.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@am__objects_2 = libncp_spinel_la-SpinelNCPControlInterface.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPInstance.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPInstance-DataPump.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPInstance-Protothreads.lo \
@@ -178,16 +230,13 @@ am__libncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskLeave.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskPeek.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskScan.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskSendCommand.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	libncp_spinel_la-SpinelNCPTaskWake.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	spinel.lo spinel-extra.lo
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@am_libncp_spinel_la_OBJECTS = $(am__objects_1)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@am_libncp_spinel_la_OBJECTS = $(am__objects_2)
 libncp_spinel_la_OBJECTS = $(am_libncp_spinel_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 libncp_spinel_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -206,12 +255,13 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 	SpinelNCPTaskForm.cpp SpinelNCPTaskForm.h \
 	SpinelNCPTaskJoin.cpp SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp SpinelNCPTaskLeave.h \
+	SpinelNCPTaskPeek.cpp SpinelNCPTaskPeek.h \
 	SpinelNCPTaskScan.cpp SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp SpinelNCPTaskSendCommand.h \
 	SpinelNCPTaskWake.cpp SpinelNCPTaskWake.h \
 	$(top_srcdir)/third_party/openthread/src/ncp/spinel.c \
 	spinel-extra.c spinel-extra.h
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@am__objects_2 = ncp_spinel_la-SpinelNCPControlInterface.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@am__objects_3 = ncp_spinel_la-SpinelNCPControlInterface.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPInstance.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPInstance-DataPump.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPInstance-Protothreads.lo \
@@ -222,11 +272,13 @@ am__ncp_spinel_la_SOURCES_DIST = SpinelNCPControlInterface.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskForm.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskJoin.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskLeave.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskPeek.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskScan.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskSendCommand.lo \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-SpinelNCPTaskWake.lo \
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@	spinel.lo spinel-extra.lo
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@am_ncp_spinel_la_OBJECTS = $(am__objects_2)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-spinel.lo \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	ncp_spinel_la-spinel-extra.lo
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@am_ncp_spinel_la_OBJECTS = $(am__objects_3)
 ncp_spinel_la_OBJECTS = $(am_ncp_spinel_la_OBJECTS)
 ncp_spinel_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
@@ -234,7 +286,17 @@ ncp_spinel_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(LDFLAGS) -o $@
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@am_ncp_spinel_la_rpath = -rpath \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@	$(mypkglibexecdir)
-PROGRAMS = $(bin_PROGRAMS)
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am__ncp_spinel_fuzz_SOURCES_DIST = ncp-spinel-fuzz.cpp
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@am_ncp_spinel_fuzz_OBJECTS = ncp_spinel_fuzz-ncp-spinel-fuzz.$(OBJEXT)
+ncp_spinel_fuzz_OBJECTS = $(am_ncp_spinel_fuzz_OBJECTS)
+am__DEPENDENCIES_1 =
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_DEPENDENCIES = libncp-spinel-fuzz.la \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@	$(am__DEPENDENCIES_1)
+ncp_spinel_fuzz_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(ncp_spinel_fuzz_CXXFLAGS) $(CXXFLAGS) \
+	$(ncp_spinel_fuzz_LDFLAGS) $(LDFLAGS) -o $@
 am__spi_hdlc_adapter_SOURCES_DIST = ../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@HOST_IS_LINUX_TRUE@am_spi_hdlc_adapter_OBJECTS = spi-hdlc-adapter.$(OBJEXT)
 spi_hdlc_adapter_OBJECTS = $(am_spi_hdlc_adapter_OBJECTS)
@@ -291,10 +353,13 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libncp_spinel_la_SOURCES) $(ncp_spinel_la_SOURCES) \
+SOURCES = $(libncp_spinel_fuzz_la_SOURCES) $(libncp_spinel_la_SOURCES) \
+	$(ncp_spinel_la_SOURCES) $(ncp_spinel_fuzz_SOURCES) \
 	$(spi_hdlc_adapter_SOURCES)
-DIST_SOURCES = $(am__libncp_spinel_la_SOURCES_DIST) \
+DIST_SOURCES = $(am__libncp_spinel_fuzz_la_SOURCES_DIST) \
+	$(am__libncp_spinel_la_SOURCES_DIST) \
 	$(am__ncp_spinel_la_SOURCES_DIST) \
+	$(am__ncp_spinel_fuzz_SOURCES_DIST) \
 	$(am__spi_hdlc_adapter_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -365,6 +430,11 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXPORT_DYNAMIC_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 FGREP = @FGREP@
+FUZZ_CFLAGS = @FUZZ_CFLAGS@
+FUZZ_CPPFLAGS = @FUZZ_CPPFLAGS@
+FUZZ_CXXFLAGS = @FUZZ_CXXFLAGS@
+FUZZ_LDFLAGS = @FUZZ_LDFLAGS@
+FUZZ_LIBS = @FUZZ_LIBS@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -493,7 +563,6 @@ EXTRA_DIST = \
 	../../third_party/openthread/NOTICE              \
 	../../third_party/openthread/README.google       \
 	../../third_party/openthread/README.md           \
-	../../third_party/openthread/src/ncp/PROTOCOL.md \
 	../../third_party/openthread/src/ncp/spinel.c    \
 	../../third_party/openthread/src/ncp/spinel.h    \
 	../../third_party/openthread/tools/spi-hdlc-adapter/README.md          \
@@ -525,6 +594,8 @@ EXTRA_DIST = \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskJoin.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskLeave.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskLeave.h \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskPeek.cpp \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskPeek.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskScan.cpp \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskScan.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	SpinelNCPTaskSendCommand.cpp \
@@ -536,13 +607,25 @@ EXTRA_DIST = \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	spinel-extra.h \
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@	$(NULL)
 
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@noinst_LTLIBRARIES = libncp-spinel.la
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@noinst_LTLIBRARIES = $(am__append_1) \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@	$(am__append_2)
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@libncp_spinel_la_SOURCES = $(NCP_SOURCES)
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@libncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_TRUE@libncp_spinel_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@mypkglibexec_LTLIBRARIES = ncp-spinel.la
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@ncp_spinel_la_LDFLAGS = -module -avoid-version -shared
 @BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@ncp_spinel_la_SOURCES = $(NCP_SOURCES)
-@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@ncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@ncp_spinel_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@STATIC_LINK_NCP_PLUGIN_FALSE@ncp_spinel_la_CPPFLAGS = $(AM_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@libncp_spinel_fuzz_la_SOURCES = $(NCP_SOURCES)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@libncp_spinel_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@libncp_spinel_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_SOURCES = ncp-spinel-fuzz.cpp
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_LDADD = libncp-spinel-fuzz.la \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@	$(CODE_COVERAGE_LIBS) \
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@	$(FUZZ_LIBS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+@BUILD_PLUGIN_NCP_SPINEL_TRUE@@ENABLE_FUZZ_TARGETS_TRUE@ncp_spinel_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -623,6 +706,9 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+libncp-spinel-fuzz.la: $(libncp_spinel_fuzz_la_OBJECTS) $(libncp_spinel_fuzz_la_DEPENDENCIES) $(EXTRA_libncp_spinel_fuzz_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(libncp_spinel_fuzz_la_LINK) $(am_libncp_spinel_fuzz_la_rpath) $(libncp_spinel_fuzz_la_OBJECTS) $(libncp_spinel_fuzz_la_LIBADD) $(LIBS)
+
 libncp-spinel.la: $(libncp_spinel_la_OBJECTS) $(libncp_spinel_la_DEPENDENCIES) $(EXTRA_libncp_spinel_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(libncp_spinel_la_LINK) $(am_libncp_spinel_la_rpath) $(libncp_spinel_la_OBJECTS) $(libncp_spinel_la_LIBADD) $(LIBS)
 
@@ -678,6 +764,19 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+clean-noinstPROGRAMS:
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+
+ncp-spinel-fuzz$(EXEEXT): $(ncp_spinel_fuzz_OBJECTS) $(ncp_spinel_fuzz_DEPENDENCIES) $(EXTRA_ncp_spinel_fuzz_DEPENDENCIES) 
+	@rm -f ncp-spinel-fuzz$(EXEEXT)
+	$(AM_V_CXXLD)$(ncp_spinel_fuzz_LINK) $(ncp_spinel_fuzz_OBJECTS) $(ncp_spinel_fuzz_LDADD) $(LIBS)
+
 spi-hdlc-adapter$(EXEEXT): $(spi_hdlc_adapter_OBJECTS) $(spi_hdlc_adapter_DEPENDENCIES) $(EXTRA_spi_hdlc_adapter_DEPENDENCIES) 
 	@rm -f spi-hdlc-adapter$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spi_hdlc_adapter_OBJECTS) $(spi_hdlc_adapter_LDADD) $(LIBS)
@@ -688,6 +787,23 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPControlInterface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTask.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskForm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskJoin.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskLeave.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskPeek.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskScan.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskWake.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-spinel-extra.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_fuzz_la-spinel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPControlInterface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPInstance-DataPump.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPInstance-Protothreads.Plo@am__quote@
@@ -699,9 +815,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskPeek.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskSendCommand.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libncp_spinel_la-SpinelNCPTaskWake.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPControlInterface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-DataPump.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-Protothreads.Plo@am__quote@
@@ -713,9 +831,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskPeek.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskSendCommand.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-SpinelNCPTaskWake.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-spinel-extra.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_spinel_la-spinel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spi-hdlc-adapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spinel-extra.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spinel.Plo@am__quote@
@@ -741,12 +862,40 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
+libncp_spinel_fuzz_la-spinel.lo: $(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libncp_spinel_fuzz_la-spinel.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-spinel.Tpo -c -o libncp_spinel_fuzz_la-spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-spinel.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-spinel.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' object='libncp_spinel_fuzz_la-spinel.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libncp_spinel_fuzz_la-spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+
+libncp_spinel_fuzz_la-spinel-extra.lo: spinel-extra.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libncp_spinel_fuzz_la-spinel-extra.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-spinel-extra.Tpo -c -o libncp_spinel_fuzz_la-spinel-extra.lo `test -f 'spinel-extra.c' || echo '$(srcdir)/'`spinel-extra.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-spinel-extra.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-spinel-extra.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='spinel-extra.c' object='libncp_spinel_fuzz_la-spinel-extra.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libncp_spinel_fuzz_la-spinel-extra.lo `test -f 'spinel-extra.c' || echo '$(srcdir)/'`spinel-extra.c
+
 spinel.lo: $(top_srcdir)/third_party/openthread/src/ncp/spinel.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spinel.lo -MD -MP -MF $(DEPDIR)/spinel.Tpo -c -o spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spinel.Tpo $(DEPDIR)/spinel.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' object='spinel.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+
+ncp_spinel_la-spinel.lo: $(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncp_spinel_la-spinel.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-spinel.Tpo -c -o ncp_spinel_la-spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-spinel.Tpo $(DEPDIR)/ncp_spinel_la-spinel.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' object='ncp_spinel_la-spinel.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncp_spinel_la-spinel.lo `test -f '$(top_srcdir)/third_party/openthread/src/ncp/spinel.c' || echo '$(srcdir)/'`$(top_srcdir)/third_party/openthread/src/ncp/spinel.c
+
+ncp_spinel_la-spinel-extra.lo: spinel-extra.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ncp_spinel_la-spinel-extra.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-spinel-extra.Tpo -c -o ncp_spinel_la-spinel-extra.lo `test -f 'spinel-extra.c' || echo '$(srcdir)/'`spinel-extra.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-spinel-extra.Tpo $(DEPDIR)/ncp_spinel_la-spinel-extra.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='spinel-extra.c' object='ncp_spinel_la-spinel-extra.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ncp_spinel_la-spinel-extra.lo `test -f 'spinel-extra.c' || echo '$(srcdir)/'`spinel-extra.c
 
 spi-hdlc-adapter.o: ../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spi-hdlc-adapter.o -MD -MP -MF $(DEPDIR)/spi-hdlc-adapter.Tpo -c -o spi-hdlc-adapter.o `test -f '../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c' || echo '$(srcdir)/'`../../third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c
@@ -782,6 +931,111 @@ spi-hdlc-adapter.obj: ../../third_party/openthread/tools/spi-hdlc-adapter/spi-hd
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo: SpinelNCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPControlInterface.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPControlInterface.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPControlInterface.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPControlInterface.cpp' object='libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPInstance.lo: SpinelNCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPInstance.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance.cpp' object='libncp_spinel_fuzz_la-SpinelNCPInstance.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo: SpinelNCPInstance-DataPump.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance-DataPump.cpp' object='libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo: SpinelNCPInstance-Protothreads.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance-Protothreads.cpp' object='libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTask.lo: SpinelNCPTask.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTask.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTask.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTask.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTask.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTask.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTask.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskDeepSleep.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo: SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetNetworkTopology.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo: SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetMsgBufferCounters.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskForm.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskForm.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskForm.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskForm.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo: SpinelNCPTaskJoin.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskJoin.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskJoin.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskJoin.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskJoin.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo: SpinelNCPTaskLeave.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskLeave.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskLeave.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskLeave.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskLeave.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo: SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskPeek.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskPeek.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskPeek.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskPeek.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo: SpinelNCPTaskScan.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskScan.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskScan.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskScan.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskScan.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo: SpinelNCPTaskSendCommand.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskSendCommand.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
+
+libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo: SpinelNCPTaskWake.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskWake.Tpo -c -o libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskWake.Tpo $(DEPDIR)/libncp_spinel_fuzz_la-SpinelNCPTaskWake.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskWake.cpp' object='libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libncp_spinel_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_fuzz_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
 
 libncp_spinel_la-SpinelNCPControlInterface.lo: SpinelNCPControlInterface.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPControlInterface.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPControlInterface.Tpo -c -o libncp_spinel_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
@@ -860,6 +1114,13 @@ libncp_spinel_la-SpinelNCPTaskLeave.lo: SpinelNCPTaskLeave.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
 
+libncp_spinel_la-SpinelNCPTaskPeek.lo: SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskPeek.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskPeek.Tpo -c -o libncp_spinel_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskPeek.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskPeek.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskPeek.cpp' object='libncp_spinel_la-SpinelNCPTaskPeek.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
+
 libncp_spinel_la-SpinelNCPTaskScan.lo: SpinelNCPTaskScan.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT libncp_spinel_la-SpinelNCPTaskScan.lo -MD -MP -MF $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Tpo -c -o libncp_spinel_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Tpo $(DEPDIR)/libncp_spinel_la-SpinelNCPTaskScan.Plo
@@ -882,102 +1143,123 @@ libncp_spinel_la-SpinelNCPTaskWake.lo: SpinelNCPTaskWake.cpp
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o libncp_spinel_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
 
 ncp_spinel_la-SpinelNCPControlInterface.lo: SpinelNCPControlInterface.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPControlInterface.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPControlInterface.Tpo -c -o ncp_spinel_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPControlInterface.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPControlInterface.Tpo -c -o ncp_spinel_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPControlInterface.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPControlInterface.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPControlInterface.cpp' object='ncp_spinel_la-SpinelNCPControlInterface.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPControlInterface.lo `test -f 'SpinelNCPControlInterface.cpp' || echo '$(srcdir)/'`SpinelNCPControlInterface.cpp
 
 ncp_spinel_la-SpinelNCPInstance.lo: SpinelNCPInstance.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance.Tpo -c -o ncp_spinel_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance.Tpo -c -o ncp_spinel_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance.cpp' object='ncp_spinel_la-SpinelNCPInstance.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance.lo `test -f 'SpinelNCPInstance.cpp' || echo '$(srcdir)/'`SpinelNCPInstance.cpp
 
 ncp_spinel_la-SpinelNCPInstance-DataPump.lo: SpinelNCPInstance-DataPump.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance-DataPump.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-DataPump.Tpo -c -o ncp_spinel_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance-DataPump.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-DataPump.Tpo -c -o ncp_spinel_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-DataPump.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-DataPump.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance-DataPump.cpp' object='ncp_spinel_la-SpinelNCPInstance-DataPump.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance-DataPump.lo `test -f 'SpinelNCPInstance-DataPump.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-DataPump.cpp
 
 ncp_spinel_la-SpinelNCPInstance-Protothreads.lo: SpinelNCPInstance-Protothreads.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance-Protothreads.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-Protothreads.Tpo -c -o ncp_spinel_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPInstance-Protothreads.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-Protothreads.Tpo -c -o ncp_spinel_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-Protothreads.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPInstance-Protothreads.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPInstance-Protothreads.cpp' object='ncp_spinel_la-SpinelNCPInstance-Protothreads.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPInstance-Protothreads.lo `test -f 'SpinelNCPInstance-Protothreads.cpp' || echo '$(srcdir)/'`SpinelNCPInstance-Protothreads.cpp
 
 ncp_spinel_la-SpinelNCPTask.lo: SpinelNCPTask.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTask.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTask.Tpo -c -o ncp_spinel_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTask.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTask.Tpo -c -o ncp_spinel_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTask.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTask.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTask.cpp' object='ncp_spinel_la-SpinelNCPTask.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTask.lo `test -f 'SpinelNCPTask.cpp' || echo '$(srcdir)/'`SpinelNCPTask.cpp
 
 ncp_spinel_la-SpinelNCPTaskDeepSleep.lo: SpinelNCPTaskDeepSleep.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskDeepSleep.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Tpo -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskDeepSleep.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Tpo -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskDeepSleep.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskDeepSleep.cpp' object='ncp_spinel_la-SpinelNCPTaskDeepSleep.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskDeepSleep.lo `test -f 'SpinelNCPTaskDeepSleep.cpp' || echo '$(srcdir)/'`SpinelNCPTaskDeepSleep.cpp
 
 ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo: SpinelNCPTaskGetNetworkTopology.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetNetworkTopology.cpp' object='ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetNetworkTopology.lo `test -f 'SpinelNCPTaskGetNetworkTopology.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetNetworkTopology.cpp
 
 ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo: SpinelNCPTaskGetMsgBufferCounters.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskGetMsgBufferCounters.cpp' object='ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskGetMsgBufferCounters.lo `test -f 'SpinelNCPTaskGetMsgBufferCounters.cpp' || echo '$(srcdir)/'`SpinelNCPTaskGetMsgBufferCounters.cpp
 
 ncp_spinel_la-SpinelNCPTaskForm.lo: SpinelNCPTaskForm.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskForm.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Tpo -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskForm.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskForm.cpp' object='ncp_spinel_la-SpinelNCPTaskForm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskForm.lo `test -f 'SpinelNCPTaskForm.cpp' || echo '$(srcdir)/'`SpinelNCPTaskForm.cpp
 
 ncp_spinel_la-SpinelNCPTaskJoin.lo: SpinelNCPTaskJoin.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskJoin.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Tpo -c -o ncp_spinel_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskJoin.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Tpo -c -o ncp_spinel_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskJoin.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskJoin.cpp' object='ncp_spinel_la-SpinelNCPTaskJoin.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskJoin.lo `test -f 'SpinelNCPTaskJoin.cpp' || echo '$(srcdir)/'`SpinelNCPTaskJoin.cpp
 
 ncp_spinel_la-SpinelNCPTaskLeave.lo: SpinelNCPTaskLeave.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskLeave.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Tpo -c -o ncp_spinel_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskLeave.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Tpo -c -o ncp_spinel_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskLeave.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskLeave.cpp' object='ncp_spinel_la-SpinelNCPTaskLeave.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskLeave.lo `test -f 'SpinelNCPTaskLeave.cpp' || echo '$(srcdir)/'`SpinelNCPTaskLeave.cpp
+
+ncp_spinel_la-SpinelNCPTaskPeek.lo: SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskPeek.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskPeek.Tpo -c -o ncp_spinel_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskPeek.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskPeek.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskPeek.cpp' object='ncp_spinel_la-SpinelNCPTaskPeek.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskPeek.lo `test -f 'SpinelNCPTaskPeek.cpp' || echo '$(srcdir)/'`SpinelNCPTaskPeek.cpp
 
 ncp_spinel_la-SpinelNCPTaskScan.lo: SpinelNCPTaskScan.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskScan.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Tpo -c -o ncp_spinel_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskScan.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Tpo -c -o ncp_spinel_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskScan.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskScan.cpp' object='ncp_spinel_la-SpinelNCPTaskScan.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskScan.lo `test -f 'SpinelNCPTaskScan.cpp' || echo '$(srcdir)/'`SpinelNCPTaskScan.cpp
 
 ncp_spinel_la-SpinelNCPTaskSendCommand.lo: SpinelNCPTaskSendCommand.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskSendCommand.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskSendCommand.Tpo -c -o ncp_spinel_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskSendCommand.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskSendCommand.Tpo -c -o ncp_spinel_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskSendCommand.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskSendCommand.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskSendCommand.cpp' object='ncp_spinel_la-SpinelNCPTaskSendCommand.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskSendCommand.lo `test -f 'SpinelNCPTaskSendCommand.cpp' || echo '$(srcdir)/'`SpinelNCPTaskSendCommand.cpp
 
 ncp_spinel_la-SpinelNCPTaskWake.lo: SpinelNCPTaskWake.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskWake.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskWake.Tpo -c -o ncp_spinel_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_la-SpinelNCPTaskWake.lo -MD -MP -MF $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskWake.Tpo -c -o ncp_spinel_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskWake.Tpo $(DEPDIR)/ncp_spinel_la-SpinelNCPTaskWake.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SpinelNCPTaskWake.cpp' object='ncp_spinel_la-SpinelNCPTaskWake.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_la_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_la_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_la-SpinelNCPTaskWake.lo `test -f 'SpinelNCPTaskWake.cpp' || echo '$(srcdir)/'`SpinelNCPTaskWake.cpp
+
+ncp_spinel_fuzz-ncp-spinel-fuzz.o: ncp-spinel-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_fuzz_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_fuzz_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_fuzz-ncp-spinel-fuzz.o -MD -MP -MF $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Tpo -c -o ncp_spinel_fuzz-ncp-spinel-fuzz.o `test -f 'ncp-spinel-fuzz.cpp' || echo '$(srcdir)/'`ncp-spinel-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Tpo $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='ncp-spinel-fuzz.cpp' object='ncp_spinel_fuzz-ncp-spinel-fuzz.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_fuzz_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_fuzz-ncp-spinel-fuzz.o `test -f 'ncp-spinel-fuzz.cpp' || echo '$(srcdir)/'`ncp-spinel-fuzz.cpp
+
+ncp_spinel_fuzz-ncp-spinel-fuzz.obj: ncp-spinel-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_fuzz_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_fuzz_CXXFLAGS) $(CXXFLAGS) -MT ncp_spinel_fuzz-ncp-spinel-fuzz.obj -MD -MP -MF $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Tpo -c -o ncp_spinel_fuzz-ncp-spinel-fuzz.obj `if test -f 'ncp-spinel-fuzz.cpp'; then $(CYGPATH_W) 'ncp-spinel-fuzz.cpp'; else $(CYGPATH_W) '$(srcdir)/ncp-spinel-fuzz.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Tpo $(DEPDIR)/ncp_spinel_fuzz-ncp-spinel-fuzz.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='ncp-spinel-fuzz.cpp' object='ncp_spinel_fuzz-ncp-spinel-fuzz.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ncp_spinel_fuzz_CPPFLAGS) $(CPPFLAGS) $(ncp_spinel_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o ncp_spinel_fuzz-ncp-spinel-fuzz.obj `if test -f 'ncp-spinel-fuzz.cpp'; then $(CYGPATH_W) 'ncp-spinel-fuzz.cpp'; else $(CYGPATH_W) '$(srcdir)/ncp-spinel-fuzz.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1109,7 +1391,7 @@ clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 	clean-mypkglibexecLTLIBRARIES clean-noinstLTLIBRARIES \
-	mostlyclean-am
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -1182,22 +1464,24 @@ uninstall-am: uninstall-binPROGRAMS uninstall-mypkglibexecLTLIBRARIES
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean \
 	clean-binPROGRAMS clean-generic clean-libtool \
 	clean-mypkglibexecLTLIBRARIES clean-noinstLTLIBRARIES \
-	cscopelist-am ctags ctags-am distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-mypkglibexecLTLIBRARIES install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-mypkglibexecLTLIBRARIES
+	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-mypkglibexecLTLIBRARIES \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-binPROGRAMS uninstall-mypkglibexecLTLIBRARIES
 
 .PRECIOUS: Makefile
 
+
+@CODE_COVERAGE_RULES@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

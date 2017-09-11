@@ -95,6 +95,7 @@ class SpinelNCPInstance : public NCPInstanceBase {
 	friend class SpinelNCPTaskForm;
 	friend class SpinelNCPTaskScan;
 	friend class SpinelNCPTaskLeave;
+	friend class SpinelNCPTaskPeek;
 	friend class SpinelNCPTaskSendCommand;
 	friend class SpinelNCPTaskGetNetworkTopology;
 	friend class SpinelNCPTaskGetMsgBufferCounters;
@@ -139,38 +140,49 @@ protected:
 	void handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state);
 
-	virtual void address_was_added(const struct in6_addr& addr, int prefix_len);
-	virtual void address_was_removed(const struct in6_addr& addr, int prefix_len);
+	bool should_filter_address(const struct in6_addr &address, uint8_t prefix_len);
+	void filter_addresses(void);
 
-	void check_operation_status(std::string operation, int status);
+	virtual void add_unicast_address_on_ncp(const struct in6_addr &addr, uint8_t prefix_len,
+					CallbackWithStatus cb = NilReturn());
+	virtual void remove_unicast_address_on_ncp(const struct in6_addr& addr, uint8_t prefix_len,
+					CallbackWithStatus cb = NilReturn());
+
+	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
+	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb = NilReturn());
+
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+					CallbackWithStatus cb = NilReturn());
+	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+					bool stable, CallbackWithStatus cb = NilReturn());
 
 	uint32_t get_default_channel_mask(void);
 
 private:
-
-	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags);
+	void update_node_type(NodeType node_type);
+	void update_link_local_address(struct in6_addr *addr);
+	void update_mesh_local_address(struct in6_addr *addr);
+	void update_mesh_local_prefix(struct in6_addr *addr);
 
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 
 	virtual std::set<std::string> get_supported_property_keys()const;
 
-	virtual void get_property(
-	    const std::string& key,
-	    CallbackWithStatusArg1 cb
-	);
-
-	virtual void set_property(
-	    const std::string& key,
-	    const boost::any& value,
-	    CallbackWithStatus cb
-	);
+	virtual void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
+	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
 
 	virtual cms_t get_ms_to_next_event(void);
 
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);
 
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
+
+	static std::string thread_mode_to_string(uint8_t mode);
+
+	uint8_t get_thread_mode(void);
 
 	virtual void process(void);
 
@@ -226,9 +238,14 @@ private:
 	boost::function<void(int)> mOutboundCallback;
 
 	int mTXPower;
+	uint8_t mThreadMode;
+	bool mIsCommissioned;
 
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
+
+	bool mSetSteeringDataWhenJoinable;
+	uint8_t mSteeringDataAddress[8];
 
 	SettingsMap mSettings;
 	SettingsMap::iterator mSettingsIter;
@@ -244,6 +261,7 @@ private:
 	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
+	bool mXPANIDWasExplicitlySet;
 
 	bool mResetIsExpected;
 

@@ -105,7 +105,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 
 	if (mOptions.count(kWPANTUNDProperty_NetworkNodeType)) {
 		NodeType node_type;
-		bool isRouterRoleEnabled;
+		bool router_role_enabled;
 
 		node_type = string_to_node_type(any_to_string(mOptions[kWPANTUNDProperty_NetworkNodeType]));
 
@@ -115,24 +115,24 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = true;
+			router_role_enabled = true;
 
 		} else if (node_type == END_DEVICE) {
-			isRouterRoleEnabled = false;
+			router_role_enabled = false;
 
 		} else if (node_type == SLEEPY_END_DEVICE) {
 			if (!mInstance->mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = false;
+			router_role_enabled = false;
 
 		} else if (node_type == LURKER) {
 			if (!mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = true;
+			router_role_enabled = true;
 
 		} else {
 			ret = kWPANTUNDStatus_InvalidArgument;
@@ -142,7 +142,37 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
 			SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
-			isRouterRoleEnabled
+			router_role_enabled
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+	}
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkNodeType)) {
+		NodeType node_type;
+		uint8_t new_thread_mode;
+
+		node_type = string_to_node_type(any_to_string(mOptions[kWPANTUNDProperty_NetworkNodeType]));
+
+		new_thread_mode = mInstance->get_thread_mode();
+
+		// The validity of node type (and related capabilities) is already checked
+		// when setting the `router_role_enabled` (in code above).
+
+		if (node_type == SLEEPY_END_DEVICE) {
+			new_thread_mode &= ~ (SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE | SPINEL_THREAD_MODE_FULL_FUNCTION_DEV);
+		} else {
+			new_thread_mode |= SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE;
+		}
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_THREAD_MODE,
+			new_thread_mode
 		);
 
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));

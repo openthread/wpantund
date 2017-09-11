@@ -46,11 +46,19 @@
 #endif
 
 TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int mtu):
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	UnixSocket(open("/dev/null",O_RDWR), true),
+#else
 	UnixSocket(tunnel_open(interface_name.c_str()), true),
+#endif
 	mInterfaceName(interface_name),
 	mLastError(0),
 	mNetlinkFD(-1),
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	mNetifMgmtFD(-1),
+#else
 	mNetifMgmtFD(netif_mgmt_open()),
+#endif
 	mIsRunning(false),
 	mIsUp(false)
 {
@@ -58,6 +66,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 		throw std::invalid_argument("Unable to open tunnel interface");
 	}
 
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	{
 		char ActualInterfaceName[TUNNEL_MAX_INTERFACE_NAME_LEN] = "";
 		int ret = 0;
@@ -79,6 +88,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 	netif_mgmt_set_mtu(mNetifMgmtFD, mInterfaceName.c_str(), mtu);
 
 	setup_signals();
+#endif
 }
 
 TunnelIPv6Interface::~TunnelIPv6Interface()
@@ -93,24 +103,79 @@ TunnelIPv6Interface::on_link_state_changed(bool isUp, bool isRunning)
 	syslog(LOG_INFO, "TunnelIPv6Interface::on_link_state_changed() UP=%d RUNNING=%d", isUp, isRunning);
 	if (isRunning != mIsRunning || isUp != mIsUp) {
 		if (isRunning && !mIsRunning) {
-			std::set<struct in6_addr>::const_iterator iter;
-			for (iter = mAddresses.begin(); iter != mAddresses.end(); ++iter) {
-				IGNORE_RETURN_VALUE(netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), iter->s6_addr, 64));
-			}
-		}
+			std::map<struct in6_addr, Entry>::iterator iter;
 
+			for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); ++iter) {
+				if (iter->second.mState != Entry::kWaitingToAdd) {
+					continue;
+				}
+
+				syslog(LOG_INFO, "Adding address \"%s/%d\" to interface \"%s\"",
+				       in6_addr_to_string(iter->first).c_str(), iter->second.mPrefixLen,
+				       mInterfaceName.c_str());
+
+				IGNORE_RETURN_VALUE(netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(),
+				                    iter->first.s6_addr, iter->second.mPrefixLen));
+				iter->second.mState = Entry::kWaitingForAddConfirm;
+			}
+
+			for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end();	++iter) {
+				if (iter->second.mState != Entry::kWaitingToAdd) {
+					continue;
+				}
+
+				syslog(LOG_INFO, "Joining multicast address \"%s\" on interface \"%s\".",
+				       in6_addr_to_string(iter->first).c_str(), mInterfaceName.c_str());
+
+				IGNORE_RETURN_VALUE(netif_mgmt_join_ipv6_multicast_address(mNetifMgmtFD, mInterfaceName.c_str(),
+				                    iter->first.s6_addr));
+			}
+			mMulticastAddresses.clear();
+		}
 		mIsUp = isUp;
 		mIsRunning = isRunning;
 		mLinkStateChanged(isUp, isRunning);
 	}
 }
 
+void
+TunnelIPv6Interface::on_address_added(const struct in6_addr &address, uint8_t prefix_len)
+{
+	if (mUnicastAddresses.count(address)) {
+		mUnicastAddresses.erase(address);
+	}
+
+	syslog(LOG_INFO, "TunnelIPv6Interface: \"%s/%d\" was added to \"%s\"", in6_addr_to_string(address).c_str(), prefix_len,
+	       get_interface_name().c_str());
+
+	mAddressWasAdded(address, prefix_len);
+}
+
+void
+TunnelIPv6Interface::on_address_removed(const struct in6_addr &address, uint8_t prefix_len)
+{
+	// Ignore "removed" signal if address is the list
+	// meaning it was added earlier and we are still
+	// waiting to confirm that it is added.
+	// This is to address the case where before adding an
+	// address on interface it may be first removed.
+
+	if (!mUnicastAddresses.count(address)) {
+		syslog(LOG_INFO, "TunnelIPv6Interface: \"%s/%d\" was removed from \"%s\"", in6_addr_to_string(address).c_str(), prefix_len,
+		       get_interface_name().c_str());
+
+		mAddressWasRemoved(address, prefix_len);
+	}
+
+}
+
+
 #if __linux__ // --------------------------------------------------------------
 
 #define LCG32(x)		((uint32_t)(x)*1664525+1013904223)
 
 void
-TunnelIPv6Interface::setup_signals()
+TunnelIPv6Interface::setup_signals(void)
 {
 	int status;
 	int fd;
@@ -194,9 +259,9 @@ TunnelIPv6Interface::process(void)
 						memcpy(addr.s6_addr, RTA_DATA(rta), sizeof(addr));
 
 						if (nlp->nlmsg_type == RTM_NEWADDR) {
-							mAddressWasAdded(addr, ifaddr->ifa_prefixlen);
+							on_address_added(addr, ifaddr->ifa_prefixlen);
 						} else if (nlp->nlmsg_type == RTM_DELADDR) {
-							mAddressWasRemoved(addr, ifaddr->ifa_prefixlen);
+							on_address_removed(addr, ifaddr->ifa_prefixlen);
 						}
 						break;
 					default:
@@ -226,7 +291,7 @@ TunnelIPv6Interface::process(void)
 #else // ----------------------------------------------------------------------
 
 void
-TunnelIPv6Interface::setup_signals()
+TunnelIPv6Interface::setup_signals(void)
 {
 	// Unknown platform.
 }
@@ -342,12 +407,6 @@ void
 TunnelIPv6Interface::reset(void)
 {
 	syslog(LOG_INFO, "Resetting interface %s. . .", mInterfaceName.c_str());
-
-	while (!mAddresses.empty()) {
-		const struct in6_addr addr(*mAddresses.begin());
-		remove_address(&addr);
-	}
-
 	set_online(false);
 }
 
@@ -359,19 +418,23 @@ TunnelIPv6Interface::add_address(const struct in6_addr *addr, int prefixlen)
 
 	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
 
-	if (!mAddresses.count(*addr)) {
-		syslog(
-			LOG_INFO,
-		   "TunnelIPv6Interface: Adding address \"%s\" to interface \"%s\".",
-		   in6_addr_to_string(*addr).c_str(),
-		   mInterfaceName.c_str()
+	if (mUnicastAddresses.count(*addr)) {
+		ret = true;
+		goto bail;
+	}
+
+	if (is_online()) {
+		syslog(LOG_INFO, "Adding address \"%s/%d\" to interface \"%s\"",
+		       in6_addr_to_string(*addr).c_str(), prefixlen, mInterfaceName.c_str());
+
+		require_noerr_action(
+			netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr, prefixlen),
+			bail,
+			mLastError = errno
 		);
-
-		mAddresses.insert(*addr);
-
-		if (is_online()) {
-			require_noerr_action(netif_mgmt_add_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr, prefixlen), bail, mLastError = errno);
-		}
+		mUnicastAddresses[*addr] = Entry(Entry::kWaitingForAddConfirm, prefixlen);
+	} else {
+		mUnicastAddresses[*addr] = Entry(Entry::kWaitingToAdd, prefixlen);
 	}
 
 	ret = true;
@@ -379,7 +442,6 @@ TunnelIPv6Interface::add_address(const struct in6_addr *addr, int prefixlen)
 bail:
 	return ret;
 }
-
 
 bool
 TunnelIPv6Interface::remove_address(const struct in6_addr *addr, int prefixlen)
@@ -388,43 +450,84 @@ TunnelIPv6Interface::remove_address(const struct in6_addr *addr, int prefixlen)
 
 	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
 
-	syslog(
-		LOG_INFO,
-	   "TunnelIPv6Interface: Removing address \"%s\" from interface \"%s\".",
-	   in6_addr_to_string(*addr).c_str(),
-	   mInterfaceName.c_str()
-	);
-
-	mAddresses.erase(*addr);
+	if (mUnicastAddresses.count(*addr)) {
+		mUnicastAddresses.erase(*addr);
+	}
 
 	if (netif_mgmt_remove_ipv6_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr) != 0) {
 		mLastError = errno;
 		goto bail;
 	}
 
+	syslog(LOG_INFO,"Removing address \"%s\" from interface \"%s\"",
+	       in6_addr_to_string(*addr).c_str(), mInterfaceName.c_str());
 	ret = true;
 
 bail:
 	return ret;
-
 }
+
+bool
+TunnelIPv6Interface::join_multicast_address(const struct in6_addr *addr)
+{
+	bool ret = false;
+
+	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
+
+	if (is_online()) {
+		if (netif_mgmt_join_ipv6_multicast_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr) != 0) {
+			mLastError = errno;
+			goto bail;
+		}
+
+		syslog(LOG_INFO, "Joining multicast address \"%s\" on interface \"%s\".",
+		       in6_addr_to_string(*addr).c_str(), mInterfaceName.c_str());
+	} else {
+		mMulticastAddresses[*addr] = Entry(Entry::kWaitingToAdd);
+	}
+
+	ret = true;
+
+bail:
+	return ret;
+}
+
+bool
+TunnelIPv6Interface::leave_multicast_address(const struct in6_addr *addr)
+{
+	bool ret = false;
+
+	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
+
+	if (mMulticastAddresses.count(*addr)) {
+		mMulticastAddresses.erase(*addr);
+	}
+
+	if (netif_mgmt_leave_ipv6_multicast_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr) != 0) {
+		mLastError = errno;
+		goto bail;
+	}
+
+	syslog(LOG_INFO, "Leaving multicast address \"%s\" on interface \"%s\".",
+	       in6_addr_to_string(*addr).c_str(), mInterfaceName.c_str());
+	ret = true;
+
+bail:
+	return ret;
+}
+
 
 bool
 TunnelIPv6Interface::add_route(const struct in6_addr *route, int prefixlen)
 {
 	bool ret = false;
 
-	syslog(
-		LOG_INFO,
-		"TunnelIPv6Interface: Adding route prefix \"%s/%d\" -> \"%s\".",
-		in6_addr_to_string(*route).c_str(),
-		prefixlen,
-		mInterfaceName.c_str()
-	);
-
-	if (is_online()) {
-		require_noerr_action(netif_mgmt_add_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen), bail, mLastError = errno);
+	if (netif_mgmt_add_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen) != 0) {
+		mLastError = errno;
+		goto bail;
 	}
+	syslog(LOG_INFO, "Adding route prefix \"%s/%d\" -> \"%s\".",
+	       in6_addr_to_string(*route).c_str(), prefixlen, mInterfaceName.c_str());
 
 	ret = true;
 
@@ -437,17 +540,13 @@ TunnelIPv6Interface::remove_route(const struct in6_addr *route, int prefixlen)
 {
 	bool ret = false;
 
-	syslog(
-		LOG_INFO,
-		"TunnelIPv6Interface: Removing route prefix \"%s/%d\" -> \"%s\".",
-		in6_addr_to_string(*route).c_str(),
-		prefixlen,
-		mInterfaceName.c_str()
-	);
-
-	if (is_online()) {
-		require_noerr_action(netif_mgmt_remove_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen), bail, mLastError = errno);
+	if (netif_mgmt_remove_ipv6_route(mNetifMgmtFD, mInterfaceName.c_str(), route->s6_addr, prefixlen) != 0) {
+		mLastError = errno;
+		goto bail;
 	}
+
+	syslog(LOG_INFO, "Removing route prefix \"%s/%d\" -> \"%s\".",
+	       in6_addr_to_string(*route).c_str(), prefixlen, mInterfaceName.c_str());
 
 	ret = true;
 

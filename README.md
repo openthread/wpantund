@@ -48,7 +48,7 @@ The following NCP plugins are provided:
 *   `src/ncp-dummy`: A dummy NCP plug-in implementation meant to be the
     starting point for implementing new NCP plug-ins
 
-[1]: ./third_party/openthread/src/ncp/PROTOCOL.md
+[1]: https://github.com/openthread/openthread/tree/master/doc
 [2]: https://github.com/openthread/openthread/
 
 ## License ##

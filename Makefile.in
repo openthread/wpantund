@@ -179,9 +179,9 @@ DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/doxygen.cfg.in \
 	$(top_srcdir)/m4/compile $(top_srcdir)/m4/config.guess \
 	$(top_srcdir)/m4/config.sub $(top_srcdir)/m4/install-sh \
-	$(top_srcdir)/m4/ltmain.sh $(top_srcdir)/m4/missing m4/compile \
-	m4/config.guess m4/config.sub m4/install-sh m4/ltmain.sh \
-	m4/missing
+	$(top_srcdir)/m4/ltmain.sh $(top_srcdir)/m4/missing AUTHORS \
+	m4/compile m4/config.guess m4/config.sub m4/install-sh \
+	m4/ltmain.sh m4/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 top_distdir = $(distdir)
 am__remove_distdir = \
@@ -264,6 +264,11 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXPORT_DYNAMIC_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 FGREP = @FGREP@
+FUZZ_CFLAGS = @FUZZ_CFLAGS@
+FUZZ_CPPFLAGS = @FUZZ_CPPFLAGS@
+FUZZ_CXXFLAGS = @FUZZ_CXXFLAGS@
+FUZZ_LDFLAGS = @FUZZ_LDFLAGS@
+FUZZ_LIBS = @FUZZ_LIBS@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -892,6 +897,9 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
+@CODE_COVERAGE_RULES@
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+EXTRA_DIST += Android.mk etc/android/Android.mk etc/android/doxygen.cfg etc/android/src/Android.mk etc/android/src/config.h etc/android/src/ipc-dbus/Android.mk etc/android/src/ncp-spinel/Android.mk etc/android/src/wpanctl/Android.mk etc/android/src/wpanctl/version.c etc/android/src/wpantund/Android.mk etc/android/src/wpantund/version.c # Added by autoandr

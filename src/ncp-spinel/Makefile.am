@@ -25,6 +25,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/openthread/src/ncp \
 	$(NULL)
 
+@CODE_COVERAGE_RULES@
+
 DISTCLEANFILES = \
 	.deps \
 	Makefile \
@@ -36,7 +38,6 @@ EXTRA_DIST =                                         \
 	../../third_party/openthread/NOTICE              \
 	../../third_party/openthread/README.google       \
 	../../third_party/openthread/README.md           \
-	../../third_party/openthread/src/ncp/PROTOCOL.md \
 	../../third_party/openthread/src/ncp/spinel.c    \
 	../../third_party/openthread/src/ncp/spinel.h    \
 	../../third_party/openthread/tools/spi-hdlc-adapter/README.md          \
@@ -74,6 +75,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskJoin.h \
 	SpinelNCPTaskLeave.cpp \
 	SpinelNCPTaskLeave.h \
+	SpinelNCPTaskPeek.cpp \
+	SpinelNCPTaskPeek.h \
 	SpinelNCPTaskScan.cpp \
 	SpinelNCPTaskScan.h \
 	SpinelNCPTaskSendCommand.cpp \
@@ -85,16 +88,36 @@ NCP_SOURCES = \
 	spinel-extra.h \
 	$(NULL)
 
+noinst_LTLIBRARIES =
 
 if STATIC_LINK_NCP_PLUGIN
-noinst_LTLIBRARIES = libncp-spinel.la
+noinst_LTLIBRARIES += libncp-spinel.la
 libncp_spinel_la_SOURCES = $(NCP_SOURCES)
-libncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+libncp_spinel_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 else
 mypkglibexec_LTLIBRARIES = ncp-spinel.la
 ncp_spinel_la_LDFLAGS = -module -avoid-version -shared
 ncp_spinel_la_SOURCES = $(NCP_SOURCES)
-ncp_spinel_la_CXXFLAGS = @BOOST_CXXFLAGS@
+ncp_spinel_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+ncp_spinel_la_CPPFLAGS = $(AM_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+endif
+
+if ENABLE_FUZZ_TARGETS
+noinst_LTLIBRARIES += libncp-spinel-fuzz.la
+libncp_spinel_fuzz_la_SOURCES = $(NCP_SOURCES)
+libncp_spinel_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+libncp_spinel_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+
+
+noinst_PROGRAMS = ncp-spinel-fuzz
+ncp_spinel_fuzz_SOURCES = ncp-spinel-fuzz.cpp
+ncp_spinel_fuzz_LDADD = libncp-spinel-fuzz.la
+ncp_spinel_fuzz_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+ncp_spinel_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+ncp_spinel_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
+ncp_spinel_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
+
+
 endif
 
 endif #BUILD_PLUGIN_NCP_SPINEL
