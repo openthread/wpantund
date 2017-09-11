@@ -134,6 +134,7 @@ ncp_state_is_not_associated(ncp_state_t ncp_state)
 {
 	switch(ncp_state) {
 	case NCP_STATE_OFFLINE:
+	case NCP_STATE_COMMISSIONED:
 	case NCP_STATE_UPGRADING:
 	case NCP_STATE_UNINITIALIZED:
 		return true;
