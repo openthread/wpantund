@@ -107,6 +107,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@ENABLE_FUZZ_TARGETS_TRUE@am__append_1 = libwpantund-dbus-fuzz.la
 subdir = src/ipc-dbus
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -123,17 +124,30 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-libwpantund_dbus_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libwpantund_dbus_fuzz_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__dirstamp = $(am__leading_dot)dirstamp
+am_libwpantund_dbus_fuzz_la_OBJECTS =  \
+	libwpantund_dbus_fuzz_la-DBUSIPCServer.lo \
+	libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo \
+	libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo \
+	../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo
+libwpantund_dbus_fuzz_la_OBJECTS =  \
+	$(am_libwpantund_dbus_fuzz_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+libwpantund_dbus_fuzz_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@ENABLE_FUZZ_TARGETS_TRUE@am_libwpantund_dbus_fuzz_la_rpath =
+libwpantund_dbus_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_libwpantund_dbus_la_OBJECTS = libwpantund_dbus_la-DBUSIPCServer.lo \
 	libwpantund_dbus_la-DBusIPCAPI_v1.lo \
 	libwpantund_dbus_la-DBusIPCAPI_v0.lo \
 	../util/libwpantund_dbus_la-DBUSHelpers.lo
 libwpantund_dbus_la_OBJECTS = $(am_libwpantund_dbus_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 libwpantund_dbus_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libwpantund_dbus_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -190,8 +204,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libwpantund_dbus_la_SOURCES)
-DIST_SOURCES = $(libwpantund_dbus_la_SOURCES)
+SOURCES = $(libwpantund_dbus_fuzz_la_SOURCES) \
+	$(libwpantund_dbus_la_SOURCES)
+DIST_SOURCES = $(libwpantund_dbus_fuzz_la_SOURCES) \
+	$(libwpantund_dbus_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -292,6 +308,11 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXPORT_DYNAMIC_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 FGREP = @FGREP@
+FUZZ_CFLAGS = @FUZZ_CFLAGS@
+FUZZ_CPPFLAGS = @FUZZ_CPPFLAGS@
+FUZZ_CXXFLAGS = @FUZZ_CXXFLAGS@
+FUZZ_LDFLAGS = @FUZZ_LDFLAGS@
+FUZZ_LIBS = @FUZZ_LIBS@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -412,7 +433,7 @@ DISTCLEANFILES = .deps Makefile
 AUTOMAKE_OPTIONS = subdir-objects
 dbusconfdir = $(DBUS_CONFDIR)
 dbusconf_DATA = wpantund.conf
-noinst_LTLIBRARIES = libwpantund-dbus.la
+noinst_LTLIBRARIES = libwpantund-dbus.la $(am__append_1)
 libwpantund_dbus_la_SOURCES = \
 	DBUSIPCServer.cpp \
 	DBUSIPCServer.h \
@@ -426,8 +447,23 @@ libwpantund_dbus_la_SOURCES = \
 	$(NULL)
 
 libwpantund_dbus_la_LIBADD = $(DBUS_LIBS)
-libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-libwpantund_dbus_la_CXXFLAGS = $(BOOST_CXXFLAGS)
+libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+libwpantund_dbus_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+libwpantund_dbus_fuzz_la_SOURCES = \
+	DBUSIPCServer.cpp \
+	DBUSIPCServer.h \
+	DBusIPCAPI_v1.cpp \
+	DBusIPCAPI_v1.h \
+	wpan-dbus-v1.h \
+	DBusIPCAPI_v0.cpp \
+	DBusIPCAPI_v0.h \
+	wpan-dbus-v0.h \
+	../util/DBUSHelpers.cpp \
+	$(NULL)
+
+libwpantund_dbus_fuzz_la_LIBADD = $(DBUS_LIBS)
+libwpantund_dbus_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+libwpantund_dbus_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 pkginclude_HEADERS = wpan-dbus-v0.h wpan-dbus-v1.h
 all: all-am
 
@@ -479,6 +515,11 @@ clean-noinstLTLIBRARIES:
 ../util/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) ../util/$(DEPDIR)
 	@: > ../util/$(DEPDIR)/$(am__dirstamp)
+../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo:  \
+	../util/$(am__dirstamp) ../util/$(DEPDIR)/$(am__dirstamp)
+
+libwpantund-dbus-fuzz.la: $(libwpantund_dbus_fuzz_la_OBJECTS) $(libwpantund_dbus_fuzz_la_DEPENDENCIES) $(EXTRA_libwpantund_dbus_fuzz_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(libwpantund_dbus_fuzz_la_LINK) $(am_libwpantund_dbus_fuzz_la_rpath) $(libwpantund_dbus_fuzz_la_OBJECTS) $(libwpantund_dbus_fuzz_la_LIBADD) $(LIBS)
 ../util/libwpantund_dbus_la-DBUSHelpers.lo: ../util/$(am__dirstamp) \
 	../util/$(DEPDIR)/$(am__dirstamp)
 
@@ -493,7 +534,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@../util/$(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSHelpers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../util/$(DEPDIR)/libwpantund_dbus_la-DBUSHelpers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSIPCServer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_la-DBUSIPCServer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_la-DBusIPCAPI_v0.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libwpantund_dbus_la-DBusIPCAPI_v1.Plo@am__quote@
@@ -521,6 +566,34 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+libwpantund_dbus_fuzz_la-DBUSIPCServer.lo: DBUSIPCServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libwpantund_dbus_fuzz_la-DBUSIPCServer.lo -MD -MP -MF $(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSIPCServer.Tpo -c -o libwpantund_dbus_fuzz_la-DBUSIPCServer.lo `test -f 'DBUSIPCServer.cpp' || echo '$(srcdir)/'`DBUSIPCServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSIPCServer.Tpo $(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSIPCServer.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='DBUSIPCServer.cpp' object='libwpantund_dbus_fuzz_la-DBUSIPCServer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libwpantund_dbus_fuzz_la-DBUSIPCServer.lo `test -f 'DBUSIPCServer.cpp' || echo '$(srcdir)/'`DBUSIPCServer.cpp
+
+libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo: DBusIPCAPI_v1.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo -MD -MP -MF $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.Tpo -c -o libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo `test -f 'DBusIPCAPI_v1.cpp' || echo '$(srcdir)/'`DBusIPCAPI_v1.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.Tpo $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='DBusIPCAPI_v1.cpp' object='libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libwpantund_dbus_fuzz_la-DBusIPCAPI_v1.lo `test -f 'DBusIPCAPI_v1.cpp' || echo '$(srcdir)/'`DBusIPCAPI_v1.cpp
+
+libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo: DBusIPCAPI_v0.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo -MD -MP -MF $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.Tpo -c -o libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo `test -f 'DBusIPCAPI_v0.cpp' || echo '$(srcdir)/'`DBusIPCAPI_v0.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.Tpo $(DEPDIR)/libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='DBusIPCAPI_v0.cpp' object='libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o libwpantund_dbus_fuzz_la-DBusIPCAPI_v0.lo `test -f 'DBusIPCAPI_v0.cpp' || echo '$(srcdir)/'`DBusIPCAPI_v0.cpp
+
+../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo: ../util/DBUSHelpers.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -MT ../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo -MD -MP -MF ../util/$(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSHelpers.Tpo -c -o ../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo `test -f '../util/DBUSHelpers.cpp' || echo '$(srcdir)/'`../util/DBUSHelpers.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../util/$(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSHelpers.Tpo ../util/$(DEPDIR)/libwpantund_dbus_fuzz_la-DBUSHelpers.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/DBUSHelpers.cpp' object='../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_fuzz_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_fuzz_la_CXXFLAGS) $(CXXFLAGS) -c -o ../util/libwpantund_dbus_fuzz_la-DBUSHelpers.lo `test -f '../util/DBUSHelpers.cpp' || echo '$(srcdir)/'`../util/DBUSHelpers.cpp
 
 libwpantund_dbus_la-DBUSIPCServer.lo: DBUSIPCServer.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libwpantund_dbus_la_CPPFLAGS) $(CPPFLAGS) $(libwpantund_dbus_la_CXXFLAGS) $(CXXFLAGS) -MT libwpantund_dbus_la-DBUSIPCServer.lo -MD -MP -MF $(DEPDIR)/libwpantund_dbus_la-DBUSIPCServer.Tpo -c -o libwpantund_dbus_la-DBUSIPCServer.lo `test -f 'DBUSIPCServer.cpp' || echo '$(srcdir)/'`DBUSIPCServer.cpp
@@ -812,6 +885,8 @@ uninstall-am: uninstall-dbusconfDATA uninstall-pkgincludeHEADERS
 
 .PRECIOUS: Makefile
 
+
+@CODE_COVERAGE_RULES@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -110,6 +110,7 @@ host_triplet = @host@
 sbin_PROGRAMS = wpantund$(EXEEXT)
 @STATIC_LINK_NCP_PLUGIN_TRUE@am__append_1 = ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@.la
 @STATIC_LINK_NCP_PLUGIN_FALSE@am__append_2 = $(LIBDL_LIBS)
+@ENABLE_FUZZ_TARGETS_TRUE@noinst_PROGRAMS = wpantund-fuzz$(EXEEXT)
 subdir = src/wpantund
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -126,9 +127,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(sysconfdir)" \
 	"$(DESTDIR)$(pkgincludedir)"
-PROGRAMS = $(sbin_PROGRAMS)
-am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) \
-	wpantund-NCPControlInterface.$(OBJEXT) \
+PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
+am__objects_1 = wpantund-NCPControlInterface.$(OBJEXT) \
 	wpantund-NCPInstance.$(OBJEXT) \
 	wpantund-NCPInstanceBase.$(OBJEXT) \
 	wpantund-FirmwareUpgrade.$(OBJEXT) \
@@ -151,6 +151,7 @@ am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) \
 	wpantund-TunnelIPv6Interface.$(OBJEXT) \
 	wpantund-ValueMap.$(OBJEXT) wpantund-Timer.$(OBJEXT) \
 	wpantund-sec-random.$(OBJEXT) wpantund-version.$(OBJEXT)
+am_wpantund_OBJECTS = wpantund-wpantund.$(OBJEXT) $(am__objects_1)
 wpantund_OBJECTS = $(am_wpantund_OBJECTS)
 am__DEPENDENCIES_1 =
 @STATIC_LINK_NCP_PLUGIN_FALSE@am__DEPENDENCIES_2 =  \
@@ -165,6 +166,50 @@ am__v_lt_1 =
 wpantund_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(wpantund_CXXFLAGS) \
 	$(CXXFLAGS) $(wpantund_LDFLAGS) $(LDFLAGS) -o $@
+am__objects_2 = wpantund_fuzz-NCPControlInterface.$(OBJEXT) \
+	wpantund_fuzz-NCPInstance.$(OBJEXT) \
+	wpantund_fuzz-NCPInstanceBase.$(OBJEXT) \
+	wpantund_fuzz-FirmwareUpgrade.$(OBJEXT) \
+	wpantund_fuzz-StatCollector.$(OBJEXT) \
+	wpantund_fuzz-RunawayResetBackoffManager.$(OBJEXT) \
+	wpantund_fuzz-NCPInstanceBase-NetInterface.$(OBJEXT) \
+	wpantund_fuzz-NCPInstanceBase-Addresses.$(OBJEXT) \
+	wpantund_fuzz-NCPInstanceBase-AsyncIO.$(OBJEXT) \
+	wpantund_fuzz-NCPTypes.$(OBJEXT) \
+	wpantund_fuzz-NetworkRetain.$(OBJEXT) \
+	wpantund_fuzz-Pcap.$(OBJEXT) \
+	wpantund_fuzz-wpan-error.$(OBJEXT) \
+	wpantund_fuzz-IPv6PacketMatcher.$(OBJEXT) \
+	wpantund_fuzz-IPv6Helpers.$(OBJEXT) \
+	wpantund_fuzz-tunnel.$(OBJEXT) \
+	wpantund_fuzz-netif-mgmt.$(OBJEXT) \
+	wpantund_fuzz-config-file.$(OBJEXT) \
+	wpantund_fuzz-socket-utils.$(OBJEXT) \
+	wpantund_fuzz-any-to.$(OBJEXT) \
+	wpantund_fuzz-string-utils.$(OBJEXT) \
+	wpantund_fuzz-time-utils.$(OBJEXT) \
+	wpantund_fuzz-nlpt-select.$(OBJEXT) \
+	wpantund_fuzz-Data.$(OBJEXT) \
+	wpantund_fuzz-SocketWrapper.$(OBJEXT) \
+	wpantund_fuzz-SocketAdapter.$(OBJEXT) \
+	wpantund_fuzz-UnixSocket.$(OBJEXT) \
+	wpantund_fuzz-SuperSocket.$(OBJEXT) \
+	wpantund_fuzz-EventHandler.$(OBJEXT) \
+	wpantund_fuzz-TunnelIPv6Interface.$(OBJEXT) \
+	wpantund_fuzz-ValueMap.$(OBJEXT) wpantund_fuzz-Timer.$(OBJEXT) \
+	wpantund_fuzz-sec-random.$(OBJEXT) \
+	wpantund_fuzz-version.$(OBJEXT)
+am_wpantund_fuzz_OBJECTS = wpantund_fuzz-wpantund-fuzz.$(OBJEXT) \
+	$(am__objects_2)
+wpantund_fuzz_OBJECTS = $(am_wpantund_fuzz_OBJECTS)
+wpantund_fuzz_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) ../ipc-dbus/libwpantund-dbus-fuzz.la \
+	../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@-fuzz.la \
+	$(am__DEPENDENCIES_1)
+wpantund_fuzz_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) $(wpantund_fuzz_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -217,8 +262,7 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(wpantund_SOURCES)
-DIST_SOURCES = $(wpantund_SOURCES)
+DIST_SOURCES = $(wpantund_SOURCES) $(wpantund_fuzz_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -317,6 +361,11 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXPORT_DYNAMIC_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 FGREP = @FGREP@
+FUZZ_CFLAGS = @FUZZ_CFLAGS@
+FUZZ_CPPFLAGS = @FUZZ_CPPFLAGS@
+FUZZ_CXXFLAGS = @FUZZ_CXXFLAGS@
+FUZZ_LDFLAGS = @FUZZ_LDFLAGS@
+FUZZ_LIBS = @FUZZ_LIBS@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -450,7 +499,7 @@ pkginclude_HEADERS = \
 	$(NULL)
 
 sysconf_DATA = wpantund.conf
-wpantund_SOURCES = wpantund.cpp wpantund.h IPCServer.h NCPConstants.h \
+SOURCES = wpantund.h IPCServer.h NCPConstants.h \
 	NCPControlInterface.cpp NCPControlInterface.h NCPInstance.cpp \
 	NCPInstance.h NCPInstanceBase.cpp NCPInstanceBase.h \
 	NCPMfgInterface_v0.h NCPMfgInterface_v1.h NetworkInstance.h \
@@ -470,18 +519,31 @@ wpantund_SOURCES = wpantund.cpp wpantund.h IPCServer.h NCPConstants.h \
 	../util/EventHandler.cpp ../util/TunnelIPv6Interface.cpp \
 	../util/ValueMap.cpp ../util/Timer.cpp ../util/sec-random.c \
 	$(NULL) $(top_builddir)/$(subdir)/version.c
-wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS) \
-	../ipc-dbus/libwpantund-dbus.la $(am__append_1) \
-	$(am__append_2)
-@STATIC_LINK_NCP_PLUGIN_FALSE@wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
-wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-wpantund_CXXFLAGS = $(BOOST_CXXFLAGS)
 SOURCE_VERSION = $(shell                                            \
 	git describe --dirty --always --match "[0-9].*" 2> /dev/null  \
 )
 
 BUILT_SOURCES = $(top_builddir)/$(subdir)/version.c
 CLEANFILES = $(top_builddir)/$(subdir)/version.c
+wpantund_SOURCES = wpantund.cpp $(SOURCES)
+wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS) \
+	../ipc-dbus/libwpantund-dbus.la $(am__append_1) \
+	$(am__append_2) $(CODE_COVERAGE_LIBS)
+@STATIC_LINK_NCP_PLUGIN_FALSE@wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
+wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) \
+	$(CODE_COVERAGE_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+wpantund_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) \
+	$(CODE_COVERAGE_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_CFLAGS = $(AM_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
+wpantund_fuzz_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS) \
+	../ipc-dbus/libwpantund-dbus-fuzz.la \
+	../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@-fuzz.la \
+	$(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
+wpantund_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_fuzz_CFLAGS = $(FUZZ_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+wpantund_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -516,6 +578,15 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstPROGRAMS:
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -570,6 +641,10 @@ wpantund$(EXEEXT): $(wpantund_OBJECTS) $(wpantund_DEPENDENCIES) $(EXTRA_wpantund
 	@rm -f wpantund$(EXEEXT)
 	$(AM_V_CXXLD)$(wpantund_LINK) $(wpantund_OBJECTS) $(wpantund_LDADD) $(LIBS)
 
+wpantund-fuzz$(EXEEXT): $(wpantund_fuzz_OBJECTS) $(wpantund_fuzz_DEPENDENCIES) $(EXTRA_wpantund_fuzz_DEPENDENCIES) 
+	@rm -f wpantund-fuzz$(EXEEXT)
+	$(AM_V_CXXLD)$(wpantund_fuzz_LINK) $(wpantund_fuzz_OBJECTS) $(wpantund_fuzz_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -611,6 +686,41 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-wpan-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund-wpantund.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-Data.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-EventHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-IPv6Helpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPControlInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPInstance.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NCPTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-NetworkRetain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-Pcap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-SocketAdapter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-SocketWrapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-StatCollector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-SuperSocket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-Timer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-UnixSocket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-ValueMap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-any-to.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-config-file.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-netif-mgmt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-nlpt-select.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-sec-random.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-socket-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-string-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-time-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-tunnel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-wpan-error.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -634,144 +744,284 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 wpantund-wpan-error.o: wpan-error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.o -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.o -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-wpan-error.Tpo $(DEPDIR)/wpantund-wpan-error.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund-wpan-error.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
 
 wpantund-wpan-error.obj: wpan-error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.obj -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-wpan-error.obj -MD -MP -MF $(DEPDIR)/wpantund-wpan-error.Tpo -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-wpan-error.Tpo $(DEPDIR)/wpantund-wpan-error.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund-wpan-error.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
 
 wpantund-tunnel.o: ../util/tunnel.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-tunnel.o -MD -MP -MF $(DEPDIR)/wpantund-tunnel.Tpo -c -o wpantund-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-tunnel.o -MD -MP -MF $(DEPDIR)/wpantund-tunnel.Tpo -c -o wpantund-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-tunnel.Tpo $(DEPDIR)/wpantund-tunnel.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/tunnel.c' object='wpantund-tunnel.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
 
 wpantund-tunnel.obj: ../util/tunnel.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-tunnel.obj -MD -MP -MF $(DEPDIR)/wpantund-tunnel.Tpo -c -o wpantund-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-tunnel.obj -MD -MP -MF $(DEPDIR)/wpantund-tunnel.Tpo -c -o wpantund-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-tunnel.Tpo $(DEPDIR)/wpantund-tunnel.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/tunnel.c' object='wpantund-tunnel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
 
 wpantund-netif-mgmt.o: ../util/netif-mgmt.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.o -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.o -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-netif-mgmt.Tpo $(DEPDIR)/wpantund-netif-mgmt.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund-netif-mgmt.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
 
 wpantund-netif-mgmt.obj: ../util/netif-mgmt.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.obj -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-netif-mgmt.obj -MD -MP -MF $(DEPDIR)/wpantund-netif-mgmt.Tpo -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-netif-mgmt.Tpo $(DEPDIR)/wpantund-netif-mgmt.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund-netif-mgmt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
 
 wpantund-config-file.o: ../util/config-file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-config-file.o -MD -MP -MF $(DEPDIR)/wpantund-config-file.Tpo -c -o wpantund-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-config-file.o -MD -MP -MF $(DEPDIR)/wpantund-config-file.Tpo -c -o wpantund-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-config-file.Tpo $(DEPDIR)/wpantund-config-file.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/config-file.c' object='wpantund-config-file.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
 
 wpantund-config-file.obj: ../util/config-file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-config-file.obj -MD -MP -MF $(DEPDIR)/wpantund-config-file.Tpo -c -o wpantund-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-config-file.obj -MD -MP -MF $(DEPDIR)/wpantund-config-file.Tpo -c -o wpantund-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-config-file.Tpo $(DEPDIR)/wpantund-config-file.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/config-file.c' object='wpantund-config-file.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
 
 wpantund-socket-utils.o: ../util/socket-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-socket-utils.o -MD -MP -MF $(DEPDIR)/wpantund-socket-utils.Tpo -c -o wpantund-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-socket-utils.o -MD -MP -MF $(DEPDIR)/wpantund-socket-utils.Tpo -c -o wpantund-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-socket-utils.Tpo $(DEPDIR)/wpantund-socket-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/socket-utils.c' object='wpantund-socket-utils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
 
 wpantund-socket-utils.obj: ../util/socket-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-socket-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-socket-utils.Tpo -c -o wpantund-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-socket-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-socket-utils.Tpo -c -o wpantund-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-socket-utils.Tpo $(DEPDIR)/wpantund-socket-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/socket-utils.c' object='wpantund-socket-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
 
 wpantund-string-utils.o: ../util/string-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-string-utils.o -MD -MP -MF $(DEPDIR)/wpantund-string-utils.Tpo -c -o wpantund-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-string-utils.o -MD -MP -MF $(DEPDIR)/wpantund-string-utils.Tpo -c -o wpantund-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-string-utils.Tpo $(DEPDIR)/wpantund-string-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/string-utils.c' object='wpantund-string-utils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
 
 wpantund-string-utils.obj: ../util/string-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-string-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-string-utils.Tpo -c -o wpantund-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-string-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-string-utils.Tpo -c -o wpantund-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-string-utils.Tpo $(DEPDIR)/wpantund-string-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/string-utils.c' object='wpantund-string-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
 
 wpantund-time-utils.o: ../util/time-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-time-utils.o -MD -MP -MF $(DEPDIR)/wpantund-time-utils.Tpo -c -o wpantund-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-time-utils.o -MD -MP -MF $(DEPDIR)/wpantund-time-utils.Tpo -c -o wpantund-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-time-utils.Tpo $(DEPDIR)/wpantund-time-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/time-utils.c' object='wpantund-time-utils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
 
 wpantund-time-utils.obj: ../util/time-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-time-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-time-utils.Tpo -c -o wpantund-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-time-utils.obj -MD -MP -MF $(DEPDIR)/wpantund-time-utils.Tpo -c -o wpantund-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-time-utils.Tpo $(DEPDIR)/wpantund-time-utils.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/time-utils.c' object='wpantund-time-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
 
 wpantund-nlpt-select.o: ../util/nlpt-select.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-nlpt-select.o -MD -MP -MF $(DEPDIR)/wpantund-nlpt-select.Tpo -c -o wpantund-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-nlpt-select.o -MD -MP -MF $(DEPDIR)/wpantund-nlpt-select.Tpo -c -o wpantund-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-nlpt-select.Tpo $(DEPDIR)/wpantund-nlpt-select.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/nlpt-select.c' object='wpantund-nlpt-select.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
 
 wpantund-nlpt-select.obj: ../util/nlpt-select.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-nlpt-select.obj -MD -MP -MF $(DEPDIR)/wpantund-nlpt-select.Tpo -c -o wpantund-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-nlpt-select.obj -MD -MP -MF $(DEPDIR)/wpantund-nlpt-select.Tpo -c -o wpantund-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-nlpt-select.Tpo $(DEPDIR)/wpantund-nlpt-select.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/nlpt-select.c' object='wpantund-nlpt-select.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
 
 wpantund-sec-random.o: ../util/sec-random.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.o -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.o -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-sec-random.Tpo $(DEPDIR)/wpantund-sec-random.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund-sec-random.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
 
 wpantund-sec-random.obj: ../util/sec-random.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.obj -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-sec-random.obj -MD -MP -MF $(DEPDIR)/wpantund-sec-random.Tpo -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-sec-random.Tpo $(DEPDIR)/wpantund-sec-random.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund-sec-random.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
 
 wpantund-version.o: $(top_builddir)/$(subdir)/version.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-version.o -MD -MP -MF $(DEPDIR)/wpantund-version.Tpo -c -o wpantund-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-version.o -MD -MP -MF $(DEPDIR)/wpantund-version.Tpo -c -o wpantund-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-version.Tpo $(DEPDIR)/wpantund-version.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/$(subdir)/version.c' object='wpantund-version.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
 
 wpantund-version.obj: $(top_builddir)/$(subdir)/version.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wpantund-version.obj -MD -MP -MF $(DEPDIR)/wpantund-version.Tpo -c -o wpantund-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -MT wpantund-version.obj -MD -MP -MF $(DEPDIR)/wpantund-version.Tpo -c -o wpantund-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund-version.Tpo $(DEPDIR)/wpantund-version.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/$(subdir)/version.c' object='wpantund-version.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wpantund-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CFLAGS) $(CFLAGS) -c -o wpantund-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
+
+wpantund_fuzz-wpan-error.o: wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-wpan-error.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-wpan-error.Tpo -c -o wpantund_fuzz-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-wpan-error.Tpo $(DEPDIR)/wpantund_fuzz-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund_fuzz-wpan-error.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-wpan-error.o `test -f 'wpan-error.c' || echo '$(srcdir)/'`wpan-error.c
+
+wpantund_fuzz-wpan-error.obj: wpan-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-wpan-error.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-wpan-error.Tpo -c -o wpantund_fuzz-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-wpan-error.Tpo $(DEPDIR)/wpantund_fuzz-wpan-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wpan-error.c' object='wpantund_fuzz-wpan-error.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-wpan-error.obj `if test -f 'wpan-error.c'; then $(CYGPATH_W) 'wpan-error.c'; else $(CYGPATH_W) '$(srcdir)/wpan-error.c'; fi`
+
+wpantund_fuzz-tunnel.o: ../util/tunnel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-tunnel.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-tunnel.Tpo -c -o wpantund_fuzz-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-tunnel.Tpo $(DEPDIR)/wpantund_fuzz-tunnel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/tunnel.c' object='wpantund_fuzz-tunnel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-tunnel.o `test -f '../util/tunnel.c' || echo '$(srcdir)/'`../util/tunnel.c
+
+wpantund_fuzz-tunnel.obj: ../util/tunnel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-tunnel.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-tunnel.Tpo -c -o wpantund_fuzz-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-tunnel.Tpo $(DEPDIR)/wpantund_fuzz-tunnel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/tunnel.c' object='wpantund_fuzz-tunnel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-tunnel.obj `if test -f '../util/tunnel.c'; then $(CYGPATH_W) '../util/tunnel.c'; else $(CYGPATH_W) '$(srcdir)/../util/tunnel.c'; fi`
+
+wpantund_fuzz-netif-mgmt.o: ../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-netif-mgmt.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-netif-mgmt.Tpo -c -o wpantund_fuzz-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-netif-mgmt.Tpo $(DEPDIR)/wpantund_fuzz-netif-mgmt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund_fuzz-netif-mgmt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-netif-mgmt.o `test -f '../util/netif-mgmt.c' || echo '$(srcdir)/'`../util/netif-mgmt.c
+
+wpantund_fuzz-netif-mgmt.obj: ../util/netif-mgmt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-netif-mgmt.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-netif-mgmt.Tpo -c -o wpantund_fuzz-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-netif-mgmt.Tpo $(DEPDIR)/wpantund_fuzz-netif-mgmt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/netif-mgmt.c' object='wpantund_fuzz-netif-mgmt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-netif-mgmt.obj `if test -f '../util/netif-mgmt.c'; then $(CYGPATH_W) '../util/netif-mgmt.c'; else $(CYGPATH_W) '$(srcdir)/../util/netif-mgmt.c'; fi`
+
+wpantund_fuzz-config-file.o: ../util/config-file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-config-file.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-config-file.Tpo -c -o wpantund_fuzz-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-config-file.Tpo $(DEPDIR)/wpantund_fuzz-config-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/config-file.c' object='wpantund_fuzz-config-file.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-config-file.o `test -f '../util/config-file.c' || echo '$(srcdir)/'`../util/config-file.c
+
+wpantund_fuzz-config-file.obj: ../util/config-file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-config-file.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-config-file.Tpo -c -o wpantund_fuzz-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-config-file.Tpo $(DEPDIR)/wpantund_fuzz-config-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/config-file.c' object='wpantund_fuzz-config-file.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-config-file.obj `if test -f '../util/config-file.c'; then $(CYGPATH_W) '../util/config-file.c'; else $(CYGPATH_W) '$(srcdir)/../util/config-file.c'; fi`
+
+wpantund_fuzz-socket-utils.o: ../util/socket-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-socket-utils.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-socket-utils.Tpo -c -o wpantund_fuzz-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-socket-utils.Tpo $(DEPDIR)/wpantund_fuzz-socket-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/socket-utils.c' object='wpantund_fuzz-socket-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-socket-utils.o `test -f '../util/socket-utils.c' || echo '$(srcdir)/'`../util/socket-utils.c
+
+wpantund_fuzz-socket-utils.obj: ../util/socket-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-socket-utils.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-socket-utils.Tpo -c -o wpantund_fuzz-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-socket-utils.Tpo $(DEPDIR)/wpantund_fuzz-socket-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/socket-utils.c' object='wpantund_fuzz-socket-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-socket-utils.obj `if test -f '../util/socket-utils.c'; then $(CYGPATH_W) '../util/socket-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/socket-utils.c'; fi`
+
+wpantund_fuzz-string-utils.o: ../util/string-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-string-utils.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-string-utils.Tpo -c -o wpantund_fuzz-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-string-utils.Tpo $(DEPDIR)/wpantund_fuzz-string-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/string-utils.c' object='wpantund_fuzz-string-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-string-utils.o `test -f '../util/string-utils.c' || echo '$(srcdir)/'`../util/string-utils.c
+
+wpantund_fuzz-string-utils.obj: ../util/string-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-string-utils.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-string-utils.Tpo -c -o wpantund_fuzz-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-string-utils.Tpo $(DEPDIR)/wpantund_fuzz-string-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/string-utils.c' object='wpantund_fuzz-string-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-string-utils.obj `if test -f '../util/string-utils.c'; then $(CYGPATH_W) '../util/string-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/string-utils.c'; fi`
+
+wpantund_fuzz-time-utils.o: ../util/time-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-time-utils.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-time-utils.Tpo -c -o wpantund_fuzz-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-time-utils.Tpo $(DEPDIR)/wpantund_fuzz-time-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/time-utils.c' object='wpantund_fuzz-time-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-time-utils.o `test -f '../util/time-utils.c' || echo '$(srcdir)/'`../util/time-utils.c
+
+wpantund_fuzz-time-utils.obj: ../util/time-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-time-utils.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-time-utils.Tpo -c -o wpantund_fuzz-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-time-utils.Tpo $(DEPDIR)/wpantund_fuzz-time-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/time-utils.c' object='wpantund_fuzz-time-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-time-utils.obj `if test -f '../util/time-utils.c'; then $(CYGPATH_W) '../util/time-utils.c'; else $(CYGPATH_W) '$(srcdir)/../util/time-utils.c'; fi`
+
+wpantund_fuzz-nlpt-select.o: ../util/nlpt-select.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-nlpt-select.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-nlpt-select.Tpo -c -o wpantund_fuzz-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-nlpt-select.Tpo $(DEPDIR)/wpantund_fuzz-nlpt-select.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/nlpt-select.c' object='wpantund_fuzz-nlpt-select.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-nlpt-select.o `test -f '../util/nlpt-select.c' || echo '$(srcdir)/'`../util/nlpt-select.c
+
+wpantund_fuzz-nlpt-select.obj: ../util/nlpt-select.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-nlpt-select.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-nlpt-select.Tpo -c -o wpantund_fuzz-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-nlpt-select.Tpo $(DEPDIR)/wpantund_fuzz-nlpt-select.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/nlpt-select.c' object='wpantund_fuzz-nlpt-select.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-nlpt-select.obj `if test -f '../util/nlpt-select.c'; then $(CYGPATH_W) '../util/nlpt-select.c'; else $(CYGPATH_W) '$(srcdir)/../util/nlpt-select.c'; fi`
+
+wpantund_fuzz-sec-random.o: ../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-sec-random.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-sec-random.Tpo -c -o wpantund_fuzz-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-sec-random.Tpo $(DEPDIR)/wpantund_fuzz-sec-random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund_fuzz-sec-random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-sec-random.o `test -f '../util/sec-random.c' || echo '$(srcdir)/'`../util/sec-random.c
+
+wpantund_fuzz-sec-random.obj: ../util/sec-random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-sec-random.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-sec-random.Tpo -c -o wpantund_fuzz-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-sec-random.Tpo $(DEPDIR)/wpantund_fuzz-sec-random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../util/sec-random.c' object='wpantund_fuzz-sec-random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-sec-random.obj `if test -f '../util/sec-random.c'; then $(CYGPATH_W) '../util/sec-random.c'; else $(CYGPATH_W) '$(srcdir)/../util/sec-random.c'; fi`
+
+wpantund_fuzz-version.o: $(top_builddir)/$(subdir)/version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-version.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-version.Tpo -c -o wpantund_fuzz-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-version.Tpo $(DEPDIR)/wpantund_fuzz-version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/$(subdir)/version.c' object='wpantund_fuzz-version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-version.o `test -f '$(top_builddir)/$(subdir)/version.c' || echo '$(srcdir)/'`$(top_builddir)/$(subdir)/version.c
+
+wpantund_fuzz-version.obj: $(top_builddir)/$(subdir)/version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -MT wpantund_fuzz-version.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-version.Tpo -c -o wpantund_fuzz-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-version.Tpo $(DEPDIR)/wpantund_fuzz-version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_builddir)/$(subdir)/version.c' object='wpantund_fuzz-version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CFLAGS) $(CFLAGS) -c -o wpantund_fuzz-version.obj `if test -f '$(top_builddir)/$(subdir)/version.c'; then $(CYGPATH_W) '$(top_builddir)/$(subdir)/version.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/$(subdir)/version.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -1144,6 +1394,356 @@ wpantund-Timer.obj: ../util/Timer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_CPPFLAGS) $(CPPFLAGS) $(wpantund_CXXFLAGS) $(CXXFLAGS) -c -o wpantund-Timer.obj `if test -f '../util/Timer.cpp'; then $(CYGPATH_W) '../util/Timer.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/Timer.cpp'; fi`
 
+wpantund_fuzz-wpantund-fuzz.o: wpantund-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-wpantund-fuzz.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Tpo -c -o wpantund_fuzz-wpantund-fuzz.o `test -f 'wpantund-fuzz.cpp' || echo '$(srcdir)/'`wpantund-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Tpo $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wpantund-fuzz.cpp' object='wpantund_fuzz-wpantund-fuzz.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-wpantund-fuzz.o `test -f 'wpantund-fuzz.cpp' || echo '$(srcdir)/'`wpantund-fuzz.cpp
+
+wpantund_fuzz-wpantund-fuzz.obj: wpantund-fuzz.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-wpantund-fuzz.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Tpo -c -o wpantund_fuzz-wpantund-fuzz.obj `if test -f 'wpantund-fuzz.cpp'; then $(CYGPATH_W) 'wpantund-fuzz.cpp'; else $(CYGPATH_W) '$(srcdir)/wpantund-fuzz.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Tpo $(DEPDIR)/wpantund_fuzz-wpantund-fuzz.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wpantund-fuzz.cpp' object='wpantund_fuzz-wpantund-fuzz.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-wpantund-fuzz.obj `if test -f 'wpantund-fuzz.cpp'; then $(CYGPATH_W) 'wpantund-fuzz.cpp'; else $(CYGPATH_W) '$(srcdir)/wpantund-fuzz.cpp'; fi`
+
+wpantund_fuzz-NCPControlInterface.o: NCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPControlInterface.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Tpo -c -o wpantund_fuzz-NCPControlInterface.o `test -f 'NCPControlInterface.cpp' || echo '$(srcdir)/'`NCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Tpo $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPControlInterface.cpp' object='wpantund_fuzz-NCPControlInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPControlInterface.o `test -f 'NCPControlInterface.cpp' || echo '$(srcdir)/'`NCPControlInterface.cpp
+
+wpantund_fuzz-NCPControlInterface.obj: NCPControlInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPControlInterface.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Tpo -c -o wpantund_fuzz-NCPControlInterface.obj `if test -f 'NCPControlInterface.cpp'; then $(CYGPATH_W) 'NCPControlInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPControlInterface.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Tpo $(DEPDIR)/wpantund_fuzz-NCPControlInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPControlInterface.cpp' object='wpantund_fuzz-NCPControlInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPControlInterface.obj `if test -f 'NCPControlInterface.cpp'; then $(CYGPATH_W) 'NCPControlInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPControlInterface.cpp'; fi`
+
+wpantund_fuzz-NCPInstance.o: NCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstance.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstance.Tpo -c -o wpantund_fuzz-NCPInstance.o `test -f 'NCPInstance.cpp' || echo '$(srcdir)/'`NCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstance.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstance.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstance.cpp' object='wpantund_fuzz-NCPInstance.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstance.o `test -f 'NCPInstance.cpp' || echo '$(srcdir)/'`NCPInstance.cpp
+
+wpantund_fuzz-NCPInstance.obj: NCPInstance.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstance.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstance.Tpo -c -o wpantund_fuzz-NCPInstance.obj `if test -f 'NCPInstance.cpp'; then $(CYGPATH_W) 'NCPInstance.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstance.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstance.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstance.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstance.cpp' object='wpantund_fuzz-NCPInstance.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstance.obj `if test -f 'NCPInstance.cpp'; then $(CYGPATH_W) 'NCPInstance.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstance.cpp'; fi`
+
+wpantund_fuzz-NCPInstanceBase.o: NCPInstanceBase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Tpo -c -o wpantund_fuzz-NCPInstanceBase.o `test -f 'NCPInstanceBase.cpp' || echo '$(srcdir)/'`NCPInstanceBase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase.cpp' object='wpantund_fuzz-NCPInstanceBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase.o `test -f 'NCPInstanceBase.cpp' || echo '$(srcdir)/'`NCPInstanceBase.cpp
+
+wpantund_fuzz-NCPInstanceBase.obj: NCPInstanceBase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Tpo -c -o wpantund_fuzz-NCPInstanceBase.obj `if test -f 'NCPInstanceBase.cpp'; then $(CYGPATH_W) 'NCPInstanceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase.cpp' object='wpantund_fuzz-NCPInstanceBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase.obj `if test -f 'NCPInstanceBase.cpp'; then $(CYGPATH_W) 'NCPInstanceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase.cpp'; fi`
+
+wpantund_fuzz-FirmwareUpgrade.o: FirmwareUpgrade.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-FirmwareUpgrade.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Tpo -c -o wpantund_fuzz-FirmwareUpgrade.o `test -f 'FirmwareUpgrade.cpp' || echo '$(srcdir)/'`FirmwareUpgrade.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Tpo $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='FirmwareUpgrade.cpp' object='wpantund_fuzz-FirmwareUpgrade.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-FirmwareUpgrade.o `test -f 'FirmwareUpgrade.cpp' || echo '$(srcdir)/'`FirmwareUpgrade.cpp
+
+wpantund_fuzz-FirmwareUpgrade.obj: FirmwareUpgrade.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-FirmwareUpgrade.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Tpo -c -o wpantund_fuzz-FirmwareUpgrade.obj `if test -f 'FirmwareUpgrade.cpp'; then $(CYGPATH_W) 'FirmwareUpgrade.cpp'; else $(CYGPATH_W) '$(srcdir)/FirmwareUpgrade.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Tpo $(DEPDIR)/wpantund_fuzz-FirmwareUpgrade.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='FirmwareUpgrade.cpp' object='wpantund_fuzz-FirmwareUpgrade.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-FirmwareUpgrade.obj `if test -f 'FirmwareUpgrade.cpp'; then $(CYGPATH_W) 'FirmwareUpgrade.cpp'; else $(CYGPATH_W) '$(srcdir)/FirmwareUpgrade.cpp'; fi`
+
+wpantund_fuzz-StatCollector.o: StatCollector.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-StatCollector.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-StatCollector.Tpo -c -o wpantund_fuzz-StatCollector.o `test -f 'StatCollector.cpp' || echo '$(srcdir)/'`StatCollector.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-StatCollector.Tpo $(DEPDIR)/wpantund_fuzz-StatCollector.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='StatCollector.cpp' object='wpantund_fuzz-StatCollector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-StatCollector.o `test -f 'StatCollector.cpp' || echo '$(srcdir)/'`StatCollector.cpp
+
+wpantund_fuzz-StatCollector.obj: StatCollector.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-StatCollector.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-StatCollector.Tpo -c -o wpantund_fuzz-StatCollector.obj `if test -f 'StatCollector.cpp'; then $(CYGPATH_W) 'StatCollector.cpp'; else $(CYGPATH_W) '$(srcdir)/StatCollector.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-StatCollector.Tpo $(DEPDIR)/wpantund_fuzz-StatCollector.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='StatCollector.cpp' object='wpantund_fuzz-StatCollector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-StatCollector.obj `if test -f 'StatCollector.cpp'; then $(CYGPATH_W) 'StatCollector.cpp'; else $(CYGPATH_W) '$(srcdir)/StatCollector.cpp'; fi`
+
+wpantund_fuzz-RunawayResetBackoffManager.o: RunawayResetBackoffManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-RunawayResetBackoffManager.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Tpo -c -o wpantund_fuzz-RunawayResetBackoffManager.o `test -f 'RunawayResetBackoffManager.cpp' || echo '$(srcdir)/'`RunawayResetBackoffManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Tpo $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='RunawayResetBackoffManager.cpp' object='wpantund_fuzz-RunawayResetBackoffManager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-RunawayResetBackoffManager.o `test -f 'RunawayResetBackoffManager.cpp' || echo '$(srcdir)/'`RunawayResetBackoffManager.cpp
+
+wpantund_fuzz-RunawayResetBackoffManager.obj: RunawayResetBackoffManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-RunawayResetBackoffManager.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Tpo -c -o wpantund_fuzz-RunawayResetBackoffManager.obj `if test -f 'RunawayResetBackoffManager.cpp'; then $(CYGPATH_W) 'RunawayResetBackoffManager.cpp'; else $(CYGPATH_W) '$(srcdir)/RunawayResetBackoffManager.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Tpo $(DEPDIR)/wpantund_fuzz-RunawayResetBackoffManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='RunawayResetBackoffManager.cpp' object='wpantund_fuzz-RunawayResetBackoffManager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-RunawayResetBackoffManager.obj `if test -f 'RunawayResetBackoffManager.cpp'; then $(CYGPATH_W) 'RunawayResetBackoffManager.cpp'; else $(CYGPATH_W) '$(srcdir)/RunawayResetBackoffManager.cpp'; fi`
+
+wpantund_fuzz-NCPInstanceBase-NetInterface.o: NCPInstanceBase-NetInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-NetInterface.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Tpo -c -o wpantund_fuzz-NCPInstanceBase-NetInterface.o `test -f 'NCPInstanceBase-NetInterface.cpp' || echo '$(srcdir)/'`NCPInstanceBase-NetInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-NetInterface.cpp' object='wpantund_fuzz-NCPInstanceBase-NetInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-NetInterface.o `test -f 'NCPInstanceBase-NetInterface.cpp' || echo '$(srcdir)/'`NCPInstanceBase-NetInterface.cpp
+
+wpantund_fuzz-NCPInstanceBase-NetInterface.obj: NCPInstanceBase-NetInterface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-NetInterface.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Tpo -c -o wpantund_fuzz-NCPInstanceBase-NetInterface.obj `if test -f 'NCPInstanceBase-NetInterface.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-NetInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-NetInterface.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-NetInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-NetInterface.cpp' object='wpantund_fuzz-NCPInstanceBase-NetInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-NetInterface.obj `if test -f 'NCPInstanceBase-NetInterface.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-NetInterface.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-NetInterface.cpp'; fi`
+
+wpantund_fuzz-NCPInstanceBase-Addresses.o: NCPInstanceBase-Addresses.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-Addresses.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Tpo -c -o wpantund_fuzz-NCPInstanceBase-Addresses.o `test -f 'NCPInstanceBase-Addresses.cpp' || echo '$(srcdir)/'`NCPInstanceBase-Addresses.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-Addresses.cpp' object='wpantund_fuzz-NCPInstanceBase-Addresses.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-Addresses.o `test -f 'NCPInstanceBase-Addresses.cpp' || echo '$(srcdir)/'`NCPInstanceBase-Addresses.cpp
+
+wpantund_fuzz-NCPInstanceBase-Addresses.obj: NCPInstanceBase-Addresses.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-Addresses.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Tpo -c -o wpantund_fuzz-NCPInstanceBase-Addresses.obj `if test -f 'NCPInstanceBase-Addresses.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-Addresses.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-Addresses.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-Addresses.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-Addresses.cpp' object='wpantund_fuzz-NCPInstanceBase-Addresses.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-Addresses.obj `if test -f 'NCPInstanceBase-Addresses.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-Addresses.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-Addresses.cpp'; fi`
+
+wpantund_fuzz-NCPInstanceBase-AsyncIO.o: NCPInstanceBase-AsyncIO.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-AsyncIO.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Tpo -c -o wpantund_fuzz-NCPInstanceBase-AsyncIO.o `test -f 'NCPInstanceBase-AsyncIO.cpp' || echo '$(srcdir)/'`NCPInstanceBase-AsyncIO.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-AsyncIO.cpp' object='wpantund_fuzz-NCPInstanceBase-AsyncIO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-AsyncIO.o `test -f 'NCPInstanceBase-AsyncIO.cpp' || echo '$(srcdir)/'`NCPInstanceBase-AsyncIO.cpp
+
+wpantund_fuzz-NCPInstanceBase-AsyncIO.obj: NCPInstanceBase-AsyncIO.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPInstanceBase-AsyncIO.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Tpo -c -o wpantund_fuzz-NCPInstanceBase-AsyncIO.obj `if test -f 'NCPInstanceBase-AsyncIO.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-AsyncIO.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-AsyncIO.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Tpo $(DEPDIR)/wpantund_fuzz-NCPInstanceBase-AsyncIO.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPInstanceBase-AsyncIO.cpp' object='wpantund_fuzz-NCPInstanceBase-AsyncIO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPInstanceBase-AsyncIO.obj `if test -f 'NCPInstanceBase-AsyncIO.cpp'; then $(CYGPATH_W) 'NCPInstanceBase-AsyncIO.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPInstanceBase-AsyncIO.cpp'; fi`
+
+wpantund_fuzz-NCPTypes.o: NCPTypes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPTypes.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPTypes.Tpo -c -o wpantund_fuzz-NCPTypes.o `test -f 'NCPTypes.cpp' || echo '$(srcdir)/'`NCPTypes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPTypes.Tpo $(DEPDIR)/wpantund_fuzz-NCPTypes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPTypes.cpp' object='wpantund_fuzz-NCPTypes.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPTypes.o `test -f 'NCPTypes.cpp' || echo '$(srcdir)/'`NCPTypes.cpp
+
+wpantund_fuzz-NCPTypes.obj: NCPTypes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NCPTypes.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NCPTypes.Tpo -c -o wpantund_fuzz-NCPTypes.obj `if test -f 'NCPTypes.cpp'; then $(CYGPATH_W) 'NCPTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPTypes.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NCPTypes.Tpo $(DEPDIR)/wpantund_fuzz-NCPTypes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCPTypes.cpp' object='wpantund_fuzz-NCPTypes.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NCPTypes.obj `if test -f 'NCPTypes.cpp'; then $(CYGPATH_W) 'NCPTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/NCPTypes.cpp'; fi`
+
+wpantund_fuzz-NetworkRetain.o: NetworkRetain.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NetworkRetain.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NetworkRetain.Tpo -c -o wpantund_fuzz-NetworkRetain.o `test -f 'NetworkRetain.cpp' || echo '$(srcdir)/'`NetworkRetain.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NetworkRetain.Tpo $(DEPDIR)/wpantund_fuzz-NetworkRetain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NetworkRetain.cpp' object='wpantund_fuzz-NetworkRetain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NetworkRetain.o `test -f 'NetworkRetain.cpp' || echo '$(srcdir)/'`NetworkRetain.cpp
+
+wpantund_fuzz-NetworkRetain.obj: NetworkRetain.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-NetworkRetain.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-NetworkRetain.Tpo -c -o wpantund_fuzz-NetworkRetain.obj `if test -f 'NetworkRetain.cpp'; then $(CYGPATH_W) 'NetworkRetain.cpp'; else $(CYGPATH_W) '$(srcdir)/NetworkRetain.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-NetworkRetain.Tpo $(DEPDIR)/wpantund_fuzz-NetworkRetain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NetworkRetain.cpp' object='wpantund_fuzz-NetworkRetain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-NetworkRetain.obj `if test -f 'NetworkRetain.cpp'; then $(CYGPATH_W) 'NetworkRetain.cpp'; else $(CYGPATH_W) '$(srcdir)/NetworkRetain.cpp'; fi`
+
+wpantund_fuzz-Pcap.o: Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Pcap.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Pcap.Tpo -c -o wpantund_fuzz-Pcap.o `test -f 'Pcap.cpp' || echo '$(srcdir)/'`Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Pcap.Tpo $(DEPDIR)/wpantund_fuzz-Pcap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='Pcap.cpp' object='wpantund_fuzz-Pcap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Pcap.o `test -f 'Pcap.cpp' || echo '$(srcdir)/'`Pcap.cpp
+
+wpantund_fuzz-Pcap.obj: Pcap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Pcap.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Pcap.Tpo -c -o wpantund_fuzz-Pcap.obj `if test -f 'Pcap.cpp'; then $(CYGPATH_W) 'Pcap.cpp'; else $(CYGPATH_W) '$(srcdir)/Pcap.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Pcap.Tpo $(DEPDIR)/wpantund_fuzz-Pcap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='Pcap.cpp' object='wpantund_fuzz-Pcap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Pcap.obj `if test -f 'Pcap.cpp'; then $(CYGPATH_W) 'Pcap.cpp'; else $(CYGPATH_W) '$(srcdir)/Pcap.cpp'; fi`
+
+wpantund_fuzz-IPv6PacketMatcher.o: ../util/IPv6PacketMatcher.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-IPv6PacketMatcher.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Tpo -c -o wpantund_fuzz-IPv6PacketMatcher.o `test -f '../util/IPv6PacketMatcher.cpp' || echo '$(srcdir)/'`../util/IPv6PacketMatcher.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Tpo $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/IPv6PacketMatcher.cpp' object='wpantund_fuzz-IPv6PacketMatcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-IPv6PacketMatcher.o `test -f '../util/IPv6PacketMatcher.cpp' || echo '$(srcdir)/'`../util/IPv6PacketMatcher.cpp
+
+wpantund_fuzz-IPv6PacketMatcher.obj: ../util/IPv6PacketMatcher.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-IPv6PacketMatcher.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Tpo -c -o wpantund_fuzz-IPv6PacketMatcher.obj `if test -f '../util/IPv6PacketMatcher.cpp'; then $(CYGPATH_W) '../util/IPv6PacketMatcher.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/IPv6PacketMatcher.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Tpo $(DEPDIR)/wpantund_fuzz-IPv6PacketMatcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/IPv6PacketMatcher.cpp' object='wpantund_fuzz-IPv6PacketMatcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-IPv6PacketMatcher.obj `if test -f '../util/IPv6PacketMatcher.cpp'; then $(CYGPATH_W) '../util/IPv6PacketMatcher.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/IPv6PacketMatcher.cpp'; fi`
+
+wpantund_fuzz-IPv6Helpers.o: ../util/IPv6Helpers.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-IPv6Helpers.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Tpo -c -o wpantund_fuzz-IPv6Helpers.o `test -f '../util/IPv6Helpers.cpp' || echo '$(srcdir)/'`../util/IPv6Helpers.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Tpo $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/IPv6Helpers.cpp' object='wpantund_fuzz-IPv6Helpers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-IPv6Helpers.o `test -f '../util/IPv6Helpers.cpp' || echo '$(srcdir)/'`../util/IPv6Helpers.cpp
+
+wpantund_fuzz-IPv6Helpers.obj: ../util/IPv6Helpers.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-IPv6Helpers.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Tpo -c -o wpantund_fuzz-IPv6Helpers.obj `if test -f '../util/IPv6Helpers.cpp'; then $(CYGPATH_W) '../util/IPv6Helpers.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/IPv6Helpers.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Tpo $(DEPDIR)/wpantund_fuzz-IPv6Helpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/IPv6Helpers.cpp' object='wpantund_fuzz-IPv6Helpers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-IPv6Helpers.obj `if test -f '../util/IPv6Helpers.cpp'; then $(CYGPATH_W) '../util/IPv6Helpers.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/IPv6Helpers.cpp'; fi`
+
+wpantund_fuzz-any-to.o: ../util/any-to.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-any-to.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-any-to.Tpo -c -o wpantund_fuzz-any-to.o `test -f '../util/any-to.cpp' || echo '$(srcdir)/'`../util/any-to.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-any-to.Tpo $(DEPDIR)/wpantund_fuzz-any-to.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/any-to.cpp' object='wpantund_fuzz-any-to.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-any-to.o `test -f '../util/any-to.cpp' || echo '$(srcdir)/'`../util/any-to.cpp
+
+wpantund_fuzz-any-to.obj: ../util/any-to.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-any-to.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-any-to.Tpo -c -o wpantund_fuzz-any-to.obj `if test -f '../util/any-to.cpp'; then $(CYGPATH_W) '../util/any-to.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/any-to.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-any-to.Tpo $(DEPDIR)/wpantund_fuzz-any-to.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/any-to.cpp' object='wpantund_fuzz-any-to.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-any-to.obj `if test -f '../util/any-to.cpp'; then $(CYGPATH_W) '../util/any-to.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/any-to.cpp'; fi`
+
+wpantund_fuzz-Data.o: ../util/Data.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Data.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Data.Tpo -c -o wpantund_fuzz-Data.o `test -f '../util/Data.cpp' || echo '$(srcdir)/'`../util/Data.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Data.Tpo $(DEPDIR)/wpantund_fuzz-Data.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/Data.cpp' object='wpantund_fuzz-Data.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Data.o `test -f '../util/Data.cpp' || echo '$(srcdir)/'`../util/Data.cpp
+
+wpantund_fuzz-Data.obj: ../util/Data.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Data.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Data.Tpo -c -o wpantund_fuzz-Data.obj `if test -f '../util/Data.cpp'; then $(CYGPATH_W) '../util/Data.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/Data.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Data.Tpo $(DEPDIR)/wpantund_fuzz-Data.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/Data.cpp' object='wpantund_fuzz-Data.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Data.obj `if test -f '../util/Data.cpp'; then $(CYGPATH_W) '../util/Data.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/Data.cpp'; fi`
+
+wpantund_fuzz-SocketWrapper.o: ../util/SocketWrapper.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SocketWrapper.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SocketWrapper.Tpo -c -o wpantund_fuzz-SocketWrapper.o `test -f '../util/SocketWrapper.cpp' || echo '$(srcdir)/'`../util/SocketWrapper.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SocketWrapper.Tpo $(DEPDIR)/wpantund_fuzz-SocketWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SocketWrapper.cpp' object='wpantund_fuzz-SocketWrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SocketWrapper.o `test -f '../util/SocketWrapper.cpp' || echo '$(srcdir)/'`../util/SocketWrapper.cpp
+
+wpantund_fuzz-SocketWrapper.obj: ../util/SocketWrapper.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SocketWrapper.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SocketWrapper.Tpo -c -o wpantund_fuzz-SocketWrapper.obj `if test -f '../util/SocketWrapper.cpp'; then $(CYGPATH_W) '../util/SocketWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SocketWrapper.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SocketWrapper.Tpo $(DEPDIR)/wpantund_fuzz-SocketWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SocketWrapper.cpp' object='wpantund_fuzz-SocketWrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SocketWrapper.obj `if test -f '../util/SocketWrapper.cpp'; then $(CYGPATH_W) '../util/SocketWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SocketWrapper.cpp'; fi`
+
+wpantund_fuzz-SocketAdapter.o: ../util/SocketAdapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SocketAdapter.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SocketAdapter.Tpo -c -o wpantund_fuzz-SocketAdapter.o `test -f '../util/SocketAdapter.cpp' || echo '$(srcdir)/'`../util/SocketAdapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SocketAdapter.Tpo $(DEPDIR)/wpantund_fuzz-SocketAdapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SocketAdapter.cpp' object='wpantund_fuzz-SocketAdapter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SocketAdapter.o `test -f '../util/SocketAdapter.cpp' || echo '$(srcdir)/'`../util/SocketAdapter.cpp
+
+wpantund_fuzz-SocketAdapter.obj: ../util/SocketAdapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SocketAdapter.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SocketAdapter.Tpo -c -o wpantund_fuzz-SocketAdapter.obj `if test -f '../util/SocketAdapter.cpp'; then $(CYGPATH_W) '../util/SocketAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SocketAdapter.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SocketAdapter.Tpo $(DEPDIR)/wpantund_fuzz-SocketAdapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SocketAdapter.cpp' object='wpantund_fuzz-SocketAdapter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SocketAdapter.obj `if test -f '../util/SocketAdapter.cpp'; then $(CYGPATH_W) '../util/SocketAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SocketAdapter.cpp'; fi`
+
+wpantund_fuzz-UnixSocket.o: ../util/UnixSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-UnixSocket.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-UnixSocket.Tpo -c -o wpantund_fuzz-UnixSocket.o `test -f '../util/UnixSocket.cpp' || echo '$(srcdir)/'`../util/UnixSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-UnixSocket.Tpo $(DEPDIR)/wpantund_fuzz-UnixSocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/UnixSocket.cpp' object='wpantund_fuzz-UnixSocket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-UnixSocket.o `test -f '../util/UnixSocket.cpp' || echo '$(srcdir)/'`../util/UnixSocket.cpp
+
+wpantund_fuzz-UnixSocket.obj: ../util/UnixSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-UnixSocket.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-UnixSocket.Tpo -c -o wpantund_fuzz-UnixSocket.obj `if test -f '../util/UnixSocket.cpp'; then $(CYGPATH_W) '../util/UnixSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/UnixSocket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-UnixSocket.Tpo $(DEPDIR)/wpantund_fuzz-UnixSocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/UnixSocket.cpp' object='wpantund_fuzz-UnixSocket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-UnixSocket.obj `if test -f '../util/UnixSocket.cpp'; then $(CYGPATH_W) '../util/UnixSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/UnixSocket.cpp'; fi`
+
+wpantund_fuzz-SuperSocket.o: ../util/SuperSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SuperSocket.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SuperSocket.Tpo -c -o wpantund_fuzz-SuperSocket.o `test -f '../util/SuperSocket.cpp' || echo '$(srcdir)/'`../util/SuperSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SuperSocket.Tpo $(DEPDIR)/wpantund_fuzz-SuperSocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SuperSocket.cpp' object='wpantund_fuzz-SuperSocket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SuperSocket.o `test -f '../util/SuperSocket.cpp' || echo '$(srcdir)/'`../util/SuperSocket.cpp
+
+wpantund_fuzz-SuperSocket.obj: ../util/SuperSocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-SuperSocket.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-SuperSocket.Tpo -c -o wpantund_fuzz-SuperSocket.obj `if test -f '../util/SuperSocket.cpp'; then $(CYGPATH_W) '../util/SuperSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SuperSocket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-SuperSocket.Tpo $(DEPDIR)/wpantund_fuzz-SuperSocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/SuperSocket.cpp' object='wpantund_fuzz-SuperSocket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-SuperSocket.obj `if test -f '../util/SuperSocket.cpp'; then $(CYGPATH_W) '../util/SuperSocket.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/SuperSocket.cpp'; fi`
+
+wpantund_fuzz-EventHandler.o: ../util/EventHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-EventHandler.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-EventHandler.Tpo -c -o wpantund_fuzz-EventHandler.o `test -f '../util/EventHandler.cpp' || echo '$(srcdir)/'`../util/EventHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-EventHandler.Tpo $(DEPDIR)/wpantund_fuzz-EventHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/EventHandler.cpp' object='wpantund_fuzz-EventHandler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-EventHandler.o `test -f '../util/EventHandler.cpp' || echo '$(srcdir)/'`../util/EventHandler.cpp
+
+wpantund_fuzz-EventHandler.obj: ../util/EventHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-EventHandler.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-EventHandler.Tpo -c -o wpantund_fuzz-EventHandler.obj `if test -f '../util/EventHandler.cpp'; then $(CYGPATH_W) '../util/EventHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/EventHandler.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-EventHandler.Tpo $(DEPDIR)/wpantund_fuzz-EventHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/EventHandler.cpp' object='wpantund_fuzz-EventHandler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-EventHandler.obj `if test -f '../util/EventHandler.cpp'; then $(CYGPATH_W) '../util/EventHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/EventHandler.cpp'; fi`
+
+wpantund_fuzz-TunnelIPv6Interface.o: ../util/TunnelIPv6Interface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-TunnelIPv6Interface.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Tpo -c -o wpantund_fuzz-TunnelIPv6Interface.o `test -f '../util/TunnelIPv6Interface.cpp' || echo '$(srcdir)/'`../util/TunnelIPv6Interface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Tpo $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/TunnelIPv6Interface.cpp' object='wpantund_fuzz-TunnelIPv6Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-TunnelIPv6Interface.o `test -f '../util/TunnelIPv6Interface.cpp' || echo '$(srcdir)/'`../util/TunnelIPv6Interface.cpp
+
+wpantund_fuzz-TunnelIPv6Interface.obj: ../util/TunnelIPv6Interface.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-TunnelIPv6Interface.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Tpo -c -o wpantund_fuzz-TunnelIPv6Interface.obj `if test -f '../util/TunnelIPv6Interface.cpp'; then $(CYGPATH_W) '../util/TunnelIPv6Interface.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/TunnelIPv6Interface.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Tpo $(DEPDIR)/wpantund_fuzz-TunnelIPv6Interface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/TunnelIPv6Interface.cpp' object='wpantund_fuzz-TunnelIPv6Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-TunnelIPv6Interface.obj `if test -f '../util/TunnelIPv6Interface.cpp'; then $(CYGPATH_W) '../util/TunnelIPv6Interface.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/TunnelIPv6Interface.cpp'; fi`
+
+wpantund_fuzz-ValueMap.o: ../util/ValueMap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-ValueMap.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-ValueMap.Tpo -c -o wpantund_fuzz-ValueMap.o `test -f '../util/ValueMap.cpp' || echo '$(srcdir)/'`../util/ValueMap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-ValueMap.Tpo $(DEPDIR)/wpantund_fuzz-ValueMap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/ValueMap.cpp' object='wpantund_fuzz-ValueMap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-ValueMap.o `test -f '../util/ValueMap.cpp' || echo '$(srcdir)/'`../util/ValueMap.cpp
+
+wpantund_fuzz-ValueMap.obj: ../util/ValueMap.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-ValueMap.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-ValueMap.Tpo -c -o wpantund_fuzz-ValueMap.obj `if test -f '../util/ValueMap.cpp'; then $(CYGPATH_W) '../util/ValueMap.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/ValueMap.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-ValueMap.Tpo $(DEPDIR)/wpantund_fuzz-ValueMap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/ValueMap.cpp' object='wpantund_fuzz-ValueMap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-ValueMap.obj `if test -f '../util/ValueMap.cpp'; then $(CYGPATH_W) '../util/ValueMap.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/ValueMap.cpp'; fi`
+
+wpantund_fuzz-Timer.o: ../util/Timer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Timer.o -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Timer.Tpo -c -o wpantund_fuzz-Timer.o `test -f '../util/Timer.cpp' || echo '$(srcdir)/'`../util/Timer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Timer.Tpo $(DEPDIR)/wpantund_fuzz-Timer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/Timer.cpp' object='wpantund_fuzz-Timer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Timer.o `test -f '../util/Timer.cpp' || echo '$(srcdir)/'`../util/Timer.cpp
+
+wpantund_fuzz-Timer.obj: ../util/Timer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -MT wpantund_fuzz-Timer.obj -MD -MP -MF $(DEPDIR)/wpantund_fuzz-Timer.Tpo -c -o wpantund_fuzz-Timer.obj `if test -f '../util/Timer.cpp'; then $(CYGPATH_W) '../util/Timer.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/Timer.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wpantund_fuzz-Timer.Tpo $(DEPDIR)/wpantund_fuzz-Timer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../util/Timer.cpp' object='wpantund_fuzz-Timer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wpantund_fuzz_CPPFLAGS) $(CPPFLAGS) $(wpantund_fuzz_CXXFLAGS) $(CXXFLAGS) -c -o wpantund_fuzz-Timer.obj `if test -f '../util/Timer.cpp'; then $(CYGPATH_W) '../util/Timer.cpp'; else $(CYGPATH_W) '$(srcdir)/../util/Timer.cpp'; fi`
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -1318,8 +1918,8 @@ maintainer-clean-generic:
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -1391,24 +1991,26 @@ uninstall-am: uninstall-pkgincludeHEADERS uninstall-sbinPROGRAMS \
 .MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-sbinPROGRAMS cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-pkgincludeHEADERS install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip install-sysconfDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am \
+	clean-libtool clean-noinstPROGRAMS clean-sbinPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-pkgincludeHEADERS install-ps \
+	install-ps-am install-sbinPROGRAMS install-strip \
+	install-sysconfDATA installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am \
 	uninstall-pkgincludeHEADERS uninstall-sbinPROGRAMS \
 	uninstall-sysconfDATA
 
 .PRECIOUS: Makefile
 
+
+@CODE_COVERAGE_RULES@
 .INTERMEDIATE:   wpantund-version.$(OBJEXT)
 
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile

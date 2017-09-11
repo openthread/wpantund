@@ -2357,7 +2357,7 @@ BEGIN {RS = " "; FS = "/|\n";} {
   esac
   sys_lib_search_path_spec=`$ECHO "$lt_search_path_spec" | $lt_NL2SP`
 else
-  sys_lib_search_path_spec="/lib /usr/lib /usr/local/lib"
+  sys_lib_search_path_spec="/lib /usr/lib /Users/rquattle/homebrew/lib"
 fi])
 library_names_spec=
 libname_spec='lib$name'
@@ -2514,8 +2514,8 @@ bsdi[[45]]*)
   soname_spec='$libname$release$shared_ext$major'
   finish_cmds='PATH="\$PATH:/sbin" ldconfig $libdir'
   shlibpath_var=LD_LIBRARY_PATH
-  sys_lib_search_path_spec="/shlib /usr/lib /usr/X11/lib /usr/contrib/lib /lib /usr/local/lib"
-  sys_lib_dlsearch_path_spec="/shlib /usr/lib /usr/local/lib"
+  sys_lib_search_path_spec="/shlib /usr/lib /usr/X11/lib /usr/contrib/lib /lib /Users/rquattle/homebrew/lib"
+  sys_lib_dlsearch_path_spec="/shlib /usr/lib /Users/rquattle/homebrew/lib"
   # the default ld.so.conf also contains /usr/contrib/lib and
   # /usr/X11R6/lib (/usr/X11 is a link to /usr/X11R6), but let us allow
   # libtool to hard-code these into programs
@@ -2642,8 +2642,8 @@ darwin* | rhapsody*)
   shlibpath_var=DYLD_LIBRARY_PATH
   shrext_cmds='`test .$module = .yes && echo .so || echo .dylib`'
 m4_if([$1], [],[
-  sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/local/lib"])
-  sys_lib_dlsearch_path_spec='/usr/local/lib /lib /usr/lib'
+  sys_lib_search_path_spec="$sys_lib_search_path_spec /Users/rquattle/homebrew/lib"])
+  sys_lib_dlsearch_path_spec='/Users/rquattle/homebrew/lib /lib /usr/lib'
   ;;
 
 dgux*)
@@ -2729,10 +2729,10 @@ hpux9* | hpux10* | hpux11*)
     library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
     soname_spec='$libname$release$shared_ext$major'
     if test 32 = "$HPUX_IA64_MODE"; then
-      sys_lib_search_path_spec="/usr/lib/hpux32 /usr/local/lib/hpux32 /usr/local/lib"
+      sys_lib_search_path_spec="/usr/lib/hpux32 /Users/rquattle/homebrew/lib/hpux32 /Users/rquattle/homebrew/lib"
       sys_lib_dlsearch_path_spec=/usr/lib/hpux32
     else
-      sys_lib_search_path_spec="/usr/lib/hpux64 /usr/local/lib/hpux64"
+      sys_lib_search_path_spec="/usr/lib/hpux64 /Users/rquattle/homebrew/lib/hpux64"
       sys_lib_dlsearch_path_spec=/usr/lib/hpux64
     fi
     ;;
@@ -2806,7 +2806,7 @@ irix5* | irix6* | nonstopux*)
   esac
   shlibpath_var=LD_LIBRARY${shlibsuff}_PATH
   shlibpath_overrides_runpath=no
-  sys_lib_search_path_spec="/usr/lib$libsuff /lib$libsuff /usr/local/lib$libsuff"
+  sys_lib_search_path_spec="/usr/lib$libsuff /lib$libsuff /Users/rquattle/homebrew/lib$libsuff"
   sys_lib_dlsearch_path_spec="/usr/lib$libsuff /lib$libsuff"
   hardcode_into_libs=yes
   ;;
@@ -2953,7 +2953,7 @@ os2*)
   library_names_spec='${libname}_dll.$libext'
   dynamic_linker='OS/2 ld.exe'
   shlibpath_var=BEGINLIBPATH
-  sys_lib_search_path_spec="/lib /usr/lib /usr/local/lib"
+  sys_lib_search_path_spec="/lib /usr/lib /Users/rquattle/homebrew/lib"
   sys_lib_dlsearch_path_spec=$sys_lib_search_path_spec
   postinstall_cmds='base_file=`basename \$file`~
     dlpath=`$SHELL 2>&1 -c '\''. $dir/'\''\$base_file'\''i; $ECHO \$dlname'\''`~
@@ -2976,7 +2976,7 @@ osf3* | osf4* | osf5*)
   soname_spec='$libname$release$shared_ext$major'
   library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
   shlibpath_var=LD_LIBRARY_PATH
-  sys_lib_search_path_spec="/usr/shlib /usr/ccs/lib /usr/lib/cmplrs/cc /usr/lib /usr/local/lib /var/shlib"
+  sys_lib_search_path_spec="/usr/shlib /usr/ccs/lib /usr/lib/cmplrs/cc /usr/lib /Users/rquattle/homebrew/lib /var/shlib"
   sys_lib_dlsearch_path_spec=$sys_lib_search_path_spec
   ;;
 
@@ -3051,7 +3051,7 @@ sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
   shlibpath_overrides_runpath=yes
   hardcode_into_libs=yes
   if test yes = "$with_gnu_ld"; then
-    sys_lib_search_path_spec='/usr/local/lib /usr/gnu/lib /usr/ccs/lib /usr/lib /lib'
+    sys_lib_search_path_spec='/Users/rquattle/homebrew/lib /usr/gnu/lib /usr/ccs/lib /usr/lib /lib'
   else
     sys_lib_search_path_spec='/usr/ccs/lib /usr/lib'
     case $host_os in
