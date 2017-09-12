@@ -346,6 +346,11 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			// we shouldn't try any of the checks below, since it
 			// will delay processing.
 
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		} else {
+			NLPT_YIELD_UNTIL(pt,(mOutboundBufferLen > 0));
+		}
+#else
 		} else if (static_cast<bool>(mLegacyInterface) && is_legacy_interface_enabled()) {
 			NLPT_YIELD_UNTIL_READABLE2_OR_COND(
 				pt,
@@ -363,6 +368,7 @@ SpinelNCPInstance::driver_to_ncp_pump()
 				mPrimaryInterface->can_read() || (mOutboundBufferLen > 0)
 			);
 		}
+#endif
 
 		// Get packet or management command, and also
 		// perform any necessary filtering.

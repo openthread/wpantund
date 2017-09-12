@@ -32,10 +32,16 @@ DISTCLEANFILES = .deps Makefile
 AUTOMAKE_OPTIONS = subdir-objects
 
 dbusconfdir = $(DBUS_CONFDIR)
+noinst_LTLIBRARIES =
 
+if ENABLE_FUZZ_TARGETS
+# Not currently fuzzing the DBus code. When that changes, uncomment
+# the next line.
+#noinst_LTLIBRARIES += libwpantund-dbus-fuzz.la
+else
 dbusconf_DATA = wpantund.conf
-
-noinst_LTLIBRARIES = libwpantund-dbus.la
+noinst_LTLIBRARIES += libwpantund-dbus.la
+endif
 
 libwpantund_dbus_la_SOURCES = \
 	DBUSIPCServer.cpp \
@@ -52,10 +58,6 @@ libwpantund_dbus_la_SOURCES = \
 libwpantund_dbus_la_LIBADD =  $(DBUS_LIBS)
 libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
 libwpantund_dbus_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
-
-if ENABLE_FUZZ_TARGETS
-noinst_LTLIBRARIES += libwpantund-dbus-fuzz.la
-endif
 
 libwpantund_dbus_fuzz_la_SOURCES = \
 	DBUSIPCServer.cpp \

@@ -167,6 +167,7 @@ nl::wpantund::peek_ncp_callback_status(int event, va_list args)
 SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	NCPInstanceBase(settings), mControlInterface(this)
 {
+	mLastTID = 0;
 	mOutboundBufferLen = 0;
 	mInboundHeader = 0;
 	mSupprotedChannels.clear();

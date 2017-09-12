@@ -195,6 +195,18 @@ close_super_socket(int fd)
 }
 
 int
+checkpoll(int fd, int poll_flags)
+{
+	if (fd >= 0) {
+		struct pollfd pollfd = { fd, (short)poll_flags, 0 };
+		IGNORE_RETURN_VALUE( poll(&pollfd, 1, 0) );
+		return pollfd.revents;
+	}
+
+	return -1;
+}
+
+int
 fd_has_error(int fd)
 {
 	const int flags = (POLLPRI|POLLRDBAND|POLLERR|POLLHUP|POLLNVAL);
