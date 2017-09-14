@@ -32,8 +32,14 @@
 #include <string>
 #include <sys/select.h>
 #include "time-utils.h"
+#include <stdexcept>
 
 namespace nl {
+
+class SocketError : public std::runtime_error {
+public:
+	SocketError(const char* reason):std::runtime_error(reason) { }
+};
 
 class SocketWrapper {
 public:
