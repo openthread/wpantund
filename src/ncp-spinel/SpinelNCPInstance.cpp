@@ -1779,8 +1779,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 	} else if (key == SPINEL_PROP_NCP_VERSION) {
 		const char* ncp_version = NULL;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &ncp_version);
-		set_ncp_version_string(ncp_version);
+		spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &ncp_version);
+		if ((len <= 0) || (ncp_version == NULL)) {
+			syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
+			// TODO: Properly handle NCP Misbehavior
+			change_ncp_state(FAULT);
+		} else {
+			set_ncp_version_string(ncp_version);
+		}
 
 	} else if (key == SPINEL_PROP_INTERFACE_TYPE) {
 		unsigned int interface_type = 0;
@@ -1830,11 +1836,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_NET_NETWORK_NAME) {
 		const char* value = NULL;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
-		syslog(LOG_INFO, "[-NCP-]: Network name \"%s\"", value);
-		if (value && (mCurrentNetworkInstance.name != value)) {
-			mCurrentNetworkInstance.name = value;
-			signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
+		spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
+
+		if ((len <= 0) || (value == NULL)) {
+			syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
+			// TODO: Properly handle NCP Misbehavior
+			change_ncp_state(FAULT);
+		} else {
+			syslog(LOG_INFO, "[-NCP-]: Network name \"%s\"", value);
+			if (mCurrentNetworkInstance.name != value) {
+				mCurrentNetworkInstance.name = value;
+				signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
+			}
 		}
 
 	} else if (key == SPINEL_PROP_IPV6_LL_ADDR) {
