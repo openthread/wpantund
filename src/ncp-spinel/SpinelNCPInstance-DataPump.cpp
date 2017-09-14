@@ -302,11 +302,15 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		if (spinel_datatype_unpack(mInboundFrame, mInboundFrameSize, "Ci", &mInboundHeader, &command_value) > 0) {
 			if ((mInboundHeader&SPINEL_HEADER_FLAG) != SPINEL_HEADER_FLAG) {
 				// Unrecognized frame.
+				syslog(LOG_ERR, "[-NCP-]: Unrecognized frame (0x%02X)", mInboundHeader);
 				break;
 			}
 
 			if (SPINEL_HEADER_GET_IID(mInboundHeader) != 0) {
 				// We only support IID zero for now.
+#if DEBUG
+				syslog(LOG_INFO, "[-NCP-]: Unsupported IID: %d", SPINEL_HEADER_GET_IID(mInboundHeader));
+#endif
 				break;
 			}
 
