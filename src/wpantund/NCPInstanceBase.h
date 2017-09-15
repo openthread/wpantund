@@ -348,7 +348,7 @@ protected:
 		uint8_t is_stable(void) const { return mStable; }
 
 		uint8_t get_flags(void) const { return mFlags; }
-		uint8_t set_flags(uint8_t flags) { mFlags = flags; }
+		void set_flags(uint8_t flags) { mFlags = flags; }
 
 		bool is_on_mesh(void) const { return (mFlags & kFlagOnMesh) == kFlagOnMesh; }
 		bool is_slaac(void) const { return (mFlags & kFlagSLAAC) == kFlagSLAAC; }

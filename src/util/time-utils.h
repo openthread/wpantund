@@ -61,6 +61,12 @@ typedef int32_t cms_t;
 extern cms_t time_ms(void);
 extern time_t time_get_monotonic(void);
 extern cms_t cms_until_time(time_t time);
+
+
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+extern void fuzz_ff_cms(cms_t increment);
+#endif
+
 __END_DECLS
 
 #endif

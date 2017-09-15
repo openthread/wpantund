@@ -23,6 +23,34 @@
 
 #include "time-utils.h"
 #include <sys/time.h>
+#include <stdio.h>
+
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+static uint64_t sFuzzCms = 0;
+
+void
+fuzz_ff_cms(cms_t increment) {
+#if DEBUG
+	fprintf(stderr, "fuzz_ff_cms: fast forward %dms\n", (int)increment);
+#endif
+	if (increment <= CMS_DISTANT_FUTURE) {
+		sFuzzCms += increment;
+	}
+}
+
+cms_t
+time_ms(void)
+{
+	return (cms_t)sFuzzCms;
+}
+
+time_t
+time_get_monotonic(void)
+{
+	return (time_t)(sFuzzCms/MSEC_PER_SEC);
+}
+
+#else // if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 cms_t
 time_ms(void)
@@ -55,6 +83,7 @@ time_get_monotonic(void)
 	return time(NULL);
 #endif // !__linux__
 }
+#endif // else FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 cms_t
 cms_until_time(time_t time)

@@ -195,6 +195,18 @@ close_super_socket(int fd)
 }
 
 int
+checkpoll(int fd, int poll_flags)
+{
+	if (fd >= 0) {
+		struct pollfd pollfd = { fd, (short)poll_flags, 0 };
+		IGNORE_RETURN_VALUE( poll(&pollfd, 1, 0) );
+		return pollfd.revents;
+	}
+
+	return -1;
+}
+
+int
 fd_has_error(int fd)
 {
 	const int flags = (POLLPRI|POLLRDBAND|POLLERR|POLLHUP|POLLNVAL);
@@ -754,7 +766,15 @@ open_super_socket(const char* socket_name)
 	} else if (SUPER_SOCKET_TYPE_SYSTEM_SOCKETPAIR == socket_type) {
 		fd = open_system_socket_unix_domain(filename);
 	} else if (SUPER_SOCKET_TYPE_FD == socket_type) {
-		fd = dup((int)strtol(filename, NULL, 0));
+		errno = 0;
+		fd = strtol(filename, NULL, 0);
+		if (fd == 0 && errno != 0) {
+			perror("strtol");
+			syslog(LOG_ERR, "strtol failed. \"%s\" (%d)", strerror(errno), errno);
+			fd = -1;
+			goto bail;
+		}
+		fd = dup(fd);
 	} else if (SUPER_SOCKET_TYPE_DEVICE == socket_type) {
 		fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
 

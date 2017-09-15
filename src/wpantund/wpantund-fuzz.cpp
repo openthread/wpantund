@@ -22,6 +22,18 @@
 #define main __XX_main
 #include "wpantund.cpp"
 
+#include <poll.h>
+#include <sys/select.h>
+#include <sys/cdefs.h>
+#include <unistd.h>
+#include "util/SocketWrapper.h"
+
+#define HDLC_BYTE_FLAG             0x7E
+#define HDLC_BYTE_ESC              0x7D
+#define HDLC_BYTE_XON              0x11
+#define HDLC_BYTE_XOFF             0x13
+#define HDLC_BYTE_SPECIAL          0xF8
+#define HDLC_ESCAPE_XFORM          0x20
 
 int
 ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
@@ -45,36 +57,146 @@ ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 	return 0;
 }
 
+void fuzz_trap() {
+	sleep(1);
+	abort();
+}
+
+#define FUZZ_SPECIAL_WAIT_FOR_FRAME			0
+#define FUZZ_SPECIAL_FF_DECISECONDS			1
+
 int
 NCPInputFuzzTarget(const uint8_t *data, size_t size) {
-#if 0 // Not working yet
 	std::map<std::string, std::string> settings;
-	char filename[L_tmpnam];
 
-	FILE *file = fopen(tmpnam(filename), "w+");
+	int fd[2] = { -1, -1 };
+	uint8_t data_out[100];
+	uint32_t i = 0;
+	const uint32_t max_iterations = 10000000;
+	static const uint8_t hdlc_flag = HDLC_BYTE_FLAG;
 
-	settings[kWPANTUNDProperty_ConfigNCPSocketPath] = filename;
+	gRet = 0;
 
-	fwrite(data, 1, size, file);
-	fflush(file);
-	rewind(file);
+	if (socketpair(PF_UNIX, SOCK_STREAM, 0, fd) < 0) {
+		syslog(LOG_ERR, "Call to socketpair() failed: %s (%d)", strerror(errno), errno);
+		fuzz_trap();
+	}
+
+	{
+		char *fd_string = NULL;
+
+		if (0 >= asprintf(&fd_string, "fd:%d", fd[1])) {
+			syslog(LOG_ERR, "Call to asprintf() failed: %s (%d)", strerror(errno), errno);
+			fuzz_trap();
+		}
+
+		assert(fd_string != NULL);
+
+		settings[kWPANTUNDProperty_ConfigNCPSocketPath] = fd_string;
+
+		free(fd_string);
+	}
+
+	try {
+
+#if VERBOSE_DEBUG
+	settings[kWPANTUNDProperty_DaemonSyslogMask] = "all";
+#elif DEBUG
+	settings[kWPANTUNDProperty_DaemonSyslogMask] = "all -debug";
+#endif
 
 	MainLoop main_loop(settings);
 
+	// wpantund dup'd the file descriptor we gave it,
+	// so we should close this one here.
+	close(fd[1]);
+	fd[1] = -1;
+
+	for (i = 0; (i < 10) && main_loop.block_until_ready(); i++) {
+		main_loop.process();
+	}
 	main_loop.process();
 
-	for (;size > 0; size--,data++) {
-		// TODO: Feed data, one byte at a time.
+	while (size > 0 && gRet == 0) {
+		uint8_t c = *data++;
+		size--;
 
-		main_loop.process();
+		// Special command.
+		if ((size > 0) && (c == HDLC_BYTE_SPECIAL)) {
+			c = *data++;
+			size--;
+
+			if (c == FUZZ_SPECIAL_WAIT_FOR_FRAME) {
+				for (i = 0; i < 5 && checkpoll(fd[0], POLLIN|POLLERR|POLLHUP) == 0; i++) {
+					if (main_loop.block_until_ready()) {
+						main_loop.process();
+					} else {
+						break;
+					}
+				}
+
+				while (checkpoll(fd[0], POLLIN|POLLERR|POLLHUP) != 0 && gRet == 0) {
+					ssize_t bytesread = read(fd[0], data_out, sizeof(data_out));
+					if (bytesread <= 0) {
+						syslog(LOG_WARNING, "Call to read() failed: %s (%d)", strerror(errno), errno);
+						goto bail;
+					}
+
+					if (main_loop.block_until_ready()) {
+						main_loop.process();
+					} else {
+						break;
+					}
+#if DEBUG
+					fprintf(stderr, "NCPInputFuzzTarget: Got %lu bytes from wpantund\n", bytesread);
+#endif
+				}
+				continue;
+			} else if ((c == FUZZ_SPECIAL_FF_DECISECONDS) && (size > 0)) {
+				c = *data++;
+				size--;
+				// Fast forward the given number of deciseconds
+				fuzz_ff_cms(c * (MSEC_PER_SEC/10));
+			}
+		}
+
+		while (checkpoll(fd[0], POLLOUT|POLLERR|POLLHUP) == 0 && gRet == 0) {
+			main_loop.block_until_ready();
+			main_loop.process();
+		}
+
+		ssize_t byteswritten = write(fd[0], &c, 1);
+		if (byteswritten <= 0) {
+			syslog(LOG_WARNING, "Call to write() failed: %s (%d)", strerror(errno), errno);
+			goto bail;;
+		}
+
+		main_loop.block_until_ready();
 		main_loop.process();
 	}
 
+	for (i = 0; (i < 10) && main_loop.block_until_ready(); i++) {
+		main_loop.process();
+	}
 	main_loop.process();
 
-	fclose(file);
-	unlink(filename);
-#endif
+	if (size != 0) {
+		syslog(LOG_ERR, "Did not consume all data");
+		fuzz_trap();
+	}
+
+	if (gRet != 0) {
+		syslog(LOG_ERR, "gRet = %d", gRet);
+		fuzz_trap();
+	}
+
+	} catch (nl::SocketError x) {
+		// Ignore socket wrapper errors
+	}
+
+bail:
+	close(fd[0]);
+	close(fd[1]);
 	return 0;
 }
 
@@ -92,7 +214,10 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 	if (!did_init) {
 		did_init = true;
 
-		//openlog("wpantund-fuzz", LOG_PERROR | LOG_PID | LOG_CONS, LOG_DAEMON);
+#if DEBUG
+		openlog("wpantund-fuzz", LOG_PERROR, LOG_DAEMON);
+#endif
+		signal(SIGPIPE, SIG_IGN);
 	}
 
 	if (size >= 1) {

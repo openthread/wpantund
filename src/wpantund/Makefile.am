@@ -37,14 +37,16 @@ EXTRA_DIST = \
 	wpantund.conf \
 	$(NULL)
 
+if ENABLE_FUZZ_TARGETS
+noinst_PROGRAMS = wpantund-fuzz
+else
+sysconf_DATA = wpantund.conf
+sbin_PROGRAMS = wpantund
 pkginclude_HEADERS = \
 	wpan-properties.h \
 	wpan-error.h \
 	$(NULL)
-
-sysconf_DATA = wpantund.conf
-
-sbin_PROGRAMS = wpantund
+endif
 
 SOURCES = \
 	wpantund.h \
@@ -133,19 +135,12 @@ wpantund_CXXFLAGS += $(CODE_COVERAGE_CXXFLAGS)
 wpantund_CFLAGS += $(CODE_COVERAGE_CFLAGS)
 wpantund_LDADD += $(CODE_COVERAGE_LIBS)
 
-if ENABLE_FUZZ_TARGETS
-noinst_PROGRAMS = wpantund-fuzz
-endif
-
 wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
 
-wpantund_fuzz_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
-wpantund_fuzz_LDADD += ../ipc-dbus/libwpantund-dbus-fuzz.la
+wpantund_fuzz_LDADD = $(MISSING_LIBADD)
 wpantund_fuzz_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@-fuzz.la
-wpantund_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
-wpantund_fuzz_CFLAGS = $(FUZZ_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+wpantund_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_fuzz_CFLAGS = $(FUZZ_CFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 wpantund_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
 wpantund_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
-
-

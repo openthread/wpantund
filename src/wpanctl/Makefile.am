@@ -28,7 +28,9 @@ AM_CPPFLAGS = \
 
 DISTCLEANFILES = .deps Makefile
 
+if !ENABLE_FUZZ_TARGETS
 bin_PROGRAMS = wpanctl
+endif
 
 wpanctl_SOURCES = \
 	wpanctl.c \
