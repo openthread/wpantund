@@ -25,6 +25,11 @@
  *    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *   This file contains definitions of spinel API.
+ */
+
 #ifndef SPINEL_HEADER_INCLUDED
 #define SPINEL_HEADER_INCLUDED 1
 
@@ -365,6 +370,7 @@ enum
     SPINEL_CAP_GPIO                     = 9,
     SPINEL_CAP_TRNG                     = 10,
     SPINEL_CAP_CMD_MULTI                = 11,
+    SPINEL_CAP_UNSOL_UPDATE_FILTER      = 12,
 
     SPINEL_CAP_802_15_4__BEGIN          = 16,
     SPINEL_CAP_802_15_4_2003            = (SPINEL_CAP_802_15_4__BEGIN + 0),
@@ -550,6 +556,37 @@ typedef enum
     /// Raw samples from TRNG entropy source representing 32 bits of entropy.
     SPINEL_PROP_TRNG_RAW_32             = SPINEL_PROP_BASE_EXT__BEGIN + 7,
 
+
+    /// NCP Unsolicited update filter
+    /** Format: `A(I)`
+     *  Type: Read-Write (optional Insert-Remove)
+     *  Required capability: `CAP_UNSOL_UPDATE_FILTER`
+     *
+     * Contains a list of properties which are excluded from generating
+     * unsolicited value updates. This property is empty after reset.
+     * In other words, the host may opt-out of unsolicited property updates
+     * for a specific property by adding that property id to this list.
+     * Hosts SHOULD NOT add properties to this list which are not
+     * present in `PROP_UNSOL_UPDATE_LIST`. If such properties are added,
+     * the NCP ignores the unsupported properties.
+     */
+    SPINEL_PROP_UNSOL_UPDATE_FILTER     = SPINEL_PROP_BASE_EXT__BEGIN + 8,
+
+    /// List of properties capable of generating unsolicited value update.
+    /** Format: `A(I)`
+     *  Type: Read-Only
+     *  Required capability: `CAP_UNSOL_UPDATE_FILTER`
+     *
+     * Contains a list of properties which are capable of generating
+     * unsolicited value updates. This list can be used when populating
+     * `PROP_UNSOL_UPDATE_FILTER` to disable all unsolicited property
+     * updates.
+     *
+     * This property is intended to effectively behave as a constant
+     * for a given NCP firmware.
+     */
+    SPINEL_PROP_UNSOL_UPDATE_LIST       = SPINEL_PROP_BASE_EXT__BEGIN + 9,
+
     SPINEL_PROP_BASE_EXT__END           = 0x1100,
 
     SPINEL_PROP_PHY__BEGIN              = 0x20,
@@ -646,7 +683,7 @@ typedef enum
     SPINEL_PROP_MAC_RAW_STREAM_ENABLED  = SPINEL_PROP_MAC__BEGIN + 7,  ///< [C]
     SPINEL_PROP_MAC_PROMISCUOUS_MODE    = SPINEL_PROP_MAC__BEGIN + 8,  ///< [C]
     SPINEL_PROP_MAC_ENERGY_SCAN_RESULT  = SPINEL_PROP_MAC__BEGIN + 9,  ///< chan,maxRssi [Cc]
-    SPINEL_PROP_MAC_DATA_POLL_PERIOD    = SPINEL_PROP_MAC__BEGIN + 10, ///< pollPeriodInMs [L]
+    SPINEL_PROP_MAC_DATA_POLL_PERIOD    = SPINEL_PROP_MAC__BEGIN + 10, ///< pollPeriod (in ms) [L]
     SPINEL_PROP_MAC__END                = 0x40,
 
     SPINEL_PROP_MAC_EXT__BEGIN          = 0x1300,
@@ -702,6 +739,17 @@ typedef enum
     /** Format: `b`
      */
     SPINEL_PROP_MAC_BLACKLIST_ENABLED   = SPINEL_PROP_MAC_EXT__BEGIN + 7,
+
+    /// MAC Received Signal Strength Filter
+    /** Format: `A(t(Ec))`
+     *
+     * Structure Parameters:
+     *
+     * * `E`: Optional EUI64 address of node. Set default RSS if not included.
+     * * `c`: Fixed RSS. OT_MAC_FILTER_FIXED_RSS_OVERRIDE_DISABLED(127) means not set.
+     */
+    SPINEL_PROP_MAC_FIXED_RSS            = SPINEL_PROP_MAC_EXT__BEGIN + 8,
+
     SPINEL_PROP_MAC_EXT__END            = 0x1400,
 
     SPINEL_PROP_NET__BEGIN              = 0x40,
@@ -759,7 +807,7 @@ typedef enum
                                         = SPINEL_PROP_THREAD__BEGIN + 8, ///< [D]
     SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION
                                         = SPINEL_PROP_THREAD__BEGIN + 9,  ///< [S]
-    SPINEL_PROP_THREAD_ON_MESH_NETS     = SPINEL_PROP_THREAD__BEGIN + 10, ///< array(ipv6prefix,prefixlen,stable,flags,isLocal) [A(t(6CbCb))]
+    SPINEL_PROP_THREAD_ON_MESH_NETS     = SPINEL_PROP_THREAD__BEGIN + 10, ///< array(ipv6prefix,prefixlen,stable,flags,isLocal,rloc6) [A(t(6CbCbS))]
 
     /// Off-mesh routes
     /** Format: [A(t(6CbCbb))]
@@ -778,6 +826,8 @@ typedef enum
      *       route is this device itself (i.e., route was added by this device)
      *       This value is ignored when adding an external route. For any added
      *       route the next hop is this device.
+     *  `S`: The RLOC16 of the device that registered this route entry.
+     *       This value is not used and ignored when adding a route.
      *
      */
     SPINEL_PROP_THREAD_OFF_MESH_ROUTES  = SPINEL_PROP_THREAD__BEGIN + 11,
@@ -951,7 +1001,7 @@ typedef enum
      *
      * Required capability: SPINEL_CAP_OOB_STEERING_DATA.
      *
-     * Writing to this property allows to set/update the the MLE Discovery Response steering data out of band.
+     * Writing to this property allows to set/update the MLE Discovery Response steering data out of band.
      *
      *  - All zeros to clear the steering data (indicating that there is no steering data).
      *  - All 0xFFs to set steering data/bloom filter to accept/allow all.
@@ -1264,9 +1314,10 @@ typedef enum
     /** Format: 'D' */
     SPINEL_PROP_NEST_LEGACY_ULA_PREFIX  = SPINEL_PROP_NEST__BEGIN + 1,
 
-    /// A (newly) joined legacy node (this is signaled from NCP)
+    /// The EUI64 of last node joined using legacy protocol (if none, all zero EUI64 is returned).
     /** Format: 'E' */
-    SPINEL_PROP_NEST_LEGACY_JOINED_NODE = SPINEL_PROP_NEST__BEGIN + 2,
+    SPINEL_PROP_NEST_LEGACY_LAST_NODE_JOINED
+                                        = SPINEL_PROP_NEST__BEGIN + 2,
 
     SPINEL_PROP_NEST__END               = 15360,
 
@@ -1411,7 +1462,57 @@ SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_vpack(uint8_t *data_out, spinel
                                                        const char *pack_format, va_list args);
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_unpack(const uint8_t *data_in, spinel_size_t data_len,
                                                         const char *pack_format, ...);
+/**
+ * This function parses spinel data similar to sscanf().
+ *
+ * This function actually calls spinel_datatype_vunpack_in_place() to parse data.
+ *
+ * @param[in]   data_in     A pointer to the data to parse.
+ * @param[in]   data_len    The length of @p data_in in bytes.
+ * @param[in]   pack_format C string that contains a format string follows the same specification of spinel.
+ * @param[in]   ...         Additional arguments depending on the format string @p pack_format.
+ *
+ * @returns The parsed length in bytes.
+ *
+ * @note This function behaves different from `spinel_datatype_unpack()`:
+ *       - This function expects composite data arguments of pointer to data type, while `spinel_datatype_unpack()`
+ *         expects them of pointer to data type pointer. For example, if `SPINEL_DATATYPE_EUI64_C` is present in
+ *         @p pack_format, this function expects a `spinel_eui64_t *` is included in variable arguments, while
+ *         `spinel_datatype_unpack()` expects a `spinel_eui64_t **` is included.
+ *       - For `SPINEL_DATATYPE_UTF8_C`, this function expects two arguments, the first of type `char *` and the
+ *         second is of type `size_t` to indicate length of the provided buffer in the first argument just like
+ *         `strncpy()`, while `spinel_datatype_unpack()` only expects a `const char **`.
+ *
+ * @sa spinel_datatype_vunpack_in_place()
+ *
+ */
+SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_unpack_in_place(const uint8_t *data_in, spinel_size_t data_len,
+                                                        const char *pack_format, ...);
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_vunpack(const uint8_t *data_in, spinel_size_t data_len,
+                                                         const char *pack_format, va_list args);
+/**
+ * This function parses spinel data similar to vsscanf().
+ *
+ * @param[in]   data_in     A pointer to the data to parse.
+ * @param[in]   data_len    The length of @p data_in in bytes.
+ * @param[in]   pack_format C string that contains a format string follows the same specification of spinel.
+ * @param[in]   args        A value identifying a variable arguments list.
+ *
+ * @returns The parsed length in bytes.
+ *
+ * @note This function behaves different from `spinel_datatype_vunpack()`:
+ *       - This function expects composite data arguments of pointer to data type, while `spinel_datatype_vunpack()`
+ *         expects them of pointer to data type pointer. For example, if `SPINEL_DATATYPE_EUI64_C` is present in
+ *         @p pack_format, this function expects a `spinel_eui64_t *` is included in variable arguments, while
+ *         `spinel_datatype_vunpack()` expects a `spinel_eui64_t **` is included.
+ *       - For `SPINEL_DATATYPE_UTF8_C`, this function expects two arguments, the first of type `char *` and the
+ *         second is of type `size_t` to indicate length of the provided buffer in the first argument just like
+ *         `strncpy()`, while `spinel_datatype_vunpack()` only expects a `const char **`.
+ *
+ * @sa spinel_datatype_unpack_in_place()
+ *
+ */
+SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_vunpack_in_place(const uint8_t *data_in, spinel_size_t data_len,
                                                          const char *pack_format, va_list args);
 
 SPINEL_API_EXTERN spinel_ssize_t spinel_packed_uint_decode(const uint8_t *bytes, spinel_size_t len,
