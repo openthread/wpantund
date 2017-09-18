@@ -81,7 +81,7 @@ parse_string_into_data(uint8_t* buffer, size_t len, const char* c_str)
 		len = 0;
 	}
 
-	while (*c_str != 0) {
+	while ((*c_str != 0) && (len > 0)) {
 		char c = tolower(*c_str++);
 		if (!(isdigit(c) || (c >= 'a' && c <= 'f'))) {
 			continue;
