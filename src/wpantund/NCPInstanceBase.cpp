@@ -58,21 +58,25 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	NLPT_INIT(&mNCPToDriverPumpPT);
 	NLPT_INIT(&mDriverToNCPPumpPT);
 
+	mAutoDeepSleep = false;
+	mAutoDeepSleepTimeout = 10;
+	mAutoResume = true;
+	mAutoUpdateFirmware = false;
+	mCommissionerPort = 5684;
 	mCommissioningExpiration = 0;
 	mEnabled = true;
-	mTerminateOnFault = false;
-	mAutoUpdateFirmware = false;
-	mAutoResume = true;
-	mAutoDeepSleep = false;
-	mSetDefaultRouteForAutoAddedPrefix = false;
-	mIsInitializingNCP = false;
-	mNCPState = UNINITIALIZED;
-	mIsInterfaceOnline = false;
-	mNodeType = UNKNOWN;
 	mFailureCount = 0;
 	mFailureThreshold = 3;
-	mAutoDeepSleepTimeout = 10;
-	mCommissionerPort = 5684;
+	mIsInitializingNCP = false;
+	mIsInterfaceOnline = false;
+	mLastChangedBusy = 0;
+	mLegacyInterfaceEnabled = false;
+	mNCPState = UNINITIALIZED;
+	mNodeType = UNKNOWN;
+	mNodeTypeSupportsLegacy = false;
+	mSetDefaultRouteForAutoAddedPrefix = false;
+	mTerminateOnFault = false;
+	mWasBusy = false;
 
 	memset(mNCPMeshLocalAddress.s6_addr, 0, sizeof(mNCPMeshLocalAddress));
 	memset(mNCPLinkLocalAddress.s6_addr, 0, sizeof(mNCPLinkLocalAddress));
