@@ -1549,20 +1549,24 @@ SpinelNCPInstance::property_set_value(
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyStream)) {
 			Data packet = any_to_data(value);
 
-			uint16_t port = (packet[packet.size() - sizeof(port)] << 8 | packet[packet.size() - sizeof(port) + 1]);
-			uint16_t locator = (packet[packet.size() - sizeof(locator) - sizeof(port)] << 8 |
-					packet[packet.size() - sizeof(locator) - sizeof(port) + 1]);
+			if (packet.size() > sizeof(uint16_t)*2) {
+				uint16_t port = (packet[packet.size() - sizeof(port)] << 8 | packet[packet.size() - sizeof(port) + 1]);
+				uint16_t locator = (packet[packet.size() - sizeof(locator) - sizeof(port)] << 8 |
+						packet[packet.size() - sizeof(locator) - sizeof(port) + 1]);
 
-			packet.resize(packet.size() - sizeof(locator) - sizeof(port));
+				packet.resize(packet.size() - sizeof(locator) - sizeof(port));
 
-			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
-					SPINEL_PROP_THREAD_TMF_PROXY_STREAM, packet.data(), packet.size(), locator, port);
+				Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
+						SPINEL_PROP_THREAD_TMF_PROXY_STREAM, packet.data(), packet.size(), locator, port);
 
-			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-					.set_callback(cb)
-					.add_command(command)
-					.finish()
-					);
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(command)
+						.finish()
+						);
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
 
 		} else {
 			NCPInstanceBase::property_set_value(key, value, cb);
