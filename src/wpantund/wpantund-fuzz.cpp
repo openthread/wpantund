@@ -39,10 +39,13 @@ int
 ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 	std::map<std::string, std::string> settings;
 	FILE *file = tmpfile();
+
 	fwrite(data, 1, size, file);
 	fflush(file);
 	rewind(file);
 	fread_config(file, &add_to_map, &settings);
+	fclose(file);
+
 	if (!settings.empty()) {
 		std::map<std::string, std::string>::const_iterator iter;
 
@@ -50,9 +53,12 @@ ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 			set_config_param(NULL, iter->first.c_str(), iter->second.c_str());
 		}
 
-		MainLoop main_loop(settings);
+		try {
+			MainLoop main_loop(settings);
+		} catch (nl::SocketError x) {
+			// Ignore socket errors
+		}
 	}
-	fclose(file);
 
 	return 0;
 }
