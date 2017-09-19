@@ -2396,18 +2396,20 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
 		struct in6_addr *prefix = NULL;
 		uint8_t prefix_len = 0;
-		bool stable;
+		bool stable = false;
 		uint8_t flags = 0;
-		bool is_local;
+		bool is_local = false;
 
 		spinel_datatype_unpack(value_data_ptr, value_data_len, "6CbCb",
 			&prefix, &prefix_len, &stable, &flags, &is_local);
 
-		syslog(LOG_INFO, "[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s", in6_addr_to_string(*prefix).c_str(),
-			prefix_len,	stable ? "yes" : "no", is_local ? "yes" : "no",	on_mesh_prefix_flags_to_string(flags).c_str());
+		if (prefix != NULL) {
+			syslog(LOG_INFO, "[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s", in6_addr_to_string(*prefix).c_str(),
+				prefix_len,	stable ? "yes" : "no", is_local ? "yes" : "no",	on_mesh_prefix_flags_to_string(flags).c_str());
 
-		if (!is_local) {
-			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
+			if (!is_local) {
+				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
+			}
 		}
 	}
 
