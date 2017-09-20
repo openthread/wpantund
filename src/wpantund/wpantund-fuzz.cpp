@@ -57,6 +57,8 @@ ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 			MainLoop main_loop(settings);
 		} catch (nl::SocketError x) {
 			// Ignore socket errors
+		} catch (std::invalid_argument x) {
+			// Ignore invalid argument errors
 		}
 	}
 

@@ -1,4 +1,4 @@
-# Example wpantund configuration file
+0# Example wpantund configuration file
 #
 
 # The desired name of the network interface (not supported on all platforms)

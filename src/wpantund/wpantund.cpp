@@ -505,7 +505,9 @@ public:
 		mSettings(settings), mNcpInstance(NCPInstance::alloc(settings)),
 		mFdsReady(0), mInterfaceAdded(false), mZeroCmsInARowCount(0)
 	{
-		assert(mNcpInstance != NULL);
+		if (mNcpInstance == NULL) {
+			throw std::invalid_argument("Unknown NCP Driver");
+		}
 
 		mNcpInstance->mOnFatalError.connect(&handle_error);
 
