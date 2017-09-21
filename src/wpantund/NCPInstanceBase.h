@@ -395,6 +395,7 @@ protected:
 	//  is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
 	bool mSetDefaultRouteForAutoAddedPrefix;
+	bool mSetSLAACForAutoAddedPrefix;
 
 private:
 	NCPState mNCPState;
