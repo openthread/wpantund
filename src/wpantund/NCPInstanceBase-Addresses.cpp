@@ -403,6 +403,10 @@ NCPInstanceBase::add_address_on_ncp_and_update_prefixes(const in6_addr &address,
 			flags |= OnMeshPrefixEntry::kFlagDefaultRoute;
 		}
 
+		if (mSetSLAACForAutoAddedPrefix) {
+			flags |= OnMeshPrefixEntry::kFlagSLAAC;
+		}
+
 		in6_addr_apply_mask(prefix, entry.get_prefix_len());
 		on_mesh_prefix_was_added(entry.get_origin(), address, entry.get_prefix_len(), flags);
 	}
