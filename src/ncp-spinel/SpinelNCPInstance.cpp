@@ -167,19 +167,32 @@ nl::wpantund::peek_ncp_callback_status(int event, va_list args)
 SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	NCPInstanceBase(settings), mControlInterface(this)
 {
-	mLastTID = 0;
-	mOutboundBufferLen = 0;
+	mInboundFrameDataLen = 0;
+	mInboundFrameDataPtr = NULL;
+	mInboundFrameDataType = 0;
+	mInboundFrameHDLCCRC = 0;
+	mInboundFrameSize = 0;
 	mInboundHeader = 0;
-	mSupprotedChannels.clear();
-
-	mSetSteeringDataWhenJoinable = false;
-	memset(mSteeringDataAddress, 0xff, sizeof(mSteeringDataAddress));
-
-	mIsPcapInProgress = false;
-	mSettings.clear();
-	mXPANIDWasExplicitlySet = false;
-	mThreadMode = 0;
 	mIsCommissioned = false;
+	mIsPcapInProgress = false;
+	mLastHeader = 0;
+	mLastTID = 0;
+	mNetworkKeyIndex = 0;
+	mOutboundBufferEscapedLen = 0;
+	mOutboundBufferLen = 0;
+	mOutboundBufferSent = 0;
+	mOutboundBufferType = 0;
+	mResetIsExpected = false;
+	mSetSteeringDataWhenJoinable = false;
+	mSubPTIndex = 0;
+	mTXPower = 0;
+	mThreadMode = 0;
+	mXPANIDWasExplicitlySet = false;
+
+	mSupprotedChannels.clear();
+	mSettings.clear();
+
+	memset(mSteeringDataAddress, 0xff, sizeof(mSteeringDataAddress));
 
 	if (!settings.empty()) {
 		int status;
