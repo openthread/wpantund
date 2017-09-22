@@ -174,6 +174,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundFrameSize = 0;
 	mInboundHeader = 0;
 	mIsCommissioned = false;
+	mFilterRLOCAddresses = true;
 	mIsPcapInProgress = false;
 	mLastHeader = 0;
 	mLastTID = 0;
@@ -821,8 +822,12 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_COMMISSIONER_ENABLED, SPINEL_DATATYPE_BOOL_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadDeviceMode)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_MODE, SPINEL_DATATYPE_UINT8_S);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses)) {
+		cb(kWPANTUNDStatus_Ok, boost::any(mFilterRLOCAddresses));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_ML_PREFIX, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -1531,6 +1536,7 @@ SpinelNCPInstance::property_set_value(
 				))
 				.finish()
 			);
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
 			uint8_t logLevel = static_cast<uint8_t>(any_to_int(value));
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, logLevel);
@@ -1542,6 +1548,10 @@ SpinelNCPInstance::property_set_value(
 				.add_command(command)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses)) {
+			mFilterRLOCAddresses = any_to_bool(value);
+			cb(kWPANTUNDStatus_Ok);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable)) {
 			mSetSteeringDataWhenJoinable = any_to_bool(value);
@@ -2574,17 +2584,19 @@ SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t pr
 	static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
 	bool should_filter = false;
 
-	// Filter RLOC link-local or mesh-local addresses
+	if (mFilterRLOCAddresses) {
+		// Filter RLOC link-local or mesh-local addresses
 
-	if (0 == memcmp(rloc_bytes, addr.s6_addr + 8, sizeof(rloc_bytes))) {
-		if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
-			should_filter = true;
-		}
+		if (0 == memcmp(rloc_bytes, addr.s6_addr + 8, sizeof(rloc_bytes))) {
+			if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
+				should_filter = true;
+			}
 
-		if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))
-			&& (0 == memcmp(mNCPV6Prefix, &addr, sizeof(mNCPV6Prefix)))
-		) {
-			should_filter = true;
+			if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))
+				&& (0 == memcmp(mNCPV6Prefix, &addr, sizeof(mNCPV6Prefix)))
+			) {
+				should_filter = true;
+			}
 		}
 	}
 

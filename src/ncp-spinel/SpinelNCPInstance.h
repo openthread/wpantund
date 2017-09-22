@@ -240,6 +240,7 @@ private:
 	int mTXPower;
 	uint8_t mThreadMode;
 	bool mIsCommissioned;
+	bool mFilterRLOCAddresses;
 
 	std::set<unsigned int> mCapabilities;
 
