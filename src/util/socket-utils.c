@@ -262,6 +262,9 @@ socket_name_is_port(const char* socket_name)
 static bool
 socket_name_is_inet(const char* socket_name)
 {
+	if (*socket_name == 0) {
+		return false;
+	}
 	// It's an inet address if it Contains no slashes or starts with a '['.
 	if (*socket_name == '[') {
 		return true;
@@ -774,8 +777,25 @@ open_super_socket(const char* socket_name)
 			fd = -1;
 			goto bail;
 		}
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		switch(fd) {
+		case STDERR_FILENO:
+		case STDIN_FILENO:
+		case STDOUT_FILENO:
+			// Don't mess up the fuzzer's standard input/output streams.
+			fd = -1;
+			goto bail;
+		default:
+			break;
+		}
+#endif
 		fd = dup(fd);
 	} else if (SUPER_SOCKET_TYPE_DEVICE == socket_type) {
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		// Don't let the fuzzer go crazy on files.
+		free(filename);
+		filename = strdup("/dev/null");
+#endif
 		fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
 
 		if (fd >= 0) {
