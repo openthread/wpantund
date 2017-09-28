@@ -781,7 +781,7 @@ main(int argc, char * argv[])
 			break;
 
 		case 'o':
-			if ((optind >= argc) || (strncmp(argv[optind], "-", 1) == 0)) {
+			if ((optind >= argc) || (strhasprefix(argv[optind], "-"))) {
 				syslog(LOG_ERR, "Missing argument to '-o'.");
 				gRet = ERRORCODE_BADARG;
 				goto bail;
