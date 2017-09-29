@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include "socket-utils.h"
+#include "string-utils.h"
 #include <ctype.h>
 #include <syslog.h>
 #include <errno.h>
@@ -240,9 +241,9 @@ int gSocketWrapperBaud = 115200;
 static bool
 socket_name_is_system_command(const char* socket_name)
 {
-	return strncmp(socket_name,SOCKET_SYSTEM_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_COMMAND_PREFIX)) == 0
-	    || strncmp(socket_name,SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)) == 0
-	    || strncmp(socket_name,SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX,strlen(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)) == 0
+	return strhasprefix(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX)
+		|| strhasprefix(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)
+		|| strhasprefix(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)
 	;
 }
 
@@ -640,19 +641,19 @@ get_super_socket_type_from_path(const char* socket_name)
 {
 	int socket_type = SUPER_SOCKET_TYPE_UNKNOWN;
 
-	if (strncasecmp(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_COMMAND_PREFIX)-1) == 0) {
+	if (strcasehasprefix(socket_name, SOCKET_SYSTEM_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_SYSTEM;
-	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_SYSTEM_FORKPTY_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_SYSTEM_FORKPTY;
-	} else if (strncasecmp(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX, sizeof(SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_SYSTEM_SOCKETPAIR_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_SYSTEM_SOCKETPAIR;
-	} else if (strncasecmp(socket_name, SOCKET_FD_COMMAND_PREFIX, sizeof(SOCKET_FD_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_FD_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_FD;
-	} else if (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_FILE_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
-	} else if (strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_SERIAL_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_DEVICE;
-	} else if (strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0) {
+	} else if (strcasehasprefix(socket_name, SOCKET_TCP_COMMAND_PREFIX)) {
 		socket_type = SUPER_SOCKET_TYPE_TCP;
 	} else if (socket_name_is_inet(socket_name) || socket_name_is_port(socket_name)) {
 		socket_type = SUPER_SOCKET_TYPE_TCP;
@@ -719,13 +720,13 @@ open_super_socket(const char* socket_name)
 
 	if (socket_type == SUPER_SOCKET_TYPE_DEVICE) {
 		socket_name_is_well_formed =
-			(strncasecmp(socket_name, SOCKET_SERIAL_COMMAND_PREFIX, sizeof(SOCKET_SERIAL_COMMAND_PREFIX)-1) == 0)
-			|| (strncasecmp(socket_name, SOCKET_FILE_COMMAND_PREFIX, sizeof(SOCKET_FILE_COMMAND_PREFIX)-1) == 0);
+			(strcasehasprefix(socket_name, SOCKET_SERIAL_COMMAND_PREFIX))
+			|| (strcasehasprefix(socket_name, SOCKET_FILE_COMMAND_PREFIX));
 	}
 
 	if (socket_type == SUPER_SOCKET_TYPE_TCP) {
 		socket_name_is_well_formed =
-			(strncasecmp(socket_name, SOCKET_TCP_COMMAND_PREFIX, sizeof(SOCKET_TCP_COMMAND_PREFIX)-1) == 0);
+			(strcasehasprefix(socket_name, SOCKET_TCP_COMMAND_PREFIX));
 		if (!socket_name_is_well_formed) {
 			filename = (char*)socket_name;
 		}
@@ -878,13 +879,13 @@ open_super_socket(const char* socket_name)
 
 		// Parse the options, if any
 		for (; NULL != options; options = strchr(options+1, ',')) {
-			if (strncasecmp(options, ",b", 2) == 0 && isdigit(options[2])) {
+			if (strcasehasprefix(options, ",b") && isdigit(options[2])) {
 				// Change Baud rate
 				int baud = baud_rate_to_termios_constant((int)strtol(options+2,NULL,10));
 				FETCH_TERMIOS();
 				cfsetspeed(&tios, baud);
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",default", strlen(",default")) == 0) {
+			} else if (strcasehasprefix(options, ",default")) {
 				FETCH_TERMIOS();
 				for (i=0; i < NCCS; i++) {
 					tios.c_cc[i] = _POSIX_VDISABLE;
@@ -898,12 +899,12 @@ open_super_socket(const char* socket_name)
 				cfmakeraw(&tios);
 				cfsetspeed(&tios, baud_rate_to_termios_constant(gSocketWrapperBaud));
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",raw", 4) == 0) {
+			} else if (strcasehasprefix(options, ",raw")) {
 				// Raw mode
 				FETCH_TERMIOS();
 				cfmakeraw(&tios);
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",clocal=", 8) == 0) {
+			} else if (strcasehasprefix(options, ",clocal=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				if (options[1] == '1') {
@@ -912,7 +913,7 @@ open_super_socket(const char* socket_name)
 					tios.c_cflag &= ~CLOCAL;
 				}
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",ixoff=", 6) == 0) {
+			} else if (strcasehasprefix(options, ",ixoff=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				if (options[1] == '1') {
@@ -921,7 +922,7 @@ open_super_socket(const char* socket_name)
 					tios.c_iflag &= ~IXOFF;
 				}
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",ixon=", 6) == 0) {
+			} else if (strcasehasprefix(options, ",ixon=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				if (options[1] == '1') {
@@ -930,7 +931,7 @@ open_super_socket(const char* socket_name)
 					tios.c_iflag &= ~IXON;
 				}
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",ixany=", 6) == 0) {
+			} else if (strcasehasprefix(options, ",ixany=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				if (options[1] == '1') {
@@ -939,7 +940,7 @@ open_super_socket(const char* socket_name)
 					tios.c_iflag &= ~IXANY;
 				}
 				COMMIT_TERMIOS();
-			} else if (strncasecmp(options, ",crtscts=", 9) == 0) {
+			} else if (strcasehasprefix(options, ",crtscts=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				// Hardware flow control
@@ -952,7 +953,7 @@ open_super_socket(const char* socket_name)
 				COMMIT_TERMIOS();
 
 #ifdef CCTS_OFLOW
-			} else if (strncasecmp(options, ",ccts_oflow=", 12) == 0) {
+			} else if (strcasehasprefix(options, ",ccts_oflow=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				// Hardware output flow control
@@ -965,7 +966,7 @@ open_super_socket(const char* socket_name)
 				COMMIT_TERMIOS();
 #endif
 #ifdef CRTS_IFLOW
-			} else if (strncasecmp(options, ",crts_iflow=", 12) == 0) {
+			} else if (strcasehasprefix(options, ",crts_iflow=")) {
 				FETCH_TERMIOS();
 				options = strchr(options,'=');
 				// Hardware input flow control

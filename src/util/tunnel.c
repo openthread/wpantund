@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tunnel.h"
+#include "string-utils.h"
 #include <syslog.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -109,7 +110,7 @@ tunnel_open(const char* tun_name)
 	addr.ss_sysaddr = AF_SYS_CONTROL;
 	addr.sc_unit = 0;  /* allocate dynamically */
 
-	if (strncmp(tun_name, "utun", 4) == 0)
+	if (strhasprefix(tun_name, "utun"))
 		addr.sc_unit = (int)strtol(tun_name + 4, NULL, 10) + 1;
 
 	error = connect(fd, (struct sockaddr*)&addr, sizeof(addr));
@@ -131,7 +132,7 @@ tunnel_open(const char* tun_name)
 #else
 
 #ifdef __APPLE__
-	if (strncmp(tun_name, "utun", 4) == 0)
+	if (strhasprefix(tun_name, "utun"))
 		tun_name = "tun0";
 	asprintf(&device, "/dev/%s", tun_name);
 #else
