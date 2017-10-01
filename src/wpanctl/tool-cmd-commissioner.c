@@ -61,6 +61,8 @@ int tool_cmd_commissioner(int argc, char* argv[])
 	const char* ext_addr = NULL;
 	const char* psk = NULL;
 	int psk_len = 0;
+	uint8_t pskd[20];
+	uint32_t pskd_length = sizeof(pskd);
 	uint32_t joiner_timeout = DEFAULT_JOINER_TIMEOUT;
 	dbus_bool_t enabled = false;
 	const char* invalid_psk_characters = INVALID_PSK_CHARACTERS;
@@ -323,6 +325,11 @@ int tool_cmd_commissioner(int argc, char* argv[])
 				goto bail;
 			}
 
+			// XXX: interpret PSK string as binary PSKd
+			memcpy(pskd, psk, psk_len);
+			pskd_length = psk_len;
+
+			// TODO: decode PSK string as base32 and check decode status
 			if (strpbrk(invalid_psk_characters, psk) != 0) {
 				fprintf(stderr, "%s: warning: PSK consists an invalid character\n", argv[0]);
 			}
@@ -367,15 +374,11 @@ int tool_cmd_commissioner(int argc, char* argv[])
 			);
 
 			if (psk) {
-				uint8_t psk_bytes[psk_len];
-				memset(psk_bytes, '\0', psk_len+1);
-
-				memcpy(psk_bytes, psk, psk_len);
-				char *psk = psk_bytes;
+				uint8_t *p_pskd = pskd;
 
 				dbus_message_append_args(
 					message,
-					DBUS_TYPE_STRING, &psk,
+					DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &p_pskd, pskd_length,
 					DBUS_TYPE_INVALID
 				);
 

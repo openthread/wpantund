@@ -1395,14 +1395,14 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
-	const char* psk = NULL;
-	int psk_len = 0;
+	const uint8_t* pskd = NULL;
+	uint32_t pskd_length = 0;
 	uint32_t joiner_timeout = 0;
 	bool did_succeed = false;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
-		DBUS_TYPE_STRING, &psk,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &pskd, &pskd_length,
 		DBUS_TYPE_UINT32, &joiner_timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
 		DBUS_TYPE_INVALID
@@ -1412,18 +1412,19 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 		// No extended address specified
 		did_succeed = dbus_message_get_args(
 			message, NULL,
-			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &pskd, &pskd_length,
 			DBUS_TYPE_UINT32, &joiner_timeout,
 			DBUS_TYPE_INVALID
 		);
 	}
 
 	require(did_succeed, bail);
-	require(psk != NULL, bail);
+	require(pskd != NULL, bail);
 
 	dbus_message_ref(message);
 	interface->joiner_add(
-		psk,
+		pskd,
+		pskd_length,
 		joiner_timeout,
 		ext_addr,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)

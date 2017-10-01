@@ -174,7 +174,8 @@ DummyNCPControlInterface::remove_external_route(
 
 void
 DummyNCPControlInterface::joiner_add(
-	const char *psk,
+	const uint8_t *pskd,
+	uint32_t pskd_length,
 	uint32_t joiner_timeout,
 	const uint8_t *addr,
 	CallbackWithStatus cb
