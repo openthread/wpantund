@@ -1,19 +1,24 @@
-[![OpenThread][ot-logo]][ot-repo]  
+[![OpenThread][ot-logo]][ot-repo]
 [![Build Status][ot-travis-svg]][ot-travis]
 [![Build Status][ot-appveyor-svg]][ot-appveyor]
 [![Coverage Status][ot-codecov-svg]][ot-codecov]
 
 ---
 
-OpenThread is an open-source implementation of the [Thread][thread]
-networking protocol. Nest has released OpenThread to make the technology
-used in Nest products more broadly available to developers to accelerate 
-the development of products for the connected home.
+# What is OpenThread?
 
-The Thread specification defines an IPv6-based reliable, secure and
-low-power wireless device-to-device communication protocol for home
-applications. More information about Thread can be found on
-[threadgroup.org](http://threadgroup.org/).
+OpenThread is...
+<a href="http://threadgroup.org/technology/ourtechnology#certifiedproducts">
+<img src="https://cdn.rawgit.com/openthread/openthread/ab4c4e1e/doc/images/certified.svg" alt="Thread Certified Component" width="150px" align="right">
+</a>
+
+**...an open-source implementation of the [Thread](http://threadgroup.org/technology/ourtechnology) networking protocol.** Nest has released OpenThread to make the technology used in Nest products more broadly available to developers to accelerate the development of products for the connected home.
+
+**...OS and platform agnostic**, with a narrow platform abstraction layer and a small memory footprint, making it highly portable. It supports both system-on-chip (SoC) and network co-processor (NCP) designs.
+
+**...a Thread Certified Component**, implementing all features defined in the [Thread 1.1.1 specification](http://threadgroup.org/technology/ourtechnology#specifications), including all Thread networking layers (IPv6, 6LoWPAN, IEEE 802.15.4 with MAC security, Mesh Link Establishment, Mesh Routing) and device roles, as well as [Border Router](https://github.com/openthread/borderrouter) support.
+
+More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
 [thread]: http://threadgroup.org/technology/ourtechnology
 [ot-repo]: https://github.com/openthread/openthread
@@ -25,102 +30,49 @@ applications. More information about Thread can be found on
 [ot-codecov]: https://codecov.io/gh/openthread/openthread
 [ot-codecov-svg]: https://codecov.io/gh/openthread/openthread/branch/master/graph/badge.svg
 
-## Features ##
+# Who supports OpenThread?
 
- *  Highly portable: OS and platform agnostic with a radio
-    abstraction layer
- *  Implements the End Device, Router, Leader and Border Router roles
- *  Small memory footprint
+Led by Nest, the following companies are contributing to the ongoing development of OpenThread:
 
-OpenThread implements all Thread networking layers including IPv6,
-6LoWPAN, IEEE 802.15.4 with MAC security, Mesh Link Establishment, and
-Mesh Routing.
+<a href="https://www.arm.com/"><img src="doc/images/ot-contrib-arm.png" alt="ARM" width="150px"></a><a href="http://www.dialog-semiconductor.com/"><img src="doc/images/ot-contrib-dialog.png" alt="Dialog" width="150px"></a><a href="https://www.microsoft.com/en-us/"><img src="doc/images/ot-contrib-ms.png" alt="Microsoft" width="150px"></a><a href="https://nest.com/"><img src="doc/images/ot-contrib-nest.png" alt="Nest" width="150px"></a><a href="http://www.nordicsemi.com/"><img src="doc/images/ot-contrib-nordic.png" alt="Nordic" width="150px"></a><a href="http://www.nxp.com/"><img src="doc/images/ot-contrib-nxp.png" alt="NXP" width="150px"></a><a href="https://www.qorvo.com/"><img src="doc/images/ot-contrib-qorvo.png" alt="Qorvo" width="150px"></a><a href="https://www.qualcomm.com/"><img src="doc/images/ot-contrib-qc.png" alt="Qualcomm" width="150px"></a><a href="https://www.synopsys.com/"><img src="doc/images/ot-contrib-synopsys.png" alt="Synopsys" width="150px"></a><a href="https://www.ti.com/"><img src="doc/images/ot-contrib-ti.png" alt="Texas Instruments" width="150px"></a>
 
+# Getting started
 
-# Who is supporting OpenThread #
+All end-user documentation and guides are located at [openthread.io](https://openthread.io). If you're looking to do things like...
 
-![OpenThread Contributor Logos](doc/images/openthread_contrib.png)
+* Learn more about OpenThread features and enhancements
+* Use OpenThread in your products
+* Learn how to build and configure a Thread network
+* Port OpenThread to a new platform
+* Build an application on top of OpenThread
+* Certify a product using OpenThread
 
-Nest, along with ARM, Atmel, a subsidiary of Microchip Technology,
-Dialog Semiconductor, Microsoft Corporation, Nordic Semiconductor,
-Qualcomm Technologies, Inc. (a subsidiary of Qualcomm Incorporated),
-and Texas Instruments Incorporated are contributing to the ongoing
-development of OpenThread.
+...then [openthread.io](https://openthread.io) is the place for you.
 
+If you're interested in contributing to OpenThread, read on.
 
-# Getting started #
+# Contributing
 
-The easiest way to get started is to run the CLI example in
-`/examples/apps/cli`. See the
-[CLI example README](examples/apps/cli/README.md)
-for more details.
+We would love for you to contribute to OpenThread and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/openthread/blob/master/CONTRIBUTING.md) for more information.
 
+Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/openthread/blob/master/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/openthread/blob/master/STYLE_GUIDE.md).
 
-## What's included ##
+# Versioning
 
-In the repo you'll find the following directories and files:
+OpenThread follows the [Semantic Versioning guidelines](http://semver.org/) for release cycle transparency and to maintain backwards compatibility. OpenThread's versioning is independent of the Thread protocol specification version but will clearly indicate which version of the specification it currently supports.
 
-File/Folder   | Provides
---------------|----------------------------------------------------------------
-`doc`         | Doxygen docs
-`examples`    | Sample applications demonstrating OpenThread
-`include`     | Public API header files
-`src`         | Core implementation of the Thread standard and related add-ons
-`tests`       | Unit and Thread conformance tests
-`third_party` | Third-party code used by OpenThread
-`tools`       | Helpful utilities related to the OpenThread project
+# License
 
+OpenThread is released under the [BSD 3-Clause license](https://github.com/openthread/openthread/blob/master/LICENSE). See the [`LICENSE`](https://github.com/openthread/openthread/blob/master/LICENSE) file for more information.
 
-## Documentation ##
+Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
 
-The Doxygen reference docs are [hosted online][ot-docs] and generated
-as part of the build.
+# Need help?
 
-[ot-docs]: http://openthread.github.io/openthread/
+There are numerous avenues for OpenThread support:
 
+* Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/openthread/issues)
+* Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
+* Google Groups — [discussion and announcements at openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
 
-# Getting help #
-
-Submit bugs and feature requests to [issue tracker][ot-issues]. Usage
-questions? Post your questions to [Stack Overflow][stackoverflow] using the
-[`openthread` tag][ot-tag]. We also use Google Groups for discussion
-and announcements:
-
- *  [openthread-announce](https://groups.google.com/forum/#!forum/openthread-announce)
-    \- subscribe for release notes and new updates on OpenThread
- *  [openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
-    \- the best place for users to discuss OpenThread and interact with
-    the OpenThread team
- *  [openthread-devel](https://groups.google.com/forum/#!forum/openthread-devel)
-    \- team members discuss the on-going development of OpenThread
-
-[ot-issues]: https://github.com/openthread/openthread/issues
-[stackoverflow]: http://stackoverflow.com/
-[ot-tag]: http://stackoverflow.com/questions/tagged/openthread
-
-
-# Versioning #
-
-OpenThread follows [the Semantic Versioning guidelines][semver] for
-release cycle transparency and to maintain backwards compatibility.
-OpenThread's versioning is independent of the Thread protocol
-specification version but will clearly indicate which version of the
-specification it currently supports.
-
-[semver]: http://semver.org/
-
-
-# Contributing #
-
-See the [`CONTRIBUTING.md`](CONTRIBUTING.md) file for more information.
-
-
-# License #
-
-OpenThread is released under the [BSD 3-Clause license](LICENSE). See
-the [`LICENSE`](LICENSE) file for more information.
-
-Please only use the OpenThread name and marks when accurately
-referencing this software distribution. Do not use the marks in
-a way that suggests you are endorsed by or otherwise affiliated with
-Nest, Google, or The Thread Group.
+The openthread-users Google Group is the recommended place for users to discuss OpenThread and interact directly with the OpenThread team.
