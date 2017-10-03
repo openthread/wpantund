@@ -598,11 +598,48 @@ BinderILowpanInterface::startNetScan(const ::android::binder::Map& properties, c
 	{
 		BinderIPCServerLock lock(mIpcServer);
 
-		// Wait for any previous scan to complete.
+		/* Here we wait for any previous scan to complete. To do that
+		 * we poll mNetScanListener for when it becomes NULL.
+		 * This normally isn't a good synchronization strategy,
+		 * but we are using it here because of the complex relationship
+		 * between the main thread (which owns mNetScanListener)
+		 * and binder threads (of which this function is running on).
+		 * A simple polling loop with a 1-second sleep gets the job done
+		 * in a fairly robust fashion without adding unnecessary
+		 * additional complexity. This comes at the expense of latency
+		 * and proper FIFO queueing, neither of which are terribly
+		 * important for the initiation of a network scan. In any case,
+		 * the contention case should happen extremely rarely.
+		 *
+		 * We allow 10 seconds to elapse before we give up on the
+		 * previous scan and force the previous scan to abort.
+		 */
 		for (int i = 10; i != 0 && mNetScanListener != NULL; i--) {
-			mIpcServer.lockMainThread();
-			sleep(1);
+			// Unlock the main thread so that it can
+			// finish the previous scan.
 			mIpcServer.unlockMainThread();
+
+			// Let the main thread run for a second.
+			sleep(1);
+
+			// Re-lock the main thread so that we
+			// can check mNetScanListener.
+			mIpcServer.lockMainThread();
+		}
+
+		if (mNetScanListener != NULL) {
+			// The previous scan in progress is still in progress.
+			// We will fail, but first let's go ahead and try to stop
+			// the previous scan in case we are somehow wedged.
+
+			mNetScanListener->onNetScanFinished();
+			mNetScanListener.clear();
+			mInterface.netscan_stop();
+
+			return Status::fromServiceSpecificError(
+				ILowpanInterface::ERROR_UNSPECIFIED,
+				"Net scan was already in progress"
+			);
 		}
 
 		mNetScanListener = listener;
@@ -668,11 +705,48 @@ BinderILowpanInterface::startEnergyScan(const ::android::binder::Map& properties
 	{
 		BinderIPCServerLock lock(mIpcServer);
 
-		// Wait for any previous scan to complete.
+		/* Here we wait for any previous scan to complete. To do that
+		 * we poll mEnergyScanListener for when it becomes NULL.
+		 * This normally isn't a good synchronization strategy,
+		 * but we are using it here because of the complex relationship
+		 * between the main thread (which owns mEnergyScanListener)
+		 * and binder threads (of which this function is running on).
+		 * A simple polling loop with a 1-second sleep gets the job done
+		 * in a fairly robust fashion without adding unnecessary
+		 * additional complexity. This comes at the expense of latency
+		 * and proper FIFO queueing, neither of which are terribly
+		 * important for the initiation of an energy scan. In any case,
+		 * the contention case should happen extremely rarely.
+		 *
+		 * We allow 10 seconds to elapse before we give up on the
+		 * previous scan and force the previous scan to abort.
+		 */
 		for (int i = 10; i != 0 && mEnergyScanListener != NULL; i--) {
-			mIpcServer.lockMainThread();
-			sleep(1);
+			// Unlock the main thread so that it can
+			// finish the previous scan.
 			mIpcServer.unlockMainThread();
+
+			// Let the main thread run for a second.
+			sleep(1);
+
+			// Re-lock the main thread so that we
+			// can check mEnergyScanListener.
+			mIpcServer.lockMainThread();
+		}
+
+		if (mEnergyScanListener != NULL) {
+			// The previous scan in progress is still in progress.
+			// We will fail, but first let's go ahead and try to stop
+			// the previous scan in case we are somehow wedged.
+
+			mEnergyScanListener->onEnergyScanFinished();
+			mEnergyScanListener.clear();
+			mInterface.energyscan_stop();
+
+			return Status::fromServiceSpecificError(
+				ILowpanInterface::ERROR_UNSPECIFIED,
+				"Energy scan was already in progress"
+			);
 		}
 
 		mEnergyScanListener = listener;
