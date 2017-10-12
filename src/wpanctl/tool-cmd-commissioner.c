@@ -61,7 +61,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
 	const char* ext_addr = NULL;
 	const char* psk = NULL;
 	int psk_len = 0;
-	uint8_t pskd[20];
+	uint8_t pskd[PSK_MAX_LENGTH];
 	uint32_t pskd_length = sizeof(pskd);
 	uint32_t joiner_timeout = DEFAULT_JOINER_TIMEOUT;
 	dbus_bool_t enabled = false;
