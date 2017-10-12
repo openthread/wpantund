@@ -101,6 +101,9 @@ nl::wpantund::SpinelNCPTaskDeepSleep::vprocess_event(int event, va_list args)
 		);
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 		ret = mNextCommandRet;
+		if (ret == spinel_status_to_wpantund_status(SPINEL_STATUS_PROP_NOT_FOUND)) {
+			ret = kWPANTUNDStatus_FeatureNotImplemented;
+		}
 		require_noerr(ret, on_error);
 
 		mInstance->change_ncp_state(DEEP_SLEEP);
@@ -111,6 +114,8 @@ on_error:
 	if (mInstance->get_ncp_state() == DEEP_SLEEP) {
 		syslog(LOG_NOTICE, "NCP is asleep.");
 		ret = kWPANTUNDStatus_Ok;
+	} else if (ret == kWPANTUNDStatus_FeatureNotImplemented) {
+		syslog(LOG_WARNING, "NCP does not support deep sleep.");
 	} else {
 		syslog(LOG_WARNING, "NCP DID NOT GO TO SLEEP!");
 		if (kWPANTUNDStatus_Ok == ret) {

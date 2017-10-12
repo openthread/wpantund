@@ -41,7 +41,7 @@ typedef enum {
 	kWPANTUNDStatus_InProgress                    = 12,
 	kWPANTUNDStatus_TryAgainLater                 = 13,
 
-	kWPANTUNDStatus_FeatureNotSupported           = 14,
+	kWPANTUNDStatus_FeatureNotSupported           = 15, // Deprecated, use kWPANTUNDStatus_FeatureNotImplemented instead.
 	kWPANTUNDStatus_FeatureNotImplemented         = 15,
 
 	kWPANTUNDStatus_PropertyNotFound              = 16,

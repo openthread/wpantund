@@ -454,6 +454,8 @@ NCPInstanceBase::get_property(
 		  && !ncp_state_is_detached_from_ncp(get_ncp_state())
 		) {
 			cb(0, boost::any(std::string(kWPANTUNDStateUninitialized)));
+		} else if (!mEnabled && get_ncp_state() != FAULT) {
+			cb(0, boost::any(std::string(kWPANTUNDStateOffline)));
 		} else {
 			cb(0, boost::any(ncp_state_to_string(get_ncp_state())));
 		}
