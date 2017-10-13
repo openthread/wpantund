@@ -127,6 +127,10 @@ BinderILowpanInterface::join(const LowpanProvision& provision)
 
 	require(ret.isOk(), bail);
 
+	// Make sure we don't automatically enter the comissioning
+	// state upon joining error.
+	value_map[kWPANTUNDUseModernBehavior] = true;
+
 	{
 		BinderIPCServerLock lock(mIpcServer);
 		mInterface.join(value_map, CallbackCompletion(args));
@@ -153,6 +157,9 @@ BinderILowpanInterface::form(const LowpanProvision& provision)
 
 	require(ret.isOk(), bail);
 
+	// Always use modern behavior
+	value_map[kWPANTUNDUseModernBehavior] = true;
+
 	{
 		BinderIPCServerLock lock(mIpcServer);
 		mInterface.form(value_map, CallbackCompletion(args));
@@ -178,6 +185,9 @@ BinderILowpanInterface::attach(const LowpanProvision& provision)
 	ret = add_to_value_map(value_map, provision);
 
 	require(ret.isOk(), bail);
+
+	// Always use modern behavior
+	value_map[kWPANTUNDUseModernBehavior] = true;
 
 	for (iter = value_map.begin(); iter != value_map.end(); ++iter) {
 		ret = setProperty(iter->first, iter->second);

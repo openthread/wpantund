@@ -38,8 +38,12 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	const ValueMap& options
-):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
+):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state()), mUseModernBehavior(false)
 {
+	if (options.count(kWPANTUNDUseModernBehavior)) {
+		mUseModernBehavior = any_to_bool(options.find(kWPANTUNDUseModernBehavior)->second);
+	}
+
 	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		uint16_t panid;
 
@@ -126,7 +130,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	if (ncp_state_is_associated(mInstance->get_ncp_state())) {
+	if (!mUseModernBehavior && ncp_state_is_associated(mInstance->get_ncp_state())) {
 		ret = kWPANTUNDStatus_Already;
 		finish(ret);
 		EH_EXIT();
@@ -147,15 +151,36 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
-	mLastState = mInstance->get_ncp_state();
-	mInstance->change_ncp_state(ASSOCIATING);
+	if (mUseModernBehavior) {
+		// Turn off PROP_NET_STACK_UP
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_STACK_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+		// Turn off PROP_NET_IF_UP
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+	}
 
 	// Clear any previously saved network settings
 	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;
-
 	check_noerr(ret);
+
+	mLastState = mInstance->get_ncp_state();
+	mInstance->change_ncp_state(ASSOCIATING);
 
 	// TODO: We should do a scan to make sure we pick a good channel
 	//       and don't have a panid collision.

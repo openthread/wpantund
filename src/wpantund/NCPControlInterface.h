@@ -62,6 +62,8 @@ typedef std::set<int> IntegerSet;
 
 class NCPInstance;
 
+#define kWPANTUNDUseModernBehavior         "UseModernBehavior"
+
 class NCPControlInterface {
 public:
 

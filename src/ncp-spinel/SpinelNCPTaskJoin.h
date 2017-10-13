@@ -45,6 +45,8 @@ public:
 private:
 	ValueMap mOptions;
 	NCPState mLastState;
+	bool mUseModernBehavior; // If true, don't enter commissioning state on failure
+	int mRet; // Holder for return value
 };
 
 }; // namespace wpantund
