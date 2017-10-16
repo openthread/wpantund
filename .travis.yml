@@ -38,8 +38,7 @@ env:
 
 matrix:
     allow_failures:
-        - os: linux        # This seems to be some sort of weird failure to
-          compiler: clang  # find boost-signals. Needs further investigation.
+        - os: osx # See issue #245: "Travis macOS builds are failing"
     exclude:
         - os: osx
           compiler: gcc
