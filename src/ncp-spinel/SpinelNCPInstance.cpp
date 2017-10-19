@@ -2470,9 +2470,38 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
 			}
 		}
+
+	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
+		int status;
+
+		status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
+
+		if (status == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: ChildTable entry added: %s", child_entry.get_as_string().c_str());
+		}
+
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
+}
+
+void
+SpinelNCPInstance::handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+{
+	if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
+		int status;
+
+		status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
+
+		if (status == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: ChildTable entry removed: %s", child_entry.get_as_string().c_str());
+		}
+
+	}
+
+	process_event(EVENT_NCP_PROP_VALUE_REMOVED, key, value_data_ptr, value_data_len);
 }
 
 void
@@ -2513,12 +2542,6 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 			);
 		}
 	}
-}
-
-void
-SpinelNCPInstance::handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
-{
-	process_event(EVENT_NCP_PROP_VALUE_REMOVED, key, value_data_ptr, value_data_len);
 }
 
 void
