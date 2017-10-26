@@ -179,6 +179,116 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(const uint8_
 }
 
 int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table)
+{
+	int ret = kWPANTUNDStatus_Ok;
+
+	router_table.clear();
+
+	while (data_len > 0)
+	{
+		spinel_ssize_t len = 0;
+		const uint8_t *struct_data;
+		spinel_size_t struct_len;
+		TableEntry router_info;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_data,
+			&struct_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		ret = parse_router_entry(struct_data, struct_len, router_info);
+
+		require_noerr(ret, bail);
+
+		router_table.push_back(router_info);
+
+		data_in += len;
+		data_len -= len;
+	}
+
+bail:
+	return ret;
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& router_info)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len = 0;
+	const spinel_eui64_t *eui64 = NULL;
+	uint8_t age;
+	bool link_established = false;
+
+	memset(&router_info, 0, sizeof(router_info));
+
+	router_info.mType = kRouterTable;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+			SPINEL_DATATYPE_UINT16_S        // Rloc16
+			SPINEL_DATATYPE_UINT8_S         // Router Id
+			SPINEL_DATATYPE_UINT8_S         // Next hop
+			SPINEL_DATATYPE_UINT8_S         // Path Cost
+			SPINEL_DATATYPE_UINT8_S         // Link Quality In
+			SPINEL_DATATYPE_UINT8_S         // Link Quality Out
+			SPINEL_DATATYPE_UINT8_S         // Age
+			SPINEL_DATATYPE_BOOL_S          // Is Link Established
+		),
+		&eui64,
+		&router_info.mRloc16,
+		&router_info.mRouterId,
+		&router_info.mNextHop,
+		&router_info.mPathCost,
+		&router_info.mLinkQualityIn,
+		&router_info.mLinkQualityOut,
+		&age,
+		&link_established
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	memcpy(router_info.mExtAddress, eui64, sizeof(router_info.mExtAddress));
+
+	router_info.mAge = age;
+	router_info.mLinkEstablished = link_established;
+
+bail:
+	return ret;
+}
+
+unsigned int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::property_key_for_type(Type type)
+{
+	unsigned int prop_key = 0;
+
+	switch (type)
+	{
+	case kChildTable:
+		prop_key = SPINEL_PROP_THREAD_CHILD_TABLE;
+		break;
+
+	case kNeighborTable:
+		prop_key = SPINEL_PROP_THREAD_NEIGHBOR_TABLE;
+		break;
+
+	case kRouterTable:
+		prop_key = SPINEL_PROP_THREAD_ROUTER_TABLE;
+		break;
+	}
+
+	return prop_key;
+}
+
+int
 nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list args)
 {
 	int ret = kWPANTUNDStatus_Failure;
@@ -217,7 +327,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list
 
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET,
-		(mType == kChildTable) ? SPINEL_PROP_THREAD_CHILD_TABLE : SPINEL_PROP_THREAD_NEIGHBOR_TABLE
+		property_key_for_type(mType)
 	);
 
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
@@ -232,12 +342,14 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list
 	data_in = va_arg(args, const uint8_t*);
 	data_len = va_arg_small(args, spinel_size_t);
 
+	require(prop_key == property_key_for_type(mType), on_error);
+
 	if (mType == kChildTable) {
-		require(prop_key == SPINEL_PROP_THREAD_CHILD_TABLE, on_error);
 		parse_child_table(data_in, data_len, mTable);
-	} else {
-		require(prop_key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE, on_error);
+	} else if (mType == kNeighborTable) {
 		parse_neighbor_table(data_in, data_len, mTable);
+	} else if (mType == kRouterTable) {
+		parse_router_table(data_in, data_len, mTable);
 	}
 
 	ret = kWPANTUNDStatus_Ok;
@@ -295,7 +407,9 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 {
 	char c_string[800];
 
-	if (mType == kChildTable) {
+	switch (mType)
+	{
+	case kChildTable:
 		snprintf(c_string, sizeof(c_string),
 			"%02X%02X%02X%02X%02X%02X%02X%02X, "
 			"RLOC16:%04x, "
@@ -323,8 +437,9 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			mSecureDataRequest ? "yes" : "no",
 			mFullNetworkData ? "yes" : "no"
 		);
+		break;
 
-	} else {
+	case kNeighborTable:
 		snprintf(c_string, sizeof(c_string),
 			"%02X%02X%02X%02X%02X%02X%02X%02X, "
 			"RLOC16:%04x, "
@@ -354,6 +469,35 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			mSecureDataRequest ? "yes" : "no",
 			mFullNetworkData ? "yes" : "no"
 		);
+		break;
+
+	case kRouterTable:
+		snprintf(c_string, sizeof(c_string),
+			"%02X%02X%02X%02X%02X%02X%02X%02X, "
+			"RLOC16:%04x, "
+			"RouterId:%d, "
+			"NextHop:%d, "
+			"PathCost:%d, "
+			"LQIn:%d, "
+			"LQOut:%d, "
+			"Age:%d, "
+			"LinkEst:%s",
+			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],
+			mExtAddress[4], mExtAddress[5], mExtAddress[6], mExtAddress[7],
+			mRloc16,
+			mRouterId,
+			mNextHop,
+			mPathCost,
+			mLinkQualityIn,
+			mLinkQualityOut,
+			mAge,
+			mLinkEstablished ? "yes" : "no"
+		);
+		break;
+
+	default:
+		c_string[0] = 0;
+		break;
 	}
 
 	return std::string(c_string);
@@ -364,6 +508,10 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 {
 	ValueMap entryMap;
 	uint64_t addr;
+
+	if (mType == kRouterTable) {
+		goto bail;
+	}
 
 	addr  = (uint64_t) mExtAddress[7];
 	addr |= (uint64_t) mExtAddress[6] << 8;
@@ -396,5 +544,6 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 	SPINEL_TOPO_MAP_INSERT( kWPANTUNDValueMapKey_NetworkTopology_IsChild,          mIsChild          );
 	}
 
+bail:
 	return entryMap;
 }
