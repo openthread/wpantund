@@ -39,7 +39,8 @@ public:
 	enum Type
 	{
 		kChildTable,                   // Get the child table
-		kNeighborTable                 // Get the neighbor table
+		kNeighborTable,                // Get the neighbor table
+		kRouterTable,                  // Get the router table
 	};
 
 	enum ResultFormat
@@ -61,11 +62,13 @@ public:
 	{
 		Type      mType;     // Indicates if this entry is for a child or a neighbor
 
-		// Common fields for both child info and neighbor info
+		// Common fields for child info, neighbor info, and router info:
 		uint8_t   mExtAddress[8];
 		uint32_t  mAge;
 		uint16_t  mRloc16;
 		uint8_t   mLinkQualityIn;
+
+		// Common fields for both child info and neighbor info
 		int8_t    mAverageRssi;
 		int8_t    mLastRssi;
 		bool      mRxOnWhenIdle : 1;
@@ -81,6 +84,13 @@ public:
 		uint32_t  mLinkFrameCounter;
 		uint32_t  mMleFrameCounter;
 		bool      mIsChild : 1;
+
+		// Router info only
+		uint8_t   mRouterId;
+		uint8_t   mNextHop;
+		uint8_t   mPathCost;
+		uint8_t   mLinkQualityOut;
+		bool      mLinkEstablished : 1;
 
 	public:
 		std::string get_as_string(void) const;
@@ -104,7 +114,15 @@ public:
 	// Parses the spinel neighbor table property and updates the neighbor_table
 	static int parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
 
+	// Parses the spinel router table property and updates the router_table
+	static int parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table);
+
+	// Parses a single router entry and updates the router_info
+	static int parse_router_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& router_info);
+
 private:
+	static unsigned int property_key_for_type(Type type);
+
 	Type mType;
 	Table mTable;
 	ResultFormat mResultFormat;

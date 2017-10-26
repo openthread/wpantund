@@ -299,6 +299,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
+		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
@@ -1005,6 +1006,26 @@ SpinelNCPInstance::property_get_value(
 				this,
 				cb,
 				SpinelNCPTaskGetNetworkTopology::kNeighborTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterTable)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kRouterTable,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterTableAsValMap)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kRouterTable,
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
@@ -2374,6 +2395,21 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
 		}
 		syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
+
+	} else if (key == SPINEL_PROP_THREAD_ROUTER_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::Table router_table;
+		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+		int num_router = 0;
+
+		SpinelNCPTaskGetNetworkTopology::parse_router_table(value_data_ptr, value_data_len, router_table);
+
+		for (it = router_table.begin(); it != router_table.end(); it++)
+		{
+			num_router++;
+			syslog(LOG_INFO, "[-NCP-] Router: %02d %s", num_router, it->get_as_string().c_str());
+		}
+		syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "es" : "");
+
 
 	} else if (key == SPINEL_PROP_NET_PARTITION_ID) {
 		uint32_t paritition_id = 0;
