@@ -376,21 +376,21 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_GET) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_GET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_PROP_VALUE_GET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_SET) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_SET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_PROP_VALUE_SET(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_INSERT) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_INSERT(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_PROP_VALUE_INSERT(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_PROP_VALUE_REMOVE) {
 				spinel_prop_key_t key;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "Cii", NULL, NULL, &key);
-				syslog(LOG_INFO, "[->NCP] CMD_PROP_VALUE_REMOVE(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_PROP_VALUE_REMOVE(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_NOOP) {
-				syslog(LOG_INFO, "[->NCP] CMD_NOOP tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_NOOP tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_RESET) {
 				syslog(LOG_INFO, "[->NCP] CMD_RESET tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_NET_CLEAR) {
@@ -399,12 +399,12 @@ SpinelNCPInstance::driver_to_ncp_pump()
 				uint32_t address = 0;
 				uint16_t count = 0;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "CiLS", NULL, NULL, &address, &count);
-				syslog(LOG_INFO, "[->NCP] CMD_PEEK(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_PEEK(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_POKE) {
 				uint32_t address = 0;
 				uint16_t count = 0;
 				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "CiLS", NULL, NULL, &address, &count);
-				syslog(LOG_INFO, "[->NCP] CMD_NET_POKE(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+				syslog(LOG_DEBUG, "[->NCP] CMD_NET_POKE(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else {
 				syslog(LOG_INFO, "[->NCP] Spinel command 0x%02X tid:%d", mOutboundBuffer[1], SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			}
