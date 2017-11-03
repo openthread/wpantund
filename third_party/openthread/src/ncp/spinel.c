@@ -75,6 +75,14 @@
 #define EINVAL 1
 #endif
 
+// IAR's errno.h apparently doesn't define ENOMEM.
+#ifndef ENOMEM
+// There is no real good choice for what to set
+// errno to in this case, so we just pick the
+// value '1' somewhat arbitrarily.
+#define ENOMEM 1
+#endif
+
 #ifdef _KERNEL_MODE
 #define va_copy(destination, source) ((destination) = (source))
 #undef errno
@@ -326,6 +334,26 @@ spinel_datatype_vunpack_(bool in_place, const uint8_t *data_ptr, spinel_size_t d
             ret += sizeof(uint32_t);
             data_ptr += sizeof(uint32_t);
             data_len -= sizeof(uint32_t);
+            break;
+        }
+
+        case SPINEL_DATATYPE_INT64_C:
+        case SPINEL_DATATYPE_UINT64_C:
+        {
+            uint64_t *arg_ptr = va_arg(args->obj, uint64_t *);
+            require_action(data_len >= sizeof(uint64_t), bail, (ret = -1, errno = EOVERFLOW));
+
+            if (arg_ptr)
+            {
+                uint32_t l32 = (uint32_t)((data_ptr[3] << 24) | (data_ptr[2] << 16) | (data_ptr[1] << 8) | data_ptr[0]);
+                uint32_t h32 = (uint32_t)((data_ptr[7] << 24) | (data_ptr[6] << 16) | (data_ptr[5] << 8) | data_ptr[4]);
+
+                *arg_ptr = ((uint64_t)l32) | (((uint64_t)h32) << 32);
+            }
+
+            ret += sizeof(uint64_t);
+            data_ptr += sizeof(uint64_t);
+            data_len -= sizeof(uint64_t);
             break;
         }
 
@@ -731,6 +759,34 @@ spinel_datatype_vpack_(uint8_t *data_ptr, spinel_size_t data_len_max, const char
                 data_ptr[0] = (arg >> 0) & 0xff;
                 data_ptr += sizeof(uint32_t);
                 data_len_max -= sizeof(uint32_t);
+            }
+            else
+            {
+                data_len_max = 0;
+            }
+
+            break;
+        }
+
+        case SPINEL_DATATYPE_INT64_C:
+        case SPINEL_DATATYPE_UINT64_C:
+        {
+            uint64_t arg = (uint64_t)va_arg(args->obj, uint64_t);
+
+            ret += sizeof(uint64_t);
+
+            if (data_len_max >= sizeof(uint64_t))
+            {
+                data_ptr[7] = (arg >> 56) & 0xff;
+                data_ptr[6] = (arg >> 48) & 0xff;
+                data_ptr[5] = (arg >> 40) & 0xff;
+                data_ptr[4] = (arg >> 32) & 0xff;
+                data_ptr[3] = (arg >> 24) & 0xff;
+                data_ptr[2] = (arg >> 16) & 0xff;
+                data_ptr[1] = (arg >> 8) & 0xff;
+                data_ptr[0] = (arg >> 0) & 0xff;
+                data_ptr += sizeof(uint64_t);
+                data_len_max -= sizeof(uint64_t);
             }
             else
             {
@@ -1415,6 +1471,42 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_THREAD_ROUTER_TABLE:
         ret = "PROP_THREAD_ROUTER_TABLE";
+        break;
+
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET:
+        ret = "PROP_THREAD_ACTIVE_DATASET";
+        break;
+
+    case SPINEL_PROP_THREAD_PENDING_DATASET:
+        ret = "PROP_THREAD_PENDING_DATASET";
+        break;
+
+    case SPINEL_PROP_THREAD_MGMT_ACTIVE_DATASET:
+        ret = "PROP_THREAD_MGMT_ACTIVE_DATASET";
+        break;
+
+    case SPINEL_PROP_THREAD_MGMT_PENDING_DATASET:
+        ret = "PROP_THREAD_MGMT_PENDING_DATASET";
+        break;
+
+    case SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP:
+        ret = "PROP_DATASET_ACTIVE_TIMESTAMP";
+        break;
+
+    case SPINEL_PROP_DATASET_PENDING_TIMESTAMP:
+        ret = "PROP_DATASET_PENDING_TIMESTAMP";
+        break;
+
+    case SPINEL_PROP_DATASET_DELAY_TIMER:
+        ret = "PROP_DATASET_DELAY_TIMER";
+        break;
+
+    case SPINEL_PROP_DATASET_SECURITY_POLICY:
+        ret = "PROP_DATASET_SECURITY_POLICY";
+        break;
+
+    case SPINEL_PROP_DATASET_RAW_TLVS:
+        ret = "PROP_DATASET_RAW_TLVS";
         break;
 
     case SPINEL_PROP_IPV6_LL_ADDR:

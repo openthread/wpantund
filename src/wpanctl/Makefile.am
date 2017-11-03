@@ -93,6 +93,8 @@ wpanctl_SOURCES = \
 	tool-cmd-poke.c \
 	tool-cmd-commissioner.h \
 	tool-cmd-commissioner.c \
+	tool-cmd-dataset.h \
+	tool-cmd-dataset.c \
 	tool-updateprop.h \
 	$(NULL)
 

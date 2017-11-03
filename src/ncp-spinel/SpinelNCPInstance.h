@@ -22,9 +22,11 @@
 
 #include "NCPInstanceBase.h"
 #include "SpinelNCPControlInterface.h"
+#include "SpinelNCPThreadDataset.h"
 #include "nlpt.h"
 #include "SocketWrapper.h"
 #include "SocketAsyncOp.h"
+#include "ValueMap.h"
 
 #include <queue>
 #include <set>
@@ -174,6 +176,11 @@ private:
 	void update_mesh_local_address(struct in6_addr *addr);
 	void update_mesh_local_prefix(struct in6_addr *addr);
 
+private:
+	void get_dataset_command_help(std::list<std::string> &list);
+	int unpack_and_set_local_dataset(const uint8_t *data_in, spinel_size_t data_len);
+	void perform_dataset_command(const std::string& command, CallbackWithStatus cb);
+
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 
@@ -256,6 +263,8 @@ private:
 
 	bool mSetSteeringDataWhenJoinable;
 	uint8_t mSteeringDataAddress[8];
+
+	ThreadDataset mLocalDataset;
 
 	SettingsMap mSettings;
 	SettingsMap::iterator mSettingsIter;

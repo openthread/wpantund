@@ -46,6 +46,7 @@
 #include "tool-cmd-poke.h"
 #include "tool-cmd-pcap.h"
 #include "tool-cmd-commissioner.h"
+#include "tool-cmd-dataset.h"
 
 #include "wpanctl-utils.h"
 
@@ -187,6 +188,11 @@
 		"poke", \
 		"Poke NCP memory (change content at a NCP memory address)", \
 		&tool_cmd_poke \
+	}, \
+	{ \
+		"dataset", \
+		"Issue commands related to the local dataset", \
+		&tool_cmd_dataset \
 	}, \
 	{ "cd",   "Change current interface (command mode)", \
 	  &tool_cmd_cd                                            }
