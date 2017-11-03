@@ -47,6 +47,10 @@
 #include "SuperSocket.h"
 #include "Timer.h"
 
+#include "IPCServer.h"
+
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+
 #if BUILD_IPC_DBUS
 #include "DBUSIPCServer.h"
 #endif
@@ -54,6 +58,8 @@
 #if BUILD_IPC_BINDER
 #include "BinderIPCServer.h"
 #endif
+
+#endif // if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 #include "NCPControlInterface.h"
 #include "NCPInstance.h"
@@ -507,7 +513,9 @@ public:
 		mSettings(settings), mNcpInstance(NCPInstance::alloc(settings)),
 		mFdsReady(0), mInterfaceAdded(false), mZeroCmsInARowCount(0)
 	{
-		assert(mNcpInstance != NULL);
+		if (mNcpInstance == NULL) {
+			throw std::invalid_argument("Unknown NCP Driver");
+		}
 
 		mNcpInstance->mOnFatalError.connect(&handle_error);
 
@@ -554,7 +562,7 @@ public:
 		}
 	}
 
-	void block_until_ready() {
+	bool block_until_ready() {
 		int fds_ready = 0;
 		const cms_t max_main_loop_timeout(CMS_DISTANT_FUTURE);
 		cms_t cms_timeout(max_main_loop_timeout);
@@ -618,15 +626,10 @@ public:
 		timeout.tv_sec = cms_timeout / MSEC_PER_SEC;
 		timeout.tv_usec = (cms_timeout % MSEC_PER_SEC) * USEC_PER_MSEC;
 
-#if DEBUG
-		syslog_dump_select_info(
-			LOG_DEBUG,
-			&gReadableFDs,
-			&gWritableFDs,
-			&gErrorableFDs,
-			max_fd + 1,
-			cms_timeout
-		);
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		// When fuzzing we don't wait for select.
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
 #endif
 
 		// Block until we timeout or there is FD activity.
@@ -638,6 +641,25 @@ public:
 			&timeout
 		);
 
+#if VERBOSE_DEBUG
+		syslog_dump_select_info(
+			LOG_DEBUG,
+			&gReadableFDs,
+			&gWritableFDs,
+			&gErrorableFDs,
+			max_fd + 1,
+			cms_timeout
+		);
+#endif
+
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		// When fuzzing, if there were no FDs ready, then we just
+		// fast forward to the time when something interesting happens.
+		if (fds_ready == 0 && cms_timeout <= max_main_loop_timeout) {
+			fuzz_ff_cms(cms_timeout);
+		}
+#endif
+
 		if (fds_ready < 0) {
 			syslog(LOG_ERR, "select() errno=\"%s\" (%d)", strerror(errno),
 				   errno);
@@ -648,7 +670,7 @@ public:
 		}
 
 	bail:
-		return;
+		return (fds_ready > 0) || (cms_timeout == 0);
 	}
 
 
@@ -772,7 +794,7 @@ main(int argc, char * argv[])
 			break;
 
 		case 'o':
-			if ((optind >= argc) || (strncmp(argv[optind], "-", 1) == 0)) {
+			if ((optind >= argc) || (strhasprefix(argv[optind], "-"))) {
 				syslog(LOG_ERR, "Missing argument to '-o'.");
 				gRet = ERRORCODE_BADARG;
 				goto bail;
@@ -873,6 +895,8 @@ main(int argc, char * argv[])
 
 		main_loop = new MainLoop(settings);
 
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+		// Set up DBUSIPCServer
 #if BUILD_IPC_DBUS
 		try {
 			main_loop->add_ipc_server(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
@@ -891,6 +915,7 @@ main(int argc, char * argv[])
 
 		/*** Add other IPCServers here! ***/
 
+#endif // if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 	} catch(std::runtime_error x) {
 		syslog(LOG_ERR, "Runtime error thrown while starting up, \"%s\"",x.what());

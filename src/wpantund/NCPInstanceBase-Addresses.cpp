@@ -30,14 +30,157 @@
 #include <algorithm>
 #include "socket-utils.h"
 #include "SuperSocket.h"
+#include "IPv6Helpers.h"
 
 using namespace nl;
 using namespace wpantund;
 
+std::string
+NCPInstanceBase::EntryBase::get_origin_as_string(void) const
+{
+	const char *ret = "unknown";
 
+	switch (mOrigin) {
+	case kOriginThreadNCP:
+		ret =  "ncp";
+		break;
+
+	case kOriginPrimaryInterface:
+		ret =  "intface";
+		break;
+
+	case kOriginUser:
+		ret = "user";
+		break;
+	}
+
+	return ret;
+}
+
+NCPInstanceBase::UnicastAddressEntry::UnicastAddressEntry(
+	Origin origin,
+	uint8_t prefix_len,
+	uint32_t valid_lifetime,
+	uint32_t preferred_lifetime
+) :	EntryBase(origin)
+{
+	mPrefixLen = prefix_len;
+	mValidLifetime = valid_lifetime;
+	mPreferredLifetime = preferred_lifetime;
+}
+
+std::string
+NCPInstanceBase::UnicastAddressEntry::get_description(const struct in6_addr &address, bool align) const
+{
+	char c_string[300];
+
+	if (align) {
+		if ((mValidLifetime == UINT32_MAX) && (mPreferredLifetime == UINT32_MAX)) {
+			snprintf(c_string, sizeof(c_string),
+				"%-40s prefix_len:%-4d origin:%-8s valid:forever   preferred:forever",
+				in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str());
+		} else {
+			snprintf(c_string, sizeof(c_string),
+				"%-40s prefix_len:%-4d origin:%-8s valid:%-10u preferred:%-10u",
+				in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
+				mValidLifetime, mPreferredLifetime);
+		}
+	} else {
+		if ((mValidLifetime == UINT32_MAX) && (mPreferredLifetime == UINT32_MAX)) {
+			snprintf(c_string, sizeof(c_string),
+				"\"%s/%d\", origin:%s, valid:forever, preferred:forever",
+				in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str());
+		} else {
+			snprintf(c_string, sizeof(c_string),
+				"\"%s/%d\", origin:%s, valid:%u, preferred:%u",
+				in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
+				mValidLifetime, mPreferredLifetime);
+		}
+	}
+
+	return std::string(c_string);
+}
+
+std::string
+NCPInstanceBase::MulticastAddressEntry::get_description(const struct in6_addr &address, bool align) const
+{
+	char c_string[300];
+
+	if (align) {
+		snprintf(c_string, sizeof(c_string), "%-40s origin:%s", in6_addr_to_string(address).c_str(),
+			get_origin_as_string().c_str());
+	} else {
+		snprintf(c_string, sizeof(c_string), "\"%s\", origin:%s", in6_addr_to_string(address).c_str(),
+			get_origin_as_string().c_str());
+	}
+
+	return std::string(c_string);
+}
+
+std::string
+NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
+{
+	char c_string[300];
+
+	if (detailed) {
+		uint8_t preferece = flags & OnMeshPrefixEntry::kPreferenceMask;
+		const char *prio = "none";
+
+		switch (preferece) {
+		case OnMeshPrefixEntry::kPreferenceHigh:
+			prio = "high";
+			break;
+
+		case OnMeshPrefixEntry::kPreferenceLow:
+			prio = "low";
+			break;
+
+		case OnMeshPrefixEntry::kPreferenceMedium:
+			prio = "med";
+			break;
+		}
+
+		snprintf(c_string, sizeof(c_string), "flags:0x%02x [on-mesh:%s def-route:%s config:%s dhcp:%s slaac:%s pref:%s prio:%s]",
+			flags,
+			(flags & OnMeshPrefixEntry::kFlagOnMesh) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagDefaultRoute) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagConfigure) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagDHCP) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagSLAAC) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagPreferred) ? "1" : "0",
+			prio
+		);
+	} else {
+		snprintf(c_string, sizeof(c_string), "%s(0x%02x)", flags_to_string(flags, "ppPSDCRM").c_str(), flags);
+	}
+
+	return c_string;
+}
+
+std::string
+NCPInstanceBase::OnMeshPrefixEntry::get_description(const struct in6_addr &address, bool align) const
+{
+	char c_string[300];
+
+	if (align) {
+		snprintf(c_string, sizeof(c_string), "%-22s prefix_len:%-4d origin:%-8s stable:%s %s",
+			in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
+			is_stable() ? "yes" : "no ", on_mesh_prefix_flags_to_string(get_flags(), true).c_str());
+
+	} else {
+		snprintf(c_string, sizeof(c_string), "\"%s/%d\", origin:%s, stable:%s, flags:%s, ",
+			in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
+			is_stable() ? "yes" : "no", on_mesh_prefix_flags_to_string(get_flags()).c_str());
+	}
+
+	return std::string(c_string);
+}
+
+// ========================================================================
+// MARK: Global Entries Management
 
 void
-NCPInstanceBase::refresh_global_addresses()
+NCPInstanceBase::refresh_address_entries(void)
 {
 	// Here is where we would do any periodic global address bookkeeping,
 	// which doesn't appear to be necessary yet but may become necessary
@@ -45,114 +188,310 @@ NCPInstanceBase::refresh_global_addresses()
 }
 
 void
-NCPInstanceBase::clear_nonpermanent_global_addresses()
+NCPInstanceBase::remove_all_address_prefix_entries(void)
 {
-	std::map<struct in6_addr, GlobalAddressEntry>::iterator iter;
+	syslog(LOG_INFO, "Removing all address/prefix entries");
 
-	// We want to remove all of the addresses that were
-	// not user-added.
-	//
-	// This loop looks a little weird because we are mutating
-	// the container as we are iterating through it. Whenever
-	// we mutate the container we have to start over.
+	if (!mExternalNetifManagement) {
+		for (
+			std::map<struct in6_addr, UnicastAddressEntry>::iterator iter = mUnicastAddresses.begin();
+			iter != mUnicastAddresses.end();
+			++iter
+		) {
+			mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
+		}
+
+		for (
+			std::map<struct in6_addr, MulticastAddressEntry>::iterator iter = mMulticastAddresses.begin();
+			iter != mMulticastAddresses.end();
+			++iter
+		) {
+			mPrimaryInterface->leave_multicast_address(&iter->first);
+		}
+	}
+
+	memset(&mNCPLinkLocalAddress, 0, sizeof(mNCPLinkLocalAddress));
+	memset(&mNCPMeshLocalAddress, 0, sizeof(mNCPMeshLocalAddress));
+
+	mUnicastAddresses.clear();
+	mMulticastAddresses.clear();
+	mOnMeshPrefixes.clear();
+}
+
+void
+NCPInstanceBase::remove_ncp_originated_addresses(void)
+{
+	bool did_remove = false;
+
+	// We remove all of the addresses/prefixes that originated
+	// from the NCP.
+
+	syslog(LOG_INFO, "Removing all NCP originated addresses");
+
+	// Unicast addresses
 	do {
-		for (iter = mGlobalAddresses.begin(); iter != mGlobalAddresses.end(); ++iter) {
-			// Skip the removal of user-added addresses.
-			if (iter->second.mUserAdded) {
+		std::map<struct in6_addr, UnicastAddressEntry>::iterator iter;
+
+		did_remove = false;
+
+		for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); iter++) {
+			if (!iter->second.is_from_ncp()) {
 				continue;
 			}
 
+			syslog(LOG_INFO, "UnicastAddresses: Removing %s", iter->second.get_description(iter->first).c_str());
 			if (!mExternalNetifManagement) {
-				mPrimaryInterface->remove_address(&iter->first);
+				mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
 			}
 
-			mGlobalAddresses.erase(iter);
-
-			// The following assignment is needed to avoid
-			// an invalid iterator comparison in the outer loop.
-			iter = mGlobalAddresses.begin();
-
-			// Break out of the inner loop so that we start over.
+			mUnicastAddresses.erase(iter);
+			did_remove = true;
 			break;
 		}
-	} while(iter != mGlobalAddresses.end());
-}
+	} while (did_remove);
 
-void
-NCPInstanceBase::restore_global_addresses()
-{
-	std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
-	std::map<struct in6_addr, GlobalAddressEntry> global_addresses(mGlobalAddresses);
+	// Multicast addresses
+	do {
+		std::map<struct in6_addr, MulticastAddressEntry>::iterator iter;
 
-	mGlobalAddresses.clear();
+		did_remove = false;
 
-	for (iter = global_addresses.begin(); iter!= global_addresses.end(); ++iter) {
-		if (iter->second.mUserAdded) {
-			address_was_added(iter->first, 64);
+		for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end(); iter++) {
+			if (!iter->second.is_from_ncp()) {
+				continue;
+			}
+
+			syslog(LOG_INFO, "MulticastAddresses: Removing %s", iter->second.get_description(iter->first).c_str());
+			if (!mExternalNetifManagement) {
+				mPrimaryInterface->leave_multicast_address(&iter->first);
+			}
+			mMulticastAddresses.erase(iter);
+			did_remove = true;
+			break;
 		}
-		mGlobalAddresses.insert(*iter);
+	} while (did_remove);
 
-		if (!mExternalNetifManagement) {
-			mPrimaryInterface->add_address(&iter->first);
+	// On-Mesh Prefixes
+	do {
+		std::map<struct in6_addr, OnMeshPrefixEntry>::iterator iter;
+
+		did_remove = false;
+
+		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++) {
+			if (!iter->second.is_from_ncp()) {
+				continue;
+			}
+
+			syslog(LOG_INFO, "OnMeshPrefixes: Removing %s", iter->second.get_description(iter->first).c_str());
+			mOnMeshPrefixes.erase(iter);
+			did_remove = true;
+			break;
+		}
+	} while (did_remove);
+}
+
+void
+NCPInstanceBase::restore_address_prefix_entries_on_ncp(void)
+{
+	syslog(LOG_INFO, "Restoring interface/user originated address/prefix entries on NCP");
+
+	for (
+		std::map<struct in6_addr, UnicastAddressEntry>::iterator iter = mUnicastAddresses.begin();
+		iter != mUnicastAddresses.end();
+		++iter
+	) {
+		if (iter->second.is_from_interface() || iter->second.is_from_user()) {
+			add_address_on_ncp_and_update_prefixes(iter->first, iter->second);
+		}
+	}
+
+	for (
+		std::map<struct in6_addr, MulticastAddressEntry>::iterator iter = mMulticastAddresses.begin();
+		iter != mMulticastAddresses.end();
+		++iter
+	) {
+		if (iter->second.is_from_interface() || iter->second.is_from_user()) {
+			add_multicast_address_on_ncp(iter->first);
+		}
+	}
+
+	for (
+		std::map<struct in6_addr, OnMeshPrefixEntry>::iterator iter = mOnMeshPrefixes.begin();
+		iter != mOnMeshPrefixes.end();
+		++iter
+	) {
+		if (iter->second.is_from_interface() || iter->second.is_from_user()) {
+			add_on_mesh_prefix_on_ncp(iter->first, iter->second.get_prefix_len(), iter->second.get_flags(), iter->second.is_stable());
 		}
 	}
 }
 
 void
-NCPInstanceBase::add_address(const struct in6_addr &address, uint8_t prefix, uint32_t valid_lifetime, uint32_t preferred_lifetime)
+NCPInstanceBase::check_ncp_entry_update_status(int status, std::string operation, CallbackWithStatus cb)
 {
-	GlobalAddressEntry entry = GlobalAddressEntry();
-
-	if (mGlobalAddresses.count(address)) {
-		syslog(LOG_INFO, "Updating IPv6 Address...");
-		entry = mGlobalAddresses[address];
-	} else {
-		syslog(LOG_INFO, "Adding IPv6 Address...");
-		mPrimaryInterface->add_address(&address);
+	if (status == kWPANTUNDStatus_Timeout)
+	{
+		syslog(LOG_ERR, "Timed out while performing \"%s\" on NCP - Resetting NCP.", operation.c_str());
+		ncp_is_misbehaving();
 	}
 
-	entry.mValidLifetime = valid_lifetime;
-	entry.mPreferredLifetime = preferred_lifetime;
-	entry.mValidLifetimeExpiration = ((valid_lifetime == UINT32_MAX)
-		? TIME_DISTANT_FUTURE
-		: time_get_monotonic() + valid_lifetime
-	);
-	entry.mPreferredLifetimeExpiration = ((valid_lifetime == UINT32_MAX)
-		? TIME_DISTANT_FUTURE
-		: time_get_monotonic() + preferred_lifetime
-	);
+	cb(status);
+}
 
-	mGlobalAddresses[address] = entry;
+// ========================================================================
+// MARK: Unicast IPv6 Address Management
+
+void
+NCPInstanceBase::unicast_address_was_added(Origin origin, const struct in6_addr &address, uint8_t prefix_len,
+	uint32_t valid_lifetime, uint32_t preferred_lifetime)
+{
+	if (!mUnicastAddresses.count(address)) {
+		UnicastAddressEntry entry(origin, prefix_len, valid_lifetime, preferred_lifetime);
+
+		mUnicastAddresses[address] = entry;
+		syslog(LOG_INFO, "UnicastAddresses: Adding %s", entry.get_description(address).c_str());
+
+		// Add the address on NCP or primary interface (depending on origin).
+
+		if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
+			mPrimaryInterface->add_address(&address, prefix_len);
+		}
+
+		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+			add_address_on_ncp_and_update_prefixes(address, entry);
+		}
+	}
 }
 
 void
-NCPInstanceBase::remove_address(const struct in6_addr &address)
+NCPInstanceBase::unicast_address_was_removed(Origin origin, const struct in6_addr &address)
 {
-	mGlobalAddresses.erase(address);
-	if (!mExternalNetifManagement) {
-		mPrimaryInterface->remove_address(&address);
+	if (mUnicastAddresses.count(address)) {
+		UnicastAddressEntry entry = mUnicastAddresses[address];
+
+		// Allow address remove if origin is user, or if it matches the
+		// originator of the entry (when it was previously added).
+
+		if ((origin == kOriginUser) || (origin == entry.get_origin())) {
+			syslog(LOG_INFO, "UnicastAddresses: Removing %s", entry.get_description(address).c_str());
+			mUnicastAddresses.erase(address);
+
+			if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
+				mPrimaryInterface->remove_address(&address, entry.get_prefix_len());
+			}
+
+			if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+				remove_address_on_ncp_and_update_prefixes(address, entry);
+			}
+		}
 	}
 }
+
+void
+NCPInstanceBase::add_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry)
+{
+	add_unicast_address_on_ncp(address, entry.get_prefix_len(),
+		boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding unicast address", NilReturn()));
+
+	// Update the prefix if entry is not from NCP and
+	// if address is not link-local and prefix does not
+	// match mesh-local prefix.
+
+	if (!entry.is_from_ncp()
+	   && !IN6_IS_ADDR_LINKLOCAL(&address)
+	   && (!buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix)) || (0 != memcmp(mNCPV6Prefix, &address, sizeof(mNCPV6Prefix))))
+	) {
+		struct in6_addr prefix = address;
+		uint8_t flags = OnMeshPrefixEntry::kFlagOnMesh
+		              | OnMeshPrefixEntry::kFlagPreferred;
+
+		if (mSetDefaultRouteForAutoAddedPrefix) {
+			flags |= OnMeshPrefixEntry::kFlagDefaultRoute;
+		}
+
+		if (mSetSLAACForAutoAddedPrefix) {
+			flags |= OnMeshPrefixEntry::kFlagSLAAC;
+		}
+
+		in6_addr_apply_mask(prefix, entry.get_prefix_len());
+		on_mesh_prefix_was_added(entry.get_origin(), address, entry.get_prefix_len(), flags);
+	}
+}
+
+void
+NCPInstanceBase::remove_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry)
+{
+	remove_unicast_address_on_ncp(address, entry.get_prefix_len());
+
+	if (!entry.is_from_ncp()
+	   && !IN6_IS_ADDR_LINKLOCAL(&address)
+	   && (!buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix)) || (0 != memcmp(mNCPV6Prefix, &address, sizeof(mNCPV6Prefix))))
+	) {
+		struct in6_addr prefix = address;
+		in6_addr_apply_mask(prefix, entry.get_prefix_len());
+		on_mesh_prefix_was_removed(entry.get_origin(), address, entry.get_prefix_len());
+	}
+}
+
+// ========================================================================
+// MARK: Multicast IPv6 Address Management
+
+void
+NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_addr &address)
+{
+	if (!mMulticastAddresses.count(address)) {
+		MulticastAddressEntry entry(origin);
+		mMulticastAddresses[address] = entry;
+		syslog(LOG_INFO, "MulticastAddresses: Adding %s", entry.get_description(address).c_str());
+
+		if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
+			mPrimaryInterface->join_multicast_address(&address);
+		}
+
+		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+			add_multicast_address_on_ncp(address);
+		}
+	}
+}
+
+void
+NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr &address)
+{
+	if (mMulticastAddresses.count(address)) {
+		MulticastAddressEntry entry = mMulticastAddresses[address];
+
+		// Allow remove if origin is user, or if it matches the
+		// originator of the entry (when it was previously added).
+
+		if ((origin == kOriginUser) || (origin == entry.get_origin())) {
+			syslog(LOG_INFO, "MulticastAddresses: Removing %s", entry.get_description(address).c_str());
+			mMulticastAddresses.erase(address);
+
+			if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
+				mPrimaryInterface->leave_multicast_address(&address);
+			}
+
+			if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+				remove_multicast_address_on_ncp(address);
+			}
+		}
+	}
+}
+
+// ========================================================================
+// MARK: On-Mesh Prefix Management
 
 bool
-NCPInstanceBase::is_address_known(const struct in6_addr &address)
-{
-	bool ret(mGlobalAddresses.count(address) != 0);
-
-	return ret;
-}
-
-bool
-NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len_in_bits)
+NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len)
 {
 	struct in6_addr masked_prefix(prefix);
 
-	in6_addr_apply_mask(masked_prefix, prefix_len_in_bits);
+	in6_addr_apply_mask(masked_prefix, prefix_len);
 
-	std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter;
-	for (iter = mGlobalAddresses.begin(); iter != mGlobalAddresses.end(); ++iter) {
+	std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
+	for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); ++iter) {
 		struct in6_addr iter_prefix(iter->first);
-		in6_addr_apply_mask(iter_prefix, prefix_len_in_bits);
+		in6_addr_apply_mask(iter_prefix, prefix_len);
 
 		if (iter_prefix == masked_prefix) {
 			if (address != NULL) {
@@ -165,52 +504,79 @@ NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struc
 }
 
 void
-NCPInstanceBase::address_was_added(const struct in6_addr& addr, int prefix_len)
+NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
+	uint8_t flags, bool stable, CallbackWithStatus cb)
 {
-	if (!mExternalNetifManagement) {
-		char addr_cstr[INET6_ADDRSTRLEN] = "::";
-		inet_ntop(
-			AF_INET6,
-			&addr,
-			addr_cstr,
-			sizeof(addr_cstr)
-		);
+	struct in6_addr prefix(prefix_address);
+	OnMeshPrefixEntry entry;
 
-		syslog(LOG_NOTICE, "\"%s\" was added to \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
+	in6_addr_apply_mask(prefix, prefix_len);
 
-		if (mGlobalAddresses.count(addr) == 0) {
-			const GlobalAddressEntry entry = {
-				UINT32_MAX,          // .mValidLifetime
-				TIME_DISTANT_FUTURE, // .mValidLifetimeExpiration
-				UINT32_MAX,          // .mPreferredLifetime
-				TIME_DISTANT_FUTURE, // .mPreferredLifetimeExpiration
-				0,                   // .mFlags
-				1,                   // .mUserAdded
-			};
+	if (!mOnMeshPrefixes.count(prefix)) {
+		entry = OnMeshPrefixEntry(origin, flags, prefix_len, stable);
 
-			mGlobalAddresses[addr] = entry;
+		mOnMeshPrefixes[prefix] = entry;
+		syslog(LOG_INFO, "OnMeshPrefixes: Adding %s", entry.get_description(prefix).c_str());
+
+		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+			add_on_mesh_prefix_on_ncp(prefix, prefix_len, flags, stable,
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding on-mesh prefix", cb));
+		} else {
+			cb(kWPANTUNDStatus_Ok);
 		}
+	} else {
+		entry = mOnMeshPrefixes[prefix];
+		cb(kWPANTUNDStatus_Already);
+	}
+
+	if (entry.is_on_mesh() && entry.is_slaac()
+		&& !lookup_address_for_prefix(NULL, prefix, prefix_len)
+	) {
+		struct in6_addr address = make_slaac_addr_from_eui64(prefix.s6_addr, mMACAddress);
+		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to NCP", in6_addr_to_string(address).c_str(), prefix_len);
+		add_unicast_address_on_ncp(address, prefix_len,
+			boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding SLAAC address", NilReturn()));
+		unicast_address_was_added(kOriginThreadNCP, address, prefix_len);
 	}
 }
 
 void
-NCPInstanceBase::address_was_removed(const struct in6_addr& addr, int prefix_len)
+NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
+	CallbackWithStatus cb)
 {
-	if (!mExternalNetifManagement) {
-		char addr_cstr[INET6_ADDRSTRLEN] = "::";
-		inet_ntop(
-			AF_INET6,
-			&addr,
-			addr_cstr,
-			sizeof(addr_cstr)
-		);
+	struct in6_addr prefix(prefix_address);
+	in6_addr_apply_mask(prefix, prefix_len);
 
-		if ((mGlobalAddresses.count(addr) != 0)
-		 && (mPrimaryInterface->is_online() || !mGlobalAddresses[addr].mUserAdded)
-		) {
-			mGlobalAddresses.erase(addr);
+	if (mOnMeshPrefixes.count(prefix)) {
+		OnMeshPrefixEntry entry = mOnMeshPrefixes[prefix];
+		uint8_t prefix_len = entry.get_prefix_len();
+
+		// Allow remove if request is coming from the originator of the prefix, or if
+		// the prefix was added from an added IPv6 address on interface and now
+		// user is removing it.
+
+		if ((entry.get_origin() == origin) || (entry.is_from_interface() && (origin == kOriginUser))) {
+			struct in6_addr address;
+
+			syslog(LOG_INFO, "OnMeshPrefixes: Removing %s", entry.get_description(prefix).c_str());
+			mOnMeshPrefixes.erase(prefix);
+
+			if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+				remove_on_mesh_prefix_on_ncp(prefix, entry.get_prefix_len(), entry.get_flags(), entry.is_stable(), cb);
+			} else {
+				cb(kWPANTUNDStatus_Ok);
+			}
+
+			if (lookup_address_for_prefix(&address, prefix, prefix_len)
+				&& entry.is_slaac() && entry.is_on_mesh()
+			) {
+				syslog(LOG_NOTICE, "Removing SLAAC address %s/%d from NCP", in6_addr_to_string(address).c_str(), prefix_len);
+				remove_unicast_address_on_ncp(address, prefix_len);
+			}
+		} else {
+			cb(kWPANTUNDStatus_InvalidForCurrentState);
 		}
-
-		syslog(LOG_NOTICE, "\"%s\" was removed from \"%s\"", addr_cstr, mPrimaryInterface->get_interface_name().c_str());
+	} else {
+		cb(kWPANTUNDStatus_Already);
 	}
 }

@@ -30,10 +30,10 @@ die() {
 
 	echo " ***************************** "
 
-	[ "$prog" == "autoreconf" ] && cat "$LOGFILE"
+	test "$prog" == "autoreconf" && cat "$LOGFILE"
 
 	echo ""
-	if [ $# -ge 1 ]
+	if test $# -ge 1
 	then echo " *** $prog failed: \"$*\""
 	else echo " *** $prog failed with error code $errcode"
 	fi
@@ -41,7 +41,7 @@ die() {
 	exit 1
 }
 
-while [ "$#" -ge 1 ]
+while test "$#" -ge 1
 do
 	case $1 in
 		--all)
@@ -67,7 +67,7 @@ do
 done
 
 
-if [ "$BOOTSTRAP_AUTOTOOLS" = 1 ]
+if test "$BOOTSTRAP_AUTOTOOLS" = 1
 then
 	cd "${SOURCE_DIR}"
 
@@ -92,7 +92,7 @@ then
 	}
 fi
 
-if [ "$BOOTSTRAP_ANDROID" = 1 ]
+if test "$BOOTSTRAP_ANDROID" = 1
 then
 	cd "${SOURCE_DIR}"
 

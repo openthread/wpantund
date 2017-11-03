@@ -107,14 +107,13 @@ then
 	then
 	AC_PROG_CXX()
 	AC_LANG_PUSH(C++)
-	FUZZ_CPPFLAGS=${FUZZ_CPPFLAGS--DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1}
 	AC_CHECK_LIB(Fuzzer,main,[],AC_MSG_ERROR([Cannot find libFuzzer]))
 	NL_CHECK_LINKER_ARG(
 		[-fsanitize=fuzzer,address],[NL_FUZZ_SOURCE],
 		[
 			FUZZ_CFLAGS=${FUZZ_CFLAGS--fsanitize=fuzzer,address}
-			FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS--fsanitize=fuzzer,address}
-			FUZZ_LDFLAGS=${FUZZ_LDFLAGS--fsanitize=fuzzer,address}
+			FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS-$FUZZ_CFLAGS}
+			FUZZ_LDFLAGS=${FUZZ_LDFLAGS-$FUZZ_CFLAGS}
 			FUZZ_LIBS=${FUZZ_LIBS-}
 		],
 		[
@@ -122,8 +121,8 @@ then
 				[-fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address -lFuzzer],[NL_FUZZ_SOURCE],
 				[
 					FUZZ_CFLAGS=${FUZZ_CFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
-					FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
-					FUZZ_LDFLAGS=${FUZZ_LDFLAGS--fsanitize-coverage=edge,indirect-calls,8bit-counters -fsanitize=address}
+					FUZZ_CXXFLAGS=${FUZZ_CXXFLAGS-$FUZZ_CFLAGS}
+					FUZZ_LDFLAGS=${FUZZ_LDFLAGS-$FUZZ_CFLAGS}
 					FUZZ_LIBS=${FUZZ_LIBS--lFuzzer}
 				],
 				AC_MSG_ERROR([Cannot figure out how to enable libFuzzer])
@@ -132,6 +131,7 @@ then
 	)
 	AC_LANG_POP(C++)
 	fi
+	FUZZ_CPPFLAGS="${FUZZ_CPPFLAGS} -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1"
 fi
 
 AC_SUBST(FUZZ_CFLAGS)

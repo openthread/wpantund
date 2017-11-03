@@ -329,7 +329,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 	if (event == EVENT_NCP_RESET) {
 		if (mDriverState == INITIALIZING) {
-			syslog(LOG_ERR, "Unexpected reset durring NCP initialization.");
+			syslog(LOG_ERR, "Unexpected reset during NCP initialization.");
 			mFailureCount++;
 			PT_INIT(&mSubPT);
 		} else if (mDriverState == INITIALIZING_WAITING_FOR_RESET) {
@@ -368,7 +368,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 	set_ncp_power(true);
 
-	clear_nonpermanent_global_addresses();
+	remove_ncp_originated_addresses();
 
 	mNCPVersionString = "";
 

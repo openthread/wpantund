@@ -31,7 +31,6 @@
 #include "SuperSocket.h"
 #include "socket-utils.h"
 #include "time-utils.h"
-#include <stdexcept>
 #include <syslog.h>
 #include <errno.h>
 #include <unistd.h>
@@ -49,7 +48,7 @@ SuperSocket::SuperSocket(const std::string& path)
 
 	if (0 > fd) {
 		syslog(LOG_ERR, "Unable to open socket with path <%s>, errno=%d (%s)", path.c_str(), errno, strerror(errno));
-		throw std::runtime_error("Unable to open socket");
+		throw SocketError("Unable to open socket");
 	}
 
 	// Lock the file descriptor if it is to a device. It does not make sense
@@ -62,7 +61,7 @@ SuperSocket::SuperSocket(const std::string& path)
 		// it just means this file descriptor doesn't support locking.
 		if (EWOULDBLOCK == errno) {
 			syslog(LOG_ERR, "Socket \"%s\" is locked by another process", path.c_str());
-			throw std::runtime_error("Socket is locked by another process");
+			throw SocketError("Socket is locked by another process");
 		}
 	}
 }
@@ -110,7 +109,7 @@ SuperSocket::reset()
 	if (mFDRead < 0) {
 		// Unable to reopen socket...!
 		syslog(LOG_ERR, "SuperSocket::Reset: Unable to reopen socket <%s>, errno=%d (%s)", mPath.c_str(), errno, strerror(errno));
-		throw std::runtime_error("Unable to reopen socket");
+		throw SocketError("Unable to reopen socket");
 	}
 
 	// Lock the file descriptor. It does not make sense to allow someone else
@@ -123,7 +122,7 @@ SuperSocket::reset()
 		// it just means this file descriptor doesn't support locking.
 		if (EWOULDBLOCK == errno) {
 			syslog(LOG_ERR, "Socket is locked by another process");
-			throw std::runtime_error("Socket is locked by another process");
+			throw SocketError("Socket is locked by another process");
 		}
 	}
 }

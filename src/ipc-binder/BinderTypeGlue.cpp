@@ -73,6 +73,8 @@ using ::boost::any;
 using ::std::map;
 using ::std::string;
 using ::std::vector;
+using ::nl::wpantund::NCPInterfaceBase::UnicastAddressEntry;
+using ::nl::wpantund::NCPInterfaceBase::OnMeshPrefixEntry;
 
 CallbackArguments::CallbackArguments():
 	mStatus(kWPANTUNDStatus_Ok), mDidFinish(false)
@@ -245,8 +247,8 @@ bail:
 void
 nl::wpantund::convert_any_to_link_addresses(std::vector<std::string>* link_addresses, const any& value)
 {
-	std::map<struct in6_addr, GlobalAddressEntry> address_table = boost::any_cast<std::map<struct in6_addr, GlobalAddressEntry>>(value);
-	std::map<struct in6_addr, GlobalAddressEntry>::const_iterator iter, end = address_table.end();
+	std::map<struct in6_addr, UnicastAddressEntry> address_table = boost::any_cast<std::map<struct in6_addr, UnicastAddressEntry>>(value);
+	std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter, end = address_table.end();
 
 	for (iter = address_table.begin(); iter != end; ++iter) {
 		link_addresses->push_back(in6_addr_to_string(iter->first) + "/64");
@@ -256,11 +258,11 @@ nl::wpantund::convert_any_to_link_addresses(std::vector<std::string>* link_addre
 void
 nl::wpantund::convert_any_to_link_networks(std::vector<IpPrefix>* link_addresses, const any& value)
 {
-	std::list<LinkRoute> route_table = boost::any_cast<std::list<LinkRoute>>(value);
-	std::list<LinkRoute>::const_iterator iter, end = route_table.end();
+	std::map<struct in6_addr, OnMeshPrefixEntry> route_table = boost::any_cast<std::map<struct in6_addr, OnMeshPrefixEntry>>(value);
+	std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter, end = route_table.end();
 
 	for (iter = route_table.begin(); iter != end; ++iter) {
-		link_addresses->push_back(IpPrefix(iter->mPrefix, iter->mPrefixLen));
+		link_addresses->push_back(IpPrefix(iter->first, iter->second.get_prefix_len()));
 	}
 }
 

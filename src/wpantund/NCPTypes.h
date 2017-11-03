@@ -28,7 +28,7 @@
 namespace nl {
 namespace wpantund {
 
-/** std::map<struct in6_addr, GlobalAddressEntry> */
+/** std::map<struct in6_addr, UnicastAddressEntry> */
 #define kWPANTUNDProperty_InternalAddressTable              "Internal:AddressTable"
 /** std::list<LinkRoute> */
 #define kWPANTUNDProperty_InternalRouteTable                "Internal:RouteTable"
@@ -71,26 +71,10 @@ enum GlobalAddressFlags {
 	GA_REQUEST_FAILED  = 0x80,
 };
 
-struct GlobalAddressEntry {
-	uint32_t mValidLifetime;
-	time_t mValidLifetimeExpiration;
-	uint32_t mPreferredLifetime;
-	time_t mPreferredLifetimeExpiration;
-	uint8_t mFlags;
-	uint8_t mUserAdded:1;
-
-	std::string get_description() const;
-};
-
-struct LinkRoute {
-	struct in6_addr mPrefix;
-	uint8_t mPrefixLen;
-};
-
 struct EnergyScanResultEntry
 {
 	uint8_t mChannel;
-	int8_t  mMaxRssi;
+	int8_t 	mMaxRssi;
 };
 
 std::string address_flags_to_string(uint8_t flags);

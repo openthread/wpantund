@@ -30,7 +30,9 @@ DISTCLEANFILES = .deps Makefile
 
 if BUILD_WPANCTL
 
+if !ENABLE_FUZZ_TARGETS
 bin_PROGRAMS = wpanctl
+endif
 
 wpanctl_SOURCES = \
 	wpanctl.c \

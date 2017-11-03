@@ -51,6 +51,16 @@ int_to_hex_digit(uint8_t x)
 	return "0123456789ABCDEF"[x & 0xF];
 }
 
+static inline bool
+strhasprefix(const char* str, const char* prefix) {
+	return strnequal(str, prefix, strlen(prefix));
+}
+
+static inline bool
+strcasehasprefix(const char* str, const char* prefix) {
+	return strncaseequal(str, prefix, strlen(prefix));
+}
+
 uint32_t strtomask_uint32(const char* in_string);
 
 extern bool strtobool(const char* string);

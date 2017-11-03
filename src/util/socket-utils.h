@@ -45,6 +45,7 @@ int lookup_sockaddr_from_host_and_port( struct sockaddr_in6* outaddr, const char
 int open_super_socket(const char* socket_name);
 int close_super_socket(int fd);
 int fd_has_error(int fd);
+int checkpoll(int fd, int poll_flags);
 
 enum {
 	SUPER_SOCKET_TYPE_UNKNOWN,

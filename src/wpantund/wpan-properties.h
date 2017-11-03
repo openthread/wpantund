@@ -48,6 +48,7 @@
 #define kWPANTUNDProperty_DaemonAutoFirmwareUpdate              "Daemon:AutoFirmwareUpdate"
 #define kWPANTUNDProperty_DaemonAutoDeepSleep                   "Daemon:AutoDeepSleep"
 #define kWPANTUNDProperty_DaemonFaultReason                     "Daemon:FaultReason"
+#define kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix   "Daemon:SetDefaultRouteForAutoAddedPrefix"
 
 #define kWPANTUNDProperty_NCPVersion                            "NCP:Version"
 #define kWPANTUNDProperty_NCPState                              "NCP:State"
@@ -84,6 +85,8 @@
 #define kWPANTUNDProperty_IPv6MeshLocalAddress                  "IPv6:MeshLocalAddress"
 #define kWPANTUNDProperty_IPv6MeshLocalPrefix                   "IPv6:MeshLocalPrefix"
 #define kWPANTUNDProperty_IPv6AllAddresses                      "IPv6:AllAddresses"
+#define kWPANTUNDProperty_IPv6MulticastAddresses                "IPv6:MulticastAddresses"
+#define kWPANTUNDProperty_IPv6SetSLAACForAutoAddedPrefix        "IPv6:SetSLAACForAutoAddedPrefix"
 
 #define kWPANTUNDProperty_ThreadRLOC16                          "Thread:RLOC16"
 #define kWPANTUNDProperty_ThreadRouterID                        "Thread:RouterID"
@@ -98,6 +101,8 @@
 #define kWPANTUNDProperty_ThreadChildTableAsValMap              "Thread:ChildTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNeighborTable                   "Thread:NeighborTable"
 #define kWPANTUNDProperty_ThreadNeighborTableAsValMap           "Thread:NeighborTable:AsValMap"
+#define kWPANTUNDProperty_ThreadRouterTable                     "Thread:RouterTable"
+#define kWPANTUNDProperty_ThreadRouterTableAsValMap             "Thread:RouterTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNetworkDataVersion              "Thread:NetworkDataVersion"
 #define kWPANTUNDProperty_ThreadStableNetworkData               "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion        "Thread:StableNetworkDataVersion"
@@ -106,6 +111,8 @@
 #define kWPANTUNDProperty_ThreadDeviceMode                      "Thread:DeviceMode"
 #define kWPANTUNDProperty_ThreadOffMeshRoutes                   "Thread:OffMeshRoutes"
 #define kWPANTUNDProperty_ThreadOnMeshPrefixes                  "Thread:OnMeshPrefixes"
+#define kWPANTUNDProperty_ThreadRouterRoleEnabled               "Thread:RouterRole:Enabled"
+#define kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses       "Thread:Config:FilterRLOCAddresses"
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadSteeringDataAddress         "OpenThread:SteeringData:Address"
