@@ -36,6 +36,7 @@
 #include "SpinelNCPTaskJoin.h"
 #include "SpinelNCPTaskGetNetworkTopology.h"
 #include "SpinelNCPTaskGetMsgBufferCounters.h"
+#include "SpinelNCPThreadDataset.h"
 #include "any-to.h"
 #include "spinel-extra.h"
 #include "IPv6Helpers.h"
@@ -303,6 +304,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
+		properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
+		properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -574,6 +577,145 @@ unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len,
 	return ret;
 }
 
+static int
+unpack_dataset(const uint8_t *data_in, spinel_size_t data_len, boost::any &value, bool as_val_map)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	ThreadDataset dataset;
+	ValueMap map;
+	std::list<std::string> list;
+
+	ret = dataset.set_from_spinel_frame(data_in, data_len);
+	require_noerr(ret, bail);
+
+	if (as_val_map) {
+		dataset.convert_to_valuemap(map);
+		value = map;
+	} else {
+		dataset.convert_to_string_list(list);
+		value = list;
+	}
+
+bail:
+	return ret;
+}
+
+void
+SpinelNCPInstance::get_dataset_command_help(std::list<std::string> &list)
+{
+	list.clear();
+	list.push_back("List of valid commands:");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_Erase "`: Erase the local Dataset (all fields are un-set)");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_GetActive "`: Get the NCP's Active Operational Dataset and populate the local Dataset from it");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SetActive "`: Set the NCP's Active Operational Dataset from the current local Dataset");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_MgmtSendActive "`: Send the current local Dataset to leader with a MGMT_SEND_ACTIVE meshcop command");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_GetPending "`: Get the NCP's Pending Operational Dataset and populate the local DataSet from it");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SetPending "`: Set the NCP's Pending Operational Dataset from the current local Dataset");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_MgmtSendPending "`: Send the current local Dataset to leader with MGMT_SEND_PENDING meshcop command");
+}
+
+int
+SpinelNCPInstance::unpack_and_set_local_dataset(const uint8_t *data_in, spinel_size_t data_len)
+{
+	return mLocalDataset.set_from_spinel_frame(data_in, data_len);
+}
+
+void
+SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackWithStatus cb)
+{
+	if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_Erase)) {
+		mLocalDataset.clear();
+		cb(kWPANTUNDStatus_Ok);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_GetActive)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_ACTIVE_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(&SpinelNCPInstance::unpack_and_set_local_dataset, this, _1, _2))
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SetActive)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_ACTIVE_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_MgmtSendActive)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_MGMT_ACTIVE_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_GetPending)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_PENDING_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(&SpinelNCPInstance::unpack_and_set_local_dataset, this, _1, _2))
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SetPending)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_PENDING_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_MgmtSendPending)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_MGMT_PENDING_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+ 	} else {
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
+}
+
 void
 SpinelNCPInstance::update_node_type(NodeType new_node_type)
 {
@@ -751,6 +893,46 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses)) {
 		cb(kWPANTUNDStatus_Ok, boost::any(mFilterRLOCAddresses));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadActiveDataset)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_ACTIVE_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, false))
+			.finish()
+		);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadActiveDatasetAsValMap)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_ACTIVE_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, true))
+			.finish()
+		);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadPendingDataset)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_PENDING_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, false))
+			.finish()
+		);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadPendingDatasetAsValMap)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_PENDING_DATASET)
+			)
+			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, true))
+			.finish()
+		);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_ML_PREFIX, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -978,6 +1160,121 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadSteeringDataAddress)) {
 		cb(0, boost::any(nl::Data(mSteeringDataAddress, sizeof(mSteeringDataAddress))));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetActiveTimestamp)) {
+		if (mLocalDataset.mActiveTimestamp.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mActiveTimestamp.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPendingTimestamp)) {
+		if (mLocalDataset.mPendingTimestamp.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mPendingTimestamp.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetMasterKey)) {
+		if (mLocalDataset.mMasterKey.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mMasterKey.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetNetworkName)) {
+		if (mLocalDataset.mNetworkName.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mNetworkName.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetExtendedPanId)) {
+		if (mLocalDataset.mExtendedPanId.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mExtendedPanId.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetMeshLocalPrefix)) {
+		if (mLocalDataset.mMeshLocalPrefix.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(in6_addr_to_string(mLocalDataset.mMeshLocalPrefix.get())));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetDelay)) {
+		if (mLocalDataset.mDelay.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mDelay.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPanId)) {
+		if (mLocalDataset.mPanId.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mPanId.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetChannel)) {
+		if (mLocalDataset.mChannel.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mChannel.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPSKc)) {
+		if (mLocalDataset.mPSKc.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mPSKc.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetChannelMaskPage0)) {
+		if (mLocalDataset.mChannelMaskPage0.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mChannelMaskPage0.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetSecPolicyKeyRotation)) {
+		if (mLocalDataset.mSecurityPolicy.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mSecurityPolicy.get().mKeyRotationTime));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetSecPolicyFlags)) {
+		if (mLocalDataset.mSecurityPolicy.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mSecurityPolicy.get().mFlags));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetRawTlvs)) {
+		if (mLocalDataset.mRawTlvs.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mRawTlvs.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if ((strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetAllFileds)) ||
+	           (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetAllFileds_AltString))
+	) {
+		std::list<std::string> list;
+		mLocalDataset.convert_to_string_list(list);
+		cb(kWPANTUNDStatus_Ok, boost::any(list));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetAllFiledsAsValMap)) {
+		ValueMap map;
+		mLocalDataset.convert_to_valuemap(map);
+		cb(kWPANTUNDStatus_Ok, boost::any(map));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetCommand)) {
+		std::list<std::string> help_string;
+		get_dataset_command_help(help_string);
+		cb(kWPANTUNDStatus_Ok, boost::any(help_string));
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
@@ -1546,6 +1843,87 @@ SpinelNCPInstance::property_set_value(
 			} else {
 				cb(kWPANTUNDStatus_InvalidArgument);
 			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetActiveTimestamp)) {
+			mLocalDataset.mActiveTimestamp = any_to_uint64(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPendingTimestamp)) {
+			mLocalDataset.mPendingTimestamp = any_to_uint64(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetMasterKey)) {
+			Data master_key = any_to_data(value);
+
+			if (master_key.size() == NCP_NETWORK_KEY_SIZE) {
+				mLocalDataset.mMasterKey = master_key;
+				cb(kWPANTUNDStatus_Ok);
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetNetworkName)) {
+			mLocalDataset.mNetworkName = any_to_string(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetExtendedPanId)) {
+			Data xpanid = any_to_data(value);
+
+			if (xpanid.size() == sizeof(spinel_net_xpanid_t)) {
+				mLocalDataset.mExtendedPanId = any_to_data(value);
+				cb(kWPANTUNDStatus_Ok);
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetMeshLocalPrefix)) {
+			mLocalDataset.mMeshLocalPrefix = any_to_ipv6(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetDelay)) {
+			mLocalDataset.mDelay = static_cast<uint32_t>(any_to_int(value));
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPanId)) {
+			mLocalDataset.mPanId = static_cast<uint16_t>(any_to_int(value));
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetChannel)) {
+			mLocalDataset.mChannel = static_cast<uint8_t>(any_to_int(value));
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetPSKc)) {
+			Data pskc = any_to_data(value);
+
+			if (pskc.size() <= sizeof(spinel_net_pskc_t)) {
+				mLocalDataset.mPSKc = any_to_data(value);
+				cb(kWPANTUNDStatus_Ok);
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetChannelMaskPage0)) {
+			mLocalDataset.mChannelMaskPage0 = static_cast<uint32_t>(any_to_int(value));
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetSecPolicyKeyRotation)) {
+			ThreadDataset::SecurityPolicy policy = mLocalDataset.mSecurityPolicy.get();
+			policy.mKeyRotationTime = static_cast<uint16_t>(any_to_int(value));
+			mLocalDataset.mSecurityPolicy = policy;
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetSecPolicyFlags)) {
+			ThreadDataset::SecurityPolicy policy = mLocalDataset.mSecurityPolicy.get();
+			policy.mFlags = static_cast<uint8_t>(any_to_int(value));
+			mLocalDataset.mSecurityPolicy = policy;
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetRawTlvs)) {
+			mLocalDataset.mRawTlvs = any_to_data(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetCommand)) {
+			perform_dataset_command(any_to_string(value), cb);
 
 		} else {
 			NCPInstanceBase::property_set_value(key, value, cb);

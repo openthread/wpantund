@@ -102,6 +102,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskSendCommand.h \
 	SpinelNCPTaskWake.cpp \
 	SpinelNCPTaskWake.h \
+	SpinelNCPThreadDataset.h \
+	SpinelNCPThreadDataset.cpp \
 	$(top_srcdir)/third_party/openthread/src/ncp/spinel.c \
 	spinel-extra.c \
 	spinel-extra.h \

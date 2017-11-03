@@ -32,6 +32,7 @@
 #include <ctype.h>
 #include <list>
 #include "string-utils.h"
+#include "IPv6Helpers.h"
 
 using namespace nl;
 
@@ -266,6 +267,10 @@ std::string any_to_string(const boost::any& value)
 		} else {
 			ret = "{ }";
 		}
+	} else if (value.type() == typeid(struct in6_addr)) {
+		struct in6_addr addr = boost::any_cast<struct in6_addr>(value);
+		ret = in6_addr_to_string(addr);
+
 	} else {
 		ret += "<";
 		ret += value.type().name();
