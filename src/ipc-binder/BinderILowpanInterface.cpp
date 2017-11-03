@@ -280,7 +280,7 @@ Status BinderILowpanInterface::fetchProperty(const std::string& key, boost::any&
 
 	{
 		BinderIPCServerLock lock(mIpcServer);
-		mInterface.get_property(key, CallbackCompletion(ret));
+		mInterface.property_get_value(key, CallbackCompletion(ret));
 	}
 
 	ret.wait();
@@ -313,7 +313,7 @@ Status BinderILowpanInterface::setProperty(const std::string& key, const boost::
 	CallbackArguments args;
 	{
 		BinderIPCServerLock lock(mIpcServer);
-		mInterface.set_property(key, value, CallbackCompletion(args));
+		mInterface.property_set_value(key, value, CallbackCompletion(args));
 	}
 	args.wait();
 	return args.get_android_status();
@@ -501,7 +501,7 @@ BinderILowpanInterface::getLinkAddresses(::std::vector<std::string>* _aidl_retur
 
 	{
 		BinderIPCServerLock lock(mIpcServer);
-		mInterface.get_property(key, CallbackCompletion(ret));
+		mInterface.property_get_value(key, CallbackCompletion(ret));
 	}
 
 	ret.wait();
@@ -531,7 +531,7 @@ BinderILowpanInterface::getLinkNetworks(::std::vector<::android::net::IpPrefix>*
 
 	{
 		BinderIPCServerLock lock(mIpcServer);
-		mInterface.get_property(key, CallbackCompletion(ret));
+		mInterface.property_get_value(key, CallbackCompletion(ret));
 	}
 
 	ret.wait();

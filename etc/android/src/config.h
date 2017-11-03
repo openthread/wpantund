@@ -55,6 +55,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* Define to 1 if you have the `Fuzzer' library (-lFuzzer). */
+/* #undef HAVE_LIBFUZZER */
+
 /* Define to 1 if we have libreadline or libedit */
 /* #undef HAVE_LIBREADLINE */
 
@@ -159,7 +162,7 @@
 #define PACKAGE_NAME "wpantund"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "wpantund 0.08.00"
+#define PACKAGE_STRING "wpantund 0.08.00d"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "wpantund"
@@ -168,7 +171,7 @@
 #define PACKAGE_URL "https://github.com/openthread/wpantund/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.08.00"
+#define PACKAGE_VERSION "0.08.00d"
 
 /* Define to the sub-directory for plugins. */
 #define PKGLIBEXECDIR "/system/bin/wpantund"
@@ -180,7 +183,7 @@
 #define SOCKET_UTILS_DEFAULT_SHELL "/system/bin/sh"
 
 /* Source version */
-#define SOURCE_VERSION "0.07.01rc1-30-g3b00424"
+#define SOURCE_VERSION "0.07.01-130-g2a5f9cd"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -195,7 +198,7 @@
 #define TUNNEL_TUNTAP_DEVICE "/dev/tun"
 
 /* Version number of package */
-#define VERSION "0.08.00"
+#define VERSION "0.08.00d"
 
 /* Set to the name of the default NCP plugin */
 #define WPANTUND_DEFAULT_NCP_PLUGIN "spinel"

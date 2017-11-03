@@ -70,6 +70,7 @@ LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskGetMsgBufferCounters.
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskGetNetworkTopology.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskJoin.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskLeave.cpp
+LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskPeek.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskScan.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskSendCommand.cpp
 LOCAL_SRC_FILES += ../../../../src/ncp-spinel/SpinelNCPTaskWake.cpp

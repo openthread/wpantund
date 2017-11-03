@@ -95,6 +95,7 @@ LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstance.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstanceBase-Addresses.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstanceBase-AsyncIO.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstanceBase-NetInterface.cpp
+LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstanceBase-Prefixes.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NCPInstanceBase.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NCPTypes.cpp
 LOCAL_SRC_FILES += ../../../../src/wpantund/NetworkRetain.cpp

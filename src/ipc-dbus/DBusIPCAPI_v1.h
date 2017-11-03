@@ -77,7 +77,7 @@ private:
 
 	// ------------------------------------------------------------------------
 
-	void property_changed(NCPControlInterface* interface,const std::string& key, const boost::any& value);
+	void property_changed(NCPControlInterface* interface, const std::string& key, const boost::any& value);
 	void received_beacon(NCPControlInterface* interface, const WPAN::NetworkInstance& network);
 	void received_energy_scan_result(NCPControlInterface* interface, const EnergyScanResultEntry& energy_scan_result);
 
@@ -143,12 +143,23 @@ private:
 		DBusMessage *        message
 	);
 
-	DBusHandlerResult interface_get_prop_handler(
+	DBusHandlerResult interface_prop_get_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
 
-	DBusHandlerResult interface_set_prop_handler(
+	DBusHandlerResult interface_prop_set_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_prop_insert_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+
+	DBusHandlerResult interface_prop_remove_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
@@ -159,6 +170,16 @@ private:
 	);
 
 	DBusHandlerResult interface_net_scan_stop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_discover_scan_start_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_discover_scan_stop_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
@@ -184,6 +205,21 @@ private:
 	);
 
 	DBusHandlerResult interface_mfg_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_joiner_add_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_peek_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_poke_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);

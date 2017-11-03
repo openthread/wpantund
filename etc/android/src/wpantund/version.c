@@ -22,5 +22,5 @@
 #endif
 #include "version.h"
 
-const char *internal_build_source_version = "0.07.01rc1-30-g3b00424";
+const char *internal_build_source_version = "0.07.01-130-g2a5f9cd-dirty";
 const char *internal_build_date = __DATE__ " " __TIME__;

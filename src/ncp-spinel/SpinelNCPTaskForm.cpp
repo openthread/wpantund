@@ -45,17 +45,25 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	}
 
 	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
-		uint16_t panid;
+		uint16_t panid = instance->mCurrentNetworkInstance.panid;
 
-		sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+		if (panid == 0xffff) {
+			sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+		}
 
 		mOptions[kWPANTUNDProperty_NetworkPANID] = panid;
 	}
 
 	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		uint64_t xpanid;
+		uint64_t xpanid = 0;
 
-		sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
+		if (instance->mXPANIDWasExplicitlySet) {
+			xpanid = instance->mCurrentNetworkInstance.get_xpanid_as_uint64();
+		}
+
+		if (xpanid == 0) {
+			sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
+		}
 
 		mOptions[kWPANTUNDProperty_NetworkXPANID] = xpanid;
 	}

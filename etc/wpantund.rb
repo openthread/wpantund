@@ -22,8 +22,8 @@ require 'formula'
 class Wpantund < Formula
   homepage 'https://github.com/openthread/wpantund'
   head 'https://github.com/openthread/wpantund.git', :using => :git, :branch => 'master'
-  url 'https://github.com/openthread/wpantund.git', :using => :git, :tag => 'full/0.07.00'
-  version '0.07.00'
+  url 'https://github.com/openthread/wpantund.git', :using => :git, :tag => 'full/0.07.01'
+  version '0.07.01'
 
   devel do
     url 'https://github.com/openthread/wpantund.git', :using => :git, :tag => 'full/latest-unstable'
