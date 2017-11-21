@@ -186,12 +186,9 @@ BinderILowpanInterface::attach(const LowpanProvision& provision)
 
 	require(ret.isOk(), bail);
 
-	// Always use modern behavior
-	value_map[kWPANTUNDUseModernBehavior] = true;
-
 	for (iter = value_map.begin(); iter != value_map.end(); ++iter) {
 		ret = setProperty(iter->first, iter->second);
-		require (ret.isOk(), bail);
+		require (ret.isOk() || iter->first=="Network:Type", bail);
 	}
 
 	ret = setProperty(kWPANTUNDProperty_InterfaceUp, cast_to_any(true));
@@ -425,11 +422,6 @@ Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanI
 	ret = fetchPropertyToBinderValue(kWPANTUNDProperty_NetworkName, value);
 	if (ret.isOk() && value.getString(&tmpString)) {
 		builder.setName(tmpString);
-	}
-
-	ret = fetchPropertyToBinderValue(kWPANTUNDProperty_NetworkType, value);
-	if (ret.isOk() && value.getString(&tmpString)) {
-		builder.setType(tmpString);
 	}
 
 	ret = fetchPropertyToBinderValue(kWPANTUNDProperty_NetworkXPANID, value);
