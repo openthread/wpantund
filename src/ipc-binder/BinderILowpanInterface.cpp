@@ -33,6 +33,7 @@
 #include "NCPControlInterface.h"
 #include "BinderILowpanInterface.h"
 #include "BinderIPCServer.h"
+#include <binder/PermissionCache.h>
 #include <boost/bind.hpp>
 #include <errno.h>
 #include <algorithm>
@@ -57,6 +58,101 @@ using ::android::binder::Map;
 using ::android::String16;
 using ::boost::any;
 using ::android::binder::Map;
+
+static constexpr const char* kPermAccessLowpanState = "android.permission.ACCESS_LOWPAN_STATE";
+static constexpr const char* kPermChangeLowpanState = "android.permission.CHANGE_LOWPAN_STATE";
+static constexpr const char* kPermReadLowpanCredential = "android.permission.READ_LOWPAN_CREDENTIAL";
+static constexpr const char* kPermIotAccessLowpanState = "com.google.android.things.permission.ACCESS_LOWPAN_STATE";
+static constexpr const char* kPermIotChangeLowpanState = "com.google.android.things.permission.CHANGE_LOWPAN_STATE";
+static constexpr const char* kPermIotReadLowpanCredential = "com.google.android.things.permission.READ_LOWPAN_CREDENTIAL";
+static constexpr const char* kPermAccessCoarseLocation = "android.permission.ACCESS_COARSE_LOCATION";
+
+static bool
+IsAndroidThings() {
+	// TODO: Figure out how to look this up with Package Manager...
+	return true;
+}
+
+static Status
+PermissionFailureStatus(const std::string& permission) {
+  return Status::fromExceptionCode(
+	  Status::EX_SECURITY,
+	  String8(("Caller lacks required permission " + permission).c_str()));
+}
+
+static Status
+CheckPermAccessLowpanState() {
+	if (PermissionCache::checkCallingPermission(String16(kPermAccessLowpanState)) == true) {
+		return Status::ok();
+	}
+	if (IsAndroidThings()) {
+		if (PermissionCache::checkCallingPermission(String16(kPermIotAccessLowpanState)) == true) {
+			return Status::ok();
+		}
+		return PermissionFailureStatus(kPermIotAccessLowpanState);
+	}
+	return PermissionFailureStatus(kPermAccessLowpanState);
+}
+
+static Status
+CheckPermChangeLowpanState() {
+	if (PermissionCache::checkCallingPermission(String16(kPermChangeLowpanState)) == true) {
+		return Status::ok();
+	}
+	if (IsAndroidThings()) {
+		if (PermissionCache::checkCallingPermission(String16(kPermIotChangeLowpanState)) == true) {
+			return Status::ok();
+		}
+		return PermissionFailureStatus(kPermIotChangeLowpanState);
+	}
+	return PermissionFailureStatus(kPermChangeLowpanState);
+}
+
+static Status
+CheckPermReadLowpanCredential() {
+	if (PermissionCache::checkCallingPermission(String16(kPermReadLowpanCredential)) == true) {
+		return Status::ok();
+	}
+	if (IsAndroidThings()) {
+		if (PermissionCache::checkCallingPermission(String16(kPermIotReadLowpanCredential)) == true) {
+			return Status::ok();
+		}
+		return PermissionFailureStatus(kPermIotReadLowpanCredential);
+	}
+	return PermissionFailureStatus(kPermReadLowpanCredential);
+}
+
+static Status
+CheckPermAccessCoarseLocation() {
+	if (PermissionCache::checkCallingPermission(String16(kPermAccessCoarseLocation)) == false) {
+		return PermissionFailureStatus(kPermAccessCoarseLocation);
+	}
+	return Status::ok();
+}
+
+#define CHECK_ACCESS_LOWPAN_STATE() do { \
+	Status __check_perm_status__ = CheckPermAccessLowpanState(); \
+	if (!__check_perm_status__.isOk()) { \
+		return __check_perm_status__; \
+	} } while(0)
+
+#define CHECK_CHANGE_LOWPAN_STATE() do { \
+	Status __check_perm_status__ = CheckPermChangeLowpanState(); \
+	if (!__check_perm_status__.isOk()) { \
+		return __check_perm_status__; \
+	} } while(0)
+
+#define CHECK_READ_LOWPAN_CREDENTIAL() do { \
+	Status __check_perm_status__ = CheckPermReadLowpanCredential(); \
+	if (!__check_perm_status__.isOk()) { \
+		return __check_perm_status__; \
+	} } while(0)
+
+#define CHECK_ACCESS_COARSE_LOCATION() do { \
+	Status __check_perm_status__ = CheckPermAccessCoarseLocation(); \
+	if (!__check_perm_status__.isOk()) { \
+		return __check_perm_status__; \
+	} } while(0)
 
 // Poison the use of boost::any_cast in this file.
 // It is too tempting and it will silently not work.
@@ -109,6 +205,8 @@ BinderILowpanInterface::binderDied(const wp<IBinder>& who)
 ::android::binder::Status
 BinderILowpanInterface::getName(::std::string* _aidl_return)
 {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	// This method doesn't require us to lock the main thread.
 	*_aidl_return = mInterface.get_name();
 	return Status::ok();
@@ -117,6 +215,8 @@ BinderILowpanInterface::getName(::std::string* _aidl_return)
 Status
 BinderILowpanInterface::join(const LowpanProvision& provision)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	Status ret;
 	CallbackArguments args;
 	ValueMap value_map;
@@ -147,6 +247,8 @@ bail:
 ::android::binder::Status
 BinderILowpanInterface::form(const LowpanProvision& provision)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	Status ret;
 	CallbackArguments args;
 	ValueMap value_map;
@@ -176,6 +278,8 @@ bail:
 ::android::binder::Status
 BinderILowpanInterface::attach(const LowpanProvision& provision)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	Status ret;
 	ValueMap value_map;
 	ValueMap::const_iterator iter;
@@ -200,6 +304,8 @@ bail:
 ::android::binder::Status
 BinderILowpanInterface::leave()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -215,6 +321,8 @@ BinderILowpanInterface::leave()
 ::android::binder::Status
 BinderILowpanInterface::reset()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -230,6 +338,8 @@ BinderILowpanInterface::reset()
 ::android::binder::Status
 BinderILowpanInterface::beginLowPower()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -245,6 +355,8 @@ BinderILowpanInterface::beginLowPower()
 ::android::binder::Status
 BinderILowpanInterface::onHostWake()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -260,6 +372,8 @@ BinderILowpanInterface::onHostWake()
 ::android::binder::Status
 BinderILowpanInterface::pollForData()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -317,21 +431,28 @@ Status BinderILowpanInterface::setProperty(const std::string& key, const boost::
 }
 
 Status BinderILowpanInterface::getSupportedChannels(::std::vector<::android::net::lowpan::LowpanChannelInfo>* _aidl_return) {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 Status BinderILowpanInterface::getSupportedNetworkTypes(::std::vector<::std::string>* _aidl_return) {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 Status BinderILowpanInterface::setEnabled(bool enabled) {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	return setProperty(kWPANTUNDProperty_DaemonEnabled, cast_to_any(enabled));
 }
 
 
 #define FETCH_AND_RETURN_PROPERTY_WITH_ACTION(key, getter, action) \
+	CHECK_ACCESS_LOWPAN_STATE(); \
 	Value value; \
 	Status ret; \
 	ret = fetchPropertyToBinderValue(key, value); \
@@ -385,6 +506,8 @@ Status BinderILowpanInterface::getExtendedAddress(::std::vector<uint8_t>* _aidl_
 }
 
 Status BinderILowpanInterface::getPartitionId(::std::string* _aidl_return) {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	// This is a stub.
 	// TODO: Plumb this into wpantund.
 	*_aidl_return = "";
@@ -392,6 +515,8 @@ Status BinderILowpanInterface::getPartitionId(::std::string* _aidl_return) {
 }
 
 Status BinderILowpanInterface::getState(::std::string* _aidl_return) {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	// We can't use the FETCH_AND_RETURN_PROPERTY macros here because
 	// we have to convert the wpantund-style status to a lowpan status.
 	boost::any x;
@@ -412,6 +537,8 @@ bail:
 }
 
 Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanIdentity* _aidl_return) {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	LowpanIdentity::Builder builder;
 	Status ret;
 	Value value;
@@ -445,6 +572,8 @@ Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanI
 }
 
 Status BinderILowpanInterface::getLowpanCredential(::android::net::lowpan::LowpanCredential* _aidl_return) {
+	CHECK_READ_LOWPAN_CREDENTIAL();
+
 	Status ret;
 	Value value;
 	std::vector<uint8_t> masterKey;
@@ -466,6 +595,8 @@ Status BinderILowpanInterface::getLowpanCredential(::android::net::lowpan::Lowpa
 ::android::binder::Status
 BinderILowpanInterface::addListener(const ::android::sp<::android::net::lowpan::ILowpanInterfaceListener>& listener)
 {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	{
 		std::lock_guard<std::mutex> guard(mMutex);
 		mListeners.insert(listener);
@@ -477,6 +608,8 @@ BinderILowpanInterface::addListener(const ::android::sp<::android::net::lowpan::
 ::android::binder::Status
 BinderILowpanInterface::removeListener(const ::android::sp<::android::net::lowpan::ILowpanInterfaceListener>& listener)
 {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	ILowpanInterface::asBinder(listener)->unlinkToDeath(this);
 	{
 		std::lock_guard<std::mutex> guard(mMutex);
@@ -488,6 +621,8 @@ BinderILowpanInterface::removeListener(const ::android::sp<::android::net::lowpa
 ::android::binder::Status
 BinderILowpanInterface::getLinkAddresses(::std::vector<std::string>* _aidl_return)
 {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	std::string key = kWPANTUNDProperty_InternalAddressTable;
 	CallbackArguments ret;
 
@@ -518,6 +653,8 @@ BinderILowpanInterface::getLinkAddresses(::std::vector<std::string>* _aidl_retur
 ::android::binder::Status
 BinderILowpanInterface::getLinkNetworks(::std::vector<::android::net::IpPrefix>* _aidl_return)
 {
+	CHECK_ACCESS_LOWPAN_STATE();
+
 	std::string key = kWPANTUNDProperty_InternalRouteTable;
 	CallbackArguments ret;
 
@@ -548,6 +685,8 @@ BinderILowpanInterface::getLinkNetworks(::std::vector<::android::net::IpPrefix>*
 ::android::binder::Status
 BinderILowpanInterface::addOnMeshPrefix(const ::android::net::IpPrefix& prefix, int32_t flags)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -555,6 +694,8 @@ BinderILowpanInterface::addOnMeshPrefix(const ::android::net::IpPrefix& prefix, 
 ::android::binder::Status
 BinderILowpanInterface::removeOnMeshPrefix(const ::android::net::IpPrefix& prefix)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -562,6 +703,8 @@ BinderILowpanInterface::removeOnMeshPrefix(const ::android::net::IpPrefix& prefi
 ::android::binder::Status
 BinderILowpanInterface::addExternalRoute(const ::android::net::IpPrefix& prefix, int32_t flags)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -569,6 +712,8 @@ BinderILowpanInterface::addExternalRoute(const ::android::net::IpPrefix& prefix,
 ::android::binder::Status
 BinderILowpanInterface::removeExternalRoute(const ::android::net::IpPrefix& prefix)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -586,6 +731,9 @@ BinderILowpanInterface::onNetScanFinished(int status)
 ::android::binder::Status
 BinderILowpanInterface::startNetScan(const ::android::binder::Map& properties, const ::android::sp<::android::net::lowpan::ILowpanNetScanCallback>& listener)
 {
+	CHECK_ACCESS_COARSE_LOCATION();
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	Status ret = Status::ok();
 	ValueMap value_map;
 
@@ -668,6 +816,8 @@ BinderILowpanInterface::startNetScan(const ::android::binder::Map& properties, c
 ::android::binder::Status
 BinderILowpanInterface::stopNetScan()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -693,6 +843,8 @@ BinderILowpanInterface::onEnergyScanFinished(int status)
 ::android::binder::Status
 BinderILowpanInterface::startEnergyScan(const ::android::binder::Map& properties, const ::android::sp<::android::net::lowpan::ILowpanEnergyScanCallback>& listener)
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	Status ret = Status::ok();
 	ValueMap value_map;
 
@@ -775,6 +927,8 @@ BinderILowpanInterface::startEnergyScan(const ::android::binder::Map& properties
 ::android::binder::Status
 BinderILowpanInterface::stopEnergyScan()
 {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	CallbackArguments ret;
 
 	{
@@ -788,16 +942,22 @@ BinderILowpanInterface::stopEnergyScan()
 }
 
 Status BinderILowpanInterface::startCommissioningSession(const ::android::net::lowpan::LowpanBeaconInfo& beaconInfo) {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 Status BinderILowpanInterface::closeCommissioningSession() {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 Status BinderILowpanInterface::sendToCommissioner(const ::std::vector<uint8_t>& packet) {
+	CHECK_CHANGE_LOWPAN_STATE();
+
 	// TODO: Plumb this into wpantund.
 	return wpantund_status_to_binder_status(kWPANTUNDStatus_FeatureNotImplemented);
 }
