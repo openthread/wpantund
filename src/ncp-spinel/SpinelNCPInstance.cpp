@@ -2467,6 +2467,13 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 				&& buffer_is_nonzero(addr->s6_addr, 8)
 				&& !IN6_IS_ADDR_UNSPECIFIED(addr)
 			) {
+				struct in6_addr addr_cpy;
+
+				// Some platforms have issues with alignment and the default copy
+				// constructor for in6_addr, so we just do a memcpy here instead.
+				memcpy(&addr_cpy, addr, sizeof(addr_cpy));
+				addr = &addr_cpy;
+
 				static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
 				if (IN6_IS_ADDR_LINKLOCAL(addr)) {
 					if (0 != memcmp(rloc_bytes, addr->s6_addr+8, sizeof(rloc_bytes))) {

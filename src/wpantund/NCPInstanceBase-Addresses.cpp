@@ -106,7 +106,7 @@ NCPInstanceBase::add_address(const struct in6_addr &address, uint8_t prefix, uin
 	if (mGlobalAddresses.count(address)) {
 		syslog(LOG_INFO, "Updating IPv6 Address...");
 		entry = mGlobalAddresses[address];
-	} else {
+	} else if (!mExternalNetifManagement) {
 		syslog(LOG_INFO, "Adding IPv6 Address...");
 		mPrimaryInterface->add_address(&address);
 	}
