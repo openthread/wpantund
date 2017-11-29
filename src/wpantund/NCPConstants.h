@@ -25,7 +25,7 @@
 #define NCP_TICKLE_TIMEOUT                      60 // seconds
 #define NCP_DEEP_SLEEP_TICKLE_TIMEOUT           (60*70) // Seventy minutes
 #define NCP_FORM_TIMEOUT                        60 // seconds
-#define NCP_JOIN_TIMEOUT                        30 // seconds
+#define NCP_JOIN_TIMEOUT                        60 // seconds
 
 #define NCP_NETWORK_KEY_SIZE                    16
 
