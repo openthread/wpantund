@@ -946,6 +946,9 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadDebugTestAssert)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_TEST_ASSERT, SPINEL_DATATYPE_BOOL_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadDebugTestWatchdog)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_DEBUG_TEST_WATCHDOG, SPINEL_DATATYPE_BOOL_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEnabled)) {
 		if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("MAC whitelist feature not supported by NCP")));
