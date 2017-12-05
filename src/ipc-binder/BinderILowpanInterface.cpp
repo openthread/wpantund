@@ -1002,8 +1002,21 @@ BinderILowpanInterface::onPropertyChanged(const std::string& key, const boost::a
 			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
 				(*iter)->onRoleChanged(x);
 			}
+		} else if (key == kWPANTUNDProperty_NetworkIsCommissioned) {
+			if (any_to_bool(value) == false) {
+				// Because we don't have this plumbed properly for MR1,
+				// we need to emit a dummy LowpanInterface to trigger
+				// the right things to happen higher up. <b/70232808>
+				::android::net::lowpan::LowpanIdentity::Builder builder;
+				LowpanIdentity x = builder.build();
+
+				for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
+					(*iter)->onLowpanIdentityChanged(x);
+				}
+			}
 		} else if (key == kWPANTUNDProperty_InternalNetworkId) {
 			LowpanIdentity x = any_to_lowpan_identity(value);
+
 			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
 				(*iter)->onLowpanIdentityChanged(x);
 			}

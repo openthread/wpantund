@@ -372,6 +372,8 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 	mNCPVersionString = "";
 
+	mRole = SPINEL_NET_ROLE_DETACHED;
+
 	mDriverState = INITIALIZING_WAITING_FOR_RESET;
 
 	if (mResetIsExpected) {
