@@ -66,6 +66,7 @@ static constexpr const char* kPermIotAccessLowpanState = "com.google.android.thi
 static constexpr const char* kPermIotChangeLowpanState = "com.google.android.things.permission.CHANGE_LOWPAN_STATE";
 static constexpr const char* kPermIotReadLowpanCredential = "com.google.android.things.permission.READ_LOWPAN_CREDENTIAL";
 static constexpr const char* kPermAccessCoarseLocation = "android.permission.ACCESS_COARSE_LOCATION";
+static constexpr const char* kPermAccessFineLocation = "android.permission.ACCESS_FINE_LOCATION";
 
 static bool
 IsAndroidThings() {
@@ -125,7 +126,9 @@ CheckPermReadLowpanCredential() {
 static Status
 CheckPermAccessCoarseLocation() {
 	if (PermissionCache::checkCallingPermission(String16(kPermAccessCoarseLocation)) == false) {
-		return PermissionFailureStatus(kPermAccessCoarseLocation);
+		if (PermissionCache::checkCallingPermission(String16(kPermAccessFineLocation)) == false) {
+			return PermissionFailureStatus(kPermAccessCoarseLocation);
+		}
 	}
 	return Status::ok();
 }
