@@ -251,8 +251,22 @@ private:
 	spinel_ssize_t mOutboundBufferLen;
 	spinel_ssize_t mOutboundBufferSent;
 	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_MAX_SIZE*2];
+	const uint8_t* mOutboundFrameDataPtr;
+	spinel_size_t mOutboundFrameDataLen;
 	spinel_ssize_t mOutboundBufferEscapedLen;
 	boost::function<void(int)> mOutboundCallback;
+
+#if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
+#if OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE
+#define OUTBOUND_BUFFER_SIZE OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE
+#else
+#define OUTBOUND_BUFFER_SIZE SPINEL_FRAME_MAX_SIZE
+#endif // OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE
+    uint8_t mInboundFrameTransformed[SPINEL_FRAME_MAX_SIZE];
+    size_t mInboundFrameTransformedLen;
+    uint8_t mOutboundFrameTransformed[OUTBOUND_BUFFER_SIZE];
+    size_t mOutboundFrameTransformedLen;
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
 	int mTXPower;
 	uint8_t mThreadMode;
