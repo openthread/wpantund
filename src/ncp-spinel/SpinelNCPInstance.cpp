@@ -2819,7 +2819,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			num_router++;
 			syslog(LOG_INFO, "[-NCP-] Router: %02d %s", num_router, it->get_as_string().c_str());
 		}
-		syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "es" : "");
+		syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "s" : "");
 
 
 	} else if (key == SPINEL_PROP_NET_PARTITION_ID) {
