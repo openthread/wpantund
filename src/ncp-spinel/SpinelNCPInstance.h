@@ -237,7 +237,7 @@ private:
 
 	uint8_t mLastHeader;
 
-	uint8_t mInboundFrame[SPINEL_FRAME_MAX_SIZE];
+	uint8_t mInboundFrame[SPINEL_FRAME_BUFFER_SIZE];
 	uint8_t mInboundHeader;
 	spinel_size_t mInboundFrameSize;
 	uint8_t mInboundFrameDataType;
@@ -246,11 +246,11 @@ private:
 	uint16_t mInboundFrameHDLCCRC;
 
 	uint8_t mOutboundBufferHeader[3];
-	uint8_t mOutboundBuffer[SPINEL_FRAME_MAX_SIZE];
+	uint8_t mOutboundBuffer[SPINEL_FRAME_BUFFER_SIZE];
 	uint8_t mOutboundBufferType;
 	spinel_ssize_t mOutboundBufferLen;
 	spinel_ssize_t mOutboundBufferSent;
-	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_MAX_SIZE*2];
+	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_BUFFER_SIZE*2];
 	spinel_ssize_t mOutboundBufferEscapedLen;
 	boost::function<void(int)> mOutboundCallback;
 

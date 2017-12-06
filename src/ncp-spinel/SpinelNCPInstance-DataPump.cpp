@@ -31,6 +31,10 @@
 #include <sys/file.h>
 #include "SuperSocket.h"
 
+#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#include "spinel_encrypter.hpp"
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+
 using namespace nl;
 using namespace wpantund;
 
@@ -299,6 +303,16 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			goto on_error;
 		}
 
+#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+		size_t dataLen = mInboundFrameSize;
+		if (!SpinelEncrypter::DecryptInbound(mInboundFrame, sizeof(mInboundFrame), &dataLen))
+		{
+			syslog(LOG_ERR, "[-NCP-]: Unable to transform inbound data");
+			break;
+		}
+		mInboundFrameSize = dataLen;
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+
 		if (spinel_datatype_unpack(mInboundFrame, mInboundFrameSize, "Ci", &mInboundHeader, &command_value) > 0) {
 			if ((mInboundHeader&SPINEL_HEADER_FLAG) != SPINEL_HEADER_FLAG) {
 				// Unrecognized frame.
@@ -505,6 +519,17 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			spinel_ssize_t i;
 			uint8_t byte;
 			uint16_t crc(0xFFFF);
+
+#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+			size_t dataLen = mOutboundBufferLen;
+			if (!SpinelEncrypter::EncryptOutbound(mOutboundBuffer, sizeof(mOutboundBuffer), &dataLen))
+			{
+				syslog(LOG_ERR, "[-NCP-]: Unable to transform outbound data");
+				break;
+			}
+			mOutboundBufferLen = dataLen;
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+
 			for (i = 0; i < mOutboundBufferLen; i++) {
 				byte = mOutboundBuffer[i];
 				crc = hdlc_crc16(crc, byte);
