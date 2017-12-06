@@ -56,7 +56,7 @@ public:
 		Factory& set_reply_format(const std::string& packed_format);
 		Factory& set_reply_unpacker(const ReplyUnpacker &reply_unpacker);
 
-		Factory& set_lock_property(int lock_property = SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
+		Factory& set_lock_property(int lock_property);
 
 		boost::shared_ptr<SpinelNCPTask> finish(void);
 

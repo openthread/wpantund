@@ -3102,7 +3102,6 @@ SpinelNCPInstance::add_unicast_address_on_ncp(const struct in6_addr &addr, uint8
 
 	syslog(LOG_NOTICE, "Adding address \"%s/%d\" to NCP", in6_addr_to_string(addr).c_str(), prefix_len);
 
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
 
 	factory.add_command(
@@ -3131,7 +3130,6 @@ SpinelNCPInstance::remove_unicast_address_on_ncp(const struct in6_addr& addr, ui
 
 	syslog(LOG_NOTICE, "Removing address \"%s/%d\" from NCP", in6_addr_to_string(addr).c_str(), prefix_len);
 
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
 
 	factory.add_command(
@@ -3156,7 +3154,6 @@ SpinelNCPInstance::add_multicast_address_on_ncp(const struct in6_addr &addr, Cal
 
 	syslog(LOG_NOTICE, "Adding multicast address \"%s\" to NCP", in6_addr_to_string(addr).c_str());
 
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
 
 	factory.add_command(
@@ -3179,7 +3176,6 @@ SpinelNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, 
 
 	syslog(LOG_NOTICE, "Removing multicast address \"%s\" from NCP", in6_addr_to_string(addr).c_str());
 
-	factory.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE);
 	factory.set_callback(cb);
 
 	factory.add_command(
