@@ -304,6 +304,7 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		}
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
+        mInboundFrameTransformedLen = sizeof(mInboundFrameTransformed);
         if (!SpinelTransformer::TransformInbound(mInboundFrame, mInboundFrameSize, mInboundFrameTransformed, &mInboundFrameTransformedLen))
         {
 			syslog(LOG_ERR, "[-NCP-]: Unable to transform inbound data");
@@ -525,6 +526,7 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			uint16_t crc(0xFFFF);
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
+            mOutboundFrameTransformedLen = sizeof(mOutboundFrameTransformed);
             if (!SpinelTransformer::TransformOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundFrameTransformed, &mOutboundFrameTransformedLen))
 			{
 				syslog(LOG_ERR, "[-NCP-]: Unable to transform outbound data");
