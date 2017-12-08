@@ -987,7 +987,6 @@ SpinelNCPInstance::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRole)) {
 		cb(0, boost::any(spinel_role_to_string(mRole)));
-		mRole = SPINEL_NET_ROLE_DETACHED;
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
