@@ -99,6 +99,7 @@ SuperSocket::reset()
 {
 	syslog(LOG_DEBUG, "SuperSocket::reset()");
 
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	SuperSocket::hibernate();
 
 	// Sleep for 200ms to wait for things to settle down.
@@ -125,4 +126,5 @@ SuperSocket::reset()
 			throw SocketError("Socket is locked by another process");
 		}
 	}
+#endif // if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 }

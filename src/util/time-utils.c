@@ -29,6 +29,14 @@
 static uint64_t sFuzzCms = 0;
 
 void
+fuzz_set_cms(cms_t value) {
+#if DEBUG
+	fprintf(stderr, "fuzz_set_cms: %dms\n", (int)increment);
+#endif
+	sFuzzCms = value;
+}
+
+void
 fuzz_ff_cms(cms_t increment) {
 #if DEBUG
 	fprintf(stderr, "fuzz_ff_cms: fast forward %dms\n", (int)increment);
