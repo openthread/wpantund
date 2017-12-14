@@ -535,6 +535,8 @@ private:
 	bool mWasBusy;
 	cms_t mLastChangedBusy;
 
+	bool mNCPIsMisbehaving;
+
 	FirmwareUpgrade mFirmwareUpgrade;
 
 	NetworkRetain mNetworkRetain;
