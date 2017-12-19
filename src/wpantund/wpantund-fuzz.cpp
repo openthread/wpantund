@@ -228,6 +228,8 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 		signal(SIGPIPE, SIG_IGN);
 	}
 
+	fuzz_set_cms(0);
+
 	if (size >= 1) {
 		char type = *data++;
 		size--;

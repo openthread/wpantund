@@ -1573,8 +1573,10 @@ StatCollector::property_set_value(const std::string& key, const boost::any& valu
 		}
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_StatLinkQualityPeriod)) {
 		int period_in_sec = any_to_int(value);
-		if (period_in_sec >= 0) {
+		if ((period_in_sec >= 0) && (period_in_sec <= STAT_COLLECTOR_AUTO_LOG_MAX_PERIOD)) {
 			update_link_stat_timer(period_in_sec * Timer::kOneSecond);
+		} else {
+			status = kWPANTUNDStatus_InvalidArgument;
 		}
 	} else {
 		StringList output;

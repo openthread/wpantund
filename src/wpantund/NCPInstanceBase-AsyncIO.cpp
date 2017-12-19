@@ -157,6 +157,10 @@ NCPInstanceBase::get_ms_to_next_event(void)
 		ret = 0;
 	}
 
+	if (mNCPIsMisbehaving) {
+		ret = 0;
+	}
+
 	if (ret < 0) {
 		ret = 0;
 	}
@@ -205,6 +209,20 @@ void
 NCPInstanceBase::process(void)
 {
 	int ret = 0;
+
+	if (mNCPIsMisbehaving) {
+		mFailureCount++;
+		hard_reset_ncp();
+		reset_tasks();
+		reinitialize_ncp();
+
+		if (mFailureCount >= mFailureThreshold) {
+			change_ncp_state(FAULT);
+		}
+
+		mNCPIsMisbehaving = false;
+		goto socket_failure;
+	}
 
 	mRunawayResetBackoffManager.update();
 

@@ -79,6 +79,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSetSLAACForAutoAddedPrefix = false;
 	mTerminateOnFault = false;
 	mWasBusy = false;
+	mNCPIsMisbehaving = false;
 
 	memset(mNCPMeshLocalAddress.s6_addr, 0, sizeof(mNCPMeshLocalAddress));
 	memset(mNCPLinkLocalAddress.s6_addr, 0, sizeof(mNCPLinkLocalAddress));
@@ -1001,14 +1002,7 @@ NCPInstanceBase::update_busy_indication(void)
 void
 NCPInstanceBase::ncp_is_misbehaving(void)
 {
-	mFailureCount++;
-	hard_reset_ncp();
-	reset_tasks();
-	reinitialize_ncp();
-
-	if (mFailureCount >= mFailureThreshold) {
-		change_ncp_state(FAULT);
-	}
+	mNCPIsMisbehaving = true;
 }
 
 // ----------------------------------------------------------------------------

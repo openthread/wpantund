@@ -326,7 +326,6 @@ SpinelNCPControlInterface::joiner_add(
 				joiner_timeout,
 				addr
 			))
-			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 			.finish()
 		);
 	}
@@ -342,7 +341,6 @@ SpinelNCPControlInterface::joiner_add(
 				psk,
 				joiner_timeout
 			))
-			.set_lock_property(SPINEL_PROP_THREAD_ALLOW_LOCAL_NET_DATA_CHANGE)
 			.finish()
 		);
 	}
