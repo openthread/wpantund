@@ -299,6 +299,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
+		properties.insert(kWPANTUNDProperty_ThreadChildTableAddresses);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
@@ -1094,6 +1095,16 @@ SpinelNCPInstance::property_get_value(
 				cb,
 				SpinelNCPTaskGetNetworkTopology::kChildTable,
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+			)
+		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTableAddresses)) {
+		start_new_task(boost::shared_ptr<SpinelNCPTask>(
+			new SpinelNCPTaskGetNetworkTopology(
+				this,
+				cb,
+				SpinelNCPTaskGetNetworkTopology::kChildTableAddresses,
+				SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
 			)
 		));
 
