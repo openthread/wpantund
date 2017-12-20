@@ -96,6 +96,7 @@
 #define kWPANTUNDProperty_ThreadNetworkData                     "Thread:NetworkData"
 #define kWPANTUNDProperty_ThreadChildTable                      "Thread:ChildTable"
 #define kWPANTUNDProperty_ThreadChildTableAsValMap              "Thread:ChildTable:AsValMap"
+#define kWPANTUNDProperty_ThreadChildTableAddresses             "Thread:ChildTable:Addresses"
 #define kWPANTUNDProperty_ThreadNeighborTable                   "Thread:NeighborTable"
 #define kWPANTUNDProperty_ThreadNeighborTableAsValMap           "Thread:NeighborTable:AsValMap"
 #define kWPANTUNDProperty_ThreadRouterTable                     "Thread:RouterTable"
