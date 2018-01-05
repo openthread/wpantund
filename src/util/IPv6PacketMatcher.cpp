@@ -454,7 +454,9 @@ IPv6PacketMatcher::match_inbound(const uint8_t* packet) const
 void
 nl::dump_outbound_ipv6_packet(const uint8_t* packet, ssize_t len, const char* extra, bool dropped)
 {
-	if(!(setlogmask(0)&LOG_MASK(LOG_INFO))) {
+	int logmask = setlogmask(0);
+	setlogmask(logmask);
+	if(!(logmask&LOG_MASK(LOG_INFO))) {
 		return;
 	}
 	char to_addr_cstr[INET6_ADDRSTRLEN] = "::";
@@ -504,7 +506,9 @@ nl::dump_outbound_ipv6_packet(const uint8_t* packet, ssize_t len, const char* ex
 void
 nl::dump_inbound_ipv6_packet(const uint8_t* packet, ssize_t len, const char* extra, bool dropped)
 {
-	if(!(setlogmask(0)&LOG_MASK(LOG_INFO))) {
+	int logmask = setlogmask(0);
+	setlogmask(logmask);
+	if(!(logmask&LOG_MASK(LOG_INFO))) {
 		return;
 	}
 	char to_addr_cstr[INET6_ADDRSTRLEN] = "::";

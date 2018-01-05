@@ -40,6 +40,13 @@ fd_set_merge(const fd_set *src, fd_set *dest, int fd_count)
 	const int32_t* src_data = (const int32_t*)src->fds_bits;
 	int32_t* dest_data = (int32_t*)dest->fds_bits;
 
+	assert(fd_count >= 0);
+	assert(fd_count <= FD_SETSIZE);
+
+	if (fd_count > FD_SETSIZE) {
+		fd_count = FD_SETSIZE;
+	}
+
 	for (i = (fd_count+31)/32; i > 0 ; --i) {
 		*dest_data++ |= *src_data++;
 	}
@@ -96,7 +103,7 @@ _nlpt_cleanup_all(struct nlpt* nlpt)
 void
 _nlpt_cleanup_read_fd_source(struct nlpt* nlpt, int fd)
 {
-	if (fd >= 0) {
+	if ((fd >= 0) && (fd < FD_SETSIZE)) {
 		FD_CLR(fd, &nlpt->read_fds);
 		FD_CLR(fd, &nlpt->error_fds);
 	}
@@ -105,7 +112,7 @@ _nlpt_cleanup_read_fd_source(struct nlpt* nlpt, int fd)
 void
 _nlpt_cleanup_write_fd_source(struct nlpt* nlpt, int fd)
 {
-	if (fd >= 0) {
+	if ((fd >= 0) && (fd < FD_SETSIZE)) {
 		FD_CLR(fd, &nlpt->write_fds);
 		FD_CLR(fd, &nlpt->error_fds);
 	}
@@ -114,7 +121,7 @@ _nlpt_cleanup_write_fd_source(struct nlpt* nlpt, int fd)
 void
 _nlpt_setup_read_fd_source(struct nlpt* nlpt, int fd)
 {
-	if (fd >= 0) {
+	if ((fd >= 0) && (fd < FD_SETSIZE)) {
 		if (fd > nlpt->max_fd) {
 			nlpt->max_fd = fd;
 		}
@@ -126,7 +133,7 @@ _nlpt_setup_read_fd_source(struct nlpt* nlpt, int fd)
 void
 _nlpt_setup_write_fd_source(struct nlpt* nlpt, int fd)
 {
-	if (fd >= 0) {
+	if ((fd >= 0) && (fd < FD_SETSIZE)) {
 		if (fd > nlpt->max_fd) {
 			nlpt->max_fd = fd;
 		}

@@ -322,9 +322,6 @@ set_config_param(
 		ret = 0;
 		require(9600 <= baud, bail);
 		gSocketWrapperBaud = baud;
-	} else if (strcaseequal(key, kWPANTUNDProperty_DaemonSyslogMask)) {
-		setlogmask(strtologmask(value, setlogmask(0)));
-		ret = 0;
 #if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 #if HAVE_PWD_H
 	} else if (strcaseequal(key, kWPANTUNDProperty_ConfigDaemonPrivDropToUser)) {
@@ -335,6 +332,9 @@ set_config_param(
 		}
 		ret = 0;
 #endif // if HAVE_PWD_H
+	} else if (strcaseequal(key, kWPANTUNDProperty_DaemonSyslogMask)) {
+		setlogmask(strtologmask(value, setlogmask(0)));
+		ret = 0;
 	} else if (strcaseequal(key, kWPANTUNDProperty_ConfigDaemonChroot)) {
 		if (value[0] == 0) {
 			gChroot = NULL;
@@ -481,8 +481,10 @@ syslog_dump_select_info(int loglevel, fd_set *read_fd_set, fd_set *write_fd_set,
 		syslog(l, "SELECT:     %s: %s", #x, buffer.c_str()); \
 	} while (0)
 
+	int logmask = setlogmask(0);
+	setlogmask(logmask);
 	// Check the log level preemptively to avoid wasted CPU.
-	if((setlogmask(0)&LOG_MASK(loglevel))) {
+	if((logmask&LOG_MASK(loglevel))) {
 		syslog(loglevel, "SELECT: fd_count=%d cms_timeout=%d", fd_count, timeout);
 
 		DUMP_FD_SET(loglevel, read_fd_set);
