@@ -35,6 +35,45 @@
 #define HDLC_BYTE_SPECIAL          0xF8
 #define HDLC_ESCAPE_XFORM          0x20
 
+void
+fuzz_trap() {
+	sleep(1);
+	abort();
+}
+
+int
+count_open_fds()
+{
+	int i;
+	int count = 0;
+
+	for (i = 0; i < FD_SETSIZE; i++) {
+		int fd = dup(i);
+
+		if (fd >= 0) {
+			count++;
+			close(fd);
+		}
+	}
+
+	return count;
+}
+
+void
+assert_no_fd_leaks()
+{
+	static int count_first = -1;
+	int count = count_open_fds();
+
+	if (count_first == -1) {
+		count_first = count;
+
+	} else if (count > count_first + 16) {
+		syslog(LOG_ALERT, "File descriptor leak detected");
+		fuzz_trap();
+	}
+}
+
 int
 ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 	std::map<std::string, std::string> settings;
@@ -62,12 +101,9 @@ ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 		}
 	}
 
-	return 0;
-}
+	assert_no_fd_leaks();
 
-void fuzz_trap() {
-	sleep(1);
-	abort();
+	return 0;
 }
 
 #define FUZZ_SPECIAL_WAIT_FOR_FRAME			0
@@ -86,7 +122,7 @@ NCPInputFuzzTarget(const uint8_t *data, size_t size) {
 	gRet = 0;
 
 	if (socketpair(PF_UNIX, SOCK_STREAM, 0, fd) < 0) {
-		syslog(LOG_ERR, "Call to socketpair() failed: %s (%d)", strerror(errno), errno);
+		syslog(LOG_ALERT, "Call to socketpair() failed: %s (%d)", strerror(errno), errno);
 		fuzz_trap();
 	}
 
@@ -94,7 +130,7 @@ NCPInputFuzzTarget(const uint8_t *data, size_t size) {
 		char *fd_string = NULL;
 
 		if (0 >= asprintf(&fd_string, "fd:%d", fd[1])) {
-			syslog(LOG_ERR, "Call to asprintf() failed: %s (%d)", strerror(errno), errno);
+			syslog(LOG_ALERT, "Call to asprintf() failed: %s (%d)", strerror(errno), errno);
 			fuzz_trap();
 		}
 
@@ -106,12 +142,6 @@ NCPInputFuzzTarget(const uint8_t *data, size_t size) {
 	}
 
 	try {
-
-#if VERBOSE_DEBUG
-	settings[kWPANTUNDProperty_DaemonSyslogMask] = "all";
-#elif DEBUG
-	settings[kWPANTUNDProperty_DaemonSyslogMask] = "all -debug";
-#endif
 
 	MainLoop main_loop(settings);
 
@@ -189,12 +219,12 @@ NCPInputFuzzTarget(const uint8_t *data, size_t size) {
 	main_loop.process();
 
 	if (size != 0) {
-		syslog(LOG_ERR, "Did not consume all data");
+		syslog(LOG_ALERT, "Did not consume all data");
 		fuzz_trap();
 	}
 
 	if (gRet != 0) {
-		syslog(LOG_ERR, "gRet = %d", gRet);
+		syslog(LOG_ALERT, "gRet = %d", gRet);
 		fuzz_trap();
 	}
 
@@ -205,6 +235,9 @@ NCPInputFuzzTarget(const uint8_t *data, size_t size) {
 bail:
 	close(fd[0]);
 	close(fd[1]);
+
+	assert_no_fd_leaks();
+
 	return 0;
 }
 
@@ -222,9 +255,14 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 	if (!did_init) {
 		did_init = true;
 
+		openlog("wpantund-fuzz", LOG_PERROR, LOG_USER);
+
 #if DEBUG
-		openlog("wpantund-fuzz", LOG_PERROR, LOG_DAEMON);
+		setlogmask(LOG_UPTO(LOG_INFO));
+#else
+		setlogmask(LOG_UPTO(LOG_ALERT));
 #endif
+
 		signal(SIGPIPE, SIG_IGN);
 	}
 

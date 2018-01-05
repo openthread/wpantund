@@ -2546,7 +2546,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_NET_SAVED) {
-		bool is_commissioned;
+		bool is_commissioned = false;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
 		syslog(LOG_INFO, "[-NCP-]: NetSaved (NCP is commissioned?) \"%s\" ", is_commissioned ? "yes" : "no");
 		mIsCommissioned = is_commissioned;
@@ -2557,7 +2557,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_NET_STACK_UP) {
-		bool is_stack_up;
+		bool is_stack_up = false;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
 		syslog(LOG_INFO, "[-NCP-]: Stack is %sup", is_stack_up ? "" : "not ");
 
@@ -2572,7 +2572,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_NET_IF_UP) {
-		bool is_if_up;
+		bool is_if_up = false;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_if_up);
 		syslog(LOG_INFO, "[-NCP-]: Interface is %sup", is_if_up ? "" : "not ");
 
