@@ -52,26 +52,14 @@ count_open_fds()
 
 		if (fd >= 0) {
 			count++;
-			close(fd);
+			if (close(fd) < 0) {
+				perror("count_open_fds");
+				fuzz_trap();
+			}
 		}
 	}
 
 	return count;
-}
-
-void
-assert_no_fd_leaks()
-{
-	static int count_first = -1;
-	int count = count_open_fds();
-
-	if (count_first == -1) {
-		count_first = count;
-
-	} else if (count > count_first + 16) {
-		syslog(LOG_ALERT, "File descriptor leak detected");
-		fuzz_trap();
-	}
 }
 
 int
@@ -100,8 +88,6 @@ ConfigFileFuzzTarget(const uint8_t *data, size_t size) {
 			// Ignore invalid argument errors
 		}
 	}
-
-	assert_no_fd_leaks();
 
 	return 0;
 }
@@ -236,8 +222,6 @@ bail:
 	close(fd[0]);
 	close(fd[1]);
 
-	assert_no_fd_leaks();
-
 	return 0;
 }
 
@@ -255,7 +239,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 	if (!did_init) {
 		did_init = true;
 
-		openlog("wpantund-fuzz", LOG_PERROR, LOG_USER);
+		openlog("wpantund-fuzz", LOG_PERROR|LOG_NDELAY, LOG_USER);
 
 #if DEBUG
 		setlogmask(LOG_UPTO(LOG_INFO));
@@ -267,6 +251,20 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 	}
 
 	fuzz_set_cms(0);
+
+	static int fd_count_before = -1;
+	static int fd_count_after = -1;
+
+	// Count the number of FDs before starting fuzzing.
+	fd_count_before = count_open_fds();
+	if ((fd_count_after >= 0) && fd_count_before != fd_count_after) {
+		syslog(LOG_ALERT, "NOTE: Fuzzer appears to have changed the number of open FDs: (%d != %d)", fd_count_after, fd_count_before);
+
+		if (fd_count_before > 10) {
+			syslog(LOG_ALERT, "Too many file descriptors opened by fuzzer: %d (max %d)", fd_count_before, 10);
+			fuzz_trap();
+		}
+	}
 
 	if (size >= 1) {
 		char type = *data++;
@@ -287,6 +285,13 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 		default:
 			break;
 		}
+	}
+
+	// Count the number of FDs after starting fuzzing.
+	fd_count_after = count_open_fds();
+	if (fd_count_before != fd_count_after) {
+		syslog(LOG_ALERT, "File descriptor count changed durring run! before=%d after=%d", fd_count_before, fd_count_after);
+		fuzz_trap();
 	}
 
 	return 0;
