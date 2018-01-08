@@ -105,7 +105,7 @@ public:
 
 		void clear(void);
 		std::string get_as_string(void);
-		ValueMap get_as_valuemap(void);
+		ValueMap get_as_valuemap(void) const;
 	};
 
 	typedef std::list<TableEntry> Table;

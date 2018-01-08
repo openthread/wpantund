@@ -669,7 +669,7 @@ bail:
 }
 
 ValueMap
-SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void)
+SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 {
 	ValueMap entryMap;
 	uint64_t addr;
