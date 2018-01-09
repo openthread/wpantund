@@ -23,6 +23,7 @@
 #include <list>
 #include <string>
 #include "ValueMap.h"
+#include "IPv6Helpers.h"
 #include "SpinelNCPTask.h"
 #include "SpinelNCPInstance.h"
 
@@ -39,6 +40,7 @@ public:
 	enum Type
 	{
 		kChildTable,                   // Get the child table
+		kChildTableAddresses,          // Get the child table addresses (including registered IPv6 addresses)
 		kNeighborTable,                // Get the neighbor table
 		kRouterTable,                  // Get the router table
 	};
@@ -57,15 +59,18 @@ public:
 		kThreadMode_FullNetworkData     = (1 << 0),
 	};
 
-	// This struct defines a common table entry to store either a child info or a neighbor info
+	// This struct defines a common table entry to store a child info (or child addresses info), a neighbor info, or a
+	// router info.
 	struct TableEntry
 	{
-		Type      mType;     // Indicates if this entry is for a child or a neighbor
+		Type      mType;
 
-		// Common fields for child info, neighbor info, and router info:
+		// Common fields for all types
 		uint8_t   mExtAddress[8];
-		uint32_t  mAge;
 		uint16_t  mRloc16;
+
+		// Common fields for child info, neighbor info, and router info
+		uint32_t  mAge;
 		uint8_t   mLinkQualityIn;
 
 		// Common fields for both child info and neighbor info
@@ -92,8 +97,14 @@ public:
 		uint8_t   mLinkQualityOut;
 		bool      mLinkEstablished : 1;
 
+		// Child info addresses only
+		std::list<struct in6_addr> mIPv6Addresses;
+
 	public:
-		std::string get_as_string(void) const;
+		TableEntry(void);
+
+		void clear(void);
+		std::string get_as_string(void);
 		ValueMap get_as_valuemap(void) const;
 	};
 
@@ -108,22 +119,21 @@ public:
 	);
 	virtual int vprocess_event(int event, va_list args);
 
-	// Parses the spinel child table property and updates the child_table
-	static int parse_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
-
-	// Parses a single child entry and updates the child_info
+	// Parse a single child/neighbor/router entry and update the passed-in `TableEntry`
 	static int parse_child_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& child_info);
-
-	// Parses the spinel neighbor table property and updates the neighbor_table
-	static int parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
-
-	// Parses the spinel router table property and updates the router_table
-	static int parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table);
-
-	// Parses a single router entry and updates the router_info
+	static int parse_child_addresses_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& child_addr_info);
+	static int parse_neighbor_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& neighbor_info);
 	static int parse_router_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& router_info);
 
+	// Parse the spinel child/neighbor/router table property and updates the passed-in `Table`
+
+	static int parse_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
+	static int parse_child_addresses_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_addr_table);
+	static int parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
+	static int parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table);
+
 private:
+	static int parse_table(Type type, const uint8_t *data_in, spinel_size_t data_len, Table& table);
 	static unsigned int property_key_for_type(Type type);
 
 	Type mType;

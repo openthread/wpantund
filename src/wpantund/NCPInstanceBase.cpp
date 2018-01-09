@@ -670,7 +670,9 @@ NCPInstanceBase::property_set_value(
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSyslogMask)) {
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 			setlogmask(strtologmask(any_to_string(value).c_str(), setlogmask(0)));
+#endif
 			cb(0);
 
 		} else if (StatCollector::is_a_stat_property(key)) {

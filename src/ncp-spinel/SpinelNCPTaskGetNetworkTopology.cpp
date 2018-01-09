@@ -31,6 +31,37 @@
 using namespace nl;
 using namespace nl::wpantund;
 
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::TableEntry::TableEntry(void)
+{
+	clear();
+}
+
+void
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::TableEntry::clear(void)
+{
+	memset(mExtAddress, 0, sizeof(mExtAddress));
+	mRloc16 = 0;
+	mAge = 0;
+	mLinkQualityIn = 0;
+	mAverageRssi = 0;
+	mLastRssi = 0;
+	mRxOnWhenIdle = false;
+	mSecureDataRequest = false;
+	mFullFunction = false;
+	mFullNetworkData = false;
+	mTimeout = 0;
+	mNetworkDataVersion = 0;
+	mLinkFrameCounter = 0;
+	mMleFrameCounter = 0;
+	mIsChild = false;
+	mRouterId = 0;
+	mNextHop = 0;
+	mPathCost = 0;
+	mLinkQualityOut = 0;
+	mLinkEstablished = false;
+	mIPv6Addresses.clear();
+}
+
 nl::wpantund::SpinelNCPTaskGetNetworkTopology::SpinelNCPTaskGetNetworkTopology(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
@@ -41,20 +72,21 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::SpinelNCPTaskGetNetworkTopology(
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_table(
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_table(
+	Type type,
 	const uint8_t *data_in,
 	spinel_size_t data_len,
-	Table& child_table
+	Table& table
 ) {
 	int ret = kWPANTUNDStatus_Ok;
 
-	child_table.clear();
+	table.clear();
 
 	while (data_len > 0) {
 		spinel_ssize_t len = 0;
 		const uint8_t *struct_data;
 		spinel_size_t struct_len;
-		TableEntry child_info;
+		TableEntry entry;
 
 		len = spinel_datatype_unpack(
 			data_in,
@@ -66,10 +98,28 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_table(
 
 		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 
-		ret = parse_child_entry(struct_data, struct_len, child_info);
+		switch (type)
+		{
+		case kChildTable:
+			ret = parse_child_entry(struct_data, struct_len, entry);
+			break;
+
+		case kChildTableAddresses:
+			ret = parse_child_addresses_entry(struct_data, struct_len, entry);
+			break;
+
+		case kNeighborTable:
+			ret = parse_neighbor_entry(struct_data, struct_len, entry);
+			break;
+
+		case kRouterTable:
+			ret = parse_router_entry(struct_data, struct_len, entry);
+			break;
+		}
+
 		require_noerr(ret, bail);
 
-		child_table.push_back(child_info);
+		table.push_back(entry);
 
 		data_in += len;
 		data_len -= len;
@@ -77,6 +127,42 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_table(
 
 bail:
 	return ret;
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_table(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	Table& child_table
+) {
+	return parse_table(kChildTable, data_in, data_len, child_table);
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_addresses_table(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	Table& child_addr_table
+) {
+	return parse_table(kChildTableAddresses, data_in, data_len, child_addr_table);
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	Table& neighbor_table
+) {
+	return parse_table(kNeighborTable, data_in, data_len, neighbor_table);
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_table(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	Table& router_table
+) {
+	return parse_table(kRouterTable, data_in, data_len, router_table);
 }
 
 int
@@ -90,7 +176,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_entry(
 	const spinel_eui64_t *eui64 = NULL;
 	uint8_t mode;
 
-	memset(&child_info, 0, sizeof(child_info));
+	child_info.clear();
 	child_info.mType = kChildTable;
 
 	len = spinel_datatype_unpack(
@@ -132,104 +218,48 @@ bail:
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len,
-																			 Table& neighbor_table)
-{
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_child_addresses_entry(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	TableEntry& child_addr_info
+) {
 	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len = 0;
+	const spinel_eui64_t *eui64 = NULL;
+	struct in6_addr *ip6_addr = NULL;
 
-	neighbor_table.clear();
+	child_addr_info.clear();
+	child_addr_info.mType = kChildTableAddresses;
 
-	while (data_len > 0)
-	{
-		spinel_ssize_t len = 0;
-		TableEntry neighbor_info;
-		const spinel_eui64_t *eui64 = NULL;
-		uint8_t mode;
-		bool is_child = false;
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+			SPINEL_DATATYPE_UINT16_S        // Rloc16
+		),
+		&eui64,
+		&child_addr_info.mRloc16
+	);
 
-		memset(&neighbor_info, 0, sizeof(neighbor_info));
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 
-		neighbor_info.mType = kNeighborTable;
+	memcpy(child_addr_info.mExtAddress, eui64, sizeof(child_addr_info.mExtAddress));
 
+	data_in += len;
+	data_len -= len;
+
+	while (data_len > 0) {
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			"t("
-				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
-				SPINEL_DATATYPE_UINT16_S        // Rloc16
-				SPINEL_DATATYPE_UINT32_S        // Age
-				SPINEL_DATATYPE_UINT8_S         // Link Quality In
-				SPINEL_DATATYPE_INT8_S          // Average RSS
-				SPINEL_DATATYPE_UINT8_S         // Mode (flags)
-				SPINEL_DATATYPE_BOOL_S          // Is Child
-				SPINEL_DATATYPE_UINT32_S        // Link Frame Counter
-				SPINEL_DATATYPE_UINT32_S        // MLE Frame Counter
-				SPINEL_DATATYPE_INT8_S          // Last Rssi
-			")",
-			&eui64,
-			&neighbor_info.mRloc16,
-			&neighbor_info.mAge,
-			&neighbor_info.mLinkQualityIn,
-			&neighbor_info.mAverageRssi,
-			&mode,
-			&is_child,
-			&neighbor_info.mLinkFrameCounter,
-			&neighbor_info.mMleFrameCounter,
-			&neighbor_info.mLastRssi
-		);
-
-		if (len <= 0)
-		{
-			ret = kWPANTUNDStatus_Failure;
-			break;
-		}
-
-		memcpy(neighbor_info.mExtAddress, eui64, sizeof(neighbor_info.mExtAddress));
-
-		neighbor_info.mRxOnWhenIdle = ((mode & kThreadMode_RxOnWhenIdle) != 0);
-		neighbor_info.mSecureDataRequest = ((mode & kThreadMode_SecureDataRequest) != 0);
-		neighbor_info.mFullFunction = ((mode & kThreadMode_FullFunctionDevice) != 0);
-		neighbor_info.mFullNetworkData = ((mode & kThreadMode_FullNetworkData) != 0);
-		neighbor_info.mIsChild = is_child;
-
-		neighbor_table.push_back(neighbor_info);
-
-		data_in += len;
-		data_len -= len;
-	}
-
-	return ret;
-}
-
-int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table)
-{
-	int ret = kWPANTUNDStatus_Ok;
-
-	router_table.clear();
-
-	while (data_len > 0)
-	{
-		spinel_ssize_t len = 0;
-		const uint8_t *struct_data;
-		spinel_size_t struct_len;
-		TableEntry router_info;
-
-		len = spinel_datatype_unpack(
-			data_in,
-			data_len,
-			SPINEL_DATATYPE_DATA_WLEN_S,
-			&struct_data,
-			&struct_len
+			SPINEL_DATATYPE_IPv6ADDR_S,
+			&ip6_addr
 		);
 
 		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 
-		ret = parse_router_entry(struct_data, struct_len, router_info);
-
-		require_noerr(ret, bail);
-
-		router_table.push_back(router_info);
+		child_addr_info.mIPv6Addresses.push_back(*ip6_addr);
 
 		data_in += len;
 		data_len -= len;
@@ -240,16 +270,74 @@ bail:
 }
 
 int
-nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& router_info)
-{
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_neighbor_entry(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	TableEntry& neighbor_info
+) {
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len = 0;
+	const spinel_eui64_t *eui64 = NULL;
+	uint8_t mode;
+	bool is_child = false;
+
+	neighbor_info.clear();
+	neighbor_info.mType = kNeighborTable;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+			SPINEL_DATATYPE_UINT16_S        // Rloc16
+			SPINEL_DATATYPE_UINT32_S        // Age
+			SPINEL_DATATYPE_UINT8_S         // Link Quality In
+			SPINEL_DATATYPE_INT8_S          // Average RSS
+			SPINEL_DATATYPE_UINT8_S         // Mode (flags)
+			SPINEL_DATATYPE_BOOL_S          // Is Child
+			SPINEL_DATATYPE_UINT32_S        // Link Frame Counter
+			SPINEL_DATATYPE_UINT32_S        // MLE Frame Counter
+			SPINEL_DATATYPE_INT8_S          // Last Rssi
+		),
+		&eui64,
+		&neighbor_info.mRloc16,
+		&neighbor_info.mAge,
+		&neighbor_info.mLinkQualityIn,
+		&neighbor_info.mAverageRssi,
+		&mode,
+		&is_child,
+		&neighbor_info.mLinkFrameCounter,
+		&neighbor_info.mMleFrameCounter,
+		&neighbor_info.mLastRssi
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	memcpy(neighbor_info.mExtAddress, eui64, sizeof(neighbor_info.mExtAddress));
+
+	neighbor_info.mRxOnWhenIdle = ((mode & kThreadMode_RxOnWhenIdle) != 0);
+	neighbor_info.mSecureDataRequest = ((mode & kThreadMode_SecureDataRequest) != 0);
+	neighbor_info.mFullFunction = ((mode & kThreadMode_FullFunctionDevice) != 0);
+	neighbor_info.mFullNetworkData = ((mode & kThreadMode_FullNetworkData) != 0);
+	neighbor_info.mIsChild = is_child;
+
+bail:
+	return ret;
+}
+
+int
+nl::wpantund::SpinelNCPTaskGetNetworkTopology::parse_router_entry(
+	const uint8_t *data_in,
+	spinel_size_t data_len,
+	TableEntry& router_info
+) {
 	int ret = kWPANTUNDStatus_Ok;
 	spinel_ssize_t len = 0;
 	const spinel_eui64_t *eui64 = NULL;
 	uint8_t age;
 	bool link_established = false;
 
-	memset(&router_info, 0, sizeof(router_info));
-
+	router_info.clear();
 	router_info.mType = kRouterTable;
 
 	len = spinel_datatype_unpack(
@@ -297,6 +385,10 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::property_key_for_type(Type type)
 	{
 	case kChildTable:
 		prop_key = SPINEL_PROP_THREAD_CHILD_TABLE;
+		break;
+
+	case kChildTableAddresses:
+		prop_key = SPINEL_PROP_THREAD_CHILD_TABLE_ADDRESSES;
 		break;
 
 	case kNeighborTable:
@@ -369,6 +461,8 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list
 
 	if (mType == kChildTable) {
 		parse_child_table(data_in, data_len, mTable);
+	} else if (mType == kChildTableAddresses) {
+		parse_child_addresses_table(data_in, data_len, mTable);
 	} else if (mType == kNeighborTable) {
 		parse_neighbor_table(data_in, data_len, mTable);
 	} else if (mType == kRouterTable) {
@@ -426,9 +520,11 @@ on_error:
 }
 
 std::string
-SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
+SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void)
 {
 	char c_string[800];
+
+	c_string[0] = 0;
 
 	switch (mType)
 	{
@@ -461,6 +557,51 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 			mFullNetworkData ? "yes" : "no"
 		);
 		break;
+
+	case kChildTableAddresses:
+	{
+		char *str = c_string;
+		size_t remaning_len = sizeof(c_string);
+		int len;
+		bool is_first = true;
+
+		len = snprintf(str, remaning_len,
+			"%02X%02X%02X%02X%02X%02X%02X%02X, RLOC16:%04x%s",
+			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],
+			mExtAddress[4], mExtAddress[5], mExtAddress[6], mExtAddress[7],
+			mRloc16,
+			mIPv6Addresses.size() > 0 ? ", IPv6Addrs:[" : ""
+		);
+
+		require(len >= 0 && len < remaning_len, bail);
+		str += len;
+		remaning_len -= len;
+
+		for (std::list<struct in6_addr>::iterator it = mIPv6Addresses.begin(); it != mIPv6Addresses.end(); ++it) {
+
+			len = snprintf(
+				str, remaning_len,
+				"%s%s",
+				is_first ? "" : ", ",
+				in6_addr_to_string(*it).c_str()
+			);
+
+			require(len >= 0 && len < remaning_len, bail);
+			str += len;
+			remaning_len -= len;
+
+			is_first = false;
+		}
+
+		if (mIPv6Addresses.size() > 0) {
+			len = snprintf(str, remaning_len, "]");
+			require(len >= 0 && len < remaning_len, bail);
+			str += len;
+			remaning_len -= len;
+		}
+
+		break;
+	}
 
 	case kNeighborTable:
 		snprintf(c_string, sizeof(c_string),
@@ -523,6 +664,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 		break;
 	}
 
+bail:
 	return std::string(c_string);
 }
 
@@ -532,7 +674,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_valuemap(void) const
 	ValueMap entryMap;
 	uint64_t addr;
 
-	if (mType == kRouterTable) {
+	if ((mType == kRouterTable) || (mType == kChildTableAddresses)) {
 		goto bail;
 	}
 
