@@ -169,6 +169,13 @@
 #define kWPANTUNDProperty_JamDetectionBusyPeriod                "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap        "JamDetection:Debug:HistoryBitmap"
 
+#define kWPANTUNDProperty_ChannelMonitorSampleInterval          "ChannelMonitor:SampleInterval"
+#define kWPANTUNDProperty_ChannelMonitorRssiThreshold           "ChannelMonitor:RssiThreshold"
+#define kWPANTUNDProperty_ChannelMonitorSampleWindow            "ChannelMonitor:SampleWindow"
+#define kWPANTUNDProperty_ChannelMonitorSampleCount             "ChannelMonitor:SampleCount"
+#define kWPANTUNDProperty_ChannelMonitorChannelQuality          "ChannelMonitor:ChannelQuality"
+#define kWPANTUNDProperty_ChannelMonitorChannelQualityAsValMap  "ChannelMonitor:ChannelQuality:AsValMap"
+
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 
@@ -250,6 +257,9 @@
 
 #define kWPANTUNDValueMapKey_Whitelist_ExtAddress               "ExtAddress"
 #define kWPANTUNDValueMapKey_Whitelist_Rssi                     "FixedRssi"
+
+#define kWPANTUNDValueMapKey_ChannelMonitor_Channel             "Channel"
+#define kWPANTUNDValueMapKey_ChannelMonitor_Quality             "Quality"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"

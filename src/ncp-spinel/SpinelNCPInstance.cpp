@@ -367,6 +367,14 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_JamDetectionDebugHistoryBitmap);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+		properties.insert(kWPANTUNDProperty_ChannelMonitorSampleInterval);
+		properties.insert(kWPANTUNDProperty_ChannelMonitorRssiThreshold);
+		properties.insert(kWPANTUNDProperty_ChannelMonitorSampleWindow);
+		properties.insert(kWPANTUNDProperty_ChannelMonitorSampleCount);
+		properties.insert(kWPANTUNDProperty_ChannelMonitorChannelQuality);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY)) {
 		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
 	}
@@ -550,6 +558,61 @@ unpack_mac_blacklist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 		}
 	}
 
+	return ret;
+}
+
+static int
+unpack_channel_monitor_channel_quality(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	std::list<ValueMap> result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0)
+	{
+		spinel_ssize_t len;
+		uint8_t channel;
+		uint16_t quality;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT8_S         // Channel
+				SPINEL_DATATYPE_UINT16_S        // Quality
+			),
+			&channel,
+			&quality
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		if (!as_val_map) {
+			char c_string[100];
+
+			snprintf(c_string, sizeof(c_string), "ch %d (0x%04x) %.2f%% busy ", channel, quality,
+				static_cast<double>(quality) * 100.0 / 0xffff);
+
+			result_as_string.push_back(std::string(c_string));
+		} else {
+			ValueMap entry;
+
+			entry[kWPANTUNDValueMapKey_ChannelMonitor_Channel] = boost::any((int)channel);
+			entry[kWPANTUNDValueMapKey_ChannelMonitor_Quality] = boost::any((int)quality);
+			result_as_val_map.push_back(entry);
+		}
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
 	return ret;
 }
 
@@ -1068,6 +1131,62 @@ SpinelNCPInstance::property_get_value(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_JAM_DETECT_HISTORY_BITMAP)
 				)
 				.set_reply_unpacker(unpack_jam_detect_history_bitmap)
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorSampleInterval)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MONITOR_SAMPLE_INTERVAL, SPINEL_DATATYPE_UINT32_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorRssiThreshold)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MONITOR_RSSI_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorSampleWindow)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MONITOR_SAMPLE_WINDOW, SPINEL_DATATYPE_UINT32_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorSampleCount)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MONITOR_SAMPLE_COUNT, SPINEL_DATATYPE_UINT32_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorChannelQuality)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CHANNEL_MONITOR_CHANNEL_QUALITY)
+				)
+				.set_reply_unpacker(boost::bind(unpack_channel_monitor_channel_quality, _1, _2, _3, false))
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorChannelQualityAsValMap)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CHANNEL_MONITOR_CHANNEL_QUALITY)
+				)
+				.set_reply_unpacker(boost::bind(unpack_channel_monitor_channel_quality, _1, _2, _3, true))
 				.finish()
 			);
 		}
