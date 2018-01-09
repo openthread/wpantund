@@ -441,7 +441,7 @@ nlpt_hook_check_read_fd_source(struct nlpt* nlpt, int fd)
 {
 
 	bool ret = false;
-	if (fd >= 0) {
+	if (fd >= 0 && fd < FD_SETSIZE) {
 		ret = FD_ISSET(fd, &gReadableFDs) || FD_ISSET(fd, &gErrorableFDs);
 		FD_CLR(fd, &gReadableFDs);
 		FD_CLR(fd, &gErrorableFDs);
@@ -453,7 +453,7 @@ bool
 nlpt_hook_check_write_fd_source(struct nlpt* nlpt, int fd)
 {
 	bool ret = false;
-	if (fd >= 0) {
+	if (fd >= 0 && fd < FD_SETSIZE) {
 		ret = FD_ISSET(fd, &gWritableFDs) || FD_ISSET(fd, &gErrorableFDs);
 		FD_CLR(fd, &gWritableFDs);
 		FD_CLR(fd, &gErrorableFDs);
@@ -483,6 +483,11 @@ syslog_dump_select_info(int loglevel, fd_set *read_fd_set, fd_set *write_fd_set,
 
 	int logmask = setlogmask(0);
 	setlogmask(logmask);
+
+	if (fd_count > FD_SETSIZE) {
+		fd_count = FD_SETSIZE;
+	}
+
 	// Check the log level preemptively to avoid wasted CPU.
 	if((logmask&LOG_MASK(loglevel))) {
 		syslog(loglevel, "SELECT: fd_count=%d cms_timeout=%d", fd_count, timeout);
@@ -575,7 +580,11 @@ public:
 			(*ipc_iter)->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
 		}
 
-		require_string(max_fd < FD_SETSIZE, bail, "Too many file descriptors");
+		if (max_fd >= FD_SETSIZE) {
+			syslog(LOG_ERR, "BUG: Too many file descriptors: %d (max %d)", max_fd, FD_SETSIZE);
+			gRet = ERRORCODE_UNKNOWN;
+			goto bail;
+		}
 
 		// Negative CMS timeout values are not valid.
 		if (cms_timeout < 0) {
