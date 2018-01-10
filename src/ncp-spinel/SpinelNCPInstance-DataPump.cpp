@@ -304,21 +304,16 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		}
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
-        mInboundFrameTransformedLen = sizeof(mInboundFrameTransformed);
-        if (!SpinelTransformer::TransformInbound(mInboundFrame, mInboundFrameSize, mInboundFrameTransformed, &mInboundFrameTransformedLen))
-        {
+		size_t inboundFrameTransformedLen = sizeof(mInboundFrame);
+		if (!SpinelTransformer::TransformInbound(mInboundFrame, mInboundFrameSize, mInboundFrame, &inboundFrameTransformedLen))
+		{
 			syslog(LOG_ERR, "[-NCP-]: Unable to transform inbound data");
 			break;
-        }
-
-		mInboundFrameDataPtr = mInboundFrameTransformed;
-		mInboundFrameDataLen = mInboundFrameTransformedLen;
-#else
-		mInboundFrameDataPtr = mInboundFrame;
-		mInboundFrameDataLen = mInboundFrameSize;
+		}
+		mInboundFrameSize = inboundFrameTransformedLen;
 #endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
-        if (spinel_datatype_unpack(mInboundFrameDataPtr, mInboundFrameDataLen, "Ci", &mInboundHeader, &command_value) > 0) {
+		if (spinel_datatype_unpack(mInboundFrame, mInboundFrameSize, "Ci", &mInboundHeader, &command_value) > 0) {
 			if ((mInboundHeader&SPINEL_HEADER_FLAG) != SPINEL_HEADER_FLAG) {
 				// Unrecognized frame.
 				syslog(LOG_ERR, "[-NCP-]: Unrecognized frame (0x%02X)", mInboundHeader);
@@ -333,7 +328,7 @@ SpinelNCPInstance::ncp_to_driver_pump()
 				break;
 			}
 
-			handle_ncp_spinel_callback(command_value, mInboundFrameDataPtr, mInboundFrameDataLen);
+			handle_ncp_spinel_callback(command_value, mInboundFrame, mInboundFrameSize);
 		}
 	} // while (!ncp_state_is_detached_from_ncp(get_ncp_state()))
 
@@ -526,21 +521,17 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			uint16_t crc(0xFFFF);
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
-            mOutboundFrameTransformedLen = sizeof(mOutboundFrameTransformed);
-            if (!SpinelTransformer::TransformOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundFrameTransformed, &mOutboundFrameTransformedLen))
+			size_t outboundFrameTransformedLen = sizeof(mOutboundBuffer);
+			if (!SpinelTransformer::TransformOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundBuffer, &outboundFrameTransformedLen))
 			{
 				syslog(LOG_ERR, "[-NCP-]: Unable to transform outbound data");
 				break;
 			}
-			mOutboundFrameDataPtr = mOutboundFrameTransformed;
-			mOutboundFrameDataLen = mOutboundFrameTransformedLen;
-#else
-			mOutboundFrameDataPtr = mOutboundBuffer;
-			mOutboundFrameDataLen = mOutboundBufferLen;
+			mOutboundBufferLen = outboundFrameTransformedLen;
 #endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
-			for (i = 0; i < mOutboundFrameDataLen; i++) {
-				byte = mOutboundFrameDataPtr[i];
+			for (i = 0; i < mOutboundBufferLen; i++) {
+				byte = mOutboundBuffer[i];
 				crc = hdlc_crc16(crc, byte);
 				if (hdlc_byte_needs_escape(byte)) {
 					mOutboundBufferEscaped[mOutboundBufferEscapedLen++] = HDLC_BYTE_ESC;
