@@ -161,13 +161,13 @@ AC_ARG_WITH(
     [AS_HELP_STRING([--with-ncp-spinel-transformer-outbound-buffer-size=<SIZE IN BYTES>],[Specify a NCP Spinel Transformer's outbound buffer size. @<:@default=none@:>@.])],
     [
         OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE=${withval}
+		AC_DEFINE_UNQUOTED([OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE],[${OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE}],[Define NCP Spinel Transformer's outbound buffer size])
     ],
     []
     )
 
 AC_MSG_CHECKING([NCP Spinel Transformer outbound buffer size])
 AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE-none})
-AC_DEFINE_UNQUOTED([OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE],[${OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE}],[Define NCP Spinel Transformer's outbound buffer size])
 
 if test "x$enable_all_restricted_plugins" = "xyes"
 then {
