@@ -132,42 +132,42 @@ AC_ARG_ENABLE(
 )
 
 #
-# NCP Spinel Transformer
+# NCP Spinel Encrypter
 #
 
 AC_ARG_WITH(
-    [ncp-spinel-transformer-libs],
-    [AS_HELP_STRING([--with-ncp-spinel-transformer-libs=<LIBSPINEL_TRANSFORMER.A>],[Specify library files (absolute paths) implementing the NCP Spinel Transformer. @<:@default=none@:>@.])],
+    [ncp-spinel-encrypter-libs],
+    [AS_HELP_STRING([--with-ncp-spinel-encrypter-libs=<LIBSPINEL_ENCRYPTER.A>],[Specify library files (absolute paths) implementing the NCP Spinel Encrypter. @<:@default=none@:>@.])],
     [
         if test "${withval}" = "no"
-            then OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER=0
+            then OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=0
         else
-            OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER=1
-            OPENTHREAD_NCP_SPINEL_TRANSFORMER_LIBS=${withval}
+            OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=1
+            OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS=${withval}
         fi
     ],
     [
-        OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER=0
+        OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=0
     ])
 
-AC_MSG_CHECKING([NCP Spinel Transformer libs])
-AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_TRANSFORMER_LIBS-none})
-AC_SUBST(OPENTHREAD_NCP_SPINEL_TRANSFORMER_LIBS)
-AC_DEFINE_UNQUOTED([OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER],[${OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER}],[Define to 1 if using NCP Spinel Transformer])
-AM_CONDITIONAL([OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER], [test "${OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER}" = "1"])
+AC_MSG_CHECKING([NCP Spinel Encrypter libs])
+AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS-none})
+AC_SUBST(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
+AC_DEFINE_UNQUOTED([OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER],[${OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER}],[Define to 1 if using NCP Spinel Encrypter])
+AM_CONDITIONAL([OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER], [test "${OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER}" = "1"])
 
 AC_ARG_WITH(
-    [ncp-spinel-transformer-outbound-buffer-size],
-    [AS_HELP_STRING([--with-ncp-spinel-transformer-outbound-buffer-size=<SIZE IN BYTES>],[Specify a NCP Spinel Transformer's outbound buffer size. @<:@default=none@:>@.])],
+    [ncp-spinel-encrypter-outbound-buffer-size],
+    [AS_HELP_STRING([--with-ncp-spinel-encrypter-outbound-buffer-size=<SIZE IN BYTES>],[Specify a NCP Spinel Encrypter's outbound buffer size. @<:@default=none@:>@.])],
     [
-        OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE=${withval}
-		AC_DEFINE_UNQUOTED([OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE],[${OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE}],[Define NCP Spinel Transformer's outbound buffer size])
+        OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE=${withval}
+		AC_DEFINE_UNQUOTED([OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE],[${OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE}],[Define NCP Spinel Encrypter's outbound buffer size])
     ],
     []
     )
 
-AC_MSG_CHECKING([NCP Spinel Transformer outbound buffer size])
-AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_TRANSFORMER_OUTBOUND_BUFFER_SIZE-none})
+AC_MSG_CHECKING([NCP Spinel Encrypter outbound buffer size])
+AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE-none})
 
 if test "x$enable_all_restricted_plugins" = "xyes"
 then {
