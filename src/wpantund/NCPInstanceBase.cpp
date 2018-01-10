@@ -92,9 +92,15 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 
 		for(iter = settings.begin(); iter != settings.end(); iter++) {
 			if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPHardResetPath)) {
+				if (mResetFD > 0) {
+					close_super_socket(mResetFD);
+				}
 				mResetFD = open_super_socket(iter->second.c_str());
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPPowerPath)) {
+				if (mPowerFD > 0) {
+					close_super_socket(mPowerFD);
+				}
 				mPowerFD = open_super_socket(iter->second.c_str());
 
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigNCPSocketPath)) {
@@ -197,8 +203,8 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 
 NCPInstanceBase::~NCPInstanceBase()
 {
-	close(mPowerFD);
-	close(mResetFD);
+	close_super_socket(mPowerFD);
+	close_super_socket(mResetFD);
 }
 
 const std::string &

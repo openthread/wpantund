@@ -234,6 +234,7 @@ NCPControlInterfaceFuzzTarget(const uint8_t *data, size_t size) {
 
 extern "C" int
 LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+	int ret = 0;
 	static bool did_init;
 
 	if (!did_init) {
@@ -252,18 +253,14 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
 	fuzz_set_cms(0);
 
-	static int fd_count_before = -1;
-	static int fd_count_after = -1;
+	int fd_count_before = -1;
+	int fd_count_after = -1;
 
 	// Count the number of FDs before starting fuzzing.
 	fd_count_before = count_open_fds();
-	if ((fd_count_after >= 0) && fd_count_before != fd_count_after) {
-		syslog(LOG_ALERT, "NOTE: Fuzzer appears to have changed the number of open FDs: (%d != %d)", fd_count_after, fd_count_before);
-
-		if (fd_count_before > 10) {
-			syslog(LOG_ALERT, "Too many file descriptors opened by fuzzer: %d (max %d)", fd_count_before, 10);
-			fuzz_trap();
-		}
+	if (fd_count_before > 1000) {
+		syslog(LOG_ALERT, "Too many file descriptors open: %d (max %d)", fd_count_before, 1000);
+		fuzz_trap();
 	}
 
 	if (size >= 1) {
@@ -271,15 +268,15 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 		size--;
 		switch (type) {
 		case '0': // Config file fuzzing
-			return ConfigFileFuzzTarget(data, size);
+			ret = ConfigFileFuzzTarget(data, size);
 			break;
 
 		case '1': // NCP Input fuzzing
-			return NCPInputFuzzTarget(data, size);
+			ret = NCPInputFuzzTarget(data, size);
 			break;
 
 		case '2': // NCPControlInterface fuzzing
-			return NCPControlInterfaceFuzzTarget(data, size);
+			ret = NCPControlInterfaceFuzzTarget(data, size);
 			break;
 
 		default:
@@ -287,12 +284,12 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 		}
 	}
 
-	// Count the number of FDs after starting fuzzing.
+	// Count the number of FDs after finishing fuzzing.
 	fd_count_after = count_open_fds();
 	if (fd_count_before != fd_count_after) {
 		syslog(LOG_ALERT, "File descriptor count changed durring run! before=%d after=%d", fd_count_before, fd_count_after);
 		fuzz_trap();
 	}
 
-	return 0;
+	return ret;
 }
