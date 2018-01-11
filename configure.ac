@@ -156,19 +156,6 @@ AC_SUBST(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
 AC_DEFINE_UNQUOTED([OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER],[${OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER}],[Define to 1 if using NCP Spinel Encrypter])
 AM_CONDITIONAL([OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER], [test "${OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER}" = "1"])
 
-AC_ARG_WITH(
-    [ncp-spinel-encrypter-outbound-buffer-size],
-    [AS_HELP_STRING([--with-ncp-spinel-encrypter-outbound-buffer-size=<SIZE IN BYTES>],[Specify a NCP Spinel Encrypter's outbound buffer size. @<:@default=none@:>@.])],
-    [
-        OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE=${withval}
-		AC_DEFINE_UNQUOTED([OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE],[${OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE}],[Define NCP Spinel Encrypter's outbound buffer size])
-    ],
-    []
-    )
-
-AC_MSG_CHECKING([NCP Spinel Encrypter outbound buffer size])
-AC_MSG_RESULT(${OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE-none})
-
 if test "x$enable_all_restricted_plugins" = "xyes"
 then {
 true
