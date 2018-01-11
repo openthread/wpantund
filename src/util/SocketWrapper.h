@@ -46,6 +46,7 @@ public:
 	virtual ~SocketWrapper();
 	virtual ssize_t write(const void* data, size_t len) = 0;
 	virtual ssize_t read(void* data, size_t len) = 0;
+	virtual off_t lseek(off_t offset, int whence);
 	virtual bool can_read(void)const;
 	virtual bool can_write(void)const;
 	virtual int process(void) = 0;

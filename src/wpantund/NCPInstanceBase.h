@@ -524,13 +524,13 @@ private:
 	// ========================================================================
 	// MARK: Private Data
 
-	int mResetFD; //!^ File descriptor for resetting NCP.
-	char mResetFD_BeginReset; //!^ Value for entering reset
-	char mResetFD_EndReset; //!^ Value for leaving reset
+	boost::shared_ptr<SocketWrapper> mResetSocket;
+	char mResetSocket_BeginReset; //!^ Value for entering reset
+	char mResetSocket_EndReset; //!^ Value for leaving reset
 
-	int mPowerFD; //!^ File descriptor for controlling NCP power.
-	char mPowerFD_PowerOn; //!^ Value for the power being on.
-	char mPowerFD_PowerOff; //!^ Value for the power being off.
+	boost::shared_ptr<SocketWrapper> mPowerSocket;
+	char mPowerSocket_PowerOn; //!^ Value for the power being on.
+	char mPowerSocket_PowerOff; //!^ Value for the power being off.
 
 	bool mWasBusy;
 	cms_t mLastChangedBusy;

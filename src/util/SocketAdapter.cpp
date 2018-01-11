@@ -60,6 +60,12 @@ SocketAdapter::write(const void* data, size_t len)
 	return mParent ? mParent->write(data, len) : -EINVAL;
 }
 
+off_t
+SocketAdapter::lseek(off_t offset, int whence)
+{
+	return mParent ? mParent->lseek(offset, whence) : -EINVAL;
+}
+
 ssize_t
 SocketAdapter::read(void* data, size_t len)
 {

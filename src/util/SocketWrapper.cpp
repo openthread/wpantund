@@ -58,6 +58,7 @@ SocketWrapper::can_write(void)const
 int
 SocketWrapper::set_log_level(int log_level)
 {
+	errno = ENOTSUP;
 	return -ENOTSUP;
 }
 
@@ -84,6 +85,13 @@ SocketWrapper::send_break(void)
 {
 }
 
+off_t
+SocketWrapper::lseek(off_t offset, int whence)
+{
+	errno = ENOTSUP;
+	return -ENOTSUP;
+}
+
 void
 SocketWrapper::reset(void)
 {
@@ -92,7 +100,8 @@ SocketWrapper::reset(void)
 int
 SocketWrapper::hibernate(void)
 {
-	return -1;
+	errno = ENOTSUP;
+	return -ENOTSUP;
 }
 
 bool
