@@ -231,20 +231,13 @@ private:
 	typedef std::map<std::string, SettingsEntry> SettingsMap;
 
 private:
-
-#if OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE
-#define SPINEL_BUFFER_SIZE OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE
-#else
-#define SPINEL_BUFFER_SIZE SPINEL_FRAME_MAX_SIZE
-#endif // OPENTHREAD_NCP_SPINEL_ENCRYPTER_OUTBOUND_BUFFER_SIZE
-
 	SpinelNCPControlInterface mControlInterface;
 
 	uint8_t mLastTID;
 
 	uint8_t mLastHeader;
 
-	uint8_t mInboundFrame[SPINEL_BUFFER_SIZE];
+	uint8_t mInboundFrame[SPINEL_FRAME_BUFFER_SIZE];
 	uint8_t mInboundHeader;
 	spinel_size_t mInboundFrameSize;
 	uint8_t mInboundFrameDataType;
@@ -253,14 +246,14 @@ private:
 	uint16_t mInboundFrameHDLCCRC;
 
 	uint8_t mOutboundBufferHeader[3];
-	uint8_t mOutboundBuffer[SPINEL_BUFFER_SIZE];
+	uint8_t mOutboundBuffer[SPINEL_FRAME_BUFFER_SIZE];
 	uint8_t mOutboundBufferType;
 	spinel_ssize_t mOutboundBufferLen;
 	spinel_ssize_t mOutboundBufferSent;
-	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_MAX_SIZE*2];
+	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_BUFFER_SIZE*2];
 	spinel_ssize_t mOutboundBufferEscapedLen;
 	boost::function<void(int)> mOutboundCallback;
-	
+
 	int mTXPower;
 	uint8_t mThreadMode;
 	bool mIsCommissioned;
