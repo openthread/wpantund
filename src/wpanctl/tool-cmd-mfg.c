@@ -28,19 +28,52 @@
 #include "wpan-dbus-v1.h"
 #include "args.h"
 
+#define MFG_MAX_COMMAND_SIZE        256
+#define MFG_TIMEOUT_IN_SECONDS      10
+
 int tool_cmd_mfg(int argc, char *argv[])
 {
 	int ret = 0;
-	int c;
-	int timeout = 10 * 1000;
-        char output[100];
+	char command[MFG_MAX_COMMAND_SIZE];
+	char *input = &command[0];
+	const char *output = NULL;
+	int timeout = MFG_TIMEOUT_IN_SECONDS * 1000;
 	DBusConnection *connection = NULL;
 	DBusMessage *message = NULL;
 	DBusMessage *reply = NULL;
-	const char* result_cstr = NULL;
+
 	DBusError error;
 
 	dbus_error_init(&error);
+
+	{
+		char *buf_ptr = command;
+		int buf_len = sizeof(command);
+		int index;
+		int len;
+
+		for (index = 0; index < argc; index++) {
+
+			len = snprintf(
+				buf_ptr,
+				buf_len,
+				"%s%s",
+				(index == 0) ? "" : " ",
+				argv[index]
+			);
+
+			require(len >= 0, bail);
+
+			if (len >= buf_len) {
+				fprintf(stderr, "%s: error: command string exceeds max size %lu \n", argv[0], sizeof(command));
+				ret = ERRORCODE_BADARG;
+				goto bail;
+			}
+
+			buf_ptr += len;
+			buf_len -= len;
+		}
+	}
 
 	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
 
@@ -57,44 +90,41 @@ int tool_cmd_mfg(int argc, char *argv[])
 		DBusMessageIter list_iter;
 		char path[DBUS_MAXIMUM_NAME_LENGTH+1];
 		char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
+
 		ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
+
 		if (ret != 0) {
+			print_error_diagnosis(ret);
 			goto bail;
 		}
-		snprintf(path,
-		         sizeof(path),
-		         "%s/%s",
-		         WPANTUND_DBUS_PATH,
-		         gInterfaceName);
 
-		message = dbus_message_new_method_call(
-		    interface_dbus_name,
-		    path,
-		    WPANTUND_DBUS_NLAPIv1_INTERFACE,
-		    WPANTUND_IF_CMD_MFG
+		snprintf(
+			path,
+			sizeof(path),
+			"%s/%s",
+			WPANTUND_DBUS_PATH,
+			gInterfaceName
 		);
 
-		char string[100];
-		if (argc == 1)
-			sprintf(string, "%s", argv[0]);
-		if (argc == 2)
-			sprintf(string, "%s %s", argv[0], argv[1]);
-		if (argc == 3)
-			sprintf(string, "%s %s %s", argv[0], argv[1], argv[2]);
-		if (argc == 4)
-			sprintf(string, "%s %s %s %s", argv[0], argv[1], argv[2], argv[3]);
-		char *cmd = string;
+		message = dbus_message_new_method_call(
+			interface_dbus_name,
+			path,
+			WPANTUND_DBUS_NLAPIv1_INTERFACE,
+			WPANTUND_IF_CMD_MFG
+		);
+
 		dbus_message_append_args(
-		    message,
-		    DBUS_TYPE_STRING, &cmd,
-		    DBUS_TYPE_INVALID
-		    );
+			message,
+			DBUS_TYPE_STRING, &input,
+			DBUS_TYPE_INVALID
+		);
+
 		reply = dbus_connection_send_with_reply_and_block(
-		    connection,
-		    message,
-		    timeout,
-		    &error
-		    );
+			connection,
+			message,
+			timeout,
+			&error
+		);
 
 		if (!reply) {
 			fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
@@ -109,8 +139,8 @@ int tool_cmd_mfg(int argc, char *argv[])
 		dbus_message_iter_next(&iter);
 
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING) {
-			dbus_message_iter_get_basic(&iter, &result_cstr);
-			printf("%s", result_cstr);
+			dbus_message_iter_get_basic(&iter, &output);
+			printf("%s", output);
 		} else {
 			dump_info_from_iter(stdout, &iter, 0, false, false);
 		}
@@ -118,14 +148,17 @@ int tool_cmd_mfg(int argc, char *argv[])
 
 bail:
 
-	if (connection)
+	if (connection) {
 		dbus_connection_unref(connection);
+	}
 
-	if (message)
+	if (message) {
 		dbus_message_unref(message);
+	}
 
-	if (reply)
+	if (reply) {
 		dbus_message_unref(reply);
+	}
 
 	dbus_error_free(&error);
 
