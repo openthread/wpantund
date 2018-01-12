@@ -178,7 +178,7 @@ signal_SIGINT(int sig)
 
 	// Can't use syslog() because it isn't async signal safe.
 	// So we write to stderr
-	(void)write(STDERR_FILENO, message, sizeof(message)-1);
+	IGNORE_RETURN_VALUE(write(STDERR_FILENO, message, sizeof(message)-1));
 
 	// Restore the previous handler so that if we end up getting
 	// this signal again we peform the system default action.

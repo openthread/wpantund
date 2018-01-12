@@ -36,6 +36,7 @@ public:
 
 	virtual ssize_t write(const void* data, size_t len);
 	virtual ssize_t read(void* data, size_t len);
+	virtual off_t lseek(off_t offset, int whence);
 	virtual bool can_read(void)const;
 	virtual bool can_write(void)const;
 	virtual int get_read_fd(void)const;

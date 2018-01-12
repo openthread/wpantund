@@ -28,6 +28,8 @@
 #include <sys/file.h>
 #include <syslog.h>
 #include <poll.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 using namespace nl;
 
@@ -127,6 +129,12 @@ UnixSocket::read(void* data, size_t len)
 	}
 
 	return ret;
+}
+
+off_t
+UnixSocket::lseek(off_t offset, int whence)
+{
+	return ::lseek(mFDRead, offset, whence);
 }
 
 bool
