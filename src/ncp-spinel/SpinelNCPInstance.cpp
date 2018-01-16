@@ -21,6 +21,7 @@
 #include <config.h>
 #endif
 
+#include <inttypes.h>
 #include "SpinelNCPInstance.h"
 #include "time-utils.h"
 #include "assert-macros.h"
@@ -540,6 +541,13 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
 	{
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_TIME_SYNC))
+	{
+		properties.insert(kWPANTUNDProperty_TimeSync_NetworkTime);
+		properties.insert(kWPANTUNDProperty_TimeSync_Period);
+		properties.insert(kWPANTUNDProperty_TimeSync_Xtal_Threshold);
 	}
 
 	{
@@ -1096,6 +1104,51 @@ unpack_dataset(const uint8_t *data_in, spinel_size_t data_len, boost::any &value
 	}
 
 bail:
+	return ret;
+}
+
+static int
+unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	spinel_ssize_t len;
+	ValueMap entry;
+	std::list<ValueMap> result_as_val_map;
+	std::list<std::string> result_as_string;
+	uint64_t time;
+	int8_t timeSyncStatus;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_UINT64_S   // time
+			SPINEL_DATATYPE_INT8_S     // time sync status
+		),
+		&time,
+		&timeSyncStatus
+	);
+
+	if (len > 0)
+	{
+		ret = kWPANTUNDStatus_Ok;
+		if (as_val_map) {
+			entry.clear();
+			entry[kWPANTUNDValueMapKey_TimeSync_Time] = time;
+			entry[kWPANTUNDValueMapKey_TimeSync_Status] = timeSyncStatus;
+			result_as_val_map.push_back(entry);
+			value = result_as_val_map;
+		} else {
+			char c_string[500];
+			int index;
+
+			index = snprintf(c_string, sizeof(c_string), "ThreadNetworkTime: %" PRIu64 ", TimeSyncStatus:%d", time, timeSyncStatus);
+
+			result_as_string.push_back(std::string(c_string));
+			value = result_as_string;
+		}
+	}
+
 	return ret;
 }
 
@@ -2088,6 +2141,49 @@ SpinelNCPInstance::property_get_value(
 		} else {
 			NCPInstanceBase::property_get_value(key, cb);
 		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_NetworkTime)) {
+		if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Time Synchronization Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_NETWORK_TIME)
+				)
+				.set_reply_unpacker(boost::bind(unpack_thread_network_time, _1, _2, _3, false))
+				.finish()
+			);
+		}
+
+        } else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap)) {
+		if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Time Synchronization Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_NETWORK_TIME)
+				)
+				.set_reply_unpacker(boost::bind(unpack_thread_network_time, _1, _2, _3, true))
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_Period)) {
+		if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Time Synchronization Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_TIME_SYNC_PERIOD, SPINEL_DATATYPE_UINT16_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_Xtal_Threshold)) {
+		if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Time Synchronization Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_TIME_SYNC_XTAL_THRESHOLD, SPINEL_DATATYPE_UINT16_S);
+		}
+
 	} else {
 		NCPInstanceBase::property_get_value(key, cb);
 	}
@@ -2923,6 +3019,36 @@ SpinelNCPInstance::property_set_value(
 			mTickleOnHostDidWake =  any_to_bool(value);
 			syslog(LOG_INFO, "TickleOnHostDidWake is %sabled", mTickleOnHostDidWake ? "en" : "dis");
 			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_Period)) {
+			uint16_t sync_period = any_to_int(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_TIME_SYNC_PERIOD, sync_period)
+					)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TimeSync_Xtal_Threshold)) {
+			uint16_t xtal_threshold = any_to_int(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(
+						SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S), SPINEL_PROP_TIME_SYNC_XTAL_THRESHOLD, xtal_threshold)
+					)
+					.finish()
+				);
+			}
 
 		} else {
 			NCPInstanceBase::property_set_value(key, value, cb);

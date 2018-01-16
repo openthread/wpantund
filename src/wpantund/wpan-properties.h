@@ -218,6 +218,11 @@
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower   "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake        "com.nestlabs.internal:Hack:AlwaysResetToWake"
 
+#define kWPANTUNDProperty_TimeSync_NetworkTime                  "TimeSync:ThreadNetworkTime"
+#define kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap          "TimeSync:ThreadNetworkTime:AsValMap"
+#define kWPANTUNDProperty_TimeSync_Period                       "TimeSync:Period"
+#define kWPANTUNDProperty_TimeSync_Xtal_Threshold               "TimeSync:XtalThreshold"
+
 #define kWPANTUNDProperty_Stat_Prefix                           "Stat:"
 #define kWPANTUNDProperty_StatRX                                "Stat:RX"
 #define kWPANTUNDProperty_StatTX                                "Stat:TX"
@@ -355,5 +360,8 @@
 #define kWPANTUNDValueMapKey_Counter_RxErrSec                   "RxErrSec"             // Number of received packets with security error
 #define kWPANTUNDValueMapKey_Counter_RxErrFcs                   "RxErrFcs"             // Number of received packets with FCS error
 #define kWPANTUNDValueMapKey_Counter_RxErrOther                 "RxErrOther"           // Number of received packets with other error
+
+#define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
+#define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
 
 #endif
