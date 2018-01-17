@@ -830,6 +830,13 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
 		cb(0, boost::any(mRole));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InternalSpinelRole)) {
+		if (!mEnabled || !ncp_state_is_associated(get_ncp_state())) {
+			cb(kWPANTUNDStatus_Ok, boost::any((uint8_t)SPINEL_NET_ROLE_DETACHED));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
+		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPartitionId)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PARTITION_ID, SPINEL_DATATYPE_UINT32_S);
 
@@ -2091,7 +2098,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		uint8_t value;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 		syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+		bool didChange = (mRole != value);
+
 		mRole = spinel_net_role_t(value);
+
+		if (didChange) {
+			signal_property_changed(kWPANTUNDProperty_NetworkRole, mRole);
+			signal_property_changed(kWPANTUNDProperty_InternalSpinelRole, value);
+		}
 
 		if (ncp_state_is_joining_or_joined(get_ncp_state())
 		  && (value != SPINEL_NET_ROLE_DETACHED)

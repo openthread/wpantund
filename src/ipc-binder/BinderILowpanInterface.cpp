@@ -48,7 +48,7 @@ using namespace android::binder;
 using namespace android::net::lowpan;
 using ::android::net::lowpan::ILowpanInterface;
 using ::android::net::lowpan::LowpanIdentity;
-using ::android::net::lowpan::LowpanProvision;
+using ::android::net::lowpan::LowpanProvisioningParams;
 using ::android::net::lowpan::LowpanBeaconInfo;
 using ::android::net::lowpan::LowpanCredential;
 using ::android::net::lowpan::LowpanChannelInfo;
@@ -57,7 +57,6 @@ using ::android::binder::Value;
 using ::android::binder::Map;
 using ::android::String16;
 using ::boost::any;
-using ::android::binder::Map;
 
 static constexpr const char* kPermAccessLowpanState = "android.permission.ACCESS_LOWPAN_STATE";
 static constexpr const char* kPermChangeLowpanState = "android.permission.CHANGE_LOWPAN_STATE";
@@ -145,6 +144,13 @@ CheckPermAccessCoarseLocation() {
 		return __check_perm_status__; \
 	} } while(0)
 
+#define CHECK_CHANGE_LOWPAN_STATE_RET() do { \
+	Status __check_perm_status__ = CheckPermChangeLowpanState(); \
+	if (!__check_perm_status__.isOk()) { \
+		ret = __check_perm_status__; \
+		goto bail; \
+	} } while(0)
+
 #define CHECK_READ_LOWPAN_CREDENTIAL() do { \
 	Status __check_perm_status__ = CheckPermReadLowpanCredential(); \
 	if (!__check_perm_status__.isOk()) { \
@@ -164,7 +170,9 @@ CheckPermAccessCoarseLocation() {
 
 BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPControlInterface *interface):
 	mIpcServer(ipcServer),
-	mInterface(*interface)
+	mInterface(*interface),
+	mSignalingThreadShouldStop(false),
+	mSignalingThread(&BinderILowpanInterface::signalingThreadMain, this)
 {
 	mOnPropertyChangedConnection = interface->mOnPropertyChanged.connect(
 		boost::bind(
@@ -194,6 +202,10 @@ BinderILowpanInterface::BinderILowpanInterface(BinderIPCServer &ipcServer, NCPCo
 
 BinderILowpanInterface::~BinderILowpanInterface()
 {
+	mSignalingThreadShouldStop = true;
+	mSignalingThreadCondition.notify_one();
+	mSignalingThread.join();
+
 	mOnPropertyChangedConnection.disconnect();
 	mOnNetScanBeaconConnection.disconnect();
 	mOnEnergyScanResultConnection.disconnect();
@@ -216,13 +228,13 @@ BinderILowpanInterface::getName(::std::string* _aidl_return)
 }
 
 Status
-BinderILowpanInterface::join(const LowpanProvision& provision)
+BinderILowpanInterface::join(const LowpanProvisioningParams& provision)
 {
-	CHECK_CHANGE_LOWPAN_STATE();
-
 	Status ret;
 	CallbackArguments args;
 	ValueMap value_map;
+
+	CHECK_CHANGE_LOWPAN_STATE_RET();
 
 	// Convert the provision to a value map that we can
 	// then pass into join().
@@ -244,17 +256,20 @@ BinderILowpanInterface::join(const LowpanProvision& provision)
 	ret = args.get_android_status();
 
 bail:
+	if (!ret.isOk()) {
+		onProvisionException(ret);
+	}
 	return ret;
 }
 
 ::android::binder::Status
-BinderILowpanInterface::form(const LowpanProvision& provision)
+BinderILowpanInterface::form(const LowpanProvisioningParams& provision)
 {
-	CHECK_CHANGE_LOWPAN_STATE();
-
 	Status ret;
 	CallbackArguments args;
 	ValueMap value_map;
+
+	CHECK_CHANGE_LOWPAN_STATE_RET();
 
 	// Convert the provision to a value map that we can
 	// then pass into form().
@@ -275,17 +290,21 @@ BinderILowpanInterface::form(const LowpanProvision& provision)
 	ret = args.get_android_status();
 
 bail:
+	if (!ret.isOk()) {
+		onProvisionException(ret);
+	}
+
 	return ret;
 }
 
 ::android::binder::Status
-BinderILowpanInterface::attach(const LowpanProvision& provision)
+BinderILowpanInterface::provision(const LowpanProvisioningParams& provision)
 {
-	CHECK_CHANGE_LOWPAN_STATE();
-
 	Status ret;
 	ValueMap value_map;
 	ValueMap::const_iterator iter;
+
+	CHECK_CHANGE_LOWPAN_STATE_RET();
 
 	// Convert the provision to property values that we can
 	// then set on the interface.
@@ -301,24 +320,36 @@ BinderILowpanInterface::attach(const LowpanProvision& provision)
 	ret = setProperty(kWPANTUNDProperty_InterfaceUp, cast_to_any(true));
 
 bail:
+	if (!ret.isOk()) {
+		onProvisionException(ret);
+	}
+
 	return ret;
 }
 
 ::android::binder::Status
 BinderILowpanInterface::leave()
 {
-	CHECK_CHANGE_LOWPAN_STATE();
+	Status ret;
+	CallbackArguments args;
 
-	CallbackArguments ret;
+	CHECK_CHANGE_LOWPAN_STATE_RET();
 
 	{
 		BinderIPCServerLock lock(mIpcServer);
-		mInterface.leave(CallbackCompletion(ret));
+		mInterface.leave(CallbackCompletion(args));
 	}
 
-	ret.wait();
+	args.wait();
 
-	return ret.get_android_status();
+	ret = args.get_android_status();
+
+bail:
+	if (!ret.isOk()) {
+		onProvisionException(ret);
+	}
+
+	return ret;
 }
 
 ::android::binder::Status
@@ -484,24 +515,12 @@ Status BinderILowpanInterface::getMacAddress(::std::vector<uint8_t>* _aidl_retur
 	FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_NCPHardwareAddress, getByteVector);
 }
 
-Status BinderILowpanInterface::isEnabled(bool* _aidl_return) {
-	FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_DaemonEnabled, getBoolean);
+Status BinderILowpanInterface::getRole(int32_t* _aidl_return) {
+	FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_InternalSpinelRole, getInt);
 }
 
 Status BinderILowpanInterface::isUp(bool* _aidl_return) {
-	FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_InterfaceUp, getBoolean);
-}
-
-Status BinderILowpanInterface::isCommissioned(bool* _aidl_return) {
-	FETCH_AND_RETURN_PROPERTY_WITH_ACTION(kWPANTUNDProperty_NetworkIsCommissioned, getBoolean, { ret = Status::ok(); *_aidl_return = false; });
-}
-
-Status BinderILowpanInterface::isConnected(bool* _aidl_return) {
-	FETCH_AND_RETURN_PROPERTY_WITH_ACTION(kWPANTUNDProperty_NetworkIsConnected, getBoolean, { ret = Status::ok(); *_aidl_return = false; });
-}
-
-Status BinderILowpanInterface::getRole(::std::string* _aidl_return) {
-	FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_NCPRole, getString);
+	   FETCH_AND_RETURN_PROPERTY(kWPANTUNDProperty_InterfaceUp, getBoolean);
 }
 
 Status BinderILowpanInterface::getExtendedAddress(::std::vector<uint8_t>* _aidl_return) {
@@ -509,25 +528,35 @@ Status BinderILowpanInterface::getExtendedAddress(::std::vector<uint8_t>* _aidl_
 }
 
 Status BinderILowpanInterface::getPartitionId(::std::string* _aidl_return) {
-	CHECK_ACCESS_LOWPAN_STATE();
-
-	// This is a stub.
-	// TODO: Plumb this into wpantund.
-	*_aidl_return = "";
-	return Status::ok();
+	FETCH_AND_RETURN_PROPERTY_WITH_ACTION(kWPANTUNDProperty_NetworkPartitionId, getString, (*_aidl_return = "", ret = Status::ok()));
 }
 
-Status BinderILowpanInterface::getState(::std::string* _aidl_return) {
+Status BinderILowpanInterface::getState(int32_t* _aidl_return) {
 	CHECK_ACCESS_LOWPAN_STATE();
 
 	// We can't use the FETCH_AND_RETURN_PROPERTY macros here because
 	// we have to convert the wpantund-style status to a lowpan status.
+
 	boost::any x;
-	Status ret = fetchProperty(kWPANTUNDProperty_NCPState, x);
+	Status ret;
+
+	// First make sure we are enabled.
+	ret = fetchProperty(kWPANTUNDProperty_DaemonEnabled, x);
 
 	require(ret.isOk(), bail);
 
 	try {
+		if (!any_to_bool(x)) {
+			// We are disabled, indicate that we are disabled.
+			*_aidl_return = ILowpanInterface::STATE_DISABLED;
+			goto bail;
+		}
+
+		// Now fetch the state.
+		ret = fetchProperty(kWPANTUNDProperty_NCPState, x);
+
+		require(ret.isOk(), bail);
+
 		*_aidl_return = ncp_state_to_lowpan_state(any_to_string(x));
 	} catch (boost::bad_any_cast x) {
 		ret = Status::fromExceptionCode(Status::EX_ILLEGAL_ARGUMENT, String8(x.what()));
@@ -539,7 +568,7 @@ bail:
 	return ret;
 }
 
-Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanIdentity* _aidl_return) {
+Status BinderILowpanInterface::getLowpanIdentity(::std::unique_ptr<::android::net::lowpan::LowpanIdentity>* _aidl_return) {
 	CHECK_ACCESS_LOWPAN_STATE();
 
 	LowpanIdentity::Builder builder;
@@ -547,7 +576,15 @@ Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanI
 	Value value;
 	std::string tmpString;
 	std::vector<uint8_t> tmpByteVector;
-	int32_t tmpInt32;
+	int32_t tmpInt32 = 0;
+	bool tmpBoolean = false;
+
+	ret = fetchPropertyToBinderValue(kWPANTUNDProperty_NetworkIsCommissioned, value);
+	if (ret.isOk() && value.getBoolean(&tmpBoolean) && tmpBoolean == false) {
+		// If we aren't provisioned, we need to return NULL.
+		*_aidl_return = NULL;
+		goto bail;
+	}
 
 	ret = fetchPropertyToBinderValue(kWPANTUNDProperty_NetworkName, value);
 	if (ret.isOk() && value.getString(&tmpString)) {
@@ -569,8 +606,11 @@ Status BinderILowpanInterface::getLowpanIdentity(::android::net::lowpan::LowpanI
 		builder.setChannel(tmpInt32);
 	}
 
-	*_aidl_return = builder.build();
+	*_aidl_return = ::std::unique_ptr<::android::net::lowpan::LowpanIdentity>(
+		new ::android::net::lowpan::LowpanIdentity(builder.build())
+	);
 
+bail:
 	return Status::ok();
 }
 
@@ -966,70 +1006,6 @@ Status BinderILowpanInterface::sendToCommissioner(const ::std::vector<uint8_t>& 
 }
 
 void
-BinderILowpanInterface::onPropertyChanged(const std::string& key, const boost::any& value)
-{
-	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>>::const_iterator iter;
-
-	// DO NOT LOCK THE MAIN THEAD HERE. THIS IS A CALL FROM THE
-	// MAIN THREAD INTO BINDER. LOCKING THE MAIN THREAD WILL CAUSE
-	// A DEADLOCK.
-	try {
-		if (key == kWPANTUNDProperty_DaemonReadyForHostSleep) {
-			// TODO: Have this effect the Android sleep system in some way.
-			return;
-		} else if (key == kWPANTUNDProperty_DaemonEnabled) {
-			bool x = any_to_bool(value);
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onEnabledChanged(x);
-			}
-		} else if (key == kWPANTUNDProperty_InterfaceUp) {
-			bool x = any_to_bool(value);
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onUpChanged(x);
-			}
-		} else if (key == kWPANTUNDProperty_NetworkIsConnected) {
-			bool x = any_to_bool(value);
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onConnectedChanged(x);
-			}
-		} else if (key == kWPANTUNDProperty_NCPState) {
-			std::string x = ncp_state_to_lowpan_state(any_to_string(value));
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onStateChanged(x);
-			}
-		} else if (key == kWPANTUNDProperty_NCPRole) {
-			std::string x = any_to_string(value);
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onRoleChanged(x);
-			}
-		} else if (key == kWPANTUNDProperty_NetworkIsCommissioned) {
-			if (any_to_bool(value) == false) {
-				// Because we don't have this plumbed properly for MR1,
-				// we need to emit a dummy LowpanInterface to trigger
-				// the right things to happen higher up. <b/70232808>
-				::android::net::lowpan::LowpanIdentity::Builder builder;
-				LowpanIdentity x = builder.build();
-
-				for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-					(*iter)->onLowpanIdentityChanged(x);
-				}
-			}
-		} else if (key == kWPANTUNDProperty_InternalNetworkId) {
-			LowpanIdentity x = any_to_lowpan_identity(value);
-
-			for (iter = mListeners.begin(); iter != mListeners.end(); ++iter) {
-				(*iter)->onLowpanIdentityChanged(x);
-			}
-		}
-	} catch (boost::bad_any_cast x) {
-		syslog(LOG_ERR, "BinderILowpanInterface::onPropertyChanged: Caught bad_any_cast exception for key \"%s\": \"%s\"", key.c_str(), x.what());
-	} catch (std::invalid_argument x) {
-		syslog(LOG_ERR, "BinderILowpanInterface::onPropertyChanged: Caught invalid_argument exception for key \"%s\": \"%s\"", key.c_str(), x.what());
-	}
-
-}
-
-void
 BinderILowpanInterface::onNetScanBeacon(const WPAN::NetworkInstance& network)
 {
 	// DO NOT LOCK THE MAIN THEAD HERE. THIS IS A CALL FROM THE
@@ -1086,4 +1062,167 @@ BinderILowpanInterface::onEnergyScanResult(const EnergyScanResultEntry& entry)
 			(int32_t)entry.mMaxRssi
 		);
 	}
+}
+
+void
+BinderILowpanInterface::onProvisionException(const Status& status)
+{
+	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>>::const_iterator iter;
+	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>> listeners;
+	int code = 0;
+
+	switch (status.exceptionCode()) {
+	case Status::EX_SECURITY:
+		code = ILowpanInterface::ERROR_SECURITY;
+		break;
+
+	case Status::EX_SERVICE_SPECIFIC:
+		code = status.serviceSpecificErrorCode();
+		break;
+
+	default:
+		code = ILowpanInterface::ERROR_UNSPECIFIED;
+		break;
+	}
+
+	{
+		std::unique_lock<std::mutex> lk(mMutex);
+		listeners = mListeners;
+	}
+
+	for (iter = listeners.begin(); iter != listeners.end(); ++iter) {
+		(*iter)->onProvisionException(code, status.exceptionMessage().string());
+	}
+}
+
+
+void
+BinderILowpanInterface::signalingThreadMain()
+{
+	std::unique_lock<std::mutex> lk(mMutex);
+
+	syslog(LOG_DEBUG, "BinderILowpanInterface::signalingThreadMain(): Started.");
+
+	while (!mSignalingThreadShouldStop) {
+
+		while (!mSignalingThreadShouldStop && !mChangedProperties.empty()) {
+			ValueMap changedProperties(mChangedProperties);
+
+			mChangedProperties.clear();
+
+			lk.unlock();
+
+			handleChangedProperties(changedProperties);
+
+			lk.lock();
+		}
+
+		if (mSignalingThreadShouldStop) {
+			break;
+		}
+
+		syslog(LOG_DEBUG, "BinderILowpanInterface::signalingThreadMain(): Waiting for changed properties.");
+
+		mSignalingThreadCondition.wait(lk);
+
+		syslog(LOG_DEBUG, "BinderILowpanInterface::signalingThreadMain(): Awoken.");
+
+	}
+
+	syslog(LOG_DEBUG, "BinderILowpanInterface::signalingThreadMain(): Stopped.");
+}
+
+void
+BinderILowpanInterface::handleChangedProperties(const ValueMap &changedProperties)
+{
+	// THIS METHOD MUST BE ONLY EXECUTED FROM SIGNALING THREAD.
+
+	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>>::const_iterator listenerIter;
+	std::set<::android::sp<::android::net::lowpan::ILowpanInterfaceListener>> listeners;
+
+	bool stateNeedsRefresh = false;
+	bool roleNeedsRefresh = false;
+	bool identityNeedsRefresh = false;
+
+	ValueMap::const_iterator iter;
+	const ValueMap::const_iterator end = changedProperties.end();
+
+	for(iter = changedProperties.begin(); iter != end; ++iter) {
+		const std::string& key = iter->first;
+
+		if (key == kWPANTUNDProperty_DaemonReadyForHostSleep) {
+			// TODO: Have this effect the Android sleep system in some way.
+
+		} else if ( (key == kWPANTUNDProperty_DaemonEnabled)
+				 || (key == kWPANTUNDProperty_NetworkIsConnected)
+				 || (key == kWPANTUNDProperty_NCPState)
+		) {
+			stateNeedsRefresh = true;
+
+		} else if ( (key == kWPANTUNDProperty_NCPRole)
+				 || (key == kWPANTUNDProperty_InternalSpinelRole)
+		) {
+			roleNeedsRefresh = true;
+
+		} else if ( (key == kWPANTUNDProperty_NetworkIsCommissioned)
+				 || (key == kWPANTUNDProperty_InternalNetworkId)
+				 || (key == kWPANTUNDProperty_NetworkName)
+				 || (key == kWPANTUNDProperty_NetworkXPANID)
+				 || (key == kWPANTUNDProperty_NetworkPANID)
+		) {
+			identityNeedsRefresh = true;
+		}
+	}
+
+	{
+		std::unique_lock<std::mutex> lk(mMutex);
+
+		// Make a copy of the listener list.
+		listeners = mListeners;
+	}
+
+	if (stateNeedsRefresh) {
+		int32_t new_state = ILowpanInterface::STATE_OFFLINE;
+
+		BinderILowpanInterface::getState(&new_state);
+
+		for (listenerIter = listeners.begin(); listenerIter != listeners.end(); ++listenerIter) {
+			(*listenerIter)->onStateChanged(new_state);
+		}
+	}
+
+	if (roleNeedsRefresh) {
+		int32_t new_role = ILowpanInterface::ROLE_DETACHED;
+
+		BinderILowpanInterface::getRole(&new_role);
+
+		for (listenerIter = listeners.begin(); listenerIter != listeners.end(); ++listenerIter) {
+			(*listenerIter)->onRoleChanged(new_role);
+		}
+	}
+
+	if (identityNeedsRefresh) {
+		::std::unique_ptr<::android::net::lowpan::LowpanIdentity> x;
+
+		BinderILowpanInterface::getLowpanIdentity(&x);
+
+		for (listenerIter = listeners.begin(); listenerIter != listeners.end(); ++listenerIter) {
+			(*listenerIter)->onLowpanIdentityChanged(x);
+		}
+	}
+}
+
+void
+BinderILowpanInterface::onPropertyChanged(const std::string& key, const boost::any& value)
+{
+	// DO NOT LOCK THE MAIN THEAD HERE. THIS IS A CALL FROM THE
+	// MAIN THREAD INTO BINDER. LOCKING THE MAIN THREAD WILL CAUSE
+	// A DEADLOCK.
+
+	// ...but locking the object mutex is fine.
+	std::lock_guard<std::mutex> guard(mMutex);
+
+	mChangedProperties[key] = value;
+
+	mSignalingThreadCondition.notify_one();
 }

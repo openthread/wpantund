@@ -561,7 +561,11 @@ NCPInstanceBase::property_set_value(
 
 	try {
 		if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonEnabled)) {
-			mEnabled = any_to_bool(value);
+			bool boolValue = any_to_bool(value);
+			if (boolValue != mEnabled) {
+				mEnabled = boolValue;
+				signal_property_changed(kWPANTUNDProperty_DaemonEnabled, mEnabled);
+			}
 			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {

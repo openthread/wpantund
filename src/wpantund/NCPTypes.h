@@ -35,6 +35,8 @@ namespace wpantund {
 /** nl::wpantund::NetworkId */
 #define kWPANTUNDProperty_InternalNetworkId                 "Internal:NetworkId"
 
+#define kWPANTUNDProperty_InternalSpinelRole                "Internal:Spinel:Role"
+
 enum NCPState {
 	UNINITIALIZED,
 	FAULT,
