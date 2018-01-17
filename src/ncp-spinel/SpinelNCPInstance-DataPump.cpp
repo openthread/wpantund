@@ -304,13 +304,13 @@ SpinelNCPInstance::ncp_to_driver_pump()
 		}
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
-		size_t inboundFrameTransformedLen = sizeof(mInboundFrame);
-		if (!SpinelEncrypter::DecryptInbound(mInboundFrame, mInboundFrameSize, mInboundFrame, &inboundFrameTransformedLen))
+		size_t dataLen = mInboundFrameSize;
+		if (!SpinelEncrypter::DecryptInbound(mInboundFrame, sizeof(mInboundFrame), &dataLen))
 		{
 			syslog(LOG_ERR, "[-NCP-]: Unable to transform inbound data");
 			break;
 		}
-		mInboundFrameSize = inboundFrameTransformedLen;
+		mInboundFrameSize = dataLen;
 #endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
 
 		if (spinel_datatype_unpack(mInboundFrame, mInboundFrameSize, "Ci", &mInboundHeader, &command_value) > 0) {
@@ -521,13 +521,13 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			uint16_t crc(0xFFFF);
 
 #if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
-			size_t outboundFrameTransformedLen = sizeof(mOutboundBuffer);
-			if (!SpinelEncrypter::EncryptOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundBuffer, &outboundFrameTransformedLen))
+			size_t dataLen = mOutboundBufferLen;
+			if (!SpinelEncrypter::EncryptOutbound(mOutboundBuffer, sizeof(mOutboundBuffer), &dataLen))
 			{
 				syslog(LOG_ERR, "[-NCP-]: Unable to transform outbound data");
 				break;
 			}
-			mOutboundBufferLen = outboundFrameTransformedLen;
+			mOutboundBufferLen = dataLen;
 #endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
 
 			for (i = 0; i < mOutboundBufferLen; i++) {
