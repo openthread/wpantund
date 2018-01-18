@@ -31,9 +31,9 @@
 #include <sys/file.h>
 #include "SuperSocket.h"
 
-#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
-#include "spinel_encrypter.hpp"
-#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
+#include "spinel_transformer.hpp"
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
 using namespace nl;
 using namespace wpantund;
@@ -303,15 +303,15 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			goto on_error;
 		}
 
-#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 		size_t inboundFrameTransformedLen = sizeof(mInboundFrame);
-		if (!SpinelEncrypter::DecryptInbound(mInboundFrame, mInboundFrameSize, mInboundFrame, &inboundFrameTransformedLen))
+		if (!SpinelTransformer::TransformInbound(mInboundFrame, mInboundFrameSize, mInboundFrame, &inboundFrameTransformedLen))
 		{
 			syslog(LOG_ERR, "[-NCP-]: Unable to transform inbound data");
 			break;
 		}
 		mInboundFrameSize = inboundFrameTransformedLen;
-#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
 		if (spinel_datatype_unpack(mInboundFrame, mInboundFrameSize, "Ci", &mInboundHeader, &command_value) > 0) {
 			if ((mInboundHeader&SPINEL_HEADER_FLAG) != SPINEL_HEADER_FLAG) {
@@ -520,15 +520,15 @@ SpinelNCPInstance::driver_to_ncp_pump()
 			uint8_t byte;
 			uint16_t crc(0xFFFF);
 
-#if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#if OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 			size_t outboundFrameTransformedLen = sizeof(mOutboundBuffer);
-			if (!SpinelEncrypter::EncryptOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundBuffer, &outboundFrameTransformedLen))
+			if (!SpinelTransformer::TransformOutbound(mOutboundBuffer, mOutboundBufferLen, mOutboundBuffer, &outboundFrameTransformedLen))
 			{
 				syslog(LOG_ERR, "[-NCP-]: Unable to transform outbound data");
 				break;
 			}
 			mOutboundBufferLen = outboundFrameTransformedLen;
-#endif // OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+#endif // OPENTHREAD_ENABLE_NCP_SPINEL_TRANSFORMER
 
 			for (i = 0; i < mOutboundBufferLen; i++) {
 				byte = mOutboundBuffer[i];
