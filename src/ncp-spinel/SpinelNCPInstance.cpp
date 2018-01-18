@@ -310,36 +310,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_TOTAL");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_UNICAST");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_BROADCAST");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACK_REQ");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_ACKED");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_NO_ACK_REQ");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_DATA");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_DATA_POLL");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_BEACON");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_BEACON_REQ");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_OTHER");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_PKT_RETRY");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_CCA");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_ERR_ABORT");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_TOTAL");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_UNICAST");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BROADCAST");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_DATA_POLL");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BEACON");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_BEACON_REQ");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_OTHER");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_FILT_WL");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_PKT_FILT_DA");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_EMPTY");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_UKWN_NBR");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_NVLD_SADDR");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_SECURITY");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_BAD_FCS");
-		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "RX_ERR_OTHER");
+		properties.insert(kWPANTUNDProperty_NCPCounterAllMac);
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_SEC_TOTAL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_INSEC_TOTAL");
 		properties.insert(kWPANTUNDProperty_Spinel_CounterPrefix "TX_IP_DROPPED");
@@ -604,6 +575,113 @@ unpack_channel_monitor_channel_quality(const uint8_t *data_in, spinel_size_t dat
 
 		data_in += len;
 		data_len -= len;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
+	return ret;
+}
+
+static int
+unpack_ncp_counters_all_mac(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+
+	const char *tx_counter_names[] = {
+		kWPANTUNDValueMapKey_Counter_TxTotal,
+		kWPANTUNDValueMapKey_Counter_TxUnicast,
+		kWPANTUNDValueMapKey_Counter_TxBroadcast,
+		kWPANTUNDValueMapKey_Counter_TxAckRequested,
+		kWPANTUNDValueMapKey_Counter_TxAcked,
+		kWPANTUNDValueMapKey_Counter_TxNoAckRequested,
+		kWPANTUNDValueMapKey_Counter_TxData,
+		kWPANTUNDValueMapKey_Counter_TxDataPoll,
+		kWPANTUNDValueMapKey_Counter_TxBeacon,
+		kWPANTUNDValueMapKey_Counter_TxBeaconRequest,
+		kWPANTUNDValueMapKey_Counter_TxOther,
+		kWPANTUNDValueMapKey_Counter_TxRetry,
+		kWPANTUNDValueMapKey_Counter_TxErrCca,
+		kWPANTUNDValueMapKey_Counter_TxErrAbort,
+		kWPANTUNDValueMapKey_Counter_TxErrBusyChannel,
+		NULL
+	};
+
+	const char *rx_counter_names[] = {
+		kWPANTUNDValueMapKey_Counter_RxTotal,
+		kWPANTUNDValueMapKey_Counter_RxUnicast,
+		kWPANTUNDValueMapKey_Counter_RxBroadcast,
+		kWPANTUNDValueMapKey_Counter_RxData,
+		kWPANTUNDValueMapKey_Counter_RxDataPoll,
+		kWPANTUNDValueMapKey_Counter_RxBeacon,
+		kWPANTUNDValueMapKey_Counter_RxBeaconRequest,
+		kWPANTUNDValueMapKey_Counter_RxOther,
+		kWPANTUNDValueMapKey_Counter_RxAddressFiltered,
+		kWPANTUNDValueMapKey_Counter_RxDestAddrFiltered,
+		kWPANTUNDValueMapKey_Counter_RxDuplicated,
+		kWPANTUNDValueMapKey_Counter_RxErrNoFrame,
+		kWPANTUNDValueMapKey_Counter_RxErrUnknownNeighbor,
+		kWPANTUNDValueMapKey_Counter_RxErrInvalidSrcAddr,
+		kWPANTUNDValueMapKey_Counter_RxErrSec,
+		kWPANTUNDValueMapKey_Counter_RxErrFcs,
+		kWPANTUNDValueMapKey_Counter_RxErrOther,
+		NULL
+	};
+
+	for (int struct_index = 0; struct_index < 2; struct_index++)
+	{
+		const char **counter_names;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+		spinel_size_t len;
+
+		counter_names = (struct_index == 0) ? tx_counter_names : rx_counter_names;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_in,
+			&struct_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		while (*counter_names != NULL) {
+			uint32_t counter_value;
+
+			len = spinel_datatype_unpack(
+				struct_in,
+				struct_len,
+				SPINEL_DATATYPE_UINT32_S,
+				&counter_value
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			struct_in  += len;
+			struct_len -= len;
+
+			if (!as_val_map) {
+				char c_string[200];
+				snprintf(c_string, sizeof(c_string), "%-20s = %d", *counter_names, counter_value);
+				result_as_string.push_back(std::string(c_string));
+			} else {
+				result_as_val_map[*counter_names] = counter_value;
+			}
+
+			counter_names++;
+		}
 	}
 
 	if (as_val_map) {
@@ -1408,6 +1486,34 @@ SpinelNCPInstance::property_get_value(
 		std::list<std::string> help_string;
 		get_dataset_command_help(help_string);
 		cb(kWPANTUNDStatus_Ok, boost::any(help_string));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCounterAllMac)) {
+		if (!mCapabilities.count(SPINEL_CAP_COUNTERS)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CNTR_ALL_MAC_COUNTERS)
+				)
+				.set_reply_unpacker(boost::bind(unpack_ncp_counters_all_mac, _1, _2, _3, /* as_val_map */ false))
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCounterAllMacAsValMap)) {
+		if (!mCapabilities.count(SPINEL_CAP_COUNTERS)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CNTR_ALL_MAC_COUNTERS)
+				)
+				.set_reply_unpacker(boost::bind(unpack_ncp_counters_all_mac, _1, _2, _3, /* as_val_map */ true))
+				.finish()
+			);
+		}
 
 	} else if (strncaseequal(key.c_str(), kWPANTUNDProperty_Spinel_CounterPrefix, sizeof(kWPANTUNDProperty_Spinel_CounterPrefix)-1)) {
 		int cntr_key = 0;
