@@ -701,11 +701,16 @@ typedef enum
     SPINEL_PROP_CHANNEL_MONITOR_SAMPLE_INTERVAL
                                         = SPINEL_PROP_PHY_EXT__BEGIN + 6,
 
-    /// Channel monitoring RSS threshold
+    /// Channel monitoring RSSI threshold
     /** Format: `c` (read-only)
      *  Units: dBm
      *
      * Required capability: SPINEL_CAP_CHANNEL_MONITOR
+     *
+     * This value specifies the threshold used by channel monitoring module.
+     * Channel monitoring maintains the average rate of RSSI samples that
+     * are above the threshold within (approximately) a pre-specified number
+     * of samples (sample window).
      *
      */
     SPINEL_PROP_CHANNEL_MONITOR_RSSI_THRESHOLD
@@ -720,7 +725,7 @@ typedef enum
      * The averaging sample window length (in units of number of channel
      * samples) used by channel monitoring module. Channel monitoring will
      * sample all channels every sample interval. It maintains the average rate
-     * of RSS samples that are above the RSS threshold within (approximately)
+     * of RSSI samples that are above the RSSI threshold within (approximately)
      * the sample window.
      *
      */
@@ -733,8 +738,9 @@ typedef enum
      *
      * Required capability: SPINEL_CAP_CHANNEL_MONITOR
      *
-     * Total number of RSS samples taken so far by channel monitoring
-     * module.
+     * Total number of RSSI samples (per channel) taken by the channel
+     * monitoring module since its start (since Thread network interface
+     * was enabled).
      *
      */
     SPINEL_PROP_CHANNEL_MONITOR_SAMPLE_COUNT
@@ -751,10 +757,10 @@ typedef enum
      *  `U`: Channel quality indicator
      *
      * The channel quality value represents the average rate/percentage of
-     * RSS samples that were above RSS threshold ("bad" RSS samples) within
+     * RSSI samples that were above RSSI threshold ("bad" RSSI samples) within
      * (approximately) sample window latest RSSI samples.
      *
-     * Max value of `0xffff` indicates all RSS samples were above RSS
+     * Max value of `0xffff` indicates all RSSI samples were above RSSI
      * threshold (i.e. 100% of samples were "bad").
      *
      */
@@ -1640,6 +1646,53 @@ typedef enum
      *      `S`, (CoapBuffers)            The number of buffers in the CoAP send queue.
      */
     SPINEL_PROP_MSG_BUFFER_COUNTERS     = SPINEL_PROP_CNTR__BEGIN + 400,
+
+    /// All MAC related counters.
+    /** Format: t(A(L))t(A(L))  (Read-only)
+     *
+     * The contents include two structs, first one corresponds to
+     * all transmit related MAC counters, second one provides the
+     * receive related counters.
+     *
+     * The transmit structure includes:
+     *
+     *   'L': TxTotal              (The total number of transmissions).
+     *   'L': TxUnicast            (The total number of unicast transmissions).
+     *   'L': TxBroadcast          (The total number of broadcast transmissions).
+     *   'L': TxAckRequested       (The number of transmissions with ack request).
+     *   'L': TxAcked              (The number of transmissions that were acked).
+     *   'L': TxNoAckRequested     (The number of transmissions without ack request).
+     *   'L': TxData               (The number of transmitted data).
+     *   'L': TxDataPoll           (The number of transmitted data poll).
+     *   'L': TxBeacon             (The number of transmitted beacon).
+     *   'L': TxBeaconRequest      (The number of transmitted beacon request).
+     *   'L': TxOther              (The number of transmitted other types of frames).
+     *   'L': TxRetry              (The number of retransmission times).
+     *   'L': TxErrCca             (The number of CCA failure times).
+     *   'L': TxErrAbort           (The number of frame transmission failures due to abort error).
+     *   'L': TxErrBusyChannel     (The number of frames that were dropped due to a busy channel).
+     *
+     * The receive structure includes:
+     *
+     *   'L': RxTotal              (The total number of received packets).
+     *   'L': RxUnicast            (The total number of unicast packets received).
+     *   'L': RxBroadcast          (The total number of broadcast packets received).
+     *   'L': RxData               (The number of received data).
+     *   'L': RxDataPoll           (The number of received data poll).
+     *   'L': RxBeacon             (The number of received beacon).
+     *   'L': RxBeaconRequest      (The number of received beacon request).
+     *   'L': RxOther              (The number of received other types of frames).
+     *   'L': RxAddressFiltered    (The number of received packets filtered by address filter (whitelist or blacklist)).
+     *   'L': RxDestAddrFiltered   (The number of received packets filtered by destination check).
+     *   'L': RxDuplicated         (The number of received duplicated packets).
+     *   'L': RxErrNoFrame         (The number of received packets that do not contain contents).
+     *   'L': RxErrUnknownNeighbor (The number of received packets from unknown neighbor).
+     *   'L': RxErrInvalidSrcAddr  (The number of received packets whose source address is invalid).
+     *   'L': RxErrSec             (The number of received packets with security error).
+     *   'L': RxErrFcs             (The number of received packets with FCS error).
+     *   'L': RxErrOther           (The number of received packets with other error).
+     */
+    SPINEL_PROP_CNTR_ALL_MAC_COUNTERS   =  SPINEL_PROP_CNTR__BEGIN + 401,
 
     SPINEL_PROP_CNTR__END               = 2048,
 
