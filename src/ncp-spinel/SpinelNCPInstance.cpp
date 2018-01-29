@@ -279,6 +279,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
+	properties.insert(kWPANTUNDProperty_NCPCCAFailureRate);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -1212,6 +1213,9 @@ SpinelNCPInstance::property_get_value(
 				.finish()
 			);
 		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAFailureRate)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_CCA_FAILURE_RATE, SPINEL_DATATYPE_UINT16_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorSampleInterval)) {
 		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {

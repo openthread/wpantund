@@ -845,7 +845,17 @@ typedef enum
      * * `E`: Optional EUI64 address of node. Set default RSS if not included.
      * * `c`: Fixed RSS. OT_MAC_FILTER_FIXED_RSS_OVERRIDE_DISABLED(127) means not set.
      */
-    SPINEL_PROP_MAC_FIXED_RSS            = SPINEL_PROP_MAC_EXT__BEGIN + 8,
+    SPINEL_PROP_MAC_FIXED_RSS           = SPINEL_PROP_MAC_EXT__BEGIN + 8,
+
+    /// The CCA failure rate
+    /** Format: `S`
+     *
+     * This property provides the current CCA (Clear Channel Assessment) failure rate.
+     *
+     * Maximum value `0xffff` corresponding to 100% failure rate.
+     *
+     */
+    SPINEL_PROP_MAC_CCA_FAILURE_RATE    = SPINEL_PROP_MAC_EXT__BEGIN + 9,
 
     SPINEL_PROP_MAC_EXT__END            = 0x1400,
 
@@ -1685,7 +1695,7 @@ typedef enum
      *   'L': RxAddressFiltered    (The number of received packets filtered by address filter (whitelist or blacklist)).
      *   'L': RxDestAddrFiltered   (The number of received packets filtered by destination check).
      *   'L': RxDuplicated         (The number of received duplicated packets).
-     *   'L': RxErrNoFrame         (The number of received packets that do not contain contents).
+     *   'L': RxErrNoFrame         (The number of received packets with no or malformed content).
      *   'L': RxErrUnknownNeighbor (The number of received packets from unknown neighbor).
      *   'L': RxErrInvalidSrcAddr  (The number of received packets whose source address is invalid).
      *   'L': RxErrSec             (The number of received packets with security error).
