@@ -62,6 +62,7 @@
 #define kWPANTUNDProperty_NCPChannelMask                        "NCP:ChannelMask"
 #define kWPANTUNDProperty_NCPSleepyPollInterval                 "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
+#define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
 
 #define kWPANTUNDProperty_InterfaceUp                           "Interface:Up"
 
