@@ -43,6 +43,7 @@ public:
 		kChildTableAddresses,          // Get the child table addresses (including registered IPv6 addresses)
 		kNeighborTable,                // Get the neighbor table
 		kRouterTable,                  // Get the router table
+		kNeighborTableErrorRates,      // Get the neighbor's (frame/message) error rates
 	};
 
 	enum ResultFormat
@@ -100,6 +101,10 @@ public:
 		// Child info addresses only
 		std::list<struct in6_addr> mIPv6Addresses;
 
+		// Neighbor info error rate only
+		uint16_t mFrameErrorRate;
+		uint16_t mMessageErrorRate;
+
 	public:
 		TableEntry(void);
 
@@ -123,6 +128,7 @@ public:
 	static int parse_child_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& child_info);
 	static int parse_child_addresses_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& child_addr_info);
 	static int parse_neighbor_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& neighbor_info);
+	static int parse_neighbor_error_rates_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& neighbor_err_rates_info);
 	static int parse_router_entry(const uint8_t *data_in, spinel_size_t data_len, TableEntry& router_info);
 
 	// Parse the spinel child/neighbor/router table property and updates the passed-in `Table`
@@ -130,6 +136,7 @@ public:
 	static int parse_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
 	static int parse_child_addresses_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_addr_table);
 	static int parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
+	static int prase_neighbor_error_rates_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_err_rate_table);
 	static int parse_router_table(const uint8_t *data_in, spinel_size_t data_len, Table& router_table);
 
 private:

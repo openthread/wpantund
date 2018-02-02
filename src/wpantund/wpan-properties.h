@@ -100,6 +100,8 @@
 #define kWPANTUNDProperty_ThreadChildTableAddresses             "Thread:ChildTable:Addresses"
 #define kWPANTUNDProperty_ThreadNeighborTable                   "Thread:NeighborTable"
 #define kWPANTUNDProperty_ThreadNeighborTableAsValMap           "Thread:NeighborTable:AsValMap"
+#define kWPANTUNDProperty_ThreadNeighborTableErrorRates         "Thread:NeighborTable:ErrorRates"
+#define kWPANTUNDProperty_ThreadNeighborTableErrorRatesAsValMap "Thread:NeighborTable:ErrorRates:AsValMap"
 #define kWPANTUNDProperty_ThreadRouterTable                     "Thread:RouterTable"
 #define kWPANTUNDProperty_ThreadRouterTableAsValMap             "Thread:RouterTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNetworkDataVersion              "Thread:NetworkDataVersion"
@@ -280,6 +282,8 @@
 #define kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter   "LinkFrameCounter"
 #define kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter    "MleFrameCounter"
 #define kWPANTUNDValueMapKey_NetworkTopology_IsChild            "IsChild"
+#define kWPANTUNDValueMapKey_NetworkTopology_FrameErrorRate     "FrameErrorRate"
+#define kWPANTUNDValueMapKey_NetworkTopology_MessageErrorRate   "MessageErrorRate"
 
 #define kWPANTUNDValueMapKey_Scan_Period                        "Scan:Period"
 #define kWPANTUNDValueMapKey_Scan_ChannelMask                   "Scan:ChannelMask"

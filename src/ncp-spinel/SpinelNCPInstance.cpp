@@ -308,6 +308,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
 		properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
 		properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
+
+		if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
+			properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
+		}
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -1328,6 +1332,34 @@ SpinelNCPInstance::property_get_value(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTableErrorRates)) {
+		if (!mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Error Rate Tracking Feature Not Supported")));
+		} else {
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
+				new SpinelNCPTaskGetNetworkTopology(
+					this,
+					cb,
+					SpinelNCPTaskGetNetworkTopology::kNeighborTableErrorRates,
+					SpinelNCPTaskGetNetworkTopology::kResultFormat_StringArray
+				)
+			));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTableErrorRatesAsValMap)) {
+		if (!mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Error Rate Tracking Feature Not Supported")));
+		} else {
+			start_new_task(boost::shared_ptr<SpinelNCPTask>(
+				new SpinelNCPTaskGetNetworkTopology(
+					this,
+					cb,
+					SpinelNCPTaskGetNetworkTopology::kNeighborTableErrorRates,
+					SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
+				)
+			));
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -3039,6 +3071,20 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		int num_neighbor = 0;
 
 		SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(value_data_ptr, value_data_len, neigh_table);
+
+		for (it = neigh_table.begin(); it != neigh_table.end(); it++)
+		{
+			num_neighbor++;
+			syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
+		}
+		syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
+
+	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE_ERROR_RATES) {
+		SpinelNCPTaskGetNetworkTopology::Table neigh_table;
+		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+		int num_neighbor = 0;
+
+		SpinelNCPTaskGetNetworkTopology::prase_neighbor_error_rates_table(value_data_ptr, value_data_len, neigh_table);
 
 		for (it = neigh_table.begin(); it != neigh_table.end(); it++)
 		{
