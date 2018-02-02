@@ -95,6 +95,7 @@ class SpinelNCPInstance : public NCPInstanceBase {
 	friend class SpinelNCPTaskForm;
 	friend class SpinelNCPTaskScan;
 	friend class SpinelNCPTaskLeave;
+	friend class SpinelNCPTaskPeek;
 	friend class SpinelNCPTaskSendCommand;
 	friend class SpinelNCPTaskGetNetworkTopology;
 	friend class SpinelNCPTaskGetMsgBufferCounters;
@@ -148,29 +149,33 @@ protected:
 
 private:
 
-	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags);
+	void refresh_on_mesh_prefix(struct in6_addr *addr, uint8_t prefix_len, bool stable, uint8_t flags, bool isLocal);
+
+	void update_node_type(NodeType node_type);
+	void update_link_local_address(struct in6_addr *addr);
+	void update_mesh_local_address(struct in6_addr *addr);
+	void update_mesh_local_prefix(struct in6_addr *addr);
 
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 
 	virtual std::set<std::string> get_supported_property_keys()const;
 
-	virtual void get_property(
-	    const std::string& key,
-	    CallbackWithStatusArg1 cb
-	);
-
-	virtual void set_property(
-	    const std::string& key,
-	    const boost::any& value,
-	    CallbackWithStatus cb
-	);
+	virtual void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
+	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
 
 	virtual cms_t get_ms_to_next_event(void);
 
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);
 
 	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
+
+	static std::string thread_mode_to_string(uint8_t mode);
+	static std::string on_mesh_prefix_flags_to_string(uint8_t flags);
+
+	uint8_t get_thread_mode(void);
 
 	virtual void process(void);
 
@@ -224,11 +229,17 @@ private:
 	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_MAX_SIZE*2];
 	spinel_ssize_t mOutboundBufferEscapedLen;
 	boost::function<void(int)> mOutboundCallback;
+	spinel_net_role_t mRole;
 
 	int mTXPower;
+	uint8_t mThreadMode;
+	bool mIsCommissioned;
 
 	std::set<unsigned int> mCapabilities;
 	uint32_t mDefaultChannelMask;
+
+	bool mSetSteeringDataWhenJoinable;
+	uint8_t mSteeringDataAddress[8];
 
 	SettingsMap mSettings;
 	SettingsMap::iterator mSettingsIter;
@@ -241,8 +252,10 @@ private:
 
 	int mSubPTIndex;
 
+	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
+	bool mXPANIDWasExplicitlySet;
 
 	bool mResetIsExpected;
 
@@ -250,15 +263,6 @@ private:
 
 	// Task management
 	std::list<boost::shared_ptr<SpinelNCPTask> > mTaskQueue;
-
-	enum
-	{
-		kMaxTimeBetweenNoMemStatus = 60000, // (in ms) time between NOMEM status to consider it back-to-back.
-		kMaxNonMemCountToReset = 15,        // Number of back-to-back NOMEM status to reset
-	};
-
-	cms_t mLastTimeNoMemStatus;
-	uint16_t mNoMemStatusCounter;
 
 }; // class SpinelNCPInstance
 

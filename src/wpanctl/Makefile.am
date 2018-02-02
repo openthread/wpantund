@@ -24,7 +24,11 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/assert-macros \
 	$(NULL)
 
+@CODE_COVERAGE_RULES@
+
 DISTCLEANFILES = .deps Makefile
+
+if BUILD_WPANCTL
 
 bin_PROGRAMS = wpanctl
 
@@ -47,6 +51,8 @@ wpanctl_SOURCES = \
 	tool-cmd-reset.c \
 	tool-cmd-getprop.c \
 	tool-cmd-setprop.c \
+	tool-cmd-insertprop.c \
+	tool-cmd-removeprop.c \
 	tool-cmd-begin-low-power.c \
 	tool-cmd-begin-net-wake.c \
 	tool-cmd-cd.c \
@@ -55,6 +61,7 @@ wpanctl_SOURCES = \
 	tool-cmd-host-did-wake.c \
 	tool-cmd-add-route.c \
 	tool-cmd-remove-route.c \
+	tool-updateprop.c \
 	wpanctl-utils.h \
 	tool-cmd-scan.h \
 	tool-cmd-join.h \
@@ -68,6 +75,8 @@ wpanctl_SOURCES = \
 	tool-cmd-reset.h \
 	tool-cmd-getprop.h \
 	tool-cmd-setprop.h \
+	tool-cmd-insertprop.h \
+	tool-cmd-removeprop.h \
 	tool-cmd-begin-low-power.h \
 	tool-cmd-begin-net-wake.h \
 	tool-cmd-cd.h \
@@ -78,6 +87,13 @@ wpanctl_SOURCES = \
 	tool-cmd-remove-route.h \
 	tool-cmd-pcap.h \
 	tool-cmd-pcap.c \
+	tool-cmd-peek.h \
+	tool-cmd-peek.c \
+	tool-cmd-poke.h \
+	tool-cmd-poke.c \
+	tool-cmd-commissioner.h \
+	tool-cmd-commissioner.c \
+	tool-updateprop.h \
 	$(NULL)
 
 wpanctl_LDADD = \
@@ -99,3 +115,5 @@ CLEANFILES = $(top_builddir)/$(subdir)/version.c
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@
 wpanctl_SOURCES += $(top_builddir)/$(subdir)/version.c
+
+endif

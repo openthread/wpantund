@@ -99,10 +99,10 @@ public:
 	virtual int vprocess_event(int event, va_list args);
 
 	// Parses the spinel child table property and updates the child_table
-	static int prase_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
+	static int parse_child_table(const uint8_t *data_in, spinel_size_t data_len, Table& child_table);
 
 	// Parses the spinel neighbor table property and updates the neighbor_table
-	static int prase_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
+	static int parse_neighbor_table(const uint8_t *data_in, spinel_size_t data_len, Table& neighbor_table);
 
 private:
 	Type mType;

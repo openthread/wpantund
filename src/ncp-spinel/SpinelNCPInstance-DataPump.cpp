@@ -208,7 +208,7 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			mInboundFrame,
 			mInboundFrameSize
 		);
-#else
+#else // if WPANTUND_SPINEL_USE_FLEN
 
 		mInboundFrameSize = 0;
 		mInboundFrameHDLCCRC = 0xffff;
@@ -244,6 +244,8 @@ SpinelNCPInstance::ncp_to_driver_pump()
 
 		mInboundFrameSize -= 2;
 		mInboundFrameHDLCCRC ^= 0xFFFF;
+
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION // Don't do CRC checks when in fuzzing mode
 		{
 			uint16_t frame_crc = (mInboundFrame[mInboundFrameSize]|(mInboundFrame[mInboundFrameSize+1]<<8));
 			if (mInboundFrameHDLCCRC != frame_crc) {
@@ -286,7 +288,9 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			}
 		}
 
-#endif
+#endif // !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+
+#endif // else WPANTUND_SPINEL_USE_FLEN
 
 		if (pt->last_errno) {
 			syslog(LOG_ERR, "[-NCP-]: Socket error on read: %s", strerror(pt->last_errno));
@@ -381,6 +385,16 @@ SpinelNCPInstance::driver_to_ncp_pump()
 				syslog(LOG_INFO, "[->NCP] CMD_RESET tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else if (mOutboundBuffer[1] == SPINEL_CMD_NET_CLEAR) {
 				syslog(LOG_INFO, "[->NCP] CMD_NET_CLEAR tid:%d", SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+			} else if (mOutboundBuffer[1] == SPINEL_CMD_PEEK) {
+				uint32_t address = 0;
+				uint16_t count = 0;
+				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "CiLS", NULL, NULL, &address, &count);
+				syslog(LOG_INFO, "[->NCP] CMD_PEEK(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
+			} else if (mOutboundBuffer[1] == SPINEL_CMD_POKE) {
+				uint32_t address = 0;
+				uint16_t count = 0;
+				spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "CiLS", NULL, NULL, &address, &count);
+				syslog(LOG_INFO, "[->NCP] CMD_NET_POKE(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			} else {
 				syslog(LOG_INFO, "[->NCP] Spinel command 0x%02X tid:%d", mOutboundBuffer[1], SPINEL_HEADER_GET_TID(mOutboundBuffer[0]));
 			}

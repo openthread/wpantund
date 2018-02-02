@@ -38,20 +38,32 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	const ValueMap& options
-):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
+):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state()), mUseModernBehavior(false)
 {
-	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
-		uint16_t panid;
+	if (options.count(kWPANTUNDUseModernBehavior)) {
+		mUseModernBehavior = any_to_bool(options.find(kWPANTUNDUseModernBehavior)->second);
+	}
 
-		sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
+		uint16_t panid = instance->mCurrentNetworkInstance.panid;
+
+		if (panid == 0xffff) {
+			sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+		}
 
 		mOptions[kWPANTUNDProperty_NetworkPANID] = panid;
 	}
 
 	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		uint64_t xpanid;
+		uint64_t xpanid = 0;
 
-		sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
+		if (instance->mXPANIDWasExplicitlySet) {
+			xpanid = instance->mCurrentNetworkInstance.get_xpanid_as_uint64();
+		}
+
+		if (xpanid == 0) {
+			sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
+		}
 
 		mOptions[kWPANTUNDProperty_NetworkXPANID] = xpanid;
 	}
@@ -126,7 +138,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	if (ncp_state_is_associated(mInstance->get_ncp_state())) {
+	if (!mUseModernBehavior && ncp_state_is_associated(mInstance->get_ncp_state())) {
 		ret = kWPANTUNDStatus_Already;
 		finish(ret);
 		EH_EXIT();
@@ -147,15 +159,36 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
-	mLastState = mInstance->get_ncp_state();
-	mInstance->change_ncp_state(ASSOCIATING);
+	if (mUseModernBehavior) {
+		// Turn off PROP_NET_STACK_UP
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_STACK_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+		// Turn off PROP_NET_IF_UP
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+	}
 
 	// Clear any previously saved network settings
 	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 	ret = mNextCommandRet;
-
 	check_noerr(ret);
+
+	mLastState = mInstance->get_ncp_state();
+	mInstance->change_ncp_state(ASSOCIATING);
 
 	// TODO: We should do a scan to make sure we pick a good channel
 	//       and don't have a panid collision.

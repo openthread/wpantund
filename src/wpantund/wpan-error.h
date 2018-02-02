@@ -41,7 +41,7 @@ typedef enum {
 	kWPANTUNDStatus_InProgress                    = 12,
 	kWPANTUNDStatus_TryAgainLater                 = 13,
 
-	kWPANTUNDStatus_FeatureNotSupported           = 14,
+	kWPANTUNDStatus_FeatureNotSupported           = 15, // Deprecated, use kWPANTUNDStatus_FeatureNotImplemented instead.
 	kWPANTUNDStatus_FeatureNotImplemented         = 15,
 
 	kWPANTUNDStatus_PropertyNotFound              = 16,
@@ -63,8 +63,8 @@ typedef enum {
 
 	kWPANTUNDStatus_InterfaceNotFound             = 28,
 
-	kWPANTUNDStatus_NCPError_First = 0xEA0000,
-	kWPANTUNDStatus_NCPError_Last = 0xEAFFFF,
+	kWPANTUNDStatus_NCPError_First                = 0xEA0000,
+	kWPANTUNDStatus_NCPError_Last                 = 0xEAFFFF,
 } wpantund_status_t;
 
 #define WPANTUND_NCPERROR_MASK		0xFFFF

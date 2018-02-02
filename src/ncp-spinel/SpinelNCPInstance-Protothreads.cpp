@@ -49,8 +49,7 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 {
 	EH_BEGIN_SUB(&mSubPT);
 
-
-	while(!mEnabled) {
+	while (!mEnabled) {
 		// If the association state is uninitialized, fail early.
 		if (get_ncp_state() == UNINITIALIZED) {
 			syslog(LOG_NOTICE, "Cannot attempt to sleep until NCP is initialized.");
@@ -60,7 +59,7 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 		// Wait for any tasks or commands to complete.
 		EH_REQUIRE_WITHIN(
 			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-			mEnabled || is_busy(),
+			!is_busy() || mEnabled,
 			timeout_error
 		);
 
@@ -68,15 +67,51 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 			break;
 		}
 
-		mPrimaryInterface->set_up(false);
+		mPrimaryInterface->set_running(false);
 
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
-			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
+			if (mCapabilities.count(SPINEL_CAP_POWER_SAVE)) {
+				start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
 
-			EH_WAIT_UNTIL_WITH_TIMEOUT(
-				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-				(get_ncp_state() == DEEP_SLEEP) || mTaskQueue.empty()
-			);
+				EH_WAIT_UNTIL_WITH_TIMEOUT(
+					NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+					(get_ncp_state() == DEEP_SLEEP) || mTaskQueue.empty()
+				);
+			} else {
+				// Our NCP doesn't support power saving modes. Fake it.
+
+				// Set PROP_NET_STACK_UP to false
+				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				mOutboundBufferLen = spinel_datatype_pack(
+					GetInstance(this)->mOutboundBuffer,
+					sizeof(GetInstance(this)->mOutboundBuffer),
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_STACK_UP,
+					false
+				);
+				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, timeout_error);
+
+				// Set PROP_NET_IF_UP to false
+				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				mOutboundBufferLen = spinel_datatype_pack(
+					GetInstance(this)->mOutboundBuffer,
+					sizeof(GetInstance(this)->mOutboundBuffer),
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_IF_UP,
+					false
+				);
+				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, timeout_error);
+
+				do {
+					EH_WAIT_UNTIL(!IS_EVENT_FROM_NCP(event));
+					EH_WAIT_UNTIL_WITH_TIMEOUT(0.25, IS_EVENT_FROM_NCP(event));
+				} while(!eh_did_timeout);
+
+				// Fake deep sleep.
+				change_ncp_state(DEEP_SLEEP);
+			}
 		}
 
 		// If we didn't enter deep sleep then we need to bail early.
@@ -128,6 +163,8 @@ timeout_error:
 		EH_EXIT();
 	}
 
+	mFailureCount++;
+
 	set_ncp_power(true);
 
 	if (ncp_state_is_sleeping(get_ncp_state())) {
@@ -151,35 +188,7 @@ SpinelNCPInstance::vprocess_resume(int event, va_list args)
 
 	EH_BEGIN_SUB(&mSubPT);
 
-	// Get the `SPINEL_PROP_NET_SAVED` property to check if the NCP is commissioned.
-
-	CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
-
-	command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_SAVED);
-	require(command.size() < sizeof(mOutboundBuffer), on_error);
-	memcpy(mOutboundBuffer, command.data(), command.size());
-	mOutboundBufferLen = static_cast<spinel_ssize_t>(command.size());
-
-	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
-	CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
-
-	ret = peek_ncp_callback_status(event, args);
-
-	check_noerr(ret);
-
-	if (ret == 0) {
-		unsigned int key = va_arg(args, unsigned int);
-		const uint8_t* data_in = va_arg(args, const uint8_t*);
-		spinel_size_t data_len = va_arg_small(args, spinel_size_t);
-		spinel_ssize_t len = 0;
-
-		require(key == SPINEL_PROP_NET_SAVED, on_error);
-
-		len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
-		require(len > 0, on_error);
-	}
-
-	if (!is_commissioned) {
+	if (!mIsCommissioned) {
 		syslog(LOG_NOTICE, "NCP is NOT commissioned. Cannot resume.");
 		EH_EXIT();
 	}
@@ -363,6 +372,8 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 	mNCPVersionString = "";
 
+	mRole = SPINEL_NET_ROLE_DETACHED;
+
 	mDriverState = INITIALIZING_WAITING_FOR_RESET;
 
 	if (mResetIsExpected) {
@@ -486,6 +497,8 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				SPINEL_PROP_IPV6_LL_ADDR,
 				SPINEL_PROP_IPV6_ML_ADDR,
 				SPINEL_PROP_THREAD_ASSISTING_PORTS,
+				SPINEL_PROP_THREAD_MODE,
+				SPINEL_PROP_NET_SAVED,
 				SPINEL_PROP_NET_IF_UP,
 				SPINEL_PROP_NET_STACK_UP,
 				SPINEL_PROP_NET_ROLE,
@@ -555,6 +568,7 @@ on_error:
 	mIsPcapInProgress = false;
 	mFailureCount = 0;
 	mResetIsExpected = false;
+	mXPANIDWasExplicitlySet = false;
 	set_initializing_ncp(false);
 	mDriverState = NORMAL_OPERATION;
 
@@ -597,8 +611,8 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 
 	EH_WAIT_UNTIL(mTaskQueue.empty());
 
-	// If we are offline and autoResume is enabled
-	if (mAutoResume && mEnabled && (get_ncp_state() == OFFLINE)) {
+	// If we are commissioned and autoResume is enabled
+	if (mAutoResume && mEnabled && (get_ncp_state() == COMMISSIONED)) {
 		syslog(LOG_NOTICE, "AutoResume is enabled. Trying to resume.");
 		EH_SPAWN(&mSubPT, vprocess_resume(event, args));
 	}

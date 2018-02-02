@@ -36,6 +36,10 @@ static const arg_list_item_t scan_option_list[] = {
 	{'t', "timeout", "ms", "Set timeout period"},
 	{'c', "channel", "channel", "Set the desired channel"},
 	{'e', "energy", NULL, "Perform an energy scan"},
+	{'d', "discover", NULL, "Perform a MLE discover scan"},
+	{'j', "joiner-only", NULL, "Scan for joiner only devices (used in discover scan)"},
+	{'f', "enable-filtering", NULL, "Enable scan result filtering (used in discover scan)"},
+	{'p', "panid-filtering", NULL, "PANID used for filtering, 0xFFFF to disable (used in discover scan)"},
 	{0}
 };
 
@@ -43,6 +47,7 @@ int gScannedNetworkCount = 0;
 struct wpan_network_info_s gScannedNetworks[SCANNED_NET_BUFFER_SIZE];
 
 static bool sEnergyScan;
+static bool sMleDiscoverScan;
 
 static void
 print_scan_header(void)
@@ -50,15 +55,13 @@ print_scan_header(void)
 	if (sEnergyScan) {
 		printf("    Ch | RSSI\n");
 		printf("   ----+-------\n");
-
-		return;
+	} else if (sMleDiscoverScan) {
+		printf(	"   | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
+		printf(	"---+--------------------+--------+----+------------------+------------------+------\n");
+	} else {
+		printf(	"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
+		printf(	"---+----------+--------------------+--------+----+------------------+------------------+------\n");
 	}
-
-	printf(
-		"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
-	printf(
-		"---+----------+--------------------+--------+----+------------------+------------------+------\n");
-
 }
 
 static DBusHandlerResult
@@ -92,7 +95,9 @@ dbus_beacon_handler(
 		printf("  ");
 	}
 
-	printf(" | %s", network_info.allowing_join ? "     YES" : "      NO");
+	if (!sMleDiscoverScan) {
+		printf(" | %s", network_info.allowing_join ? "     YES" : "      NO");
+	}
 
 	if (network_info.network_name[0]) {
 		printf(" | \"%s\"%s",
@@ -172,6 +177,7 @@ int tool_cmd_scan(int argc, char *argv[])
 	int ret = 0;
 	int c;
 	int timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
+	const char *method_name;
 	DBusConnection* connection = NULL;
 	DBusMessage *message = NULL;
 	DBusMessage *reply = NULL;
@@ -179,10 +185,14 @@ int tool_cmd_scan(int argc, char *argv[])
 	DBusError error;
 	int32_t scan_period = 0;
 	uint32_t channel_mask = 0;
+	dbus_bool_t joiner_flag = FALSE;
+	dbus_bool_t enable_filtering = FALSE;
+	uint16_t pan_id_filter = 0xffff;
 
 	dbus_error_init(&error);
 
 	sEnergyScan = false;
+	sMleDiscoverScan = false;
 
 	while (1) {
 		static struct option long_options[] = {
@@ -190,11 +200,15 @@ int tool_cmd_scan(int argc, char *argv[])
 			{"timeout", required_argument, 0, 't'},
 			{"channel", required_argument, 0, 'c'},
 			{"energy", no_argument, 0, 'e'},
+			{"discover", no_argument, 0, 'd'},
+			{"joiner-only", no_argument, 0, 'j'},
+			{"enable-filtering", no_argument, 0, 'f'},
+			{"panid-filtering", required_argument, 0, 'p'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hc:t:e", long_options,
+		c = getopt_long(argc, argv, "hc:t:edjfp:", long_options,
 				&option_index);
 
 		if (c == -1)
@@ -217,6 +231,22 @@ int tool_cmd_scan(int argc, char *argv[])
 
 		case 'e':
 			sEnergyScan = true;
+			break;
+
+		case 'd':
+			sMleDiscoverScan = true;
+			break;
+
+		case 'j':
+			joiner_flag = TRUE;
+			break;
+
+		case 'f':
+			enable_filtering = TRUE;
+			break;
+
+		case 'p':
+			pan_id_filter = strtol(optarg, NULL, 0);
 			break;
 		}
 	}
@@ -279,11 +309,21 @@ int tool_cmd_scan(int argc, char *argv[])
 			gInterfaceName
 		);
 
+		if (sEnergyScan) {
+			method_name = WPANTUND_IF_CMD_ENERGY_SCAN_START;
+		} else {
+			if (sMleDiscoverScan) {
+				method_name = WPANTUND_IF_CMD_DISCOVER_SCAN_START;
+			} else {
+				method_name = WPANTUND_IF_CMD_NET_SCAN_START;
+			}
+		}
+
 		message = dbus_message_new_method_call(
 			interface_dbus_name,
 			path,
 			WPANTUND_DBUS_APIv1_INTERFACE,
-			sEnergyScan? WPANTUND_IF_CMD_ENERGY_SCAN_START : WPANTUND_IF_CMD_NET_SCAN_START
+			method_name
 		);
 
 		dbus_message_append_args(
@@ -291,6 +331,16 @@ int tool_cmd_scan(int argc, char *argv[])
 			DBUS_TYPE_UINT32, &channel_mask,
 			DBUS_TYPE_INVALID
 		);
+
+		if (sMleDiscoverScan) {
+			dbus_message_append_args(
+				message,
+				DBUS_TYPE_BOOLEAN, &joiner_flag,
+				DBUS_TYPE_BOOLEAN, &enable_filtering,
+				DBUS_TYPE_UINT16, &pan_id_filter,
+				DBUS_TYPE_INVALID
+			);
+		}
 
 		print_scan_header();
 
@@ -318,7 +368,7 @@ int tool_cmd_scan(int argc, char *argv[])
 
 		reply = dbus_pending_call_steal_reply(pending);
 
-		require(reply!=NULL, bail);
+		require(reply != NULL, bail);
 
 
 		dbus_message_iter_init(reply, &iter);

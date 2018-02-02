@@ -18,6 +18,7 @@
 SUBDIRS =                \
 	missing              \
 	util                 \
+	ipc-binder           \
 	wpanctl              \
 	ipc-dbus             \
 	connman-plugin       \

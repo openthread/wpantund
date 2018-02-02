@@ -36,8 +36,11 @@ nl::wpantund::SpinelNCPTaskJoin::SpinelNCPTaskJoin(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	const ValueMap& options
-):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
+):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state()), mUseModernBehavior(false)
 {
+	if (options.count(kWPANTUNDUseModernBehavior)) {
+		mUseModernBehavior = any_to_bool(options.find(kWPANTUNDUseModernBehavior)->second);
+	}
 }
 
 void
@@ -79,7 +82,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	if (ncp_state_is_associated(mInstance->get_ncp_state())) {
+	if (!mUseModernBehavior && ncp_state_is_associated(mInstance->get_ncp_state())) {
 		ret = kWPANTUNDStatus_Already;
 		finish(ret);
 		EH_EXIT();
@@ -93,6 +96,24 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
 	// Clear any previously saved network settings
 	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
 	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
@@ -105,7 +126,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 
 	if (mOptions.count(kWPANTUNDProperty_NetworkNodeType)) {
 		NodeType node_type;
-		bool isRouterRoleEnabled;
+		bool router_role_enabled;
 
 		node_type = string_to_node_type(any_to_string(mOptions[kWPANTUNDProperty_NetworkNodeType]));
 
@@ -115,24 +136,24 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = true;
+			router_role_enabled = true;
 
 		} else if (node_type == END_DEVICE) {
-			isRouterRoleEnabled = false;
+			router_role_enabled = false;
 
 		} else if (node_type == SLEEPY_END_DEVICE) {
 			if (!mInstance->mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = false;
+			router_role_enabled = false;
 
 		} else if (node_type == LURKER) {
 			if (!mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 				ret = kWPANTUNDStatus_FeatureNotSupported;
 				goto on_error;
 			}
-			isRouterRoleEnabled = true;
+			router_role_enabled = true;
 
 		} else {
 			ret = kWPANTUNDStatus_InvalidArgument;
@@ -142,7 +163,37 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
 			SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
-			isRouterRoleEnabled
+			router_role_enabled
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+	}
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkNodeType)) {
+		NodeType node_type;
+		uint8_t new_thread_mode;
+
+		node_type = string_to_node_type(any_to_string(mOptions[kWPANTUNDProperty_NetworkNodeType]));
+
+		new_thread_mode = mInstance->get_thread_mode();
+
+		// The validity of node type (and related capabilities) is already checked
+		// when setting the `router_role_enabled` (in code above).
+
+		if (node_type == SLEEPY_END_DEVICE) {
+			new_thread_mode &= ~ (SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE | SPINEL_THREAD_MODE_FULL_FUNCTION_DEV);
+		} else {
+			new_thread_mode |= SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE;
+		}
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_THREAD_MODE,
+			new_thread_mode
 		);
 
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
@@ -340,18 +391,21 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	ret = last_status
-		? WPANTUND_NCPERROR_TO_STATUS(last_status)
-		: kWPANTUNDStatus_Ok;
+	ret = spinel_status_to_wpantund_status(last_status);
 
-	if ( (last_status == SPINEL_STATUS_JOIN_SECURITY)
-	  || (last_status == SPINEL_STATUS_JOIN_FAILURE)
-	) {
-		mInstance->change_ncp_state(CREDENTIALS_NEEDED);
-		ret = kWPANTUNDStatus_InProgress;
-	} else if ((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)) {
-		ret = kWPANTUNDStatus_JoinFailedUnknown;
+	if (!mUseModernBehavior) {
+		if ( (last_status == SPINEL_STATUS_JOIN_SECURITY)
+		  || (last_status == SPINEL_STATUS_JOIN_FAILURE)
+		) {
+			mInstance->change_ncp_state(CREDENTIALS_NEEDED);
+			finish(kWPANTUNDStatus_InProgress);
+			EH_EXIT();
+		} else if ((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)) {
+			ret = kWPANTUNDStatus_JoinFailedUnknown;
+		}
 	}
+
+	require_noerr(ret, on_error);
 
 	finish(ret);
 
@@ -365,7 +419,34 @@ on_error:
 
 	syslog(LOG_ERR, "Join failed: %d", ret);
 
-	finish(ret);
+	mRet = ret;
+
+	// Join was a failure, purge our state.
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mInstance->mNetworkKey = Data();
+	mInstance->mNetworkKeyIndex = 0;
+
+	// Issue a Reset
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	finish(mRet);
 
 	EH_END();
 }

@@ -49,7 +49,6 @@ const char* wpantund_status_to_cstr(int status)
 	case kWPANTUNDStatus_InvalidForCurrentState: return "InvalidForCurrentState";
 	case kWPANTUNDStatus_PropertyEmpty: return "PropertyEmpty";
 	case kWPANTUNDStatus_InvalidType: return "InvalidType";
-	case kWPANTUNDStatus_FeatureNotSupported: return "FeatureNotSupported";
 	case kWPANTUNDStatus_FeatureNotImplemented: return "FeatureNotImplemented";
 	case kWPANTUNDStatus_PropertyNotFound: return "PropertyNotFound";
 	case kWPANTUNDStatus_Canceled: return "Canceled";
