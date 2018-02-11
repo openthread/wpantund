@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/cdefs.h>
+#include <string.h>
 
 #define strcaseequal(x, y)   (strcasecmp(x, y) == 0)
 #define strncaseequal(x, y, n)   (strncasecmp(x, y, n) == 0)
