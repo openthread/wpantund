@@ -479,6 +479,33 @@ protected:
 	bool mSetDefaultRouteForAutoAddedPrefix;
 	bool mSetSLAACForAutoAddedPrefix;
 
+	// This boolean flag determines whether wpantund should manage the routes
+	// on the primary interface. When set to `true` wpantund will add/remove
+	// off-mesh routes provided by devices within the network on the host
+	// interface. By default it is enabled (`true`).
+	//
+	bool mAutoAddOffMeshRoutesOnInterface;
+
+	// This boolean flag controls how the off-mesh-routes are managed
+	// on the primary interface (this is applicable only if the
+	// `mAutoAddOffMeshRoutesOnInterface` is enabled).
+	//
+	// This impacts the behavior where the same off-mesh route is provided
+	// by multiple devices within the network including the device itself.
+	//
+	// When set to `true`, self-added off-mesh-routes are always filtered
+	// and never added on the host interface (independent of the priority
+	// levels at which they are added).
+	//
+	// If it is set to `false`, then the priority of routes are considered
+	// and the off-mesh-route is added on the interface if another device
+	// within the network provides the same route at a higher preference
+	// level than the self added one.
+	//
+	// By default this is enabled (`true`).
+	//
+	bool mFilterSelfAutoAddedOffMeshRoutes;
+
 private:
 	NCPState mNCPState;
 	bool mIsInitializingNCP;
