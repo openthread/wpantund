@@ -75,6 +75,8 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mNodeTypeSupportsLegacy = false;
 	mSetDefaultRouteForAutoAddedPrefix = false;
 	mSetSLAACForAutoAddedPrefix = false;
+	mAutoAddOffMeshRoutesOnInterface = true;
+	mFilterSelfAutoAddedOffMeshRoutes = true;
 	mTerminateOnFault = false;
 	mWasBusy = false;
 	mNCPIsMisbehaving = false;
@@ -397,6 +399,12 @@ NCPInstanceBase::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6SetSLAACForAutoAddedPrefix)) {
 		cb(0, boost::any(mSetSLAACForAutoAddedPrefix));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonOffMeshRouteAutoAddOnInterface)) {
+		cb(0, boost::any(mAutoAddOffMeshRoutesOnInterface));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonOffMeshRouteFilterSelfAutoAdded)) {
+		cb(0, boost::any(mFilterSelfAutoAddedOffMeshRoutes));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
 		if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 			struct in6_addr addr (mNCPMeshLocalAddress);
@@ -617,6 +625,14 @@ NCPInstanceBase::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6SetSLAACForAutoAddedPrefix)) {
 			mSetSLAACForAutoAddedPrefix = any_to_bool(value);
+			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonOffMeshRouteAutoAddOnInterface)) {
+			mAutoAddOffMeshRoutesOnInterface = any_to_bool(value);
+			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonOffMeshRouteFilterSelfAutoAdded)) {
+			mFilterSelfAutoAddedOffMeshRoutes = any_to_bool(value);
 			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)

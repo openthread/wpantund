@@ -853,11 +853,13 @@ NCPInstanceBase::should_add_route_on_interface(const IPv6Prefix &route, uint32_t
 
 	// The route should be added on host primary interface, if it
 	// is added by at least one other device within the network and,
-	// either it is not added by host/this-device or added but with
-	// a lower preference level.
+	//  (a) either it is not added by host/this-device, or
+	//  (b) if it is also added by device then
+	//      - filtering of self added routes is not enabled, and
+	//      - it is added at lower preference level.
 
 	if (route_added_by_others) {
-		if (!route_added_by_device || (preference_others > preference_device)) {
+		if (!route_added_by_device || (!mFilterSelfAutoAddedOffMeshRoutes && (preference_others > preference_device))) {
 			should_add = true;
 		}
 	}
@@ -888,6 +890,10 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 {
 	bool did_remove = false;
 	uint32_t metric;
+
+	if (!mAutoAddOffMeshRoutesOnInterface) {
+		goto bail;
+	}
 
 	syslog(LOG_INFO, "Refreshing routes on primary interface");
 
@@ -941,4 +947,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 			}
 		}
 	}
+
+bail:
+	return;
 }
