@@ -500,7 +500,7 @@ NCPInstanceBase::unicast_address_was_added(Origin origin, const struct in6_addr 
 			mPrimaryInterface->add_address(&address, prefix_len);
 		}
 
-		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+		if (((origin == kOriginPrimaryInterface) && mAutoUpdateInterfaceIPv6AddrsOnNCP) || (origin == kOriginUser)) {
 			add_address_on_ncp_and_update_prefixes(address, entry);
 		}
 	}

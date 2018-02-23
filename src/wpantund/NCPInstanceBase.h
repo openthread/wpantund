@@ -473,6 +473,14 @@ protected:
 	int mAutoDeepSleepTimeout; // In seconds
 	uint16_t mCommissionerPort;
 
+	// This boolean flag indicates whether wpantund would listen for
+	// unicast IPv6 address-added/removed events from the interface and
+	// then update the addresses on the NCP. By default this feature
+	// is enabled. It can be changed using a configuration wpantund
+	// property "Daemon:IPv6:AutoUpdateInterfaceAddrsOnNCP"
+	//
+	bool mAutoUpdateInterfaceIPv6AddrsOnNCP;
+
 	// When an unicast address is added on interface, the related on-mesh prefix
 	// is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
