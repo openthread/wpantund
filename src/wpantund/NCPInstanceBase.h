@@ -481,6 +481,12 @@ protected:
 	//
 	bool mAutoUpdateInterfaceIPv6AddrsOnNCP;
 
+	// This boolean flag indicates whether wpantund should skip adding
+	// user (or interface) originated link-local IPv6 addresses on NCP.
+	// By default this is enabled. It can be changed using a configuration
+	// wpantund property "Daemon:IPv6:FilterUserAddedLinkLocal"
+	bool mFilterUserAddedLinkLocalIPv6Address;
+
 	// When an unicast address is added on interface, the related on-mesh prefix
 	// is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
