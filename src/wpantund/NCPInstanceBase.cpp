@@ -74,6 +74,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mNodeType = UNKNOWN;
 	mNodeTypeSupportsLegacy = false;
 	mAutoUpdateInterfaceIPv6AddrsOnNCP = true;
+	mFilterUserAddedLinkLocalIPv6Address = true;
 	mSetDefaultRouteForAutoAddedPrefix = false;
 	mSetSLAACForAutoAddedPrefix = false;
 	mAutoAddOffMeshRoutesOnInterface = true;
@@ -388,6 +389,9 @@ NCPInstanceBase::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonIPv6AutoUpdateIntfaceAddrOnNCP)) {
 		cb(0, boost::any(mAutoUpdateInterfaceIPv6AddrsOnNCP));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonIPv6FilterUserAddedLinkLocal)) {
+		cb(0, boost::any(mFilterUserAddedLinkLocalIPv6Address));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {
 		cb(0, boost::any(mSetDefaultRouteForAutoAddedPrefix));
 
@@ -625,6 +629,10 @@ NCPInstanceBase::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonIPv6AutoUpdateIntfaceAddrOnNCP)) {
 			mAutoUpdateInterfaceIPv6AddrsOnNCP = any_to_bool(value);
+			cb(0);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonIPv6FilterUserAddedLinkLocal)) {
+			mFilterUserAddedLinkLocalIPv6Address = any_to_bool(value);
 			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix)) {

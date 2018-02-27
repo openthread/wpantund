@@ -488,6 +488,16 @@ void
 NCPInstanceBase::unicast_address_was_added(Origin origin, const struct in6_addr &address, uint8_t prefix_len,
 	uint32_t valid_lifetime, uint32_t preferred_lifetime)
 {
+	if (((origin == kOriginPrimaryInterface) || (origin == kOriginUser))
+	    && mFilterUserAddedLinkLocalIPv6Address
+	    && IN6_IS_ADDR_LINKLOCAL(&address)) {
+
+		syslog(LOG_INFO, "UnicastAddresses: Skipping user/interface added link-local IPv6 address %s",
+		       in6_addr_to_string(address).c_str());
+
+		goto bail;
+	}
+
 	if (!mUnicastAddresses.count(address)) {
 		UnicastAddressEntry entry(origin, prefix_len, valid_lifetime, preferred_lifetime);
 
@@ -504,6 +514,9 @@ NCPInstanceBase::unicast_address_was_added(Origin origin, const struct in6_addr 
 			add_address_on_ncp_and_update_prefixes(address, entry);
 		}
 	}
+
+bail:
+	return;
 }
 
 void
