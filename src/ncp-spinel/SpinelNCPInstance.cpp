@@ -2721,25 +2721,37 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER) {
-		uint32_t network_key_index;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
-		if (network_key_index != mNetworkKeyIndex) {
+		uint32_t network_key_index = 0;
+		spinel_ssize_t ret;
+
+		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		if ((ret > 0) && (network_key_index != mNetworkKeyIndex)) {
 			mNetworkKeyIndex = network_key_index;
 			signal_property_changed(kWPANTUNDProperty_NetworkKeyIndex, mNetworkKeyIndex);
 		}
 
 	} else if (key == SPINEL_PROP_PHY_CHAN) {
-		unsigned int value;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
-		syslog(LOG_INFO, "[-NCP-]: Channel %d", value);
-		if (value != mCurrentNetworkInstance.channel) {
-			mCurrentNetworkInstance.channel = value;
-			signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
+		unsigned int value = 0;
+		spinel_ssize_t ret;
+
+		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		if (ret > 0) {
+			syslog(LOG_INFO, "[-NCP-]: Channel %d", value);
+			if (value != mCurrentNetworkInstance.channel) {
+				mCurrentNetworkInstance.channel = value;
+				signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
+			}
 		}
 
 	} else if (key == SPINEL_PROP_PHY_CHAN_SUPPORTED) {
 
-		uint8_t channel;
+		uint8_t channel = 0;
 		spinel_ssize_t len = 0;
 
 		mSupprotedChannels.clear();
@@ -2747,6 +2759,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		while (value_data_len > 0)
 		{
 			len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &channel);
+
+			if (len <= 0) {
+				break;
+			}
+
 			mSupprotedChannels.insert(channel);
 
 			value_data_ptr += len;
@@ -2754,67 +2771,88 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_PHY_TX_POWER) {
-		int8_t value;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
-		syslog(LOG_INFO, "[-NCP-]: Tx power %d", value);
-		if (value != mTXPower) {
-			mTXPower = value;
-			signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
+		int8_t value = 0;
+		spinel_ssize_t ret;
+
+		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		if (ret > 0) {
+			syslog(LOG_INFO, "[-NCP-]: Tx power %d", value);
+			if (value != mTXPower) {
+				mTXPower = value;
+				signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
+			}
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_DEBUG) {
 		handle_ncp_log(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_NET_ROLE) {
-		uint8_t value;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-		syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+		uint8_t value = 0;
+		spinel_ssize_t ret;
 
-		if (ncp_state_is_joining_or_joined(get_ncp_state())
-		  && (value != SPINEL_NET_ROLE_DETACHED)
-		) {
-			change_ncp_state(ASSOCIATED);
-		}
+		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
 
-		if (value == SPINEL_NET_ROLE_CHILD) {
-			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
-				update_node_type(END_DEVICE);
-			} else {
-				update_node_type(SLEEPY_END_DEVICE);
+		__ASSERT_MACROS_check(ret > 0);
+
+		if (ret > 0) {
+			syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+
+			if (ncp_state_is_joining_or_joined(get_ncp_state())
+			  && (value != SPINEL_NET_ROLE_DETACHED)
+			) {
+				change_ncp_state(ASSOCIATED);
 			}
 
-		} else if (value == SPINEL_NET_ROLE_ROUTER) {
-			update_node_type(ROUTER);
+			if (value == SPINEL_NET_ROLE_CHILD) {
+				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+					update_node_type(END_DEVICE);
+				} else {
+					update_node_type(SLEEPY_END_DEVICE);
+				}
 
-		} else if (value == SPINEL_NET_ROLE_LEADER) {
-			update_node_type(LEADER);
+			} else if (value == SPINEL_NET_ROLE_ROUTER) {
+				update_node_type(ROUTER);
 
-		} else if (value == SPINEL_NET_ROLE_DETACHED) {
-			update_node_type(UNKNOWN);
-			if (ncp_state_is_associated(get_ncp_state())) {
-				change_ncp_state(ISOLATED);
+			} else if (value == SPINEL_NET_ROLE_LEADER) {
+				update_node_type(LEADER);
+
+			} else if (value == SPINEL_NET_ROLE_DETACHED) {
+				update_node_type(UNKNOWN);
+				if (ncp_state_is_associated(get_ncp_state())) {
+					change_ncp_state(ISOLATED);
+				}
 			}
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_MODE) {
-		uint8_t value;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-		syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
-		mThreadMode = value;
+		uint8_t value = mThreadMode;
+		spinel_ssize_t ret;
 
-		switch (mNodeType)
-		{
-		case END_DEVICE:
-		case SLEEPY_END_DEVICE:
-			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
-				update_node_type(END_DEVICE);
-			} else {
-				update_node_type(SLEEPY_END_DEVICE);
+		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		if (ret > 0) {
+			syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
+			mThreadMode = value;
+
+			switch (mNodeType)
+			{
+			case END_DEVICE:
+			case SLEEPY_END_DEVICE:
+				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+					update_node_type(END_DEVICE);
+				} else {
+					update_node_type(SLEEPY_END_DEVICE);
+				}
+				break;
+
+			default:
+				break;
 			}
-			break;
-
-		default:
-			break;
 		}
 
 	} else if (key == SPINEL_PROP_NET_SAVED) {
@@ -2861,9 +2899,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			spinel_ssize_t len = 0;
 			struct in6_addr *prefix = NULL;
 			uint8_t prefix_len = 0;
-			bool stable;
+			bool stable = false;
 			uint8_t flags = 0;
-			bool is_local;
+			bool is_local = false;
 
 			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "t(6CbCb)",
 						&prefix, &prefix_len, &stable, &flags, &is_local);
@@ -2991,8 +3029,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_TMF_PROXY_STREAM) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
-		uint16_t locator;
-		uint16_t port;
+		uint16_t locator = 0;
+		uint16_t port = 0;
 		spinel_ssize_t ret;
 		Data data;
 
@@ -3248,7 +3286,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 	switch (command) {
 	case SPINEL_CMD_PROP_VALUE_IS:
 		{
-			spinel_prop_key_t key;
+			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
 			uint8_t* value_data_ptr = NULL;
 			spinel_size_t value_data_len = 0;
 			spinel_ssize_t ret;
@@ -3271,9 +3309,9 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 
 	case SPINEL_CMD_PROP_VALUE_INSERTED:
 		{
-			spinel_prop_key_t key;
-			uint8_t* value_data_ptr;
-			spinel_size_t value_data_len;
+			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
+			uint8_t* value_data_ptr = NULL;
+			spinel_size_t value_data_len = 0;
 			spinel_ssize_t ret;
 
 			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiiD", NULL, NULL, &key, &value_data_ptr, &value_data_len);
@@ -3292,9 +3330,9 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 
 	case SPINEL_CMD_PROP_VALUE_REMOVED:
 		{
-			spinel_prop_key_t key;
-			uint8_t* value_data_ptr;
-			spinel_size_t value_data_len;
+			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
+			uint8_t* value_data_ptr = NULL;
+			spinel_size_t value_data_len = 0;
 			spinel_ssize_t ret;
 
 			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiiD", NULL, NULL, &key, &value_data_ptr, &value_data_len);
@@ -3313,8 +3351,8 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 
 	case SPINEL_CMD_PEEK_RET:
 		{
-			uint32_t address;
-			uint16_t count;
+			uint32_t address = 0;
+			uint16_t count = 0;
 			spinel_ssize_t ret;
 
 			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiLS", NULL, NULL, &address, &count);
