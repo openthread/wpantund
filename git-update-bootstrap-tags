@@ -161,8 +161,10 @@ Based-on: `git rev-parse $REV`" || die
 			if git status --porcelain | grep '^UU'
 			then
 				say "Resolving conflicts using source ref as truth"
+				git status --porcelain
 				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${source_ref}"
 				git status --porcelain | grep '^UU' | awk '{print $2}' | xargs -n 1 git checkout "${autoconf_ref}"
+				git status --porcelain | grep '^AA' | awk '{print $2}' | xargs -n 1 git checkout "${source_ref}"
 				git commit -m "${COMMIT_LOG}" || die
 			else
 				git merge --abort || die
