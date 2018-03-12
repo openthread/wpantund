@@ -317,9 +317,9 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 	}
 
-	if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
+	if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
 		{
-			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress]);
+			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalPrefix]);
 			mNextCommand = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_IPv6ADDR_S SPINEL_DATATYPE_UINT8_S),
 				SPINEL_PROP_IPV6_ML_PREFIX,
@@ -333,9 +333,9 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 		ret = mNextCommandRet;
 
 		require_noerr(ret, on_error);
-	} else if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
+	} else if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
 		{
-			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalPrefix]);
+			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress]);
 			mNextCommand = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_IPv6ADDR_S SPINEL_DATATYPE_UINT8_S),
 				SPINEL_PROP_IPV6_ML_PREFIX,
