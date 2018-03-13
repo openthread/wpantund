@@ -128,7 +128,9 @@ nl::wpantund::spinel_status_to_wpantund_status(int spinel_status)
 	case SPINEL_STATUS_INVALID_STATE:
 		ret = kWPANTUNDStatus_InvalidForCurrentState;
 		break;
-
+	case SPINEL_STATUS_UNIMPLEMENTED:
+		ret = kWPANTUNDStatus_FeatureNotImplemented;
+		break;
 	default:
 		ret = WPANTUND_NCPERROR_TO_STATUS(spinel_status);
 		break;
@@ -863,6 +865,48 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 	}
 }
 
+static int unpack_spinel_role(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t spinelRole;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&spinelRole
+	);
+
+	if (len > 0)
+	{
+		switch (spinelRole) {
+		case SPINEL_NET_ROLE_DETACHED:
+			value = std::string(kWPANTUNDRole_Detached);
+			break;
+
+		case SPINEL_NET_ROLE_CHILD:
+			value = std::string(kWPANTUNDRole_EndDevice);
+			break;
+
+		case SPINEL_NET_ROLE_ROUTER:
+			value = std::string(kWPANTUNDRole_Router);
+			break;
+
+		case SPINEL_NET_ROLE_LEADER:
+			value = std::string(kWPANTUNDRole_Leader);
+			break;
+
+		default:
+			value = std::string(kWPANTUNDRole_Unknown);
+			break;
+		}
+		ret = kWPANTUNDStatus_Ok;
+	}
+
+	return ret;
+}
+
 void
 SpinelNCPInstance::update_node_type(NodeType new_node_type)
 {
@@ -953,22 +997,38 @@ SpinelNCPInstance::property_get_value(
 		cb(0, boost::any(get_default_channel_mask()));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPTXPower)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_TX_POWER, SPINEL_DATATYPE_INT8_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPFrequency)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_FREQ, SPINEL_DATATYPE_INT32_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_FREQ, SPINEL_DATATYPE_INT32_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PSKC, SPINEL_DATATYPE_DATA_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPSleepyPollInterval)) {
 		if (!mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
@@ -978,10 +1038,18 @@ SpinelNCPInstance::property_get_value(
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
-		cb(kWPANTUNDStatus_Ok, boost::any(mIsCommissioned));
+		if (!mEnabled) {
+			cb(0, boost::any(mIsCommissioned));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SAVED, SPINEL_DATATYPE_BOOL_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
@@ -990,14 +1058,29 @@ SpinelNCPInstance::property_get_value(
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PARTITION_ID, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+		}
+
+//	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsConnected)) {
+//		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SINGLETON, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRLOC16)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterID)) {
-		cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
+			SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -1164,6 +1247,20 @@ SpinelNCPInstance::property_get_value(
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("MAC Blacklist feature not supported by NCP")));
 		} else {
 			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRole)) {
+		if (!mEnabled || is_initializing_ncp()) {
+			cb(0, boost::any(std::string(kWPANTUNDRole_Detached)));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_ROLE)
+				)
+				.set_reply_unpacker(unpack_spinel_role)
+				.finish()
+			);
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {

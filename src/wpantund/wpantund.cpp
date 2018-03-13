@@ -50,8 +50,16 @@
 #include "IPCServer.h"
 
 #if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+
+#if BUILD_IPC_DBUS
 #include "DBUSIPCServer.h"
 #endif
+
+#if BUILD_IPC_BINDER
+#include "BinderIPCServer.h"
+#endif
+
+#endif // if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 #include "NCPControlInterface.h"
 #include "NCPInstance.h"
@@ -553,7 +561,10 @@ public:
 			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
 			) {
 				for (ipc_iter = mIpcServerList.begin(); ipc_iter != mIpcServerList.end(); ++ipc_iter) {
-					(*ipc_iter)->add_interface(&mNcpInstance->get_control_interface());
+					const int ret = (*ipc_iter)->add_interface(&mNcpInstance->get_control_interface());
+					if (ret != kWPANTUNDStatus_Ok) {
+						gRet = EXIT_FAILURE;
+					}
 				}
 				mInterfaceAdded = true;
 			}
@@ -714,6 +725,7 @@ main(int argc, char * argv[])
 	// Always ignore SIGPIPE.
 	signal(SIGPIPE, SIG_IGN);
 
+#if WPANTUND_BACKTRACE
 	{
 		struct sigaction sigact = { };
 		sigact.sa_sigaction = &signal_critical;
@@ -724,6 +736,7 @@ main(int argc, char * argv[])
 		sigaction(SIGILL, &sigact, (struct sigaction *)NULL);
 		sigaction(SIGABRT, &sigact, (struct sigaction *)NULL);
 	}
+#endif
 
 	openlog(basename(argv[0]), LOG_PERROR | LOG_PID | LOG_CONS, LOG_DAEMON);
 
@@ -897,6 +910,7 @@ main(int argc, char * argv[])
 
 #if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 		// Set up DBUSIPCServer
+#if BUILD_IPC_DBUS
 		try {
 			main_loop->add_ipc_server(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
 		} catch(std::exception x) {
@@ -904,8 +918,17 @@ main(int argc, char * argv[])
 		}
 #endif
 
+#if BUILD_IPC_BINDER
+		try {
+			main_loop->add_ipc_server(shared_ptr<nl::wpantund::IPCServer>(new BinderIPCServer()));
+		} catch(std::exception x) {
+			syslog(LOG_ERR, "Unable to start BinderIPCServer \"%s\"",x.what());
+		}
+#endif
+
 		/*** Add other IPCServers here! ***/
 
+#endif // if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 	} catch(std::runtime_error x) {
 		syslog(LOG_ERR, "Runtime error thrown while starting up, \"%s\"",x.what());

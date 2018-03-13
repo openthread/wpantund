@@ -34,6 +34,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 dbusconfdir = $(DBUS_CONFDIR)
 noinst_LTLIBRARIES =
 
+if BUILD_IPC_DBUS
+
 if ENABLE_FUZZ_TARGETS
 # Not currently fuzzing the DBus code. When that changes, uncomment
 # the next line.
@@ -57,7 +59,7 @@ libwpantund_dbus_la_SOURCES = \
 
 libwpantund_dbus_la_LIBADD =  $(DBUS_LIBS)
 libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-libwpantund_dbus_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+libwpantund_dbus_la_CXXFLAGS = $(AM_CXXFLAGS) $(RTTI_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 
 libwpantund_dbus_fuzz_la_SOURCES = \
 	DBUSIPCServer.cpp \
@@ -73,6 +75,8 @@ libwpantund_dbus_fuzz_la_SOURCES = \
 
 libwpantund_dbus_fuzz_la_LIBADD =  $(DBUS_LIBS)
 libwpantund_dbus_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-libwpantund_dbus_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+libwpantund_dbus_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(RTTI_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 
 pkginclude_HEADERS = wpan-dbus-v0.h wpan-dbus-v1.h
+
+endif

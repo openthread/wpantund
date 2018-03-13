@@ -49,7 +49,7 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 {
 	EH_BEGIN_SUB(&mSubPT);
 
-	while(!mEnabled) {
+	while (!mEnabled) {
 		// If the association state is uninitialized, fail early.
 		if (get_ncp_state() == UNINITIALIZED) {
 			syslog(LOG_NOTICE, "Cannot attempt to sleep until NCP is initialized.");
@@ -57,28 +57,61 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 		}
 
 		// Wait for any tasks or commands to complete.
-		EH_WAIT_UNTIL_WITH_TIMEOUT(
+		EH_REQUIRE_WITHIN(
 			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-			mEnabled || !is_busy()
+			!is_busy() || mEnabled,
+			timeout_error
 		);
 
 		if (mEnabled) {
 			break;
 		}
 
-		require(!is_initializing_ncp(), timeout_error);
-
-		reset_tasks(kWPANTUNDStatus_Canceled);
-
-		mPrimaryInterface->set_up(false);
+		mPrimaryInterface->set_running(false);
 
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
-			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
+			if (mCapabilities.count(SPINEL_CAP_POWER_SAVE)) {
+				start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
 
-			EH_WAIT_UNTIL_WITH_TIMEOUT(
-				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-				(get_ncp_state() == DEEP_SLEEP) || mTaskQueue.empty()
-			);
+				EH_WAIT_UNTIL_WITH_TIMEOUT(
+					NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+					(get_ncp_state() == DEEP_SLEEP) || mTaskQueue.empty()
+				);
+			} else {
+				// Our NCP doesn't support power saving modes. Fake it.
+
+				// Set PROP_NET_STACK_UP to false
+				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				mOutboundBufferLen = spinel_datatype_pack(
+					GetInstance(this)->mOutboundBuffer,
+					sizeof(GetInstance(this)->mOutboundBuffer),
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_STACK_UP,
+					false
+				);
+				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, timeout_error);
+
+				// Set PROP_NET_IF_UP to false
+				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				mOutboundBufferLen = spinel_datatype_pack(
+					GetInstance(this)->mOutboundBuffer,
+					sizeof(GetInstance(this)->mOutboundBuffer),
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_IF_UP,
+					false
+				);
+				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, timeout_error);
+				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, timeout_error);
+
+				do {
+					EH_WAIT_UNTIL(!IS_EVENT_FROM_NCP(event));
+					EH_WAIT_UNTIL_WITH_TIMEOUT(0.25, IS_EVENT_FROM_NCP(event));
+				} while(!eh_did_timeout);
+
+				// Fake deep sleep.
+				change_ncp_state(DEEP_SLEEP);
+			}
 		}
 
 		// If we didn't enter deep sleep then we need to bail early.
@@ -129,6 +162,8 @@ do_deep_sleep_tickle:
 timeout_error:
 		EH_EXIT();
 	}
+
+	mFailureCount++;
 
 	set_ncp_power(true);
 

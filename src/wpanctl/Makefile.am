@@ -28,6 +28,8 @@ AM_CPPFLAGS = \
 
 DISTCLEANFILES = .deps Makefile
 
+if BUILD_WPANCTL
+
 if !ENABLE_FUZZ_TARGETS
 bin_PROGRAMS = wpanctl
 endif
@@ -117,3 +119,5 @@ CLEANFILES = $(top_builddir)/$(subdir)/version.c
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@
 wpanctl_SOURCES += $(top_builddir)/$(subdir)/version.c
+
+endif

@@ -1,0 +1,7 @@
+This repository contains a copy of wpantund, a user-space network interface driver/daemon.
+
+See README.md for more information, or visit <http://wpantund.org/>.
+
+The following commands will rebuild the Android.mk files:
+
+    ./bootstrap.sh --all
