@@ -153,7 +153,9 @@ NCPInstanceBase::reset_interface(void)
 
 	set_commissioniner(0, 0, 0);
 
-	mPrimaryInterface->reset();
+	if (!mExternalNetifManagement) {
+		mPrimaryInterface->reset();
+	}
 
 	// All IPv6 address (unicast/multicast), on-mesh-prefixes, routes (off-mesh/interface) must be cleared upon reset.
 	remove_all_address_prefix_route_entries();

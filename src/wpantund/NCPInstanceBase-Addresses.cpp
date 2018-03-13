@@ -291,33 +291,34 @@ NCPInstanceBase::remove_all_address_prefix_route_entries(void)
 {
 	syslog(LOG_INFO, "Removing all address/prefix/route entries");
 
-	// Unicast addresses
-	for (
-		std::map<struct in6_addr, UnicastAddressEntry>::iterator iter = mUnicastAddresses.begin();
-		iter != mUnicastAddresses.end();
-		++iter
-	) {
-		mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
-	}
+	if (!mExternalNetifManagement) {
+		// Unicast addresses
+		for (
+			std::map<struct in6_addr, UnicastAddressEntry>::iterator iter = mUnicastAddresses.begin();
+			iter != mUnicastAddresses.end();
+			++iter
+		) {
+			mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
+		}
 
-	// Multicast addresses
-	for (
-		std::map<struct in6_addr, MulticastAddressEntry>::iterator iter = mMulticastAddresses.begin();
-		iter != mMulticastAddresses.end();
-		++iter
-	) {
-		mPrimaryInterface->leave_multicast_address(&iter->first);
-	}
+		// Multicast addresses
+		for (
+			std::map<struct in6_addr, MulticastAddressEntry>::iterator iter = mMulticastAddresses.begin();
+			iter != mMulticastAddresses.end();
+			++iter
+		) {
+			mPrimaryInterface->leave_multicast_address(&iter->first);
+		}
 
-	// Routes
-	for (
-		std::map<IPv6Prefix, InterfaceRouteEntry>::iterator iter = mInterfaceRoutes.begin();
-		iter != mInterfaceRoutes.end();
-		++iter
-	) {
-		mPrimaryInterface->remove_route(&iter->first.get_prefix(), iter->first.get_length(), iter->second.get_metric());
+		// Routes
+		for (
+			std::map<IPv6Prefix, InterfaceRouteEntry>::iterator iter = mInterfaceRoutes.begin();
+			iter != mInterfaceRoutes.end();
+			++iter
+		) {
+			mPrimaryInterface->remove_route(&iter->first.get_prefix(), iter->first.get_length(), iter->second.get_metric());
+		}
 	}
-
 	memset(&mNCPLinkLocalAddress, 0, sizeof(mNCPLinkLocalAddress));
 	memset(&mNCPMeshLocalAddress, 0, sizeof(mNCPMeshLocalAddress));
 
@@ -349,7 +350,9 @@ NCPInstanceBase::remove_ncp_originated_address_prefix_route_entries(void)
 			}
 
 			syslog(LOG_INFO, "UnicastAddresses: Removing %s", iter->second.get_description(iter->first).c_str());
-			mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
+			if (!mExternalNetifManagement) {
+				mPrimaryInterface->remove_address(&iter->first, iter->second.get_prefix_len());
+			}
 
 			mUnicastAddresses.erase(iter);
 			did_remove = true;
@@ -369,7 +372,9 @@ NCPInstanceBase::remove_ncp_originated_address_prefix_route_entries(void)
 			}
 
 			syslog(LOG_INFO, "MulticastAddresses: Removing %s", iter->second.get_description(iter->first).c_str());
-			mPrimaryInterface->leave_multicast_address(&iter->first);
+			if (!mExternalNetifManagement) {
+				mPrimaryInterface->leave_multicast_address(&iter->first);
+			}
 			mMulticastAddresses.erase(iter);
 			did_remove = true;
 			break;
@@ -506,7 +511,7 @@ NCPInstanceBase::unicast_address_was_added(Origin origin, const struct in6_addr 
 
 		// Add the address on NCP or primary interface (depending on origin).
 
-		if ((origin == kOriginThreadNCP) || (origin == kOriginUser)) {
+		if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
 			mPrimaryInterface->add_address(&address, prefix_len);
 		}
 
@@ -532,7 +537,7 @@ NCPInstanceBase::unicast_address_was_removed(Origin origin, const struct in6_add
 			syslog(LOG_INFO, "UnicastAddresses: Removing %s", entry.get_description(address).c_str());
 			mUnicastAddresses.erase(address);
 
-			if ((origin == kOriginThreadNCP) || (origin == kOriginUser)) {
+			if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
 				mPrimaryInterface->remove_address(&address, entry.get_prefix_len());
 			}
 
@@ -601,7 +606,7 @@ NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_ad
 		mMulticastAddresses[address] = entry;
 		syslog(LOG_INFO, "MulticastAddresses: Adding %s", entry.get_description(address).c_str());
 
-		if ((origin == kOriginThreadNCP) || (origin == kOriginUser)) {
+		if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
 			mPrimaryInterface->join_multicast_address(&address);
 		}
 
@@ -625,7 +630,7 @@ NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr
 			syslog(LOG_INFO, "MulticastAddresses: Removing %s", entry.get_description(address).c_str());
 			mMulticastAddresses.erase(address);
 
-			if ((origin == kOriginThreadNCP) || (origin == kOriginUser)) {
+			if (!mExternalNetifManagement && ((origin == kOriginThreadNCP) || (origin == kOriginUser))) {
 				mPrimaryInterface->leave_multicast_address(&address);
 			}
 
@@ -904,7 +909,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 	bool did_remove = false;
 	uint32_t metric;
 
-	if (!mAutoAddOffMeshRoutesOnInterface) {
+	if (!mAutoAddOffMeshRoutesOnInterface || mExternalNetifManagement) {
 		goto bail;
 	}
 

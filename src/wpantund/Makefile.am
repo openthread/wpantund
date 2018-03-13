@@ -20,6 +20,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/util \
 	-I$(top_srcdir)/src/ipc-dbus \
+	-I$(top_srcdir)/src/ipc-binder \
 	-I$(top_srcdir)/third_party/fgetln \
 	-I$(top_srcdir)/third_party/pt \
 	-I$(top_srcdir)/third_party/assert-macros \
@@ -116,8 +117,20 @@ SOURCES += $(top_builddir)/$(subdir)/version.c
 
 wpantund_SOURCES = wpantund.cpp $(SOURCES)
 
-wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
-wpantund_LDADD += ../ipc-dbus/libwpantund-dbus.la
+wpantund_LDADD = $(MISSING_LIBADD)
+wpantund_CPPFLAGS = $(AM_CPPFLAGS)
+wpantund_CXXFLAGS = $(AM_CXXFLAGS) $(RTTI_CXXFLAGS) $(BOOST_CXXFLAGS)
+wpantund_CFLAGS = $(AM_CFLAGS)
+
+if BUILD_IPC_DBUS
+wpantund_LDADD += $(DBUS_LIBS) ../ipc-dbus/libwpantund-dbus.la
+wpantund_CPPFLAGS += $(DBUS_CFLAGS)
+endif
+
+if BUILD_IPC_BINDER
+wpantund_LDADD += $(BINDER_LIBS) ../ipc-binder/libwpantund-binder.la ../ipc-binder/libwpantund-binder-rtti.la
+wpantund_CPPFLAGS += $(BINDER_CPPFLAGS)
+endif
 
 if STATIC_LINK_NCP_PLUGIN
 wpantund_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@.la
@@ -126,9 +139,6 @@ wpantund_LDADD += $(LIBDL_LIBS)
 wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
 endif
 
-wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-wpantund_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
-wpantund_CFLAGS = $(AM_CFLAGS)
 
 wpantund_CPPFLAGS += $(CODE_COVERAGE_CPPFLAGS)
 wpantund_CXXFLAGS += $(CODE_COVERAGE_CXXFLAGS)
@@ -140,7 +150,7 @@ wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
 wpantund_fuzz_LDADD = $(MISSING_LIBADD)
 wpantund_fuzz_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@-fuzz.la
 wpantund_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(RTTI_CXXFLAGS) $(FUZZ_CXXFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 wpantund_fuzz_CFLAGS = $(FUZZ_CFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 wpantund_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
 wpantund_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)

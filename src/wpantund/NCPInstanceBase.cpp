@@ -82,6 +82,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mTerminateOnFault = false;
 	mWasBusy = false;
 	mNCPIsMisbehaving = false;
+	mExternalNetifManagement = false;
 
 	memset(mNCPMeshLocalAddress.s6_addr, 0, sizeof(mNCPMeshLocalAddress));
 	memset(mNCPLinkLocalAddress.s6_addr, 0, sizeof(mNCPLinkLocalAddress));
@@ -114,6 +115,9 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)) {
 				mAutoUpdateFirmware = any_to_bool(boost::any(iter->second));
 
+			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigDaemonExternalNetifManagement)) {
+				mExternalNetifManagement =  any_to_bool(boost::any(iter->second));
+
 			} else if (strcaseequal(iter->first.c_str(), kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand)) {
 				mNetworkRetain.set_network_retain_command(iter->second);
 			}
@@ -132,9 +136,12 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSerialAdapter = mRawSerialAdapter;
 
 	mPrimaryInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(wpan_interface_name));
-	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
-	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
 	mPrimaryInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::link_state_changed, this, _1, _2));
+
+	if (!mExternalNetifManagement) {
+		mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
+		mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
+	}
 
 	set_ncp_power(true);
 
@@ -194,6 +201,7 @@ NCPInstanceBase::setup_property_supported_by_class(const std::string& prop_name)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_DaemonAutoFirmwareUpdate)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand)
+		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigDaemonExternalNetifManagement)
 		|| strcaseequal(prop_name.c_str(), kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand);
 }
 
@@ -329,6 +337,13 @@ NCPInstanceBase::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonEnabled)) {
 		cb(0, boost::any(mEnabled));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRole)) {
+		std::string role = kWPANTUNDRole_Detached;
+		if (mEnabled && ncp_state_is_associated(get_ncp_state())) {
+			role = kWPANTUNDRole_EndDevice;
+		}
+		cb(0, boost::any(role));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {
 		cb(0, boost::any(mPrimaryInterface->is_online()));
 
@@ -348,16 +363,29 @@ NCPInstanceBase::property_get_value(
 		NCPState ncp_state = get_ncp_state();
 		if (ncp_state_is_commissioned(ncp_state)) {
 			cb(0, boost::any(true));
-		} else  if (ncp_state == OFFLINE || ncp_state == DEEP_SLEEP) {
+		} else if (ncp_state == OFFLINE || ncp_state == DEEP_SLEEP) {
 			cb(0, boost::any(false));
 		} else {
 			cb(kWPANTUNDStatus_TryAgainLater,
 			   boost::any(std::string("Unable to determine association state at this time"))
 			);
 		}
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsConnected)) {
+		NCPState ncp_state = get_ncp_state();
+		if (ncp_state_has_joined(ncp_state) && ncp_state != ISOLATED) {
+			cb(0, boost::any(true));
+		} else {
+			cb(0, boost::any(false));
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyEnabled)) {
 		cb(0, boost::any(mLegacyInterfaceEnabled));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InternalAddressTable)) {
+		cb(0, boost::any(mUnicastAddresses));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InternalRouteTable)) {
+		cb(0, boost::any(mOnMeshPrefixes));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_NetworkAllowingJoin)) {
 		cb(0, boost::any(get_current_network_instance().joinable));
@@ -462,6 +490,8 @@ NCPInstanceBase::property_get_value(
 		  && !ncp_state_is_detached_from_ncp(get_ncp_state())
 		) {
 			cb(0, boost::any(std::string(kWPANTUNDStateUninitialized)));
+		} else if (!mEnabled && get_ncp_state() != FAULT) {
+			cb(0, boost::any(std::string(kWPANTUNDStateOffline)));
 		} else {
 			cb(0, boost::any(ncp_state_to_string(get_ncp_state())));
 		}
@@ -574,7 +604,11 @@ NCPInstanceBase::property_set_value(
 
 	try {
 		if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonEnabled)) {
-			mEnabled = any_to_bool(value);
+			bool boolValue = any_to_bool(value);
+			if (boolValue != mEnabled) {
+				mEnabled = boolValue;
+				signal_property_changed(kWPANTUNDProperty_DaemonEnabled, mEnabled);
+			}
 			cb(0);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InterfaceUp)) {

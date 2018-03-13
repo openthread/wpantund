@@ -472,6 +472,7 @@ protected:
 	bool mAutoDeepSleep;
 	int mAutoDeepSleepTimeout; // In seconds
 	uint16_t mCommissionerPort;
+	bool mExternalNetifManagement;
 
 	// This boolean flag indicates whether wpantund would listen for
 	// unicast IPv6 address-added/removed events from the interface and

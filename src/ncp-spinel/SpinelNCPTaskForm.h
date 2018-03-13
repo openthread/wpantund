@@ -43,6 +43,7 @@ public:
 private:
 	ValueMap mOptions;
 	NCPState mLastState;
+	bool mUseModernBehavior; // If true, allow when already commissioned.
 };
 
 }; // namespace wpantund

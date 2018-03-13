@@ -37,6 +37,7 @@
 #define kWPANTUNDProperty_ConfigDaemonPrivDropToUser            "Config:Daemon:PrivDropToUser"
 #define kWPANTUNDProperty_ConfigDaemonChroot                    "Config:Daemon:Chroot"
 #define kWPANTUNDProperty_ConfigDaemonNetworkRetainCommand      "Config:Daemon:NetworkRetainCommand"
+#define kWPANTUNDProperty_ConfigDaemonExternalNetifManagement  "Config:Daemon:ExternalNetifManagement"
 
 #define kWPANTUNDProperty_DaemonVersion                         "Daemon:Version"
 #define kWPANTUNDProperty_DaemonEnabled                         "Daemon:Enabled"
@@ -64,15 +65,18 @@
 #define kWPANTUNDProperty_NCPTXPowerLimit                       "NCP:TXPowerLimit"
 #define kWPANTUNDProperty_NCPCCAThreshold                       "NCP:CCAThreshold"
 #define kWPANTUNDProperty_NCPChannelMask                        "NCP:ChannelMask"
+#define kWPANTUNDProperty_NCPSupportedChannels                  "NCP:SupportedChannels"
 #define kWPANTUNDProperty_NCPSleepyPollInterval                 "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
 #define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
+#define kWPANTUNDProperty_NCPRole                               "NCP:Role"
 
 #define kWPANTUNDProperty_InterfaceUp                           "Interface:Up"
 
 #define kWPANTUNDProperty_NetworkName                           "Network:Name"
 #define kWPANTUNDProperty_NetworkXPANID                         "Network:XPANID"
 #define kWPANTUNDProperty_NetworkPANID                          "Network:PANID"
+#define kWPANTUNDProperty_NetworkType                           "Network:Type"
 #define kWPANTUNDProperty_NetworkNodeType                       "Network:NodeType"
 #define kWPANTUNDProperty_NetworkKey                            "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex                       "Network:KeyIndex"
@@ -226,6 +230,10 @@
 #define kWPANTUNDProperty_StatLinkQualityPeriod                 "Stat:LinkQuality:Period"
 #define kWPANTUNDProperty_StatHelp                              "Stat:Help"
 
+// These aren't really properties, they are used by IPC-Binder
+#define kWPANTUNDProperty_LQI                                   "LQI"
+#define kWPANTUNDProperty_BeaconAddress                         "Beacon:Address"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
@@ -235,6 +243,12 @@
 #define kWPANTUNDNodeType_NestLurker                            "nl-lurker"
 #define kWPANTUNDNodeType_Commissioner                          "commissioner"
 #define kWPANTUNDNodeType_Leader                                "leader"
+
+#define kWPANTUNDRole_Unknown              "unknown"
+#define kWPANTUNDRole_Detached             "detached"
+#define kWPANTUNDRole_EndDevice            "end-device"
+#define kWPANTUNDRole_Router               "router"
+#define kWPANTUNDRole_Leader               "leader"
 
 // ----------------------------------------------------------------------------
 

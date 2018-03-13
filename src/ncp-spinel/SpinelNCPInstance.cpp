@@ -128,7 +128,9 @@ nl::wpantund::spinel_status_to_wpantund_status(int spinel_status)
 	case SPINEL_STATUS_INVALID_STATE:
 		ret = kWPANTUNDStatus_InvalidForCurrentState;
 		break;
-
+	case SPINEL_STATUS_UNIMPLEMENTED:
+		ret = kWPANTUNDStatus_FeatureNotImplemented;
+		break;
 	default:
 		ret = WPANTUND_NCPERROR_TO_STATUS(spinel_status);
 		break;
@@ -190,6 +192,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mTXPower = 0;
 	mThreadMode = 0;
 	mXPANIDWasExplicitlySet = false;
+	mRole = SPINEL_NET_ROLE_DETACHED;
 
 	mSupprotedChannels.clear();
 	mSettings.clear();
@@ -863,6 +866,45 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 	}
 }
 
+static std::string spinel_role_to_string(uint8_t spinelRole) {
+	switch (spinelRole) {
+	case SPINEL_NET_ROLE_DETACHED:
+		return kWPANTUNDRole_Detached;
+
+	case SPINEL_NET_ROLE_CHILD:
+		return kWPANTUNDRole_EndDevice;
+
+	case SPINEL_NET_ROLE_ROUTER:
+		return kWPANTUNDRole_Router;
+
+	case SPINEL_NET_ROLE_LEADER:
+		return kWPANTUNDRole_Leader;
+	}
+	return kWPANTUNDRole_Unknown;
+}
+
+static int unpack_spinel_role(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t spinelRole;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&spinelRole
+	);
+
+	if (len > 0)
+	{
+		value = spinel_role_to_string(spinelRole);
+		ret = kWPANTUNDStatus_Ok;
+	}
+
+	return ret;
+}
+
 void
 SpinelNCPInstance::update_node_type(NodeType new_node_type)
 {
@@ -953,22 +995,38 @@ SpinelNCPInstance::property_get_value(
 		cb(0, boost::any(get_default_channel_mask()));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAThreshold)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_CCA_THRESHOLD, SPINEL_DATATYPE_INT8_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPTXPower)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_TX_POWER, SPINEL_DATATYPE_INT8_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPFrequency)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_FREQ, SPINEL_DATATYPE_INT32_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_FREQ, SPINEL_DATATYPE_INT32_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_MASTER_KEY, SPINEL_DATATYPE_DATA_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPSKc)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PSKC, SPINEL_DATATYPE_DATA_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPExtendedAddress)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_EXTENDED_ADDR, SPINEL_DATATYPE_EUI64_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPSleepyPollInterval)) {
 		if (!mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
@@ -978,26 +1036,52 @@ SpinelNCPInstance::property_get_value(
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
-		cb(kWPANTUNDStatus_Ok, boost::any(mIsCommissioned));
+		cb(0, boost::any(mIsCommissioned));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkRole)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
+		cb(0, boost::any(mRole));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_InternalSpinelRole)) {
+		if (!mEnabled || !ncp_state_is_associated(get_ncp_state())) {
+			cb(kWPANTUNDStatus_Ok, boost::any((uint8_t)SPINEL_NET_ROLE_DETACHED));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_NET_ROLE, SPINEL_DATATYPE_UINT8_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPartitionId)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_PARTITION_ID, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRSSI)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_PHY_RSSI, SPINEL_DATATYPE_INT8_S);
+		}
+
+//	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsConnected)) {
+//		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_SINGLETON, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRLOC16)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterID)) {
-		cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		if (!mEnabled) {
+			cb(kWPANTUNDStatus_InvalidWhenDisabled, boost::any(std::string("Interface Disabled")));
+		} else {
+			cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
+			SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -1165,6 +1249,9 @@ SpinelNCPInstance::property_get_value(
 		} else {
 			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
 		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPRole)) {
+		cb(0, boost::any(spinel_role_to_string(mRole)));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionStatus)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -2798,12 +2885,20 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		__ASSERT_MACROS_check(ret > 0);
 
 		if (ret > 0) {
+			bool didChange = (mRole != value);
 			syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+
+			mRole = spinel_net_role_t(value);
 
 			if (ncp_state_is_joining_or_joined(get_ncp_state())
 			  && (value != SPINEL_NET_ROLE_DETACHED)
 			) {
 				change_ncp_state(ASSOCIATED);
+			}
+
+			if (didChange) {
+				signal_property_changed(kWPANTUNDProperty_NetworkRole, mRole);
+				signal_property_changed(kWPANTUNDProperty_InternalSpinelRole, value);
 			}
 
 			if (value == SPINEL_NET_ROLE_CHILD) {
@@ -2859,6 +2954,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		bool is_commissioned = false;
 		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
 		syslog(LOG_INFO, "[-NCP-]: NetSaved (NCP is commissioned?) \"%s\" ", is_commissioned ? "yes" : "no");
+		if (mIsCommissioned != is_commissioned) {
+			signal_property_changed(kWPANTUNDProperty_NetworkIsCommissioned, is_commissioned);
+		}
 		mIsCommissioned = is_commissioned;
 		if (mIsCommissioned && (get_ncp_state() == OFFLINE)) {
 			change_ncp_state(COMMISSIONED);
@@ -3172,9 +3270,19 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 
 			spinel_datatype_unpack(value_data_ptr, value_data_len, "6CLL", &addr, &prefix_len, &valid_lifetime, &preferred_lifetime);
 
-			if (addr != NULL) {
-				if (!should_filter_address(*addr, prefix_len)) {
-					unicast_address_was_added(kOriginThreadNCP, *addr, prefix_len, valid_lifetime, preferred_lifetime);
+			if (addr != NULL
+				&& buffer_is_nonzero(addr->s6_addr, 8)
+				&& !IN6_IS_ADDR_UNSPECIFIED(addr)
+			) {
+				struct in6_addr addr_cpy;
+
+				// Some platforms have issues with alignment and the default copy
+				// constructor for in6_addr, so we just do a memcpy here instead.
+				memcpy(&addr_cpy, addr, sizeof(addr_cpy));
+				addr = &addr_cpy;
+
+				if (!should_filter_address(addr_cpy, prefix_len)) {
+					unicast_address_was_added(kOriginThreadNCP, addr_cpy, prefix_len, valid_lifetime, preferred_lifetime);
 				}
 			}
 
@@ -3255,10 +3363,14 @@ SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_
 		mIsPcapInProgress = false;
 	}
 
+	if (ncp_state_is_commissioned(new_ncp_state) && !mIsCommissioned) {
+		mIsCommissioned = true;
+		signal_property_changed(kWPANTUNDProperty_NetworkIsCommissioned, mIsCommissioned);
+	}
+
 	if (ncp_state_is_associated(new_ncp_state)
 	 && !ncp_state_is_associated(old_ncp_state)
 	) {
-		mIsCommissioned = true;
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 			.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MAC_15_4_LADDR))
 			.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_IPV6_ML_ADDR))

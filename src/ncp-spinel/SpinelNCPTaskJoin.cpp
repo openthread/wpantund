@@ -36,8 +36,11 @@ nl::wpantund::SpinelNCPTaskJoin::SpinelNCPTaskJoin(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	const ValueMap& options
-):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
+):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state()), mUseModernBehavior(false)
 {
+	if (options.count(kWPANTUNDUseModernBehavior)) {
+		mUseModernBehavior = any_to_bool(options.find(kWPANTUNDUseModernBehavior)->second);
+	}
 }
 
 void
@@ -79,7 +82,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	if (ncp_state_is_associated(mInstance->get_ncp_state())) {
+	if (!mUseModernBehavior && ncp_state_is_associated(mInstance->get_ncp_state())) {
 		ret = kWPANTUNDStatus_Already;
 		finish(ret);
 		EH_EXIT();
@@ -92,6 +95,24 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 	// will only be received by that task once it is that task's turn
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+	require_noerr(ret, on_error);
 
 	// Clear any previously saved network settings
 	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
@@ -370,18 +391,21 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		on_error
 	);
 
-	ret = last_status
-		? WPANTUND_NCPERROR_TO_STATUS(last_status)
-		: kWPANTUNDStatus_Ok;
+	ret = spinel_status_to_wpantund_status(last_status);
 
-	if ( (last_status == SPINEL_STATUS_JOIN_SECURITY)
-	  || (last_status == SPINEL_STATUS_JOIN_FAILURE)
-	) {
-		mInstance->change_ncp_state(CREDENTIALS_NEEDED);
-		ret = kWPANTUNDStatus_InProgress;
-	} else if ((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)) {
-		ret = kWPANTUNDStatus_JoinFailedUnknown;
+	if (!mUseModernBehavior) {
+		if ( (last_status == SPINEL_STATUS_JOIN_SECURITY)
+		  || (last_status == SPINEL_STATUS_JOIN_FAILURE)
+		) {
+			mInstance->change_ncp_state(CREDENTIALS_NEEDED);
+			finish(kWPANTUNDStatus_InProgress);
+			EH_EXIT();
+		} else if ((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)) {
+			ret = kWPANTUNDStatus_JoinFailedUnknown;
+		}
 	}
+
+	require_noerr(ret, on_error);
 
 	finish(ret);
 
@@ -395,7 +419,34 @@ on_error:
 
 	syslog(LOG_ERR, "Join failed: %d", ret);
 
-	finish(ret);
+	mRet = ret;
+
+	// Join was a failure, purge our state.
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_IF_UP,
+		false
+	);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_NET_CLEAR);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	mInstance->mNetworkKey = Data();
+	mInstance->mNetworkKeyIndex = 0;
+
+	// Issue a Reset
+	mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET);
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	finish(mRet);
 
 	EH_END();
 }
