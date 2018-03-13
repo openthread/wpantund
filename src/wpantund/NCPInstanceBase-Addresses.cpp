@@ -896,7 +896,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 	bool did_remove = false;
 	uint32_t metric;
 
-	if (!mAutoAddOffMeshRoutesOnInterface) {
+	if (!mAutoAddOffMeshRoutesOnInterface || mExternalNetifManagement) {
 		goto bail;
 	}
 

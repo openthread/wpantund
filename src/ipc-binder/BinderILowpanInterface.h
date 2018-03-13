@@ -28,6 +28,8 @@
 #include <binder/IBinder.h>
 #include <set>
 #include <mutex>
+#include <thread>
+#include <condition_variable>
 
 typedef ::android::base::unique_fd ScopedFd;
 
@@ -49,22 +51,19 @@ public:
 	virtual ::android::binder::Status getSupportedChannels(::std::vector<::android::net::lowpan::LowpanChannelInfo>* _aidl_return) override;
 	virtual ::android::binder::Status getSupportedNetworkTypes(::std::vector<::std::string>* _aidl_return) override;
 	virtual ::android::binder::Status getMacAddress(::std::vector<uint8_t>* _aidl_return) override;
-	virtual ::android::binder::Status isEnabled(bool* _aidl_return) override;
 	virtual ::android::binder::Status setEnabled(bool enabled) override;
 	virtual ::android::binder::Status isUp(bool* _aidl_return) override;
-	virtual ::android::binder::Status isCommissioned(bool* _aidl_return) override;
-	virtual ::android::binder::Status isConnected(bool* _aidl_return) override;
-	virtual ::android::binder::Status getState(::std::string* _aidl_return) override;
-	virtual ::android::binder::Status getRole(::std::string* _aidl_return) override;
+	virtual ::android::binder::Status getState(int32_t* _aidl_return) override;
+	virtual ::android::binder::Status getRole(int32_t* _aidl_return) override;
 	virtual ::android::binder::Status getPartitionId(::std::string* _aidl_return) override;
 	virtual ::android::binder::Status getExtendedAddress(::std::vector<uint8_t>* _aidl_return) override;
-	virtual ::android::binder::Status getLowpanIdentity(::android::net::lowpan::LowpanIdentity* _aidl_return) override;
+	virtual ::android::binder::Status getLowpanIdentity(::std::unique_ptr<::android::net::lowpan::LowpanIdentity>* _aidl_return) override;
 	virtual ::android::binder::Status getLowpanCredential(::android::net::lowpan::LowpanCredential* _aidl_return) override;
 	virtual ::android::binder::Status getLinkAddresses(::std::vector<::std::string>* _aidl_return) override;
 	virtual ::android::binder::Status getLinkNetworks(::std::vector<::android::net::IpPrefix>* _aidl_return) override;
-	virtual ::android::binder::Status join(const ::android::net::lowpan::LowpanProvision& provision) override;
-	virtual ::android::binder::Status form(const ::android::net::lowpan::LowpanProvision& provision) override;
-	virtual ::android::binder::Status attach(const ::android::net::lowpan::LowpanProvision& provision) override;
+	virtual ::android::binder::Status join(const ::android::net::lowpan::LowpanProvisioningParams& provision) override;
+	virtual ::android::binder::Status form(const ::android::net::lowpan::LowpanProvisioningParams& provision) override;
+	virtual ::android::binder::Status provision(const ::android::net::lowpan::LowpanProvisioningParams& provision) override;
 	virtual ::android::binder::Status leave() override;
 	virtual ::android::binder::Status reset() override;
 	virtual ::android::binder::Status startCommissioningSession(const ::android::net::lowpan::LowpanBeaconInfo& beaconInfo) override;
@@ -93,11 +92,15 @@ public:
 	void onNetScanFinished(int status);
 	void onEnergyScanFinished(int status);
 
+	void handleChangedProperties(const ValueMap &changedProperties);
+
 private:
 	::android::binder::Status fetchProperty(const std::string& key, boost::any& out);
 	::android::binder::Status fetchPropertyToBinderValue(const std::string& key, ::android::binder::Value& value);
 	::android::binder::Status setProperty(const std::string& key, const boost::any& value);
 
+	void signalingThreadMain();
+	void onProvisionException(const ::android::binder::Status& status);
 
 private:
 	BinderIPCServer& mIpcServer;
@@ -115,6 +118,13 @@ private:
 	volatile int mNetScanStatus;
 	::android::sp<::android::net::lowpan::ILowpanEnergyScanCallback> mEnergyScanListener;
 	volatile int mEnergyScanStatus;
+
+	ValueMap mChangedProperties;
+
+	std::condition_variable mSignalingThreadCondition;
+	bool mSignalingThreadShouldStop;
+	std::thread mSignalingThread;
+
 }; // class BinderILowpanInterface
 
 } // namespace wpantund

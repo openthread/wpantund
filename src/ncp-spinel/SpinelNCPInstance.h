@@ -253,6 +253,7 @@ private:
 	uint8_t mOutboundBufferEscaped[SPINEL_FRAME_BUFFER_SIZE*2];
 	spinel_ssize_t mOutboundBufferEscapedLen;
 	boost::function<void(int)> mOutboundCallback;
+	spinel_net_role_t mRole;
 
 	int mTXPower;
 	uint8_t mThreadMode;

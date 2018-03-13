@@ -66,7 +66,7 @@ using ::android::net::lowpan::LowpanBeaconInfo;
 using ::android::net::lowpan::LowpanChannelInfo;
 using ::android::net::lowpan::LowpanCredential;
 using ::android::net::lowpan::LowpanIdentity;
-using ::android::net::lowpan::LowpanProvision;
+using ::android::net::lowpan::LowpanProvisioningParams;
 using ::android::String16;
 using ::android::String8;
 using ::boost::any;
@@ -266,26 +266,26 @@ nl::wpantund::convert_any_to_link_networks(std::vector<IpPrefix>* link_addresses
 	}
 }
 
-std::string
+int32_t
 nl::wpantund::ncp_state_to_lowpan_state(const ::std::string& ncp_state)
 {
-	std::string ret;
+	int32_t ret;
 
 	if (ncp_state == kWPANTUNDStateCredentialsNeeded) {
-		ret = String8(ILowpanInterface::STATE_COMMISSIONING()).string();
+		ret = ILowpanInterface::STATE_COMMISSIONING;
 	} else if (ncp_state == kWPANTUNDStateFault) {
-		ret = String8(ILowpanInterface::STATE_FAULT()).string();
+		ret = ILowpanInterface::STATE_FAULT;
 	} else if (ncp_state.compare(0, sizeof(kWPANTUNDStateUninitialized) - 1, kWPANTUNDStateUninitialized) == 0) {
-		ret = String8(ILowpanInterface::STATE_OFFLINE()).string();
+		ret = ILowpanInterface::STATE_OFFLINE;
 	} else if (ncp_state.compare(0, sizeof(kWPANTUNDStateOffline) - 1, kWPANTUNDStateOffline) == 0) {
-		ret = String8(ILowpanInterface::STATE_OFFLINE()).string();
+		ret = ILowpanInterface::STATE_OFFLINE;
 	} else if (ncp_state.compare(0, sizeof(kWPANTUNDStateAssociating) - 1, kWPANTUNDStateAssociating) == 0) {
-		ret = String8(ILowpanInterface::STATE_ATTACHING()).string();
+		ret = ILowpanInterface::STATE_ATTACHING;
 	} else if (ncp_state.compare(0, sizeof(kWPANTUNDStateAssociated) - 1, kWPANTUNDStateAssociated) == 0) {
-		ret = String8(ILowpanInterface::STATE_ATTACHED()).string();
+		ret = ILowpanInterface::STATE_ATTACHED;
 	} else {
 		syslog(LOG_ERR, "ncp_state_to_lowpan_state: Unknown NCP state \"%s\", using FAULT", ncp_state.c_str());
-		ret = String8(ILowpanInterface::STATE_FAULT()).string();
+		ret = ILowpanInterface::STATE_FAULT;
 	}
 
 	return ret;
@@ -571,7 +571,7 @@ nl::wpantund::add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan:
 }
 
 Status
-nl::wpantund::add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanProvision& provision)
+nl::wpantund::add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanProvisioningParams& provision)
 {
 	Status ret = Status::fromStatusT(::android::BAD_VALUE);
 	const LowpanIdentity* identity = provision.getLowpanIdentity();

@@ -33,7 +33,7 @@
 #include <binder/IpPrefix.h>
 #include <pthread.h>
 #include <android/net/lowpan/LowpanIdentity.h>
-#include <android/net/lowpan/LowpanProvision.h>
+#include <android/net/lowpan/LowpanProvisioningParams.h>
 #include <android/net/lowpan/LowpanBeaconInfo.h>
 #include <android/net/lowpan/LowpanChannelInfo.h>
 #include <android/net/lowpan/LowpanCredential.h>
@@ -81,11 +81,11 @@ ValueMap cast_to_value_map(const ::android::binder::Map& parameters);
 
 ::android::net::lowpan::LowpanIdentity any_to_lowpan_identity(const ::boost::any& value);
 
-std::string ncp_state_to_lowpan_state(const ::std::string& ncpState);
+int ncp_state_to_lowpan_state(const ::std::string& ncpState);
 
 ::android::binder::Status add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanIdentity& identity);
 ::android::binder::Status add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanCredential& credential);
-::android::binder::Status add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanProvision& provision);
+::android::binder::Status add_to_value_map(ValueMap& valueMap, const ::android::net::lowpan::LowpanProvisioningParams& provision);
 
 int32_t wpantund_status_to_service_code(int status);
 ::android::binder::Status wpantund_status_to_binder_status(int status);
