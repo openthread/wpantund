@@ -281,6 +281,7 @@ private:
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
 	bool mXPANIDWasExplicitlySet;
+	uint8_t mChannelManagerNewChannel;
 
 	bool mResetIsExpected;
 

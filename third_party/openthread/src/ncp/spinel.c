@@ -1569,6 +1569,10 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_IPV6_MULTICAST_ADDRESS_TABLE";
         break;
 
+    case SPINEL_PROP_IPV6_ICMP_PING_OFFLOAD_MODE:
+        ret = "PROP_IPV6_ICMP_PING_OFFLOAD_MODE";
+        break;
+
     case SPINEL_PROP_STREAM_DEBUG:
         ret = "PROP_STREAM_DEBUG";
         break;
@@ -1583,6 +1587,34 @@ spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_STREAM_NET_INSECURE:
         ret = "PROP_STREAM_NET_INSECURE";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL:
+        ret = "PROP_CHANNEL_MANAGER_NEW_CHANNEL";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_DELAY:
+        ret = "PROP_CHANNEL_MANAGER_DELAY";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_SUPPORTED_CHANNELS:
+        ret = "PROP_CHANNEL_MANAGER_SUPPORTED_CHANNELS";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_FAVORED_CHANNELS:
+        ret = "PROP_CHANNEL_MANAGER_FAVORED_CHANNELS";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_CHANNEL_SELECT:
+        ret = "PROP_CHANNEL_MANAGER_CHANNEL_SELECT";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_ENABLED:
+        ret = "PROP_CHANNEL_MANAGER_AUTO_SELECT_ENABLED";
+        break;
+
+    case SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL:
+        ret = "PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL";
         break;
 
     case SPINEL_PROP_UART_BITRATE:
@@ -2134,6 +2166,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_CHANNEL_MONITOR:
         ret = "CAP_CHANNEL_MONITOR";
+        break;
+
+    case SPINEL_CAP_CHANNEL_MANAGER:
+        ret = "CAP_CHANNEL_MANAGER";
         break;
 
     case SPINEL_CAP_ERROR_RATE_TRACKING:

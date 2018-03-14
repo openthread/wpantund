@@ -190,6 +190,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mTXPower = 0;
 	mThreadMode = 0;
 	mXPANIDWasExplicitlySet = false;
+	mChannelManagerNewChannel = 0;
 
 	mSupprotedChannels.clear();
 	mSettings.clear();
@@ -351,6 +352,15 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ChannelMonitorChannelQuality);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+		properties.insert(kWPANTUNDProperty_ChannelManagerNewChannel);
+		properties.insert(kWPANTUNDProperty_ChannelManagerDelay);
+		properties.insert(kWPANTUNDProperty_ChannelManagerAutoSelectEnabled);
+		properties.insert(kWPANTUNDProperty_ChannelManagerAutoSelectInterval);
+		properties.insert(kWPANTUNDProperty_ChannelManagerSupportedChannelMask);
+		properties.insert(kWPANTUNDProperty_ChannelManagerFavoredChannelMask);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY)) {
 		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
 	}
@@ -401,6 +411,41 @@ convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, const boost::
 		router_id = rloc16 >> 10;
 	}
 	cb(status, router_id);
+}
+
+static int
+unpack_channel_mask(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint32_t channel_mask = 0;
+	uint8_t channel = 0xff;
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0)
+	{
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_UINT8_S,
+			&channel
+		);
+
+		if ((len <= 0) || (channel >= 32)) {
+			ret = kWPANTUNDStatus_Failure;
+			break;
+		}
+
+		channel_mask |= (1U << channel);
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (ret == kWPANTUNDStatus_Ok) {
+		value = channel_mask;
+	}
+
+	return ret;
 }
 
 static int
@@ -1277,6 +1322,69 @@ SpinelNCPInstance::property_get_value(
 			);
 		}
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerNewChannel)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL, SPINEL_DATATYPE_UINT8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerDelay)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MANAGER_DELAY, SPINEL_DATATYPE_UINT16_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerAutoSelectEnabled)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerAutoSelectInterval)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL, SPINEL_DATATYPE_UINT32_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerChannelSelect)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHANNEL_MANAGER_CHANNEL_SELECT, SPINEL_DATATYPE_BOOL_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerSupportedChannelMask)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CHANNEL_MANAGER_SUPPORTED_CHANNELS)
+				)
+				.set_reply_unpacker(unpack_channel_mask)
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerFavoredChannelMask)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Manager Feature Not Supported")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_CHANNEL_MANAGER_FAVORED_CHANNELS)
+				)
+				.set_reply_unpacker(unpack_channel_mask)
+				.finish()
+			);
+		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
 		if (!mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Legacy Capability Not Supported by NCP")));
@@ -2136,6 +2244,171 @@ SpinelNCPInstance::property_set_value(
 				cb(kWPANTUNDStatus_InvalidArgument);
 			}
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerNewChannel)) {
+			uint8_t channel = any_to_int(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+				SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL,
+				channel
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerNewChannel] = SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerDelay)) {
+			uint16_t delay = any_to_int(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+				SPINEL_PROP_CHANNEL_MANAGER_DELAY,
+				delay
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerDelay] = SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerChannelSelect)) {
+			bool skip_check = any_to_bool(value);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+						SPINEL_PROP_CHANNEL_MANAGER_CHANNEL_SELECT,
+						skip_check
+					))
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerAutoSelectEnabled)) {
+			bool enabled = any_to_bool(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_ENABLED,
+				enabled
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerAutoSelectEnabled] =
+				SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerAutoSelectInterval)) {
+			uint32_t interval = any_to_int(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
+				SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL,
+				interval
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerAutoSelectInterval] =
+				SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerSupportedChannelMask)) {
+			uint32_t mask = any_to_int(value);
+			uint8_t mask_array[32];
+			unsigned int mask_array_len = 0;
+			Data command;
+
+			for (uint8_t channel = 0; channel < 32; channel++) {
+				if (mask & (1U << channel)) {
+					mask_array[mask_array_len] = channel;
+					mask_array_len++;
+				}
+			}
+
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_CHANNEL_MANAGER_SUPPORTED_CHANNELS,
+				mask_array,
+				mask_array_len
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerSupportedChannelMask] =
+				SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerFavoredChannelMask)) {
+			uint32_t mask = any_to_int(value);
+			uint8_t mask_array[32];
+			unsigned int mask_array_len = 0;
+			Data command;
+
+			for (uint8_t channel = 0; channel < 32; channel++) {
+				if (mask & (1U << channel)) {
+					mask_array[mask_array_len] = channel;
+					mask_array_len++;
+				}
+			}
+
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_CHANNEL_MANAGER_FAVORED_CHANNELS,
+				mask_array,
+				mask_array_len
+			);
+
+			mSettings[kWPANTUNDProperty_ChannelManagerFavoredChannelMask] =
+				SettingsEntry(command, SPINEL_CAP_CHANNEL_MANAGER);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MANAGER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetActiveTimestamp)) {
 			mLocalDataset.mActiveTimestamp = any_to_uint64(value);
 			cb(kWPANTUNDStatus_Ok);
@@ -2988,6 +3261,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_NOTICE, "Signal jamming is detected");
 		} else {
 			syslog(LOG_NOTICE, "Signal jamming cleared");
+		}
+
+	} else if (key == SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL) {
+		uint8_t new_channel = 0;
+		spinel_ssize_t len;
+
+		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &new_channel);
+
+		if ((len >= 0) && (new_channel != mChannelManagerNewChannel)) {
+			mChannelManagerNewChannel = new_channel;
+			signal_property_changed(kWPANTUNDProperty_ChannelManagerNewChannel, new_channel);
+			syslog(LOG_INFO, "[-NCP-]: ChannelManager about to switch to new channel %d", new_channel);
 		}
 
 	} else if (key == SPINEL_PROP_STREAM_RAW) {

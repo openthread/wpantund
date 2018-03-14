@@ -186,6 +186,14 @@
 #define kWPANTUNDProperty_ChannelMonitorChannelQuality          "ChannelMonitor:ChannelQuality"
 #define kWPANTUNDProperty_ChannelMonitorChannelQualityAsValMap  "ChannelMonitor:ChannelQuality:AsValMap"
 
+#define kWPANTUNDProperty_ChannelManagerNewChannel              "ChannelManager:NewChannel"
+#define kWPANTUNDProperty_ChannelManagerDelay                   "ChannelManager:Delay"
+#define kWPANTUNDProperty_ChannelManagerChannelSelect           "ChannelManager:ChannelSelect"
+#define kWPANTUNDProperty_ChannelManagerAutoSelectEnabled       "ChannelManager:AutoSelect:Enabled"
+#define kWPANTUNDProperty_ChannelManagerAutoSelectInterval      "ChannelManager:AutoSelect:Interval"
+#define kWPANTUNDProperty_ChannelManagerSupportedChannelMask    "ChannelManager:SupportedChannelMask"
+#define kWPANTUNDProperty_ChannelManagerFavoredChannelMask      "ChannelManager:FavoredChannelMask"
+
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 

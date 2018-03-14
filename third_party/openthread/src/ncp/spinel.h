@@ -202,6 +202,14 @@ typedef enum
 
 typedef enum
 {
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_DISABLED       = 0,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_UNICAST_ONLY   = 1,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_MULTICAST_ONLY = 2,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_ALL            = 3,
+} spinel_ipv6_icmp_ping_offload_mode_t;
+
+typedef enum
+{
     SPINEL_SCAN_STATE_IDLE              = 0,
     SPINEL_SCAN_STATE_BEACON            = 1,
     SPINEL_SCAN_STATE_ENERGY            = 2,
@@ -419,6 +427,7 @@ enum
     SPINEL_CAP_OOB_STEERING_DATA        = (SPINEL_CAP_OPENTHREAD__BEGIN + 2),
     SPINEL_CAP_CHANNEL_MONITOR          = (SPINEL_CAP_OPENTHREAD__BEGIN + 3),
     SPINEL_CAP_ERROR_RATE_TRACKING      = (SPINEL_CAP_OPENTHREAD__BEGIN + 4),
+    SPINEL_CAP_CHANNEL_MANAGER          = (SPINEL_CAP_OPENTHREAD__BEGIN + 5),
     SPINEL_CAP_OPENTHREAD__END          = 640,
 
     SPINEL_CAP_THREAD__BEGIN            = 1024,
@@ -1411,6 +1420,20 @@ typedef enum
     SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE
                                         = SPINEL_PROP_IPV6__BEGIN + 6, ///< [A(t(6))]
 
+    /// IPv6 ICMP Ping Offload
+    /** Format: `C`
+     *
+     * Allow the NCP to directly respond to ICMP ping requests. If this is
+     * turned on, ping request ICMP packets will not be passed to the host.
+     *
+     * This property allows enabling responses sent to unicast only, multicast
+     * only, or both.
+     *
+     * Default value is `NET_IPV6_ICMP_PING_OFFLOAD_DISABLED`.
+     */
+    SPINEL_PROP_IPV6_ICMP_PING_OFFLOAD_MODE
+                                        = SPINEL_PROP_IPV6__BEGIN + 7, ///< [b]
+
     SPINEL_PROP_IPV6__END               = 0x70,
 
     SPINEL_PROP_STREAM__BEGIN           = 0x70,
@@ -1419,6 +1442,117 @@ typedef enum
     SPINEL_PROP_STREAM_NET              = SPINEL_PROP_STREAM__BEGIN + 2, ///< [dD]
     SPINEL_PROP_STREAM_NET_INSECURE     = SPINEL_PROP_STREAM__BEGIN + 3, ///< [dD]
     SPINEL_PROP_STREAM__END             = 0x80,
+
+    SPINEL_PROP_OPENTHREAD__BEGIN       = 0x1900,
+
+    /// Channel Manager - Channel Change New Channel
+    /** Format: `C` (read-write)
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * Setting this property triggers the Channel Manager to start
+     * a channel change process. The network switches to the given
+     * channel after the specified delay (see `CHANNEL_MANAGER_DELAY`).
+     *
+     * A subsequent write to this property will cancel an ongoing
+     * (previously requested) channel change.
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 0,
+
+    /// Channel Manager - Channel Change Delay
+    /** Format 'S'
+     *  Units: seconds
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * This property specifies the delay (in seconds) to be used for
+     * a channel change request.
+     *
+     * The delay should preferably be longer than maximum data poll
+     * interval used by all sleepy-end-devices within the Thread
+     * network.
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_DELAY   = SPINEL_PROP_OPENTHREAD__BEGIN + 1,
+
+    /// Channel Manager Supported Channels
+    /** Format 'A(C)'
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * This property specifies the list of supported channels.
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_SUPPORTED_CHANNELS
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 2,
+
+    /// Channel Manager Favored Channels
+    /** Format 'A(C)'
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * This property specifies the list of favored channels (when `ChannelManager` is asked to select channel)
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_FAVORED_CHANNELS
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 3,
+
+    /// Channel Manager Channel Select Trigger
+    /** Format 'b'
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * Writing to this property triggers a request on `ChannelManager` to select a new channel.
+     *
+     * Once a Channel Select is triggered, the Channel Manager will perform the following 3 steps:
+     *
+     * 1) `ChannelManager` decides if the channel change would be helpful. This check can be skipped if in the input
+     *    boolean to this property is set to `true` (skipping the quality check).
+     *    This step uses the collected link quality metrics on the device such as CCA failure rate, frame and message
+     *    error rates per neighbor, etc. to determine if the current channel quality is at the level that justifies
+     *    a channel change.
+     *
+     * 2) If first step passes, then `ChannelManager` selects a potentially better channel. It uses the collected
+     *    channel quality data by `ChannelMonitor` module. The supported and favored channels are used at this step.
+     *
+     * 3) If the newly selected channel is different from the current channel, `ChannelManager` requests/starts the
+     *    channel change process.
+     *
+     * Reading this property always yields `false`.
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_CHANNEL_SELECT
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 4,
+
+    /// Channel Manager Auto Channel Selection Enabled
+    /** Format 'b'
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * This property indicates if auto-channel-selection functionality is enabled/disabled on `ChannelManager`.
+     *
+     * When enabled, `ChannelManager` will periodically checks and attempts to select a new channel. The period interval
+     * is specified by `SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL`.
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_ENABLED
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 5,
+
+    /// Channel Manager Auto Channel Selection Interval
+    /** Format 'L'
+     *  units: seconds
+     *
+     * Required capability: SPINEL_CAP_CHANNEL_MANAGER
+     *
+     * This property specifies the auto-channel-selection check interval (in seconds).
+     *
+     */
+    SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL
+                                        = SPINEL_PROP_OPENTHREAD__BEGIN + 6,
+
+    SPINEL_PROP_OPENTHREAD__END         = 0x2000,
 
     /// UART Bitrate
     /** Format: `L`
