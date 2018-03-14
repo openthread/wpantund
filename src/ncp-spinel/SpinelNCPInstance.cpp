@@ -2041,11 +2041,6 @@ SpinelNCPInstance::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
 			struct in6_addr address = any_to_ipv6(value);
-			char address_str[INET6_ADDRSTRLEN] = "::";
-
-			inet_ntop(AF_INET6, (const void *)&address, address_str, sizeof(address_str));
-
-			fprintf(stderr, "Using prefix \"%s\"\n", address_str);
 
 			Data command =
 				SpinelPackData(
@@ -2054,8 +2049,6 @@ SpinelNCPInstance::property_set_value(
 					address.s6_addr,
 					8
 				);
-
-			mSettings[kWPANTUNDProperty_IPv6MeshLocalPrefix] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
