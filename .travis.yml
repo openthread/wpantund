@@ -26,6 +26,11 @@ compiler:
 before_install:
     - .travis/before_install.sh
 
+before_script:
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+         sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
+    fi
+
 script:
     - .travis/script.sh
 
@@ -41,4 +46,8 @@ matrix:
         - os: osx # See issue #245: "Travis macOS builds are failing"
     exclude:
         - os: osx
+          compiler: gcc
+    include:
+        - env: BUILD_TARGET="toranj-test-framework" VERBOSE=1
+          os: linux
           compiler: gcc

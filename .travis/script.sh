@@ -25,6 +25,18 @@ die() {
 
 set -x
 
+[ $BUILD_TARGET != toranj-test-framework ] || {
+    ./bootstrap.sh || die
+    ./configure || die
+    sudo make -j 8 || die
+    sudo make install || die
+
+    git clone --depth=1 --branch=master https://github.com/openthread/openthread.git
+
+    cd openthread
+    ./tests/toranj/start.sh
+}
+
 [ $TRAVIS_OS_NAME != linux ] || BUILD_CONFIGFLAGS="${BUILD_CONFIGFLAGS} --with-connman"
 
 [ -e configure ] || ./bootstrap.sh || die
