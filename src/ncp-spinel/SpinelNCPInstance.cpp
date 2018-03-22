@@ -2039,6 +2039,23 @@ SpinelNCPInstance::property_set_value(
 				);
 			}
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
+			struct in6_addr addr = any_to_ipv6(value);
+
+			Data command =
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_IPv6ADDR_S SPINEL_DATATYPE_UINT8_S),
+					SPINEL_PROP_IPV6_ML_PREFIX,
+					&addr,
+					64
+				);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(command)
+				.finish()
+			);
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
 			bool isEnabled = any_to_bool(value);
 
