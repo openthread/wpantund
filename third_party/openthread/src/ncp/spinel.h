@@ -202,12 +202,30 @@ typedef enum
 
 typedef enum
 {
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_DISABLED       = 0,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_UNICAST_ONLY   = 1,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_MULTICAST_ONLY = 2,
+    SPINEL_IPV6_ICMP_PING_OFFLOAD_ALL            = 3,
+} spinel_ipv6_icmp_ping_offload_mode_t;
+
+typedef enum
+{
     SPINEL_SCAN_STATE_IDLE              = 0,
     SPINEL_SCAN_STATE_BEACON            = 1,
     SPINEL_SCAN_STATE_ENERGY            = 2,
     SPINEL_SCAN_STATE_DISCOVER          = 3,
 } spinel_scan_state_t;
 
+typedef enum
+{
+    SPINEL_MCU_POWER_STATE_ON           = 0,
+    SPINEL_MCU_POWER_STATE_LOW_POWER    = 1,
+    SPINEL_MCU_POWER_STATE_OFF          = 2,
+} spinel_mcu_power_state_t;
+
+// The `spinel_power_state_t` enumeration and `POWER_STATE`
+// property are deprecated. Please use `MCU_POWER_STATE`
+// instead.
 typedef enum
 {
     SPINEL_POWER_STATE_OFFLINE          = 0,
@@ -389,6 +407,7 @@ enum
     SPINEL_CAP_TRNG                     = 10,
     SPINEL_CAP_CMD_MULTI                = 11,
     SPINEL_CAP_UNSOL_UPDATE_FILTER      = 12,
+    SPINEL_CAP_MCU_POWER_STATE          = 13,
 
     SPINEL_CAP_802_15_4__BEGIN          = 16,
     SPINEL_CAP_802_15_4_2003            = (SPINEL_CAP_802_15_4__BEGIN + 0),
@@ -419,6 +438,7 @@ enum
     SPINEL_CAP_OOB_STEERING_DATA        = (SPINEL_CAP_OPENTHREAD__BEGIN + 2),
     SPINEL_CAP_CHANNEL_MONITOR          = (SPINEL_CAP_OPENTHREAD__BEGIN + 3),
     SPINEL_CAP_ERROR_RATE_TRACKING      = (SPINEL_CAP_OPENTHREAD__BEGIN + 4),
+    SPINEL_CAP_CHANNEL_MANAGER          = (SPINEL_CAP_OPENTHREAD__BEGIN + 5),
     SPINEL_CAP_OPENTHREAD__END          = 640,
 
     SPINEL_CAP_THREAD__BEGIN            = 1024,
@@ -448,12 +468,13 @@ typedef enum
     SPINEL_PROP_VENDOR_ID               = 4,        ///< [i]
     SPINEL_PROP_CAPS                    = 5,        ///< capability list [A(i)]
     SPINEL_PROP_INTERFACE_COUNT         = 6,        ///< Interface count [C]
-    SPINEL_PROP_POWER_STATE             = 7,        ///< PowerState [C]
+    SPINEL_PROP_POWER_STATE             = 7,        ///< PowerState [C] (deprecated, use `MCU_POWER_STATE` instead).
     SPINEL_PROP_HWADDR                  = 8,        ///< PermEUI64 [E]
     SPINEL_PROP_LOCK                    = 9,        ///< PropLock [b]
     SPINEL_PROP_HBO_MEM_MAX             = 10,       ///< Max offload mem [S]
     SPINEL_PROP_HBO_BLOCK_MAX           = 11,       ///< Max offload block [S]
     SPINEL_PROP_HOST_POWER_STATE        = 12,       ///< Host MCU power state [C]
+    SPINEL_PROP_MCU_POWER_STATE         = 13,       ///< NCP's MCU power state [c]
 
     SPINEL_PROP_BASE_EXT__BEGIN         = 0x1000,
 
@@ -1411,6 +1432,20 @@ typedef enum
     SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE
                                         = SPINEL_PROP_IPV6__BEGIN + 6, ///< [A(t(6))]
 
+    /// IPv6 ICMP Ping Offload
+    /** Format: `C`
+     *
+     * Allow the NCP to directly respond to ICMP ping requests. If this is
+     * turned on, ping request ICMP packets will not be passed to the host.
+     *
+     * This property allows enabling responses sent to unicast only, multicast
+     * only, or both.
+     *
+     * Default value is `NET_IPV6_ICMP_PING_OFFLOAD_DISABLED`.
+     */
+    SPINEL_PROP_IPV6_ICMP_PING_OFFLOAD_MODE
+                                        = SPINEL_PROP_IPV6__BEGIN + 7, ///< [b]
+
     SPINEL_PROP_IPV6__END               = 0x70,
 
     SPINEL_PROP_STREAM__BEGIN           = 0x70,
@@ -1969,6 +2004,8 @@ SPINEL_API_EXTERN const char *spinel_next_packed_datatype(const char *pack_forma
 SPINEL_API_EXTERN const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key);
 
 SPINEL_API_EXTERN const char *spinel_net_role_to_cstr(uint8_t net_role);
+
+SPINEL_API_EXTERN const char *spinel_mcu_power_state_to_cstr(spinel_mcu_power_state_t mcu_power_state);
 
 SPINEL_API_EXTERN const char *spinel_status_to_cstr(spinel_status_t status);
 

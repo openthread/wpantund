@@ -67,6 +67,7 @@
 #define kWPANTUNDProperty_NCPSleepyPollInterval                 "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
 #define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
+#define kWPANTUNDProperty_NCPMCUPowerState                      "NCP:MCUPowerState"
 
 #define kWPANTUNDProperty_InterfaceUp                           "Interface:Up"
 
@@ -253,6 +254,13 @@
 #define kWPANTUNDStateIsolated                                  "associated:no-parent"
 #define kWPANTUNDStateNetWake_Asleep                            "associated:netwake-asleep"
 #define kWPANTUNDStateNetWake_Waking                            "associated:netwake-waking"
+
+// ----------------------------------------------------------------------------
+
+// Values of the property kWPANTUNDProperty_NCPMCUPowerState
+#define kWPANTUNDNCPMCUPowerState_On                            "on"
+#define kWPANTUNDNCPMCUPowerState_LowPower                      "low-power"
+#define kWPANTUNDNCPMCUPowerState_Off                           "off"
 
 // ----------------------------------------------------------------------------
 

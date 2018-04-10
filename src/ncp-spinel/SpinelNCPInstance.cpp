@@ -87,8 +87,13 @@ SpinelNCPInstance::start_new_task(const boost::shared_ptr<SpinelNCPTask> &task)
 		if (ncp_state_is_sleeping(get_ncp_state())
 			&& (dynamic_cast<const SpinelNCPTaskWake*>(task.get()) == NULL)
 		) {
-			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskWake(this, NilReturn())));
+			if (can_set_ncp_power()
+			    || !mCapabilities.count(SPINEL_CAP_MCU_POWER_STATE)
+			){
+				start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskWake(this, NilReturn())));
+			}
 		}
+
 		mTaskQueue.push_back(task);
 	}
 }
@@ -725,6 +730,66 @@ unpack_jam_detect_history_bitmap(const uint8_t *data_in, spinel_size_t data_len,
 }
 
 static int
+unpack_mcu_power_state(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t power_state;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&power_state
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	switch (power_state)
+	{
+	case SPINEL_MCU_POWER_STATE_ON:
+		value = std::string(kWPANTUNDNCPMCUPowerState_On);
+		break;
+
+	case SPINEL_MCU_POWER_STATE_LOW_POWER:
+		value = std::string(kWPANTUNDNCPMCUPowerState_LowPower);
+		break;
+
+	case SPINEL_MCU_POWER_STATE_OFF:
+		value = std::string(kWPANTUNDNCPMCUPowerState_Off);
+		break;
+
+	default:
+		value = std::string("unknown");
+		break;
+	}
+
+bail:
+	return ret;
+}
+
+static int
+convert_string_to_spinel_mcu_power_state(const char *str, spinel_mcu_power_state_t &power_state)
+{
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (strcaseequal(str, kWPANTUNDNCPMCUPowerState_On)) {
+		power_state = SPINEL_MCU_POWER_STATE_ON;
+
+	} else if (strcaseequal(str, kWPANTUNDNCPMCUPowerState_LowPower) || strcaseequal(str, "lp")) {
+		power_state = SPINEL_MCU_POWER_STATE_LOW_POWER;
+
+	} else if (strcaseequal(str, "kWPANTUNDNCPMCUPowerState_Off")) {
+		power_state = SPINEL_MCU_POWER_STATE_OFF;
+
+	} else {
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+
+	return ret;
+}
+
+static int
 unpack_dataset(const uint8_t *data_in, spinel_size_t data_len, boost::any &value, bool as_val_map)
 {
 	int ret = kWPANTUNDStatus_Ok;
@@ -858,7 +923,7 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 			.finish()
 		);
 
- 	} else {
+	} else {
 		cb(kWPANTUNDStatus_InvalidArgument);
 	}
 }
@@ -975,6 +1040,21 @@ SpinelNCPInstance::property_get_value(
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Sleepy role is not supported by NCP")));
 		} else {
 			SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_DATA_POLL_PERIOD, SPINEL_DATATYPE_UINT32_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPMCUPowerState)) {
+		if (!mCapabilities.count(SPINEL_CAP_MCU_POWER_STATE)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported,
+				boost::any(std::string("Getting MCU power state is not supported by NCP")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MCU_POWER_STATE)
+				)
+				.set_reply_unpacker(unpack_mcu_power_state)
+				.finish()
+			);
 		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
@@ -1676,6 +1756,29 @@ SpinelNCPInstance::property_set_value(
 				.add_command(command)
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPMCUPowerState)) {
+			spinel_mcu_power_state_t power_state;
+			int ret = convert_string_to_spinel_mcu_power_state(any_to_string(value).c_str(), power_state);
+
+			if (ret != kWPANTUNDStatus_Ok) {
+				cb(ret);
+			} else {
+				Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_MCU_POWER_STATE, power_state);
+
+				mSettings[kWPANTUNDProperty_NCPMCUPowerState] = SettingsEntry(command, SPINEL_CAP_MCU_POWER_STATE);
+
+				if (!mCapabilities.count(SPINEL_CAP_MCU_POWER_STATE))
+				{
+					cb(kWPANTUNDStatus_FeatureNotSupported);
+				} else {
+					start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(command)
+						.finish()
+					);
+				}
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkPANID)) {
 			uint16_t panid = any_to_int(value);
@@ -2593,6 +2696,35 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			if (mCurrentNetworkInstance.name != value) {
 				mCurrentNetworkInstance.name = value;
 				signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
+			}
+		}
+
+	} else if (key == SPINEL_PROP_MCU_POWER_STATE) {
+		uint8_t power_state = 0;
+		spinel_ssize_t len = 0;
+
+		len  = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &power_state);
+
+		if (len > 0) {
+			syslog(LOG_INFO, "[-NCP-]: MCU power state \"%s\" (%d)",
+				spinel_mcu_power_state_to_cstr(static_cast<spinel_mcu_power_state_t>(power_state)), power_state);
+
+			switch (get_ncp_state()) {
+			case OFFLINE:
+			case COMMISSIONED:
+				if (power_state == SPINEL_MCU_POWER_STATE_LOW_POWER) {
+					change_ncp_state(DEEP_SLEEP);
+				}
+				break;
+
+			case DEEP_SLEEP:
+				if (power_state == SPINEL_MCU_POWER_STATE_ON) {
+					change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
+				}
+				break;
+
+			default:
+				break;
 			}
 		}
 
