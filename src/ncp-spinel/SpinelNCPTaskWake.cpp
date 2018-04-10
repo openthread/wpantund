@@ -26,6 +26,7 @@
 #include <errno.h>
 #include "SpinelNCPTaskWake.h"
 #include "SpinelNCPInstance.h"
+#include "spinel-extra.h"
 
 using namespace nl;
 using namespace nl::wpantund;
@@ -64,18 +65,31 @@ nl::wpantund::SpinelNCPTaskWake::vprocess_event(int event, va_list args)
 	mInstance->set_ncp_power(true);
 	mInstance->mResetIsExpected = true;
 
-	CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
-	GetInstance(this)->mOutboundBufferLen = spinel_datatype_pack(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), "Ci", 0, SPINEL_CMD_NOOP);
-	CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+	if (mInstance->mCapabilities.count(SPINEL_CAP_MCU_POWER_STATE)) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_MCU_POWER_STATE,
+			SPINEL_MCU_POWER_STATE_ON
+		);
 
-	EH_REQUIRE_WITHIN(
-		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		!ncp_state_is_sleeping(mInstance->get_ncp_state())
-		  && (!ncp_state_is_initializing(mInstance->get_ncp_state())),
-		on_error
-	);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
 
-	ret = kWPANTUNDStatus_Ok;
+	} else {
+		CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+		GetInstance(this)->mOutboundBufferLen = spinel_datatype_pack(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), "Ci", 0, SPINEL_CMD_NOOP);
+		CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
+
+		EH_REQUIRE_WITHIN(
+			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+			!ncp_state_is_sleeping(mInstance->get_ncp_state())
+			  && (!ncp_state_is_initializing(mInstance->get_ncp_state())),
+			on_error
+		);
+
+		ret = kWPANTUNDStatus_Ok;
+	}
 
 	finish(ret);
 

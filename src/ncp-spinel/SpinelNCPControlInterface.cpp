@@ -52,6 +52,7 @@
 #include "SpinelNCPTaskLeave.h"
 #include "SpinelNCPTaskScan.h"
 #include "SpinelNCPTaskPeek.h"
+#include "SpinelNCPTaskDeepSleep.h"
 #include "SpinelNCPTaskSendCommand.h"
 
 using namespace nl;
@@ -158,8 +159,7 @@ SpinelNCPControlInterface::host_did_wake(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::begin_low_power(CallbackWithStatus cb)
 {
-	// TODO: Writeme!
-	cb(kWPANTUNDStatus_FeatureNotImplemented);
+	property_set_value(kWPANTUNDProperty_NCPMCUPowerState , std::string(kWPANTUNDNCPMCUPowerState_LowPower), cb);
 }
 
 void
