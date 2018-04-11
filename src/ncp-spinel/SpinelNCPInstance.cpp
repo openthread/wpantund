@@ -181,6 +181,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mIsCommissioned = false;
 	mFilterRLOCAddresses = true;
+	mTickleOnHostDidWake = false;
 	mIsPcapInProgress = false;
 	mLastHeader = 0;
 	mLastTID = 0;
@@ -1711,6 +1712,9 @@ SpinelNCPInstance::property_get_value(
 		get_dataset_command_help(help_string);
 		cb(kWPANTUNDStatus_Ok, boost::any(help_string));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonTickleOnHostDidWake)) {
+		cb(kWPANTUNDStatus_Ok, boost::any(mTickleOnHostDidWake));
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCounterAllMac)) {
 		if (!mCapabilities.count(SPINEL_CAP_COUNTERS)) {
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
@@ -2592,6 +2596,11 @@ SpinelNCPInstance::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetCommand)) {
 			perform_dataset_command(any_to_string(value), cb);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DaemonTickleOnHostDidWake)) {
+			mTickleOnHostDidWake =  any_to_bool(value);
+			syslog(LOG_INFO, "TickleOnHostDidWake is %sabled", mTickleOnHostDidWake ? "en" : "dis");
+			cb(kWPANTUNDStatus_Ok);
 
 		} else {
 			NCPInstanceBase::property_set_value(key, value, cb);

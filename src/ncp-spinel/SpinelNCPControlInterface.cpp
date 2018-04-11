@@ -53,6 +53,7 @@
 #include "SpinelNCPTaskScan.h"
 #include "SpinelNCPTaskPeek.h"
 #include "SpinelNCPTaskDeepSleep.h"
+#include "SpinelNCPTaskHostDidWake.h"
 #include "SpinelNCPTaskSendCommand.h"
 
 using namespace nl;
@@ -152,8 +153,13 @@ SpinelNCPControlInterface::begin_net_wake(uint8_t data, uint32_t flags, Callback
 void
 SpinelNCPControlInterface::host_did_wake(CallbackWithStatus cb)
 {
-	// TODO: Writeme!
-	cb(kWPANTUNDStatus_FeatureNotImplemented);
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskHostDidWake(
+			mNCPInstance,
+			boost::bind(cb,_1),
+			mNCPInstance->mTickleOnHostDidWake
+		)
+	));
 }
 
 void

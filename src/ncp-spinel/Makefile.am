@@ -87,6 +87,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskGetNetworkTopology.cpp \
 	SpinelNCPTaskGetMsgBufferCounters.h \
 	SpinelNCPTaskGetMsgBufferCounters.cpp \
+	SpinelNCPTaskHostDidWake.h \
+	SpinelNCPTaskHostDidWake.cpp \
 	SpinelNCPTaskDeepSleep.h \
 	SpinelNCPTaskForm.cpp \
 	SpinelNCPTaskForm.h \
