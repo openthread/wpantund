@@ -526,7 +526,7 @@ nl::wpantund::SpinelNCPTaskGetNetworkTopology::vprocess_event(int event, va_list
 		parse_neighbor_table(data_in, data_len, mTable);
 	} else if (mType == kRouterTable) {
 		parse_router_table(data_in, data_len, mTable);
-	} else if (mType = kNeighborTableErrorRates) {
+	} else if (mType == kNeighborTableErrorRates) {
 		prase_neighbor_error_rates_table(data_in, data_len, mTable);
 	}
 
