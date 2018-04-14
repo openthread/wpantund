@@ -579,7 +579,9 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 	EH_WAIT_UNTIL(mTaskQueue.empty());
 
 	// If we are commissioned and autoResume is enabled
-	if (mAutoResume && mEnabled && (get_ncp_state() == COMMISSIONED)) {
+	if (mAutoResume && mEnabled && mIsCommissioned
+	    && !ncp_state_is_joining_or_joined(get_ncp_state()) && !ncp_state_is_initializing(get_ncp_state())
+	) {
 		syslog(LOG_NOTICE, "AutoResume is enabled. Trying to resume.");
 		EH_SPAWN(&mSubPT, vprocess_resume(event, args));
 	}
