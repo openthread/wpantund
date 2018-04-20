@@ -731,8 +731,26 @@ NCPInstanceBase::property_insert_value(
 	const boost::any& value,
 	CallbackWithStatus cb
 ) {
-	syslog(LOG_ERR, "property_insert_value: Property not supported or not insert-value capable \"%s\"", key.c_str());
-	cb(kWPANTUNDStatus_PropertyNotFound);
+	try {
+		if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MulticastAddresses)) {
+			struct in6_addr address = any_to_ipv6(value);
+			multicast_address_was_joined(kOriginUser, address, cb);
+
+		} else {
+			syslog(LOG_ERR, "property_insert_value: Property not supported or not insert-value capable \"%s\"", key.c_str());
+			cb(kWPANTUNDStatus_PropertyNotFound);
+		}
+	} catch (const boost::bad_any_cast &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_insert_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	} catch (const std::invalid_argument &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_insert_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
 }
 
 void
@@ -741,8 +759,26 @@ NCPInstanceBase::property_remove_value(
 	const boost::any& value,
 	CallbackWithStatus cb
 ) {
-	syslog(LOG_ERR, "property_remove_value: Property not supported or not remove-value capable \"%s\"", key.c_str());
-	cb(kWPANTUNDStatus_PropertyNotFound);
+	try {
+		if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MulticastAddresses)) {
+			struct in6_addr address = any_to_ipv6(value);
+			multicast_address_was_left(kOriginUser, address, cb);
+
+		} else {
+			syslog(LOG_ERR, "property_remove_value: Property not supported or not remove-value capable \"%s\"", key.c_str());
+			cb(kWPANTUNDStatus_PropertyNotFound);
+		}
+	} catch (const boost::bad_any_cast &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_remove_value: Bad type for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	} catch (const std::invalid_argument &x) {
+		// We will get a bad_any_cast exception if the property is of
+		// the wrong type.
+		syslog(LOG_ERR,"property_remove_value: Invalid argument for property \"%s\" (%s)", key.c_str(), x.what());
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
 }
 
 void
