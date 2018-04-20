@@ -594,7 +594,21 @@ NCPInstanceBase::remove_address_on_ncp_and_update_prefixes(const in6_addr &addre
 // MARK: Multicast IPv6 Address Management
 
 void
-NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_addr &address)
+NCPInstanceBase::check_multicast_address_add_status(int status, const struct in6_addr address, CallbackWithStatus cb)
+{
+	if (status != kWPANTUNDStatus_Ok)
+	{
+		syslog(LOG_ERR, "Error %s (%d) adding user-added multicast address on NCP, removing the address ",
+			wpantund_status_to_cstr(status),  status);
+
+		multicast_address_was_left(kOriginUser, address);
+	}
+
+	cb(status);
+}
+
+void
+NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_addr &address, CallbackWithStatus cb)
 {
 	if (!mMulticastAddresses.count(address)) {
 		MulticastAddressEntry entry(origin);
@@ -605,15 +619,22 @@ NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_ad
 			mPrimaryInterface->join_multicast_address(&address);
 		}
 
-		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
+		if (origin == kOriginPrimaryInterface) {
 			add_multicast_address_on_ncp(address,
-				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding multicast address", NilReturn()));
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding multicast address", cb));
+		} else if (origin == kOriginUser) {
+			add_multicast_address_on_ncp(address,
+				boost::bind(&NCPInstanceBase::check_multicast_address_add_status, this, _1, address, cb));
+		} else {
+			cb(kWPANTUNDStatus_Ok);
 		}
+	} else {
+		cb(kWPANTUNDStatus_Already);
 	}
 }
 
 void
-NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr &address)
+NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr &address, CallbackWithStatus cb)
 {
 	if (mMulticastAddresses.count(address)) {
 		MulticastAddressEntry entry = mMulticastAddresses[address];
@@ -631,10 +652,17 @@ NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr
 
 			if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
 				remove_multicast_address_on_ncp(address,
-					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing multicast address", NilReturn()));
+					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing multicast address", cb));
+			} else {
+				cb(kWPANTUNDStatus_Ok);
 			}
+		} else {
+			cb(kWPANTUNDStatus_InvalidArgument);
 		}
+	} else {
+		cb(kWPANTUNDStatus_Already);
 	}
+
 }
 
 // ========================================================================

@@ -151,9 +151,9 @@ public:
 
 	void unicast_address_was_removed(Origin origin, const struct in6_addr &address);
 
-	void multicast_address_was_joined(Origin origin, const struct in6_addr &address);
+	void multicast_address_was_joined(Origin origin, const struct in6_addr &address, CallbackWithStatus cb = NilReturn());
 
-	void multicast_address_was_left(Origin origin, const struct in6_addr &address);
+	void multicast_address_was_left(Origin origin, const struct in6_addr &address, CallbackWithStatus cb = NilReturn());
 
 	int join_multicast_group(const std::string &group_name);
 
@@ -445,6 +445,7 @@ private:
 	void refresh_routes_on_interface(void);
 	bool should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric);
 	void check_ncp_entry_update_status(int status, std::string operation, CallbackWithStatus cb);
+	void check_multicast_address_add_status(int status, const struct in6_addr address, CallbackWithStatus cb);
 
 protected:
 
