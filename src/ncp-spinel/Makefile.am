@@ -49,7 +49,7 @@ noinst_LTLIBRARIES =
 if BUILD_PLUGIN_NCP_SPINEL
 
 if ENABLE_FUZZ_TARGETS
-noinst_PROGRAMS = ncp-spinel-fuzz
+#noinst_PROGRAMS = ncp-spinel-fuzz
 noinst_LTLIBRARIES += libncp-spinel-fuzz.la
 
 else # if ENABLE_FUZZ_TARGETS
@@ -123,16 +123,16 @@ libncp_spinel_fuzz_la_SOURCES = $(NCP_SOURCES)
 libncp_spinel_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 libncp_spinel_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
 
-ncp_spinel_fuzz_SOURCES = ncp-spinel-fuzz.cpp
-ncp_spinel_fuzz_LDADD = libncp-spinel-fuzz.la
-ncp_spinel_fuzz_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
-ncp_spinel_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
-ncp_spinel_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
-ncp_spinel_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
+#ncp_spinel_fuzz_SOURCES = ncp-spinel-fuzz.cpp
+#ncp_spinel_fuzz_LDADD = libncp-spinel-fuzz.la
+#ncp_spinel_fuzz_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+#ncp_spinel_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+#ncp_spinel_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
+#ncp_spinel_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
 
 if OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
 libncp_spinel_la_LIBADD = $(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
 ncp_spinel_la_LIBADD = $(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
 libncp_spinel_fuzz_la_LIBADD = $(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
-ncp_spinel_fuzz_LDADD = $(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
+#ncp_spinel_fuzz_LDADD = $(OPENTHREAD_NCP_SPINEL_ENCRYPTER_LIBS)
 endif
