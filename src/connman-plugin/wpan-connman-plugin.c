@@ -211,7 +211,7 @@ parse_prefix_string(const char *prefix_cstr, uint8_t *prefix)
 	memset(bytes, 0, sizeof(bytes));
 
 	// Create a copy of the prefix string so we can modify it.
-	strcpy(str, prefix_cstr);
+	strncpy(str, prefix_cstr, INET6_ADDRSTRLEN + 10);
 
 	// Search for "/64" and remove it from the str.
 	p = strchr(str, '/');
