@@ -145,6 +145,7 @@ protected:
 	void handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state);
 
+	void handle_ncp_log_stream(const uint8_t* data_ptr, int data_len);
 	void handle_ncp_spinel_value_is_OFF_MESH_ROUTE(const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 
 	bool should_filter_address(const struct in6_addr &address, uint8_t prefix_len);
@@ -198,7 +199,7 @@ public:
 
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);
 
-	static void handle_ncp_log(const uint8_t* data_ptr, int data_len);
+	static void handle_ncp_debug_stream(const uint8_t* data_ptr, int data_len);
 
 	static std::string thread_mode_to_string(uint8_t mode);
 

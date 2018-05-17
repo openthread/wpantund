@@ -285,7 +285,7 @@ SpinelNCPInstance::ncp_to_driver_pump()
 				}
 
 				if (i == mInboundFrameSize) {
-					handle_ncp_log(mInboundFrame, mInboundFrameSize);
+					handle_ncp_debug_stream(mInboundFrame, mInboundFrameSize);
 				}
 
 				continue;
