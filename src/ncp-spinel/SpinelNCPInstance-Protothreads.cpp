@@ -400,9 +400,11 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				event == EVENT_NCP_RESET,
 				on_error
 			);
-
-			mDriverState = INITIALIZING;
 		}
+
+		// This next line causes any resets received after this
+		// point to cause the control protothread to be restarted.
+		mDriverState = INITIALIZING;
 
 		// Get the protocol version
 		CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
@@ -428,10 +430,6 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 		// If we are "joining" at this point, then we must start over.
 		// This will cause a reset to occur.
 		require(!ncp_state_is_joining(get_ncp_state()), on_error);
-
-		// This next line causes any resets received after this
-		// point to cause the control protothread to be restarted.
-		mDriverState = INITIALIZING;
 
 		if (mIsPcapInProgress) {
 			CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
