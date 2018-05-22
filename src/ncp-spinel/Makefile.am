@@ -106,6 +106,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskWake.h \
 	SpinelNCPThreadDataset.h \
 	SpinelNCPThreadDataset.cpp \
+	SpinelNCPVendorCustom.h \
+	SpinelNCPVendorCustom.cpp \
 	$(top_srcdir)/third_party/openthread/src/ncp/spinel.c \
 	spinel-extra.c \
 	spinel-extra.h \
