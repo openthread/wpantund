@@ -171,7 +171,7 @@ nl::wpantund::peek_ncp_callback_status(int event, va_list args)
 }
 
 SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
-	NCPInstanceBase(settings), mControlInterface(this)
+	NCPInstanceBase(settings), mControlInterface(this), mVendorCustom(this)
 {
 	mInboundFrameDataLen = 0;
 	mInboundFrameDataPtr = NULL;
@@ -376,6 +376,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
 
+	{
+		const std::set<std::string> vendor_props(mVendorCustom.get_supported_property_keys());
+		properties.insert(vendor_props.begin(), vendor_props.end());
+	}
+
 	return properties;
 }
 
@@ -398,6 +403,10 @@ SpinelNCPInstance::get_ms_to_next_event(void)
 		if (tmp_cms < cms) {
 			cms = tmp_cms;
 		}
+	}
+
+	if (cms > mVendorCustom.get_ms_to_next_event()) {
+		cms = mVendorCustom.get_ms_to_next_event();
 	}
 
 	if (cms < 0) {
@@ -1059,6 +1068,9 @@ SpinelNCPInstance::property_get_value(
 
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_ConfigNCPDriverName)) {
 		cb(0, boost::any(std::string("spinel")));
+
+	} else if (mVendorCustom.is_property_key_supported(key)) {
+		mVendorCustom.property_get_value(key, cb);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPChannelMask)) {
 		cb(0, boost::any(get_default_channel_mask()));
@@ -1833,7 +1845,10 @@ SpinelNCPInstance::property_set_value(
 	}
 
 	try {
-		if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPChannel)) {
+		if (mVendorCustom.is_property_key_supported(key)) {
+			mVendorCustom.property_set_value(key, value, cb);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPChannel)) {
 			int channel = any_to_int(value);
 			mCurrentNetworkInstance.channel = channel;
 
@@ -2633,7 +2648,10 @@ SpinelNCPInstance::property_insert_value(
 	}
 
 	try {
-		if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
+		if (mVendorCustom.is_property_key_supported(key)) {
+			mVendorCustom.property_insert_value(key, value, cb);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
 			Data ext_address = any_to_data(value);
 			int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
 
@@ -2707,7 +2725,10 @@ SpinelNCPInstance::property_remove_value(
 	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
 
 	try {
-		if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
+		if (mVendorCustom.is_property_key_supported(key)) {
+			mVendorCustom.property_remove_value(key, value, cb);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEntries)) {
 			Data ext_address = any_to_data(value);
 
 			if (!mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
@@ -4132,6 +4153,8 @@ void
 SpinelNCPInstance::process(void)
 {
 	NCPInstanceBase::process();
+
+	mVendorCustom.process();
 
 	if (!is_initializing_ncp() && mTaskQueue.empty()) {
 		bool x = mPcapManager.is_enabled();

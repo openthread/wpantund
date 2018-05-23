@@ -34,6 +34,8 @@
 #include <errno.h>
 #include "spinel.h"
 
+#include "SpinelNCPVendorCustom.h"
+
 WPANTUND_DECLARE_NCPINSTANCE_PLUGIN(spinel, SpinelNCPInstance);
 
 #define EVENT_NCP_MARKER         0xAB000000
@@ -292,6 +294,9 @@ private:
 	// Task management
 	std::list<boost::shared_ptr<SpinelNCPTask> > mTaskQueue;
 
+	// The vendor custom class needs to
+	// remain as the last thing in this class.
+	SpinelNCPVendorCustom mVendorCustom;
 }; // class SpinelNCPInstance
 
 extern class SpinelNCPInstance* gNCPInstance;
