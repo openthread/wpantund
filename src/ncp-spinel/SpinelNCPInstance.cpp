@@ -2226,17 +2226,6 @@ SpinelNCPInstance::property_set_value(
 
 			mXPANIDWasExplicitlySet = true;
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKey)) {
-			Data network_key = any_to_data(value);
-
-			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-				.set_callback(cb)
-				.add_command(
-					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S), SPINEL_PROP_NET_MASTER_KEY, network_key.data(), network_key.size())
-				)
-				.finish()
-			);
-
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 			uint32_t key_index = any_to_int(value);
 
