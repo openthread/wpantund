@@ -30,7 +30,7 @@ die() {
 
 	echo " ***************************** "
 
-	test "$prog" == "autoreconf" && cat "$LOGFILE"
+	test "$prog" = "autoreconf" && cat "$LOGFILE"
 
 	echo ""
 	if test $# -ge 1
@@ -81,6 +81,15 @@ then
 	}
 
 	autoreconf --verbose --force --install 2>"$LOGFILE" || die autoreconf
+
+	which pkg-config 1>/dev/null 2>&1 || {
+		echo " *** error: The 'pkg-config' command was not found."
+		echo "Use the appropriate command for your platform to install the package:"
+		echo ""
+		echo "Homebrew(OS X) ....... brew install pkg-config"
+		echo "Debian/Ubuntu ........ apt-get install pkg-config"
+		exit 1
+	}
 
 	grep -q AX_CHECK_ configure && {
 		echo " *** error: The 'autoconf-archive' package is not installed."
