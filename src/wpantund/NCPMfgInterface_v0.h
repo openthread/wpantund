@@ -27,6 +27,7 @@ namespace wpantund {
 
 class NCPMfgInterface_v0 {
 public:
+	virtual ~NCPMfgInterface_v0() {}
 	virtual void mfg_start(CallbackWithStatus cb) { }
 
 

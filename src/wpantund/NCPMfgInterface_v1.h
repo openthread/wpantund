@@ -28,6 +28,7 @@ namespace wpantund {
 class NCPMfgInterface_v1 {
 public:
 	virtual void mfg(const std::string& mfg_command, CallbackWithStatusArg1 cb = NilReturn()) = 0;
+	virtual ~NCPMfgInterface_v1() {}
 
 };
 
