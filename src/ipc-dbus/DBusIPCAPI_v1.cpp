@@ -32,6 +32,7 @@
 #include <boost/bind.hpp>
 
 #include <dbus/dbus.h>
+#include <syslog.h>
 
 #include "wpan-dbus-v1.h"
 #include "DBusIPCAPI_v1.h"
