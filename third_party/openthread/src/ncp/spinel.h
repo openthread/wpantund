@@ -404,6 +404,7 @@ enum
 
 enum
 {
+<<<<<<< HEAD
     SPINEL_CAP_LOCK       = 1,
     SPINEL_CAP_NET_SAVE   = 2,
     SPINEL_CAP_HBO        = 3,
@@ -1139,7 +1140,7 @@ typedef enum {
     /// Thread TMF proxy stream
     /** Format `dSS`
      */
-    SPINEL_PROP_THREAD_TMF_PROXY_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 18,
+    SPINEL_PROP_THREAD_UDP_PROXY_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 18,
 
     /// Thread "joiner" flag used during discovery scan operation
     /** Format `b`

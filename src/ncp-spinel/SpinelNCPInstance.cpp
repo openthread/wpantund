@@ -520,8 +520,8 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ChannelManagerFavoredChannelMask);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY)) {
-		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
+	if (mCapabilities.count(SPINEL_CAP_THREAD_UDP_PROXY)) {
+		properties.insert(kWPANTUNDProperty_UdpProxyEnabled);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
@@ -1705,8 +1705,8 @@ SpinelNCPInstance::property_get_value(
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
 		}
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_UdpProxyEnabled)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_UDP_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -2620,14 +2620,13 @@ SpinelNCPInstance::property_set_value(
 				.add_command(command)
 				.finish()
 			);
-
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_UdpProxyEnabled)) {
 			bool isEnabled = any_to_bool(value);
-			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, isEnabled);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_UDP_PROXY_ENABLED, isEnabled);
 
-			mSettings[kWPANTUNDProperty_TmfProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_TMF_PROXY);
+			mSettings[kWPANTUNDProperty_UdpProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_UDP_PROXY);
 
-			if (!mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY))
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_UDP_PROXY))
 			{
 				cb(kWPANTUNDStatus_FeatureNotSupported);
 			} else {
@@ -2882,18 +2881,33 @@ SpinelNCPInstance::property_set_value(
 
 			cb (status);
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyStream)) {
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_UdpProxyStream)) {
 			Data packet = any_to_data(value);
 
-			if (packet.size() > sizeof(uint16_t)*2) {
-				uint16_t port = (packet[packet.size() - sizeof(port)] << 8 | packet[packet.size() - sizeof(port) + 1]);
-				uint16_t locator = (packet[packet.size() - sizeof(locator) - sizeof(port)] << 8 |
-						packet[packet.size() - sizeof(locator) - sizeof(port) + 1]);
+			if (packet.size() > sizeof(uint16_t) * 2 + sizeof(in6_addr)) {
+				in6_addr peer_addr;
+				const size_t payload_len = packet.size() - sizeof(uint16_t) * 2 - sizeof(struct in6_addr);
+				size_t i = payload_len;
+				const uint16_t peer_port = (packet[i] << 8 | packet[i + 1]);
+				i += sizeof(uint16_t);
+				memcpy(peer_addr.s6_addr, &packet[i], sizeof(peer_addr));
+				i += sizeof(peer_addr);
+				const uint16_t sock_port = (packet[i] << 8 | packet[i + 1]);
 
-				packet.resize(packet.size() - sizeof(locator) - sizeof(port));
-
-				Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
-						SPINEL_PROP_THREAD_TMF_PROXY_STREAM, packet.data(), packet.size(), locator, port);
+				Data command = SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+						SPINEL_DATATYPE_DATA_WLEN_S
+						SPINEL_DATATYPE_UINT16_S    // Peer port
+						SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
+						SPINEL_DATATYPE_UINT16_S    // Sock port
+					),
+					SPINEL_PROP_THREAD_UDP_PROXY_STREAM,
+					packet.data(),
+					payload_len,
+					peer_port,
+					&peer_addr,
+					sock_port
+				);
 
 				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 						.set_callback(cb)
@@ -4029,22 +4043,27 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			);
 		}
 
-	} else if (key == SPINEL_PROP_THREAD_TMF_PROXY_STREAM) {
+	} else if (key == SPINEL_PROP_THREAD_UDP_PROXY_STREAM) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
-		uint16_t locator = 0;
-		uint16_t port = 0;
+		uint16_t peer_port = 0;
+		in6_addr *peer_addr;
+		uint16_t sock_port = 0;
 		spinel_ssize_t ret;
 		Data data;
 
 		ret = spinel_datatype_unpack(
 			value_data_ptr,
 			value_data_len,
-			SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S,
+			SPINEL_DATATYPE_DATA_S
+			SPINEL_DATATYPE_UINT16_S    // Peer port
+			SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
+			SPINEL_DATATYPE_UINT16_S,   // Sock port
 			&frame_ptr,
 			&frame_len,
-			&locator,
-			&port
+			&peer_port,
+			&peer_addr,
+			&sock_port
 		);
 
 		__ASSERT_MACROS_check(ret > 0);
@@ -4054,12 +4073,13 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			// append frame
 			data.append(frame_ptr, frame_len);
 			// pack the locator in big endian.
-			data.push_back(locator >> 8);
-			data.push_back(locator & 0xff);
+			data.push_back(peer_port >> 8);
+			data.push_back(peer_port & 0xff);
+			data.append(peer_addr->s6_addr, sizeof(*peer_addr));
 			// pack the port in big endian.
-			data.push_back(port >> 8);
-			data.push_back(port & 0xff);
-			signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
+			data.push_back(sock_port >> 8);
+			data.push_back(sock_port & 0xff);
+			signal_property_changed(kWPANTUNDProperty_UdpProxyStream, data);
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {
