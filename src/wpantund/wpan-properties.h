@@ -94,6 +94,7 @@
 
 #define kWPANTUNDProperty_ThreadRLOC16                          "Thread:RLOC16"
 #define kWPANTUNDProperty_ThreadRouterID                        "Thread:RouterID"
+#define kWPANTUNDProperty_ThreadRouterSelectionJitter           "Thread:RouterSelectionJitter"
 #define kWPANTUNDProperty_ThreadLeaderAddress                   "Thread:Leader:Address"
 #define kWPANTUNDProperty_ThreadLeaderRouterID                  "Thread:Leader:RouterID"
 #define kWPANTUNDProperty_ThreadLeaderWeight                    "Thread:Leader:Weight"
