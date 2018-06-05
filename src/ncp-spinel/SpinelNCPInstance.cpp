@@ -1300,6 +1300,9 @@ SpinelNCPInstance::property_get_value(
 		cb = boost::bind(convert_rloc16_to_router_id, cb, _1, _2);
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_RLOC16, SPINEL_DATATYPE_UINT16_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterSelectionJitter)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER, SPINEL_DATATYPE_UINT8_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadLeaderAddress)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_LEADER_ADDR, SPINEL_DATATYPE_IPv6ADDR_S);
 
@@ -2460,6 +2463,19 @@ SpinelNCPInstance::property_set_value(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
 					SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
 					isEnabled
+				))
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterSelectionJitter)) {
+			uint8_t jitter = static_cast<uint8_t>(any_to_int(value));
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+					SPINEL_PROP_THREAD_ROUTER_SELECTION_JITTER,
+					jitter
 				))
 				.finish()
 			);
