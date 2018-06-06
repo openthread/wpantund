@@ -1485,10 +1485,6 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PROP_THREAD_COMMISSIONER_ENABLED";
         break;
 
-    case SPINEL_PROP_THREAD_UDP_PROXY_ENABLED:
-        ret = "PROP_THREAD_UDP_PROXY_ENABLED";
-        break;
-
     case SPINEL_PROP_THREAD_UDP_PROXY_STREAM:
         ret = "PROP_THREAD_UDP_PROXY_STREAM";
         break;
