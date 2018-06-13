@@ -127,6 +127,8 @@
 #define kWPANTUNDProperty_ThreadActiveDatasetAsValMap           "Thread:ActiveDataset:AsValMap"
 #define kWPANTUNDProperty_ThreadPendingDataset                  "Thread:PendingDataset"
 #define kWPANTUNDProperty_ThreadPendingDatasetAsValMap          "Thread:PendingDataset:AsValMap"
+#define kWPANTUNDProperty_ThreadAddressCacheTable               "Thread:AddressCacheTable"
+#define kWPANTUNDProperty_ThreadAddressCacheTableAsValMap       "Thread:AddressCacheTable:AsValMap"
 
 #define kWPANTUNDProperty_DatasetActiveTimestamp                "Dataset:ActiveTimestamp"
 #define kWPANTUNDProperty_DatasetPendingTimestamp               "Dataset:PendingTimestamp"
@@ -290,6 +292,10 @@
 
 #define kWPANTUNDValueMapKey_ChannelMonitor_Channel             "Channel"
 #define kWPANTUNDValueMapKey_ChannelMonitor_Quality             "Quality"
+
+#define kWPANTUNDValueMapKey_AddressCacheTable_Address          "Address"
+#define kWPANTUNDValueMapKey_AddressCacheTable_RLOC16           "RLOC16"
+#define kWPANTUNDValueMapKey_AddressCacheTable_Age              "Age"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"

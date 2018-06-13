@@ -480,6 +480,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadRouterDowngradeThreshold);
 		properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
 		properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
+		properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
 
 		if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
 			properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
@@ -1006,6 +1007,72 @@ convert_string_to_spinel_mcu_power_state(const char *str, spinel_mcu_power_state
 		ret = kWPANTUNDStatus_InvalidArgument;
 	}
 
+	return ret;
+}
+
+static int
+unpack_address_cache_table(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	std::list<ValueMap> result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0)
+	{
+		spinel_ssize_t len;
+		struct in6_addr *target_address = NULL;
+		uint16_t target_rloc16;
+		uint8_t age;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT16_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			&target_address,
+			&target_rloc16,
+			&age
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		if (!as_val_map) {
+			char c_string[100];
+
+			snprintf(
+				c_string,
+				sizeof(c_string),
+				"%s -> 0x%04x, age:%d",
+				in6_addr_to_string(*target_address).c_str(),
+				target_rloc16,
+				age
+			);
+
+			result_as_string.push_back(std::string(c_string));
+		} else {
+			ValueMap entry;
+
+			entry[kWPANTUNDValueMapKey_AddressCacheTable_Address] = boost::any(in6_addr_to_string(*target_address));
+			entry[kWPANTUNDValueMapKey_AddressCacheTable_RLOC16]  = boost::any(target_rloc16);
+			entry[kWPANTUNDValueMapKey_AddressCacheTable_Age]     = boost::any(age);
+
+			result_as_val_map.push_back(entry);
+		}
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
 	return ret;
 }
 
@@ -1755,6 +1822,26 @@ SpinelNCPInstance::property_get_value(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadAddressCacheTable)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE)
+				)
+				.set_reply_unpacker(boost::bind(unpack_address_cache_table, _1, _2, _3, /* as_val_map */ false))
+				.finish()
+			);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadAddressCacheTableAsValMap)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE)
+				)
+				.set_reply_unpacker(boost::bind(unpack_address_cache_table, _1, _2, _3, /* as_val_map */ true))
+				.finish()
+			);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadMsgBufferCounters)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -3814,6 +3901,21 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 		syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "s" : "");
 
+
+	} else if (key == SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE) {
+		boost::any value;
+		if ((unpack_address_cache_table(value_data_ptr, value_data_len, value, false) == kWPANTUNDStatus_Ok)
+			&& (value.type() == typeid(std::list<std::string>))
+		) {
+			std::list<std::string> list = boost::any_cast<std::list<std::string> >(value);
+			int num_entries = 0;
+
+			for (std::list<std::string>::iterator it = list.begin(); it != list.end(); it++) {
+				num_entries++;
+				syslog(LOG_INFO, "[-NCP-] AddressCache: %02d %s", num_entries, it->c_str());
+			}
+			syslog(LOG_INFO, "[-NCP-] AddressCache: Total %d entr%s", num_entries, (num_entries > 1) ? "ies" : "y");
+		}
 
 	} else if (key == SPINEL_PROP_NET_PARTITION_ID) {
 		uint32_t paritition_id = 0;
