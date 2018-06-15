@@ -121,6 +121,8 @@
 #define kWPANTUNDProperty_ThreadOnMeshPrefixes                  "Thread:OnMeshPrefixes"
 #define kWPANTUNDProperty_ThreadRouterRoleEnabled               "Thread:RouterRole:Enabled"
 #define kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses       "Thread:Config:FilterRLOCAddresses"
+#define kWPANTUNDProperty_ThreadRouterUpgradeThreshold          "Thread:RouterUpgradeThreshold"
+#define kWPANTUNDProperty_ThreadRouterDowngradeThreshold        "Thread:RouterDowngradeThreshold"
 #define kWPANTUNDProperty_ThreadActiveDataset                   "Thread:ActiveDataset"
 #define kWPANTUNDProperty_ThreadActiveDatasetAsValMap           "Thread:ActiveDataset:AsValMap"
 #define kWPANTUNDProperty_ThreadPendingDataset                  "Thread:PendingDataset"
