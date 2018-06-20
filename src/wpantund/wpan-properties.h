@@ -78,6 +78,7 @@
 #define kWPANTUNDProperty_NetworkNodeType                       "Network:NodeType"
 #define kWPANTUNDProperty_NetworkKey                            "Network:Key"
 #define kWPANTUNDProperty_NetworkKeyIndex                       "Network:KeyIndex"
+#define kWPANTUNDProperty_NetworkKeySwitchGuardTime             "Network:KeySwitchGuardTime"
 #define kWPANTUNDProperty_NetworkIsCommissioned                 "Network:IsCommissioned"
 #define kWPANTUNDProperty_NetworkIsConnected                    "Network:IsConnected"
 #define kWPANTUNDProperty_NetworkPSKc                           "Network:PSKc"
