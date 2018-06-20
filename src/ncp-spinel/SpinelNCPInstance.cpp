@@ -2380,12 +2380,16 @@ SpinelNCPInstance::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadDeviceMode)) {
 			uint8_t mode = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_MODE, mode);
+
+			mSettings[kWPANTUNDProperty_ThreadDeviceMode] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
-				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_MODE, mode))
+				.add_command(command)
 				.finish()
 			);
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
 			bool isEnabled = any_to_bool(value);
 			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, isEnabled);
