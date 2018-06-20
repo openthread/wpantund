@@ -1350,6 +1350,9 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeyIndex)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, SPINEL_DATATYPE_UINT32_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeySwitchGuardTime)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_NET_KEY_SWITCH_GUARDTIME, SPINEL_DATATYPE_UINT32_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkIsCommissioned)) {
 		cb(kWPANTUNDStatus_Ok, boost::any(mIsCommissioned));
 
@@ -2331,6 +2334,17 @@ SpinelNCPInstance::property_set_value(
 				.set_callback(cb)
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, key_index)
+				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NetworkKeySwitchGuardTime)) {
+			uint32_t guard_time = any_to_int(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_NET_KEY_SWITCH_GUARDTIME, guard_time)
 				)
 				.finish()
 			);
