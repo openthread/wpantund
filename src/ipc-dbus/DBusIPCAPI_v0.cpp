@@ -630,9 +630,6 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 	DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	dbus_bool_t defaultRoute = FALSE;
 	dbus_bool_t preferred = TRUE;
 	dbus_bool_t slaac = TRUE;
@@ -690,9 +687,6 @@ DBusIPCAPI_v0::interface_add_route_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	uint8_t *prefix = NULL;
 	struct in6_addr addr = {};
 	int prefix_len = 0;
@@ -741,9 +735,6 @@ DBusIPCAPI_v0::interface_remove_route_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	uint8_t *prefix = NULL;
 	struct in6_addr addr = {};
 	int prefix_len = 0;
