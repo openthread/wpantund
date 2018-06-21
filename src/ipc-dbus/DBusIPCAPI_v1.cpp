@@ -1268,9 +1268,6 @@ DBusIPCAPI_v1::interface_route_add_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	uint8_t *route_prefix(NULL);
 	int prefix_len_in_bytes(0);
 	uint16_t domain_id(0);
@@ -1336,7 +1333,6 @@ DBusIPCAPI_v1::interface_route_remove_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
 	uint8_t *route_prefix = NULL;
 	int prefix_len_in_bytes(0);
 	uint8_t prefix_len_in_bits(0);
@@ -1391,9 +1387,6 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	const char* psk = NULL;
@@ -1443,9 +1436,6 @@ DBusIPCAPI_v1::interface_peek_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	uint32_t address;
 	uint16_t count;
 	bool did_succeed = false;
@@ -1485,9 +1475,6 @@ DBusIPCAPI_v1::interface_poke_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_ref(message);
-
 	uint32_t address;
 	int count = 0;
 	uint8_t *bytes = NULL;
