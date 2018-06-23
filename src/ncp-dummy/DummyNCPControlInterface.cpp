@@ -132,12 +132,11 @@ DummyNCPControlInterface::data_poll(CallbackWithStatus cb)
 
 void
 DummyNCPControlInterface::add_on_mesh_prefix(
-	const struct in6_addr *prefix,
-	bool defaultRoute,
-	bool preferred,
-	bool slaac,
-	bool onMesh,
+	const struct in6_addr& prefix,
+	uint8_t prefix_len,
+	OnMeshPrefixFlags flags,
 	OnMeshPrefixPriority priority,
+	bool stable,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -145,7 +144,8 @@ DummyNCPControlInterface::add_on_mesh_prefix(
 
 void
 DummyNCPControlInterface::remove_on_mesh_prefix(
-	const struct in6_addr *prefix,
+	const struct in6_addr& prefix,
+	uint8_t prefix_len,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);

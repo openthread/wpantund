@@ -388,6 +388,11 @@ protected:
 
 		std::string get_description(const struct in6_addr &preifx, bool align = false) const;
 
+		static uint8_t encode_flag_set(
+			NCPControlInterface::OnMeshPrefixFlags prefix_flags,
+			NCPControlInterface::OnMeshPrefixPriority priority
+		);
+
 	private:
 		uint8_t mFlags;
 		uint8_t mPrefixLen;

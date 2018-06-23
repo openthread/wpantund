@@ -92,8 +92,8 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 
 		switch (c) {
 		case 'h':
-			print_arg_list_help(config_gateway_option_list, argv[0],
-					    config_gateway_cmd_syntax);
+			print_arg_list_help(config_gateway_option_list, argv[0], config_gateway_cmd_syntax);
+			printf("%s is deprecated, use `add-prefix` and `remove-prefix`\n", argv[0]);
 			ret = ERRORCODE_HELP;
 			goto bail;
 
