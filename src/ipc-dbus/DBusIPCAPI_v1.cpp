@@ -1190,6 +1190,9 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	dbus_bool_t preferred = TRUE;
 	dbus_bool_t slaac = TRUE;
 	dbus_bool_t on_mesh = TRUE;
+	dbus_bool_t dhcp = FALSE;
+	dbus_bool_t configure = FALSE;
+	dbus_bool_t stable = TRUE;
 	uint32_t preferred_lifetime = 0;
 	uint32_t valid_lifetime = 0;
 	uint8_t *prefix(NULL);
@@ -1198,6 +1201,9 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	bool did_succeed(false);
 	int16_t priority_raw(0);
 	NCPControlInterface::OnMeshPrefixPriority priority(NCPControlInterface::PREFIX_MEDIUM_PREFERENCE);
+	NCPControlInterface::OnMeshPrefixFlags flags;
+	uint16_t prefix_len_in_bits = 0;
+	const uint16_t max_prefix_len_in_bits = 64;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
@@ -1209,11 +1215,35 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		DBUS_TYPE_BOOLEAN, &slaac,
 		DBUS_TYPE_BOOLEAN, &on_mesh,
 		DBUS_TYPE_INT16, &priority_raw,
+		DBUS_TYPE_BOOLEAN, &dhcp,
+		DBUS_TYPE_BOOLEAN, &configure,
+		DBUS_TYPE_BOOLEAN, &stable,
+		DBUS_TYPE_UINT16, &prefix_len_in_bits,
 		DBUS_TYPE_INVALID
 	);
 
-	if (!did_succeed)
-	{
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_BOOLEAN, &default_route,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT32, &preferred_lifetime,
+			DBUS_TYPE_UINT32, &valid_lifetime,
+			DBUS_TYPE_BOOLEAN, &preferred,
+			DBUS_TYPE_BOOLEAN, &slaac,
+			DBUS_TYPE_BOOLEAN, &on_mesh,
+			DBUS_TYPE_INT16, &priority_raw,
+			DBUS_TYPE_INVALID
+		);
+
+		prefix_len_in_bits = static_cast<uint16_t>(IPV6_PREFIX_BYTES_TO_BITS(prefix_len_in_bytes));
+
+		if (prefix_len_in_bits > max_prefix_len_in_bits) {
+			prefix_len_in_bits = max_prefix_len_in_bits;
+		}
+	}
+
+	if (!did_succeed) {
 		did_succeed = dbus_message_get_args(
 			message, NULL,
 			DBUS_TYPE_BOOLEAN, &default_route,
@@ -1222,11 +1252,11 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 			DBUS_TYPE_UINT32, &valid_lifetime,
 			DBUS_TYPE_INVALID
 		);
-	} else {
-		if (priority_raw > 0) {
-			priority = NCPControlInterface::PREFIX_HIGH_PREFERENCE;
-		} else if (priority_raw < 0) {
-			priority = NCPControlInterface::PREFIX_LOW_PREFRENCE;
+
+		prefix_len_in_bits = static_cast<uint16_t>(IPV6_PREFIX_BYTES_TO_BITS(prefix_len_in_bytes));
+
+		if (prefix_len_in_bits > max_prefix_len_in_bits) {
+			prefix_len_in_bits = max_prefix_len_in_bits;
 		}
 	}
 
@@ -1234,23 +1264,57 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	require(prefix_len_in_bytes <= sizeof(address), bail);
 	require(prefix_len_in_bytes >= 0, bail);
 
+	require(prefix_len_in_bits <= max_prefix_len_in_bits, bail);
+	require(prefix_len_in_bits > 0, bail);
+	require(prefix_len_in_bits <= IPV6_PREFIX_BYTES_TO_BITS(prefix_len_in_bytes), bail);
+
 	memcpy(address.s6_addr, prefix, prefix_len_in_bytes);
+
+	if (priority_raw > 0) {
+		priority = NCPControlInterface::PREFIX_HIGH_PREFERENCE;
+	} else if (priority_raw < 0) {
+		priority = NCPControlInterface::PREFIX_LOW_PREFRENCE;
+	}
+
+	if (default_route) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_DEFAULT_ROUTE);
+	}
+
+	if (preferred) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_PREFERRED);
+	}
+
+	if (slaac) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_SLAAC);
+	}
+
+	if (on_mesh) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_ON_MESH);
+	}
+
+	if (dhcp) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_DHCP);
+	}
+
+	if (configure) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_CONFIGURE);
+	}
 
 	dbus_message_ref(message);
 
 	if (valid_lifetime == 0) {
 		interface->remove_on_mesh_prefix(
-			&address,
+			address,
+			static_cast<uint8_t>(prefix_len_in_bits),
 			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
 		);
 	} else {
 		interface->add_on_mesh_prefix(
-			&address,
-			default_route,
-			preferred,
-			slaac,
-			on_mesh,
+			address,
+			static_cast<uint8_t>(prefix_len_in_bits),
+			flags,
 			priority,
+			stable,
 			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
 		);
 	}

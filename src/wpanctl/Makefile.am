@@ -58,6 +58,8 @@ wpanctl_SOURCES = \
 	tool-cmd-cd.c \
 	tool-cmd-poll.c \
 	tool-cmd-config-gateway.c \
+	tool-cmd-add-prefix.c \
+	tool-cmd-remove-prefix.c \
 	tool-cmd-host-did-wake.c \
 	tool-cmd-add-route.c \
 	tool-cmd-remove-route.c \
@@ -82,6 +84,8 @@ wpanctl_SOURCES = \
 	tool-cmd-cd.h \
 	tool-cmd-poll.h \
 	tool-cmd-config-gateway.h \
+	tool-cmd-add-prefix.h \
+	tool-cmd-remove-prefix.h \
 	tool-cmd-host-did-wake.h \
 	tool-cmd-add-route.h \
 	tool-cmd-remove-route.h \

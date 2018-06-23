@@ -40,6 +40,8 @@
 #include "tool-cmd-cd.h"
 #include "tool-cmd-poll.h"
 #include "tool-cmd-config-gateway.h"
+#include "tool-cmd-add-prefix.h"
+#include "tool-cmd-remove-prefix.h"
 #include "tool-cmd-add-route.h"
 #include "tool-cmd-remove-route.h"
 #include "tool-cmd-peek.h"
@@ -93,8 +95,18 @@
 	}, \
 	{ \
 		"config-gateway", \
-		"Configure gateway", \
+		"Configure gateway (deprecated, use `add-prefix` and `remove-prefix`)", \
 		&tool_cmd_config_gateway \
+	}, \
+	{ \
+		"add-prefix", \
+		"Add prefix", \
+		&tool_cmd_add_prefix \
+	}, \
+	{ \
+		"remove-prefix", \
+		"Remove prefix", \
+		&tool_cmd_remove_prefix \
 	}, \
 	{ \
 		"add-route", \

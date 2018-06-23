@@ -133,18 +133,18 @@ public:
 	);
 
 	virtual void add_on_mesh_prefix(
-		const struct in6_addr *prefix,
-		bool defaultRoute,
-		bool preferred,
-		bool slaac,
-		bool onMesh,
+		const struct in6_addr& prefix,
+		uint8_t prefix_len,
+		OnMeshPrefixFlags flags,
 		OnMeshPrefixPriority priority,
-		CallbackWithStatus cb = NilReturn()
+		bool stable,
+		CallbackWithStatus cb
 	);
 
 	virtual void remove_on_mesh_prefix(
-		const struct in6_addr *prefix,
-		CallbackWithStatus cb = NilReturn()
+		const struct in6_addr& prefix,
+		uint8_t prefix_len,
+		CallbackWithStatus cb
 	);
 
 	virtual void add_external_route(

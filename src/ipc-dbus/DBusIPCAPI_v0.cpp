@@ -631,18 +631,16 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_bool_t defaultRoute = FALSE;
-	dbus_bool_t preferred = TRUE;
-	dbus_bool_t slaac = TRUE;
-	dbus_bool_t onMesh = TRUE;
-	int16_t priority_raw;
-	NCPControlInterface::OnMeshPrefixPriority priority;
 	uint32_t preferredLifetime = 0;
 	uint32_t validLifetime = 0;
 	uint8_t *prefix = NULL;
-	struct in6_addr addr = {};
 	int prefixLen = 0;
+	NCPControlInterface::OnMeshPrefixPriority priority;
+	NCPControlInterface::OnMeshPrefixFlags flags;
+	struct in6_addr addr = {};
 
 	dbus_message_ref(message);
+
 	dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_BOOLEAN, &defaultRoute,
@@ -660,22 +658,31 @@ DBusIPCAPI_v0::interface_config_gateway_handler(
 
 	priority = NCPControlInterface::PREFIX_MEDIUM_PREFERENCE;
 
+	flags.insert(NCPControlInterface::PREFIX_FLAG_PREFERRED);
+	flags.insert(NCPControlInterface::PREFIX_FLAG_SLAAC);
+	flags.insert(NCPControlInterface::PREFIX_FLAG_ON_MESH);
+
+	if (defaultRoute) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_DEFAULT_ROUTE);
+	}
+
 	if (validLifetime == 0) {
 		interface->remove_on_mesh_prefix(
-			&addr,
+			addr,
+			IPV6_PREFIX_BYTES_TO_BITS(prefixLen),
 			boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
 		);
 	} else {
 		interface->add_on_mesh_prefix(
-			&addr,
-			defaultRoute,
-			preferred,
-			slaac,
-			onMesh,
+			addr,
+			IPV6_PREFIX_BYTES_TO_BITS(prefixLen),
+			flags,
 			priority,
+			true,
 			boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper,this, _1, message)
 		);
 	}
+
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
 	return ret;

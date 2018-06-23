@@ -192,6 +192,54 @@ NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
 	return c_string;
 }
 
+uint8_t
+NCPInstanceBase::OnMeshPrefixEntry::encode_flag_set(
+	NCPControlInterface::OnMeshPrefixFlags prefix_flag_set,
+	NCPControlInterface::OnMeshPrefixPriority priority
+) {
+	uint8_t flags = 0;
+
+	switch (priority) {
+	case NCPControlInterface::PREFIX_HIGH_PREFERENCE:
+		flags |= kPreferenceHigh;
+		break;
+
+	case NCPControlInterface::PREFIX_MEDIUM_PREFERENCE:
+		flags |= kPreferenceMedium;
+		break;
+
+	case NCPControlInterface::PREFIX_LOW_PREFRENCE:
+		flags |= kPreferenceLow;
+		break;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_ON_MESH)) {
+		flags |= kFlagOnMesh;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_DEFAULT_ROUTE)) {
+		flags |= kFlagDefaultRoute;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_CONFIGURE)) {
+		flags |= kFlagConfigure;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_DHCP)) {
+		flags |= kFlagDHCP;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_SLAAC)) {
+		flags |= kFlagSLAAC;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_PREFERRED)) {
+		flags |= kFlagPreferred;
+	}
+
+	return flags;
+}
+
 std::string
 NCPInstanceBase::OnMeshPrefixEntry::get_description(const struct in6_addr &address, bool align) const
 {
