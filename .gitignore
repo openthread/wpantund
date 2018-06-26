@@ -48,6 +48,7 @@ doxygen.cfg
 src/wpantund/wpantund
 src/wpanctl/wpanctl
 .dirstamp
+src/version.c
 src/wpanctl/version.c
 wpantund.xcodeproj/project.xcworkspace/xcshareddata/wpan-tunnel-driver.xccheckout
 wpantund.xcodeproj/project.xcworkspace/xcshareddata/wpantund.xccheckout
