@@ -35,12 +35,30 @@ LOCAL_C_INCLUDES                                         := \
 	$(LOCAL_PATH)/third_party/openthread/src/ncp \
     $(NULL)
 
+LOCAL_DEFAULT_VERSION := $(shell cat $(LOCAL_PATH)/.default-version)
+LOCAL_PRIVATE_SOURCE_VERSION := $(shell git -C $(LOCAL_PATH) describe --always --match "[0-9].*" 2> /dev/null)
 LOCAL_CFLAGS := \
 	-DTUNNEL_TUNTAP_DEVICE=\"/dev/tun\" \
     -D_GNU_SOURCE \
 	-D_XOPEN_SOURCE \
 	-D_POSIX_C_SOURCE \
-    -DHAVE_CONFIG_H \
+	-DHAVE_SYS_WAIT_H=1 \
+	-DOPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=0 \
+	-DPACKAGE=\"wpantund\" \
+	-DPACKAGE_BUGREPORT=\"wpantund-devel@googlegroups.com\" \
+	-DPACKAGE_NAME=\"wpantund\" \
+	-DPACKAGE_STRING=\"wpantund\ $(LOCAL_DEFAULT_VERSION)\" \
+	-DPACKAGE_TARNAME=\"wpantund\" \
+	-DPACKAGE_URL=\"https://github.com/openthread/wpantund/\" \
+	-DPACKAGE_VERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
+	-DPKGLIBEXECDIR=\"/usr/libexec/wpantund\" \
+	-DPREFIX="" \
+	-DSOURCE_VERSION=\"$(LOCAL_PRIVATE_SOURCE_VERSION)\" \
+	-DSYSCONFDIR=\"/etc\" \
+	-DTIME_WITH_SYS_TIME=1 \
+	-DVERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
+	-DWPANTUND_DEFAULT_NCP_PLUGIN=\"spinel\" \
+	-DWPANTUND_PLUGIN_STATICLY_LINKED=1
     $(NULL)
 
 LOCAL_CPP_FEATURES := exceptions rtti
@@ -54,9 +72,8 @@ LOCAL_CPPFLAGS := \
 LOCAL_LDFLAGS := \
     $(NULL)
 
-PRIVATE_SOURCE_VERSION=$(shell git describe --dirty --always --match "[0-9].*" 2> /dev/null)
 $(LOCAL_PATH)/src/version.c: $(LOCAL_PATH)/src/version.c.in
-	sed 's/SOURCE_VERSION/"$(PRIVATE_SOURCE_VERSION)"/' < $< > $@
+	sed 's/SOURCE_VERSION/"$(LOCAL_PRIVATE_SOURCE_VERSION)"/' < $< > $@
 
 LOCAL_SRC_FILES := \
 	src/ipc-dbus/DBUSIPCServer.cpp \
@@ -175,11 +192,30 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/third_party/assert-macros \
 	$(NULL)
 
+LOCAL_DEFAULT_VERSION := $(shell cat $(LOCAL_PATH)/.default-version)
+LOCAL_PRIVATE_SOURCE_VERSION := $(shell git -C $(LOCAL_PATH) describe --always --match "[0-9].*" 2> /dev/null)
+
 LOCAL_CFLAGS := \
     -D_GNU_SOURCE \
 	-D_XOPEN_SOURCE \
 	-D_POSIX_C_SOURCE \
-    -DHAVE_CONFIG_H \
+	-DHAVE_SYS_WAIT_H=1 \
+	-DOPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER=0 \
+	-DPACKAGE=\"wpantund\" \
+	-DPACKAGE_BUGREPORT=\"wpantund-devel@googlegroups.com\" \
+	-DPACKAGE_NAME=\"wpantund\" \
+	-DPACKAGE_STRING=\"wpantund\ $(LOCAL_DEFAULT_VERSION)\" \
+	-DPACKAGE_TARNAME=\"wpantund\" \
+	-DPACKAGE_URL=\"https://github.com/openthread/wpantund/\" \
+	-DPACKAGE_VERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
+	-DPKGLIBEXECDIR=\"/usr/libexec/wpantund\" \
+	-DPREFIX="" \
+	-DSOURCE_VERSION=\"$(LOCAL_PRIVATE_SOURCE_VERSION)\" \
+	-DSYSCONFDIR=\"/etc\" \
+	-DTIME_WITH_SYS_TIME=1 \
+	-DVERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
+	-DWPANTUND_DEFAULT_NCP_PLUGIN=\"spinel\" \
+	-DWPANTUND_PLUGIN_STATICLY_LINKED=1
     $(NULL)
 
 LOCAL_CPP_FEATURES := exceptions
