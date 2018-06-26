@@ -728,6 +728,7 @@ DBusIPCAPI_v0::interface_add_route_handler(
 		IPV6_PREFIX_BYTES_TO_BITS(prefix_len),
 		domain_id,
 		priority,
+		true, // stable
 		boost::bind(&DBusIPCAPI_v0::CallbackWithStatus_Helper, this, _1, message)
 	);
 

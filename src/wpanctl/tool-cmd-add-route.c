@@ -37,8 +37,9 @@ const char add_route_cmd_syntax[] = "[args] <prefix>";
 static const arg_list_item_t add_route_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'p', "priority", "(>0 for high, 0 for medium, <0 for low)", "Assign route priority"},
-	{'l', "length", "in bytes", "Specifies the route prefix length (default is 8)"},
+	{'l', "length", "in bits", "Specify the route prefix length (default is 64)"},
 	{'d', "domain", NULL, "Domain id for the route (default is zero)"},
+	{'n', "not-stable", NULL, "Indicate the route is NOT part of stable Network Data"},
 	{0}
 };
 
@@ -54,9 +55,10 @@ int tool_cmd_add_route(int argc, char* argv[])
 	DBusError error;
 
 	const char *route_prefix = NULL;
-	int prefix_len = 8;
+	uint8_t prefix_len_in_bits = 64;
 	int16_t priority = 0;
 	uint16_t domain_id = 0;
+	dbus_bool_t stable = TRUE;
 
 	dbus_error_init(&error);
 
@@ -66,11 +68,13 @@ int tool_cmd_add_route(int argc, char* argv[])
 			{"priority", required_argument, 0, 'p'},
 			{"length", required_argument, 0, 'l'},
 			{"domain", required_argument, 0, 'd'},
+			{"not-stable", no_argument, 0, 'n'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hp:l:d:", long_options,
+
+		c = getopt_long(argc, argv, "hp:l:d:n", long_options,
 				&option_index);
 
 		if (c == -1)
@@ -78,8 +82,7 @@ int tool_cmd_add_route(int argc, char* argv[])
 
 		switch (c) {
 		case 'h':
-			print_arg_list_help(add_route_option_list, argv[0],
-					    add_route_cmd_syntax);
+			print_arg_list_help(add_route_option_list, argv[0], add_route_cmd_syntax);
 			ret = ERRORCODE_HELP;
 			goto bail;
 
@@ -88,11 +91,15 @@ int tool_cmd_add_route(int argc, char* argv[])
 			break;
 
 		case 'l' :
-			prefix_len = (int) strtol(optarg, NULL, 0);
+			prefix_len_in_bits = (uint8_t) strtol(optarg, NULL, 0);
 			break;
 
 		case 'd':
 			domain_id = (uint16_t) strtol(optarg, NULL, 0);
+			break;
+
+		case 'n':
+			stable = FALSE;
 			break;
 		}
 	}
@@ -100,6 +107,10 @@ int tool_cmd_add_route(int argc, char* argv[])
 	if (optind < argc) {
 		route_prefix = argv[optind];
 		optind++;
+	} else {
+		fprintf((stderr), "%s: No route prefix is given\n", argv[0]);
+		ret = ERRORCODE_BADARG;
+		goto bail;
 	}
 
 	if (optind < argc) {
@@ -129,8 +140,6 @@ int tool_cmd_add_route(int argc, char* argv[])
 	require_string(connection != NULL, bail, error.message);
 
 	{
-		DBusMessageIter iter;
-		DBusMessageIter list_iter;
 		char path[DBUS_MAXIMUM_NAME_LENGTH+1];
 		char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
 		ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
@@ -150,7 +159,7 @@ int tool_cmd_add_route(int argc, char* argv[])
 		    WPANTUND_IF_CMD_ROUTE_ADD
 		);
 
-		if ((route_prefix != NULL) && (0 <= prefix_len) && (prefix_len <= 16)) {
+		if ((route_prefix != NULL) && (0 <= prefix_len_in_bits) && (prefix_len_in_bits <= 128)) {
 			uint8_t prefix_bytes[16];
 
 			memset(prefix_bytes, 0, sizeof(prefix_bytes));
@@ -186,14 +195,15 @@ int tool_cmd_add_route(int argc, char* argv[])
 				}
 			}
 
-			fprintf(stderr, "Adding route prefix \"%s\" with len %d, priority \"%s\", domain-id %d.\n",
-				route_prefix, prefix_len,
+			fprintf(stderr, "Adding route prefix \"%s\" with len %d, priority \"%s\", stable:%s, domain-id %d.\n",
+				route_prefix, prefix_len_in_bits,
 				(priority > 0)? "high" : ((priority < 0)? "low" : "medium"),
+				stable ? "yes" : "no",
 				domain_id
 			);
 
 			uint8_t *addr = prefix_bytes;
-			uint8_t len = (uint8_t)prefix_len;
+			uint8_t len = (prefix_len_in_bits + 7) / 8;
 
 			dbus_message_append_args(
 			    message,
@@ -212,6 +222,8 @@ int tool_cmd_add_route(int argc, char* argv[])
 		    message,
 		    DBUS_TYPE_UINT16, &domain_id,
 		    DBUS_TYPE_INT16, &priority,
+		    DBUS_TYPE_BYTE, &prefix_len_in_bits,
+		    DBUS_TYPE_BOOLEAN, &stable,
 		    DBUS_TYPE_INVALID
 		);
 
