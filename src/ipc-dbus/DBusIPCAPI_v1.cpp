@@ -1337,6 +1337,7 @@ DBusIPCAPI_v1::interface_route_add_handler(
 	uint16_t domain_id(0);
 	int16_t priority_raw(0);
 	NCPControlInterface::ExternalRoutePriority priority(NCPControlInterface::ROUTE_MEDIUM_PREFERENCE);
+	dbus_bool_t stable(TRUE);
 	uint8_t prefix_len_in_bits(0);
 	struct in6_addr address = {};
 	bool did_succeed(false);
@@ -1347,8 +1348,21 @@ DBusIPCAPI_v1::interface_route_add_handler(
 		DBUS_TYPE_UINT16, &domain_id,
 		DBUS_TYPE_INT16, &priority_raw,
 		DBUS_TYPE_BYTE, &prefix_len_in_bits,
+		DBUS_TYPE_BOOLEAN, &stable,
 		DBUS_TYPE_INVALID
 	);
+
+	if (!did_succeed) {
+		// Check the syntax without the `stable` argument
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &route_prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT16, &domain_id,
+			DBUS_TYPE_INT16, &priority_raw,
+			DBUS_TYPE_BYTE, &prefix_len_in_bits,
+			DBUS_TYPE_INVALID
+		);
+	}
 
 	if (!did_succeed) {
 		// Likely using the old syntax that doesn't include the prefix length in bits
@@ -1381,6 +1395,7 @@ DBusIPCAPI_v1::interface_route_add_handler(
 		prefix_len_in_bits,
 		domain_id,
 		priority,
+		stable,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 

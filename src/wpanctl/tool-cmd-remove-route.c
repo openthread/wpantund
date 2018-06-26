@@ -36,7 +36,7 @@ const char remove_route_cmd_syntax[] = "[args] <prefix>";
 
 static const arg_list_item_t remove_route_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
-	{'l', "length", "in bytes", "Specifies the route prefix length (default is 8)"},
+	{'l', "length", "in bits", "Specify the route prefix length (default is 64)"},
 	{'d', "domain", NULL, "Domain id for the route (default is zero)"},
 	{0}
 };
@@ -53,7 +53,7 @@ int tool_cmd_remove_route(int argc, char* argv[])
 	DBusError error;
 
 	const char *route_prefix = NULL;
-	int prefix_len = 8;
+	uint8_t prefix_len_in_bits = 64;
 	uint16_t domain_id = 0;
 
 	dbus_error_init(&error);
@@ -81,7 +81,7 @@ int tool_cmd_remove_route(int argc, char* argv[])
 			goto bail;
 
 		case 'l' :
-			prefix_len = (int) strtol(optarg, NULL, 0);
+			prefix_len_in_bits = (uint8_t) strtol(optarg, NULL, 0);
 			break;
 
 		case 'd':
@@ -93,6 +93,10 @@ int tool_cmd_remove_route(int argc, char* argv[])
 	if (optind < argc) {
 		route_prefix = argv[optind];
 		optind++;
+	} else {
+		fprintf((stderr), "%s: No route prefix is given\n", argv[0]);
+		ret = ERRORCODE_BADARG;
+		goto bail;
 	}
 
 	if (optind < argc) {
@@ -143,7 +147,7 @@ int tool_cmd_remove_route(int argc, char* argv[])
 		    WPANTUND_IF_CMD_ROUTE_REMOVE
 		);
 
-		if ((route_prefix != NULL) && (0 <= prefix_len) && (prefix_len <= 16)) {
+		if ((route_prefix != NULL) && (0 <= prefix_len_in_bits) && (prefix_len_in_bits <= 128)) {
 			uint8_t prefix_bytes[16];
 
 			memset(prefix_bytes, 0, sizeof(prefix_bytes));
@@ -180,11 +184,11 @@ int tool_cmd_remove_route(int argc, char* argv[])
 			}
 
 			fprintf(stderr, "Removing route prefix \"%s\" with len %d, domain-id %d.\n",
-				route_prefix, prefix_len, domain_id
+				route_prefix, prefix_len_in_bits, domain_id
 			);
 
 			uint8_t *addr = prefix_bytes;
-			uint8_t len = (uint8_t)prefix_len;
+			uint8_t len = (prefix_len_in_bits + 7) / 8;
 
 			dbus_message_append_args(
 			    message,
@@ -202,6 +206,7 @@ int tool_cmd_remove_route(int argc, char* argv[])
 		dbus_message_append_args(
 		    message,
 		    DBUS_TYPE_UINT16, &domain_id,
+		    DBUS_TYPE_BYTE, &prefix_len_in_bits,
 		    DBUS_TYPE_INVALID
 		);
 

@@ -152,6 +152,7 @@ public:
 		int prefix_len,
 		int domain_id,
 		ExternalRoutePriority priority,
+		bool stable,
 		CallbackWithStatus cb = NilReturn()
 	);
 

@@ -178,13 +178,7 @@ public:
 		int prefix_len_in_bits,
 		int domain_id,
 		ExternalRoutePriority priority,
-		CallbackWithStatus cb = NilReturn()
-	) = 0;
-
-	virtual void joiner_add(
-		const char *psk,
-		uint32_t joiner_timeout,
-		const uint8_t *addr,
+		bool stable,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
@@ -192,6 +186,13 @@ public:
 		const struct in6_addr *prefix,
 		int prefix_len_in_bits,
 		int domain_id,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void joiner_add(
+		const char *psk,
+		uint32_t joiner_timeout,
+		const uint8_t *addr,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 

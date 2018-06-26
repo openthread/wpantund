@@ -231,6 +231,7 @@ SpinelNCPControlInterface::add_external_route(
 	int prefix_len,
 	int domain_id,
 	ExternalRoutePriority priority,
+	bool stable,
 	CallbackWithStatus cb
 ) {
 	require_action(route != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
@@ -243,7 +244,7 @@ SpinelNCPControlInterface::add_external_route(
 		*route,
 		prefix_len,
 		priority,
-		true,     // stable
+		stable,
 		0,        // rlco16 (ignored for user added routes)
 		true,     // next_hop_is_host
 		cb
