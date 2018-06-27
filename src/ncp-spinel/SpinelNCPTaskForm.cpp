@@ -176,10 +176,10 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 			channel = any_to_int(mOptions[kWPANTUNDProperty_NCPChannel]);
 
 			// Make sure the channel is the supported channel set.
-			if (mInstance->mSupprotedChannels.find(channel) == mInstance->mSupprotedChannels.end()) {
+			if ((mInstance->mSupportedChannelMask & (1U << channel)) == 0) {
 				syslog(LOG_ERR, "Channel %d is not supported by NCP. Supported channels mask is %08x",
 					channel,
-					mInstance->get_default_channel_mask()
+					mInstance->mSupportedChannelMask
 				);
 				ret = kWPANTUNDStatus_InvalidArgument;
 				goto on_error;
@@ -187,21 +187,23 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 		} else {
 			uint32_t mask;
-			uint32_t default_mask = mInstance->get_default_channel_mask();
 
 			if (mOptions.count(kWPANTUNDProperty_NCPChannelMask)) {
 				mask = any_to_int(mOptions[kWPANTUNDProperty_NCPChannelMask]);
 			} else {
-				mask = default_mask;
+				mask = mInstance->mSupportedChannelMask;
 			}
 
-			if ((mask & default_mask) == 0) {
-				syslog(LOG_ERR,	"Invalid channel mask 0x%08x. Supported channels mask is 0x%08x", mask, default_mask);
+			if ((mask & mInstance->mSupportedChannelMask) == 0) {
+				syslog(LOG_ERR, "Invalid channel mask 0x%08x. Supported channels mask is 0x%08x",
+					mask,
+					mInstance->mSupportedChannelMask
+				);
 				ret = kWPANTUNDStatus_InvalidArgument;
 				goto on_error;
 			}
 
-			mask &= default_mask;
+			mask &= mInstance->mSupportedChannelMask;
 
 			// Randomly pick a channel from the given channel mask for now.
 			do {

@@ -437,7 +437,7 @@ SpinelNCPControlInterface::netscan_start(
 	const ValueMap& options,
 	CallbackWithStatus cb
 ) {
-	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
+	ChannelMask channel_mask(mNCPInstance->mSupportedChannelMask);
 	SpinelNCPTaskScan::ScanType scan_type;
 	int scan_period = 0; 			   // per channel in ms
 	bool joiner_flag = false;          // Scan for joiner only devices (used in discover scan).
@@ -503,7 +503,7 @@ SpinelNCPControlInterface::energyscan_start(
 	const ValueMap& options,
 	CallbackWithStatus cb
 ) {
-	ChannelMask channel_mask(mNCPInstance->get_default_channel_mask());
+	ChannelMask channel_mask(mNCPInstance->mSupportedChannelMask);
 
 	if (options.count(kWPANTUNDProperty_NCPChannelMask)) {
 		channel_mask = any_to_int(options.at(kWPANTUNDProperty_NCPChannelMask));

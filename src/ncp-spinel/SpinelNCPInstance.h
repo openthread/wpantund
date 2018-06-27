@@ -172,8 +172,6 @@ protected:
 	static RoutePreference convert_flags_to_route_preference(uint8_t flags);
 	static uint8_t convert_route_preference_to_flags(RoutePreference priority);
 
-	uint32_t get_default_channel_mask(void);
-
 private:
 	void update_node_type(NodeType node_type);
 	void update_link_local_address(struct in6_addr *addr);
@@ -285,6 +283,7 @@ private:
 	Data mNetworkPSKc;
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
+	uint32_t mSupportedChannelMask;
 	bool mXPANIDWasExplicitlySet;
 	uint8_t mChannelManagerNewChannel;
 

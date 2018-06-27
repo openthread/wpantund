@@ -546,8 +546,6 @@ protected:
 
 	WPAN::NetworkInstance mCurrentNetworkInstance;
 
-	std::set<unsigned int> mSupprotedChannels;
-
 	NodeType mNodeType;
 
 	int mFailureCount;
