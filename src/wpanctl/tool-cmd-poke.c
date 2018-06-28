@@ -23,6 +23,7 @@
 
 #include <getopt.h>
 #include "wpanctl-utils.h"
+#include "string-utils.h"
 #include "tool-cmd-peek.h"
 #include "assert-macros.h"
 #include "wpan-dbus-v1.h"
