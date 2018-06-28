@@ -23,23 +23,23 @@ LOCAL_MODULE:= wpantund
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES                                         := \
-    $(LOCAL_PATH)/include                                   \
-    $(LOCAL_PATH)/src                                       \
-    $(LOCAL_PATH)/src/util                                  \
-    $(LOCAL_PATH)/src/ipc-dbus                              \
+	$(LOCAL_PATH)/include                                   \
+	$(LOCAL_PATH)/src                                       \
+	$(LOCAL_PATH)/src/util                                  \
+	$(LOCAL_PATH)/src/ipc-dbus                              \
 	$(LOCAL_PATH)/src/wpantund \
 	$(LOCAL_PATH)/third_party/boost/ \
 	$(LOCAL_PATH)/third_party/fgetln \
 	$(LOCAL_PATH)/third_party/pt \
 	$(LOCAL_PATH)/third_party/assert-macros \
 	$(LOCAL_PATH)/third_party/openthread/src/ncp \
-    $(NULL)
+	$(NULL)
 
 LOCAL_DEFAULT_VERSION := $(shell cat $(LOCAL_PATH)/.default-version)
 LOCAL_PRIVATE_SOURCE_VERSION := $(shell git -C $(LOCAL_PATH) describe --always --match "[0-9].*" 2> /dev/null)
 LOCAL_CFLAGS := \
 	-DTUNNEL_TUNTAP_DEVICE=\"/dev/tun\" \
-    -D_GNU_SOURCE \
+	-D_GNU_SOURCE \
 	-D_XOPEN_SOURCE \
 	-D_POSIX_C_SOURCE \
 	-DHAVE_SYS_WAIT_H=1 \
@@ -58,8 +58,8 @@ LOCAL_CFLAGS := \
 	-DTIME_WITH_SYS_TIME=1 \
 	-DVERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
 	-DWPANTUND_DEFAULT_NCP_PLUGIN=\"spinel\" \
-	-DWPANTUND_PLUGIN_STATICLY_LINKED=1
-    $(NULL)
+	-DWPANTUND_PLUGIN_STATICLY_LINKED=1 \
+	$(NULL)
 
 LOCAL_CPP_FEATURES := exceptions rtti
 
@@ -70,7 +70,7 @@ LOCAL_CPPFLAGS := \
 	$(NULL)
 
 LOCAL_LDFLAGS := \
-    $(NULL)
+	$(NULL)
 
 $(LOCAL_PATH)/src/version.c: $(LOCAL_PATH)/src/version.c.in
 	sed 's/SOURCE_VERSION/"$(LOCAL_PRIVATE_SOURCE_VERSION)"/' < $< > $@
@@ -85,8 +85,8 @@ LOCAL_SRC_FILES := \
 	src/ipc-dbus/wpan-dbus-v1.h \
 	src/ipc-dbus/wpan-dbus-v0.h \
 	src/util/DBUSHelpers.cpp \
-    src/version.c \
-    src/wpantund/wpantund.cpp \
+	src/version.c \
+	src/wpantund/wpantund.cpp \
 	src/wpantund/wpantund.h \
 	src/wpantund/IPCServer.h \
 	src/wpantund/NCPConstants.h \
@@ -187,6 +187,7 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/src \
 	$(LOCAL_PATH)/src/ipc-dbus \
 	$(LOCAL_PATH)/src/util \
+	$(LOCAL_PATH)/src/wpanctl \
 	$(LOCAL_PATH)/src/wpantund \
 	$(LOCAL_PATH)/third_party/fgetln \
 	$(LOCAL_PATH)/third_party/assert-macros \
@@ -196,7 +197,7 @@ LOCAL_DEFAULT_VERSION := $(shell cat $(LOCAL_PATH)/.default-version)
 LOCAL_PRIVATE_SOURCE_VERSION := $(shell git -C $(LOCAL_PATH) describe --always --match "[0-9].*" 2> /dev/null)
 
 LOCAL_CFLAGS := \
-    -D_GNU_SOURCE \
+	-D_GNU_SOURCE \
 	-D_XOPEN_SOURCE \
 	-D_POSIX_C_SOURCE \
 	-DHAVE_SYS_WAIT_H=1 \
@@ -215,8 +216,8 @@ LOCAL_CFLAGS := \
 	-DTIME_WITH_SYS_TIME=1 \
 	-DVERSION=\"$(LOCAL_DEFAULT_VERSION)\" \
 	-DWPANTUND_DEFAULT_NCP_PLUGIN=\"spinel\" \
-	-DWPANTUND_PLUGIN_STATICLY_LINKED=1
-    $(NULL)
+	-DWPANTUND_PLUGIN_STATICLY_LINKED=1 \
+	$(NULL)
 
 LOCAL_CPP_FEATURES := exceptions
 
@@ -226,71 +227,13 @@ LOCAL_CPPFLAGS := \
 	-frtti \
 	$(NULL)
 
+WPANCTL_SRC_FILES := $(wildcard $(LOCAL_PATH)/src/wpanctl/*.c)
 LOCAL_SRC_FILES := \
 	src/version.c \
-	src/wpanctl/wpanctl.c \
-	src/wpanctl/wpanctl-cmds.h \
 	src/util/config-file.c \
 	src/util/string-utils.c \
 	src/wpantund/wpan-error.c \
-	src/wpanctl/wpanctl-utils.c \
-	src/wpanctl/tool-cmd-scan.c \
-	src/wpanctl/tool-cmd-join.c \
-	src/wpanctl/tool-cmd-form.c \
-	src/wpanctl/tool-cmd-mfg.c \
-	src/wpanctl/tool-cmd-leave.c \
-	src/wpanctl/tool-cmd-permit-join.c \
-	src/wpanctl/tool-cmd-list.c \
-	src/wpanctl/tool-cmd-status.c \
-	src/wpanctl/tool-cmd-resume.c \
-	src/wpanctl/tool-cmd-reset.c \
-	src/wpanctl/tool-cmd-getprop.c \
-	src/wpanctl/tool-cmd-setprop.c \
-	src/wpanctl/tool-cmd-insertprop.c \
-	src/wpanctl/tool-cmd-removeprop.c \
-	src/wpanctl/tool-cmd-begin-low-power.c \
-	src/wpanctl/tool-cmd-begin-net-wake.c \
-	src/wpanctl/tool-cmd-cd.c \
-	src/wpanctl/tool-cmd-poll.c \
-	src/wpanctl/tool-cmd-config-gateway.c \
-	src/wpanctl/tool-cmd-host-did-wake.c \
-	src/wpanctl/tool-cmd-add-route.c \
-	src/wpanctl/tool-cmd-remove-route.c \
-	src/wpanctl/tool-updateprop.c \
-	src/wpanctl/wpanctl-utils.h \
-	src/wpanctl/tool-cmd-scan.h \
-	src/wpanctl/tool-cmd-join.h \
-	src/wpanctl/tool-cmd-form.h \
-	src/wpanctl/tool-cmd-leave.h \
-	src/wpanctl/tool-cmd-mfg.h \
-	src/wpanctl/tool-cmd-permit-join.h \
-	src/wpanctl/tool-cmd-list.h \
-	src/wpanctl/tool-cmd-status.h \
-	src/wpanctl/tool-cmd-resume.h \
-	src/wpanctl/tool-cmd-reset.h \
-	src/wpanctl/tool-cmd-getprop.h \
-	src/wpanctl/tool-cmd-setprop.h \
-	src/wpanctl/tool-cmd-insertprop.h \
-	src/wpanctl/tool-cmd-removeprop.h \
-	src/wpanctl/tool-cmd-begin-low-power.h \
-	src/wpanctl/tool-cmd-begin-net-wake.h \
-	src/wpanctl/tool-cmd-cd.h \
-	src/wpanctl/tool-cmd-poll.h \
-	src/wpanctl/tool-cmd-config-gateway.h \
-	src/wpanctl/tool-cmd-host-did-wake.h \
-	src/wpanctl/tool-cmd-add-route.h \
-	src/wpanctl/tool-cmd-remove-route.h \
-	src/wpanctl/tool-cmd-pcap.h \
-	src/wpanctl/tool-cmd-pcap.c \
-	src/wpanctl/tool-cmd-peek.h \
-	src/wpanctl/tool-cmd-peek.c \
-	src/wpanctl/tool-cmd-poke.h \
-	src/wpanctl/tool-cmd-poke.c \
-	src/wpanctl/tool-cmd-commissioner.h \
-	src/wpanctl/tool-cmd-commissioner.c \
-	src/wpanctl/tool-cmd-dataset.h \
-	src/wpanctl/tool-cmd-dataset.c \
-	src/wpanctl/tool-updateprop.h \
+	$(WPANCTL_SRC_FILES:$(LOCAL_PATH)/%=%) \
 	$(NULL)
 
 LOCAL_SHARED_LIBRARIES := libdbus
