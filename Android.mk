@@ -19,6 +19,16 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+LOCAL_MODULE := spi-hdlc-adapter
+LOCAL_MODULE_TAGS := eng
+LOCAL_C_INCLUDES := $(NULL)
+LOCAL_SRC_FILES := third_party/openthread/tools/spi-hdlc-adapter/spi-hdlc-adapter.c \
+	$(NULL)
+
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+
 LOCAL_MODULE:= wpantund
 LOCAL_MODULE_TAGS := eng
 
