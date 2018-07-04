@@ -130,6 +130,8 @@
 #define kWPANTUNDProperty_ThreadPendingDatasetAsValMap          "Thread:PendingDataset:AsValMap"
 #define kWPANTUNDProperty_ThreadAddressCacheTable               "Thread:AddressCacheTable"
 #define kWPANTUNDProperty_ThreadAddressCacheTableAsValMap       "Thread:AddressCacheTable:AsValMap"
+#define kWPANTUNDProperty_ThreadParent                          "Thread:Parent"
+#define kWPANTUNDProperty_ThreadParentAsValMap                  "Thread:Parent:AsValMap"
 
 #define kWPANTUNDProperty_DatasetActiveTimestamp                "Dataset:ActiveTimestamp"
 #define kWPANTUNDProperty_DatasetPendingTimestamp               "Dataset:PendingTimestamp"
