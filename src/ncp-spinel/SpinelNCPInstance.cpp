@@ -459,6 +459,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadChildTableAddresses);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
+		properties.insert(kWPANTUNDProperty_ThreadParent);
 		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
@@ -1016,6 +1017,94 @@ convert_string_to_spinel_mcu_power_state(const char *str, spinel_mcu_power_state
 		ret = kWPANTUNDStatus_InvalidArgument;
 	}
 
+	return ret;
+}
+
+static int
+unpack_parent_info(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::string result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+	const spinel_eui64_t *eui64 = NULL;
+	uint16_t rloc16;
+	uint32_t age;
+	int8_t average_rssi;
+	int8_t last_rssi;
+	uint8_t lqin;
+	uint8_t lqout;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+			SPINEL_DATATYPE_UINT16_S        // Rloc16
+			SPINEL_DATATYPE_UINT32_S        // Age
+			SPINEL_DATATYPE_INT8_S          // Average RSSI
+			SPINEL_DATATYPE_INT8_S          // Last RSSI
+			SPINEL_DATATYPE_UINT8_S         // LinkQuality In
+			SPINEL_DATATYPE_UINT8_S         // LinkQuality Out
+		),
+		&eui64,
+		&rloc16,
+		&age,
+		&average_rssi,
+		&last_rssi,
+		&lqin,
+		&lqout
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	if (!as_val_map) {
+		char c_string[200];
+
+		snprintf(c_string, sizeof(c_string),
+			"%02X%02X%02X%02X%02X%02X%02X%02X, "
+			"RLOC16:%04x, "
+			"Age:%u, "
+			"AveRssi:%d, "
+			"LastRssi:%d, "
+			"LQIn:%d, "
+			"LQOut:%d",
+			eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
+			eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7],
+			rloc16,
+			age,
+			average_rssi,
+			last_rssi,
+			lqin,
+			lqout
+		);
+
+		value = std::string(c_string);
+
+	} else {
+		ValueMap map;
+		uint64_t ext_addr;
+
+		ext_addr  = (uint64_t) eui64->bytes[7];
+		ext_addr |= (uint64_t) eui64->bytes[6] << 8;
+		ext_addr |= (uint64_t) eui64->bytes[5] << 16;
+		ext_addr |= (uint64_t) eui64->bytes[4] << 24;
+		ext_addr |= (uint64_t) eui64->bytes[3] << 32;
+		ext_addr |= (uint64_t) eui64->bytes[2] << 40;
+		ext_addr |= (uint64_t) eui64->bytes[1] << 48;
+		ext_addr |= (uint64_t) eui64->bytes[0] << 56;
+
+		map[kWPANTUNDValueMapKey_NetworkTopology_ExtAddress]    = boost::any(ext_addr);
+		map[kWPANTUNDValueMapKey_NetworkTopology_RLOC16]        = boost::any(rloc16);
+		map[kWPANTUNDValueMapKey_NetworkTopology_Age]           = boost::any(age);
+		map[kWPANTUNDValueMapKey_NetworkTopology_AverageRssi]   = boost::any(average_rssi);
+		map[kWPANTUNDValueMapKey_NetworkTopology_LastRssi]      = boost::any(last_rssi);
+		map[kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn] = boost::any(lqin);
+
+		value = map;
+	}
+
+bail:
 	return ret;
 }
 
@@ -1886,6 +1975,26 @@ SpinelNCPInstance::property_get_value(
 				SpinelNCPTaskGetNetworkTopology::kResultFormat_ValueMapArray
 			)
 		));
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadParent)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_PARENT)
+				)
+				.set_reply_unpacker(boost::bind(unpack_parent_info, _1, _2, _3, /* as_val_map */ false))
+				.finish()
+			);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadParentAsValMap)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_PARENT)
+				)
+				.set_reply_unpacker(boost::bind(unpack_parent_info, _1, _2, _3, /* as_val_map */ true))
+				.finish()
+			);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadAddressCacheTable)) {
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
