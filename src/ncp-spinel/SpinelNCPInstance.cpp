@@ -1250,10 +1250,12 @@ SpinelNCPInstance::get_dataset_command_help(std::list<std::string> &list)
 	list.push_back("   - `" kWPANTUNDDatasetCommand_Erase "`: Erase the local Dataset (all fields are un-set)");
 	list.push_back("   - `" kWPANTUNDDatasetCommand_GetActive "`: Get the NCP's Active Operational Dataset and populate the local Dataset from it");
 	list.push_back("   - `" kWPANTUNDDatasetCommand_SetActive "`: Set the NCP's Active Operational Dataset from the current local Dataset");
-	list.push_back("   - `" kWPANTUNDDatasetCommand_MgmtSendActive "`: Send the current local Dataset to leader with a MGMT_SEND_ACTIVE meshcop command");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SendMgmtGetActive "`: Send MGMT_GET_ACTIVE meshcop command requesting TLVs in current local Dataset");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SendMgmtSetActive "`: Send MGMT_SET_ACTIVE meshcop command along with the current local Dataset");
 	list.push_back("   - `" kWPANTUNDDatasetCommand_GetPending "`: Get the NCP's Pending Operational Dataset and populate the local DataSet from it");
 	list.push_back("   - `" kWPANTUNDDatasetCommand_SetPending "`: Set the NCP's Pending Operational Dataset from the current local Dataset");
-	list.push_back("   - `" kWPANTUNDDatasetCommand_MgmtSendPending "`: Send the current local Dataset to leader with MGMT_SEND_PENDING meshcop command");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SendMgmtGetPending "`: Send MGMT_GET_PENDING meshcop command requesting TLVs in the current local Dataset");
+	list.push_back("   - `" kWPANTUNDDatasetCommand_SendMgmtSetPending "`: Send MGMT_SET_PENDING meshcop command along with the current local Dataset");
 }
 
 int
@@ -1295,7 +1297,23 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 			.finish()
 		);
 
-	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_MgmtSendActive)) {
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SendMgmtGetActive)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame, /* include_values */ false);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_MGMT_GET_ACTIVE_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SendMgmtSetActive)) {
 		Data frame;
 		mLocalDataset.convert_to_spinel_frame(frame);
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -1303,7 +1321,7 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
-					SPINEL_PROP_THREAD_MGMT_ACTIVE_DATASET,
+					SPINEL_PROP_THREAD_MGMT_SET_ACTIVE_DATASET,
 					frame.data(),
 					frame.size()
 				)
@@ -1337,7 +1355,23 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 			.finish()
 		);
 
-	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_MgmtSendPending)) {
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SendMgmtGetPending)) {
+		Data frame;
+		mLocalDataset.convert_to_spinel_frame(frame, /* include_values */ false);
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+					SPINEL_PROP_THREAD_MGMT_GET_PENDING_DATASET,
+					frame.data(),
+					frame.size()
+				)
+			)
+			.finish()
+		);
+
+	} else if (strcaseequal(command.c_str(), kWPANTUNDDatasetCommand_SendMgmtSetPending)) {
 		Data frame;
 		mLocalDataset.convert_to_spinel_frame(frame);
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -1345,7 +1379,7 @@ SpinelNCPInstance::perform_dataset_command(const std::string &command, CallbackW
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
-					SPINEL_PROP_THREAD_MGMT_PENDING_DATASET,
+					SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET,
 					frame.data(),
 					frame.size()
 				)
@@ -2137,6 +2171,13 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetRawTlvs)) {
 		if (mLocalDataset.mRawTlvs.has_value()) {
 			cb(kWPANTUNDStatus_Ok, boost::any(mLocalDataset.mRawTlvs.get()));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetDestIpAddress)) {
+		if (mLocalDataset.mDestIpAddress.has_value()) {
+			cb(kWPANTUNDStatus_Ok, boost::any(in6_addr_to_string(mLocalDataset.mDestIpAddress.get())));
 		} else {
 			cb(kWPANTUNDStatus_Ok, boost::any(Data()));
 		}
@@ -3162,6 +3203,10 @@ SpinelNCPInstance::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetRawTlvs)) {
 			mLocalDataset.mRawTlvs = any_to_data(value);
+			cb(kWPANTUNDStatus_Ok);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetDestIpAddress)) {
+			mLocalDataset.mDestIpAddress = any_to_ipv6(value);
 			cb(kWPANTUNDStatus_Ok);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_DatasetCommand)) {

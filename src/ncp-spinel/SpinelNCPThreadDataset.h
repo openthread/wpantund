@@ -62,7 +62,7 @@ public:
 	void convert_to_string_list(std::list<std::string> &list);
 
 	int  set_from_spinel_frame(const uint8_t *data_in, spinel_size_t data_len);
-	void convert_to_spinel_frame(Data &frame);
+	void convert_to_spinel_frame(Data &frame, bool include_value = true);
 
 	Optional<uint64_t>         mActiveTimestamp;
 	Optional<uint64_t>         mPendingTimestamp;
@@ -77,7 +77,7 @@ public:
 	Optional<uint32_t>         mChannelMaskPage0;
 	Optional<SecurityPolicy>   mSecurityPolicy;
 	Optional<Data>             mRawTlvs;
-
+	Optional<struct in6_addr>  mDestIpAddress;
 
 private:
 	enum

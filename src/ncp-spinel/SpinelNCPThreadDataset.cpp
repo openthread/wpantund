@@ -49,6 +49,7 @@ ThreadDataset::clear(void)
 	mChannelMaskPage0.clear();
 	mSecurityPolicy.clear();
 	mRawTlvs.clear();
+	mDestIpAddress.clear();
 }
 
 void
@@ -107,6 +108,10 @@ ThreadDataset::convert_to_valuemap(ValueMap &map)
 	if (mSecurityPolicy.has_value()) {
 		map[kWPANTUNDProperty_DatasetSecPolicyKeyRotation] = mSecurityPolicy.get().mKeyRotationTime;
 		map[kWPANTUNDProperty_DatasetSecPolicyFlags] = mSecurityPolicy.get().mFlags;
+	}
+
+	if (mDestIpAddress.has_value()) {
+		map[kWPANTUNDProperty_DatasetDestIpAddress] = in6_addr_to_string(mDestIpAddress.get());
 	}
 }
 
@@ -193,6 +198,14 @@ ThreadDataset::convert_to_string_list(std::list<std::string> &list)
 		snprintf(
 			str, sizeof(str), "%-32s =  [%s]", kWPANTUNDProperty_DatasetRawTlvs,
 			any_to_string(mRawTlvs.get()).c_str()
+		);
+		list.push_back(str);
+	}
+
+	if (mDestIpAddress.has_value()) {
+		snprintf(
+			str, sizeof(str), "%-32s =  %s", kWPANTUNDProperty_DatasetDestIpAddress,
+			any_to_string(mDestIpAddress.get()).c_str()
 		);
 		list.push_back(str);
 	}
@@ -436,6 +449,22 @@ ThreadDataset::parse_dataset_entry(const uint8_t *data_in, spinel_size_t data_le
 		mRawTlvs = Data(value_data, value_len);
 		break;
 
+	case SPINEL_PROP_DATASET_DEST_ADDRESS:
+		{
+			const struct in6_addr *address;
+
+			len = spinel_datatype_unpack(
+				value_data,
+				value_len,
+				SPINEL_DATATYPE_IPv6ADDR_S,
+				&address
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+			mDestIpAddress = *address;
+		}
+		break;
+
 	default:
 		syslog(
 			LOG_WARNING,
@@ -451,160 +480,215 @@ bail:
 }
 
 void
-ThreadDataset::convert_to_spinel_frame(Data &frame)
+ThreadDataset::convert_to_spinel_frame(Data &frame, bool include_value)
 {
 	frame.clear();
 
 	if (mActiveTimestamp.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT64_S
-			),
-			SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP,
-			mActiveTimestamp.get()
-		));
+
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UINT64_S),
+				SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP,
+				mActiveTimestamp.get()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP
+			));
+		}
 	}
 
 	if (mPendingTimestamp.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT64_S
-			),
-			SPINEL_PROP_DATASET_PENDING_TIMESTAMP,
-			mPendingTimestamp.get()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UINT64_S),
+				SPINEL_PROP_DATASET_PENDING_TIMESTAMP,
+				mPendingTimestamp.get()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_DATASET_PENDING_TIMESTAMP
+			));
+		}
 	}
 
 	if (mMasterKey.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_DATA_S
-			),
-			SPINEL_PROP_NET_MASTER_KEY,
-			mMasterKey.get().data(),
-			mMasterKey.get().size()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_NET_MASTER_KEY,
+				mMasterKey.get().data(),
+				mMasterKey.get().size()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_NET_MASTER_KEY
+			));
+		}
 	}
 
 	if (mNetworkName.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UTF8_S
-			),
-			SPINEL_PROP_NET_NETWORK_NAME,
-			mNetworkName.get().c_str()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UTF8_S),
+				SPINEL_PROP_NET_NETWORK_NAME,
+				mNetworkName.get().c_str()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_NET_NETWORK_NAME
+			));
+		}
 	}
 
 	if (mExtendedPanId.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_DATA_S
-			),
-			SPINEL_PROP_NET_XPANID,
-			mExtendedPanId.get().data(),
-			mExtendedPanId.get().size()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_NET_XPANID,
+				mExtendedPanId.get().data(),
+				mExtendedPanId.get().size()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_NET_XPANID
+			));
+		}
 	}
 
 	if (mMeshLocalPrefix.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_IPv6ADDR_S
-				SPINEL_DATATYPE_UINT8_S
-			),
-			SPINEL_PROP_IPV6_ML_PREFIX,
-			&mMeshLocalPrefix.get(),
-			kMeshLocalPrefixLen
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT_PACKED_S
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+				),
+				SPINEL_PROP_IPV6_ML_PREFIX,
+				&mMeshLocalPrefix.get(),
+				kMeshLocalPrefixLen
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_IPV6_ML_PREFIX
+			));
+		}
 	}
 
 	if (mDelay.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT32_S
-			),
-			SPINEL_PROP_DATASET_DELAY_TIMER,
-			mDelay.get()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UINT32_S),
+				SPINEL_PROP_DATASET_DELAY_TIMER,
+				mDelay.get()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_DATASET_DELAY_TIMER
+			));
+		}
 	}
 
 	if (mPanId.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT16_S
-			),
-			SPINEL_PROP_MAC_15_4_PANID,
-			mPanId.get()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UINT16_S),
+				SPINEL_PROP_MAC_15_4_PANID,
+				mPanId.get()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_MAC_15_4_PANID
+			));
+		}
 	}
 
 	if (mChannel.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT8_S
-			),
-			SPINEL_PROP_PHY_CHAN,
-			mChannel.get()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_UINT8_S),
+				SPINEL_PROP_PHY_CHAN,
+				mChannel.get()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_PHY_CHAN
+			));
+		}
 	}
 
 	if (mPSKc.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_DATA_S
-			),
-			SPINEL_PROP_NET_PSKC,
-			mPSKc.get().data(),
-			mPSKc.get().size()
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_NET_PSKC,
+				mPSKc.get().data(),
+				mPSKc.get().size()
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_NET_PSKC
+			));
+		}
 	}
 
 	if (mChannelMaskPage0.has_value()) {
-		uint8_t mask_data[32];
-		uint8_t mask_len = 0;
+		if (include_value) {
+			uint8_t mask_data[32];
+			uint8_t mask_len = 0;
 
-		for (uint8_t i = 0; i < 32; i++) {
-			if (mChannelMaskPage0.get() & (1U << i)) {
-				mask_data[mask_len++] = i;
+			for (uint8_t i = 0; i < 32; i++) {
+				if (mChannelMaskPage0.get() & (1U << i)) {
+					mask_data[mask_len++] = i;
+				}
 			}
-		}
 
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_DATA_S
-			),
-			SPINEL_PROP_PHY_CHAN_SUPPORTED,
-			mask_data,
-			mask_len
-		));
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S SPINEL_DATATYPE_DATA_S),
+				SPINEL_PROP_PHY_CHAN_SUPPORTED,
+				mask_data,
+				mask_len
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_PHY_CHAN_SUPPORTED
+			));
+		}
 	}
 
 	if (mSecurityPolicy.has_value()) {
-		frame.append(SpinelPackData(
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT_PACKED_S
-				SPINEL_DATATYPE_UINT16_S
-				SPINEL_DATATYPE_UINT8_S
-			),
-			SPINEL_PROP_DATASET_SECURITY_POLICY,
-			mSecurityPolicy.get().mKeyRotationTime,
-			mSecurityPolicy.get().mFlags
-		));
+		if (include_value) {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT_PACKED_S
+					SPINEL_DATATYPE_UINT16_S
+					SPINEL_DATATYPE_UINT8_S
+				),
+				SPINEL_PROP_DATASET_SECURITY_POLICY,
+				mSecurityPolicy.get().mKeyRotationTime,
+				mSecurityPolicy.get().mFlags
+			));
+		} else {
+			frame.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_UINT_PACKED_S),
+				SPINEL_PROP_DATASET_SECURITY_POLICY
+			));
+		}
 	}
 
-	if (mRawTlvs.has_value()) {
+	if (mRawTlvs.has_value()) {  /* always include the raw TLV value */
 		frame.append(SpinelPackData(
 			SPINEL_DATATYPE_STRUCT_S(
 				SPINEL_DATATYPE_UINT_PACKED_S
@@ -613,6 +697,17 @@ ThreadDataset::convert_to_spinel_frame(Data &frame)
 			SPINEL_PROP_DATASET_RAW_TLVS,
 			mRawTlvs.get().data(),
 			mRawTlvs.get().size()
+		));
+	}
+
+	if (mDestIpAddress.has_value()) { /* always include dest IP address value */
+		frame.append(SpinelPackData(
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT_PACKED_S
+				SPINEL_DATATYPE_IPv6ADDR_S
+			),
+			SPINEL_PROP_DATASET_DEST_ADDRESS,
+			&mDestIpAddress.get()
 		));
 	}
 }
