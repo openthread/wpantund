@@ -54,8 +54,12 @@ static dataset_command_t datsetCommandList[] =
 		"Set the NCP's Active Operational Dataset from the current local Dataset."
 	},
 	{
-		"mgmt-active", "ma", kWPANTUNDDatasetCommand_MgmtSendActive,
-		"Send the current local Dataset to leader with a MGMT_SEND_ACTIVE meshcop command."
+		"mgmt-get-active", "mga", kWPANTUNDDatasetCommand_SendMgmtGetActive,
+		"Send a MGMT_GET_ACTIVE meshcop command requesting TLVs in the current local Dataset."
+	},
+	{
+		"mgmt-set-active", "msa", kWPANTUNDDatasetCommand_SendMgmtSetActive,
+		"Send a MGMT_SET_ACTIVE meshcop command along with the current local Dataset."
 	},
 	{
 		"get-pending", "gp", kWPANTUNDDatasetCommand_GetPending,
@@ -66,8 +70,12 @@ static dataset_command_t datsetCommandList[] =
 		"Set the NCP's Pending Operational Dataset from the current local Dataset."
 	},
 	{
-		"mgmt-pending", "mp", kWPANTUNDDatasetCommand_MgmtSendPending,
-		"Send the current local Dataset to leader with a MGMT_SEND_PENDING meshcop command."
+		"mgmt-get-pending", "mgp", kWPANTUNDDatasetCommand_SendMgmtGetPending,
+		"Send a MGMT_GET_PENDING meshcop command requesting TLVs in the current local Dataset."
+	},
+	{
+		"mgmt-set-pending", "msp", kWPANTUNDDatasetCommand_SendMgmtSetPending,
+		"Send a MGMT_SET_PENDING meshcop command along with the current local Dataset to leader"
 	},
 	{
 		NULL, NULL, NULL, NULL
@@ -83,7 +91,7 @@ static void print_help(const char *command_name)
 	printf("Valid commands are:\n");
 
 	while (entry->long_name != NULL)	{
-		printf("   %-12s (or %-2s)      %s\n", entry->long_name, entry->short_name, entry->help_string);
+		printf("   %-16s (or %-3s)      %s\n", entry->long_name, entry->short_name, entry->help_string);
 		entry++;
 	}
 }
