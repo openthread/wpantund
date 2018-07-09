@@ -147,7 +147,7 @@ int tool_cmd_remove_route(int argc, char* argv[])
 		    WPANTUND_IF_CMD_ROUTE_REMOVE
 		);
 
-		if ((route_prefix != NULL) && (0 <= prefix_len_in_bits) && (prefix_len_in_bits <= 128)) {
+		if ((route_prefix != NULL) && (prefix_len_in_bits <= 128)) {
 			uint8_t prefix_bytes[16];
 
 			memset(prefix_bytes, 0, sizeof(prefix_bytes));
