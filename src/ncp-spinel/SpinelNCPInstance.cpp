@@ -520,6 +520,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ChannelManagerFavoredChannelMask);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY)) {
+		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
 	{
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
@@ -1701,6 +1705,9 @@ SpinelNCPInstance::property_get_value(
 			SIMPLE_SPINEL_GET(SPINEL_PROP_JAM_DETECTED, SPINEL_DATATYPE_BOOL_S);
 		}
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, SPINEL_DATATYPE_BOOL_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_JamDetectionEnable)) {
 		if (!mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Jam Detection Feature Not Supported")));
@@ -2614,6 +2621,23 @@ SpinelNCPInstance::property_set_value(
 				.finish()
 			);
 
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyEnabled)) {
+			bool isEnabled = any_to_bool(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S), SPINEL_PROP_THREAD_TMF_PROXY_ENABLED, isEnabled);
+
+			mSettings[kWPANTUNDProperty_TmfProxyEnabled] = SettingsEntry(command, SPINEL_CAP_THREAD_TMF_PROXY);
+
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_TMF_PROXY))
+			{
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_MACWhitelistEnabled)) {
 			bool isEnabled = any_to_bool(value);
 
@@ -2857,6 +2881,28 @@ SpinelNCPInstance::property_set_value(
 			}
 
 			cb (status);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_TmfProxyStream)) {
+			Data packet = any_to_data(value);
+
+			if (packet.size() > sizeof(uint16_t)*2) {
+				uint16_t port = (packet[packet.size() - sizeof(port)] << 8 | packet[packet.size() - sizeof(port) + 1]);
+				uint16_t locator = (packet[packet.size() - sizeof(locator) - sizeof(port)] << 8 |
+						packet[packet.size() - sizeof(locator) - sizeof(port) + 1]);
+
+				packet.resize(packet.size() - sizeof(locator) - sizeof(port));
+
+				Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S),
+						SPINEL_PROP_THREAD_TMF_PROXY_STREAM, packet.data(), packet.size(), locator, port);
+
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(command)
+						.finish()
+						);
+			} else {
+				cb(kWPANTUNDStatus_InvalidArgument);
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_UdpProxyStream)) {
 			Data packet = any_to_data(value);
@@ -4018,6 +4064,39 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 					.append_ppi_field(PCAP_PPI_TYPE_SPINEL, meta_ptr, meta_len)
 					.append_payload(frame_ptr, frame_len)
 			);
+		}
+
+	} else if (key == SPINEL_PROP_THREAD_TMF_PROXY_STREAM) {
+		const uint8_t* frame_ptr(NULL);
+		unsigned int frame_len(0);
+		uint16_t locator = 0;
+		uint16_t port = 0;
+		spinel_ssize_t ret;
+		Data data;
+
+		ret = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S,
+			&frame_ptr,
+			&frame_len,
+			&locator,
+			&port
+		);
+
+		__ASSERT_MACROS_check(ret > 0);
+
+		// Analyze the packet to determine if it should be dropped.
+		if ((ret > 0)) {
+			// append frame
+			data.append(frame_ptr, frame_len);
+			// pack the locator in big endian.
+			data.push_back(locator >> 8);
+			data.push_back(locator & 0xff);
+			// pack the port in big endian.
+			data.push_back(port >> 8);
+			data.push_back(port & 0xff);
+			signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_UDP_PROXY_STREAM) {
