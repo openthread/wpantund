@@ -4125,7 +4125,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		__ASSERT_MACROS_check(ret > 0);
 
 		// Analyze the packet to determine if it should be dropped.
-		if ((ret > 0)) {
+		if (ret > 0) {
 			// append frame
 			data.append(frame_ptr, frame_len);
 			// pack the locator in big endian.
