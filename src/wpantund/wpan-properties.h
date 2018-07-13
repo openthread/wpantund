@@ -206,6 +206,7 @@
 
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
+#define kWPANTUNDProperty_UdpProxyStream                        "UdpProxy:Stream"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin          "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort          "com.nestlabs.internal:Network:PassthruPort"
