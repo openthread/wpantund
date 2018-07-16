@@ -55,15 +55,7 @@ do_pcap_to_fd(int fd, int timeout, DBusError *error)
 	char path[DBUS_MAXIMUM_NAME_LENGTH+1];
 	char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, error);
-
-	if (connection == NULL) {
-		if (error != NULL) {
-			dbus_error_free(error);
-			dbus_error_init(error);
-		}
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, error);
 
 	require(connection != NULL, bail);
 

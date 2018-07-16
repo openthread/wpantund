@@ -526,19 +526,10 @@ int main(int argc, char * argv[])
 	setenv("WPANCTL_DBUS_NAME", WPAN_TUNNEL_DBUS_NAME, 0);
 
 	if (gDebugMode >= 1) {
-		fprintf(stderr, "DEBUG: Getting DBusConnection via dbus_bus_get(DBUS_BUS_STARTER). . .\n");
+		fprintf(stderr, "DEBUG: trying dbus_bus_get(DBUS_BUS_SYSTEM). . .\n");
 	}
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-	if (!connection) {
-		if (gDebugMode >= 1) {
-			fprintf(stderr, "DEBUG: dbus_bus_get(DBUS_BUS_STARTER) didn't work, trying dbus_bus_get(DBUS_BUS_SYSTEM). . .\n");
-		}
-		dbus_error_free(&error);
-		dbus_error_init(&error);
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 	require_string(connection != NULL, bail, error.message);
 
