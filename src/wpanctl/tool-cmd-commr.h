@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 OpenThread Authors, Inc.
+ * Copyright (c) 2018 Nest Labs, Inc.
  * All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,11 @@
  *
  */
 
-#ifndef COMMISSIONER_UTILS_H
-#define COMMISSIONER_UTILS_H
+#ifndef WPANCTL_TOOL_CMD_COMMR_H
+#define WPANCTL_TOOL_CMD_COMMR_H
 
-#define PSK_MIN_LENGTH              6
-#define PSK_MAX_LENGTH              32
-#define INVALID_PSK_CHARACTERS      "IOQZ"
+#include "wpanctl-utils.h"
 
-#define EXT_ADDRESS_LENGTH          8
-#define EXT_ADDRESS_LENGTH_CHAR     (2*EXT_ADDRESS_LENGTH)
-#define DEFAULT_JOINER_TIMEOUT      120
+int tool_cmd_commr(int argc, char* argv[]);
+
 #endif

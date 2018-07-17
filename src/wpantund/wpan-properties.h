@@ -116,7 +116,6 @@
 #define kWPANTUNDProperty_ThreadStableNetworkData               "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion        "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID               "Thread:PreferredRouterID"
-#define kWPANTUNDProperty_ThreadCommissionerEnabled             "Thread:Commissioner:Enabled"
 #define kWPANTUNDProperty_ThreadDeviceMode                      "Thread:DeviceMode"
 #define kWPANTUNDProperty_ThreadOffMeshRoutes                   "Thread:OffMeshRoutes"
 #define kWPANTUNDProperty_ThreadOnMeshPrefixes                  "Thread:OnMeshPrefixes"
@@ -210,6 +209,18 @@
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 #define kWPANTUNDProperty_UdpProxyStream                        "UdpProxy:Stream"
+
+#define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
+#define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
+#define kWPANTUNDProperty_CommissionerSessionId                 "Commissioner:SessionId"
+#define kWPANTUNDProperty_CommissionerEnergyScanResult          "Commissioner:EnergyScanResult"
+#define kWPANTUNDProperty_CommissionerPanIdConflictResult       "Commissioner:PanIdConflictResult"
+#define kWPANTUNDProperty_CommissionerSendMgmtGet               "Commissioner:Send:MgmtGet"
+#define kWPANTUNDProperty_CommissionerSendMgmtSet               "Commissioner:Send:MgmtSet"
+
+#define kWPANTUNDCommissionerState_Disabled                     "disabled"
+#define kWPANTUNDCommissionerState_Petition                     "petition"
+#define kWPANTUNDCommissionerState_Active                       "active"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin          "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort          "com.nestlabs.internal:Network:PassthruPort"
@@ -308,6 +319,12 @@
 #define kWPANTUNDValueMapKey_AddressCacheTable_Address          "Address"
 #define kWPANTUNDValueMapKey_AddressCacheTable_RLOC16           "RLOC16"
 #define kWPANTUNDValueMapKey_AddressCacheTable_Age              "Age"
+
+#define kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask  "ChannelMask"
+#define kWPANTUNDValueMapKey_CommrEnergyScanResult_Data         "Data"
+
+#define kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask     "ChannelMask"
+#define kWPANTUNDValueMapKey_CommrPanIdConflict_PanId           "PanId"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"

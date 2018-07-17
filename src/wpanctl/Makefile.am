@@ -39,6 +39,7 @@ wpanctl_SOURCES = \
 	../util/string-utils.c \
 	../wpantund/wpan-error.c \
 	wpanctl-utils.c \
+	commissioner-utils.c \
 	tool-cmd-scan.c \
 	tool-cmd-join.c \
 	tool-cmd-form.c \
@@ -65,6 +66,7 @@ wpanctl_SOURCES = \
 	tool-cmd-remove-route.c \
 	tool-updateprop.c \
 	wpanctl-utils.h \
+	commissioner-utils.h \
 	tool-cmd-scan.h \
 	tool-cmd-join.h \
 	tool-cmd-form.h \
@@ -95,6 +97,8 @@ wpanctl_SOURCES = \
 	tool-cmd-peek.c \
 	tool-cmd-poke.h \
 	tool-cmd-poke.c \
+	tool-cmd-commr.h \
+	tool-cmd-commr.c \
 	tool-cmd-commissioner.h \
 	tool-cmd-commissioner.c \
 	tool-cmd-dataset.h \

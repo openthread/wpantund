@@ -362,6 +362,8 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mXPANIDWasExplicitlySet = false;
 	mChannelManagerNewChannel = 0;
 	mSupportedChannelMask = 0;
+	mCommissionerEnergyScanResult.clear();
+	mCommissionerPanIdConflictResult.clear();
 
 	mSettings.clear();
 
@@ -460,7 +462,6 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
 		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
 		properties.insert(kWPANTUNDProperty_ThreadParent);
-		properties.insert(kWPANTUNDProperty_ThreadCommissionerEnabled);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
 		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
 		properties.insert(kWPANTUNDProperty_ThreadRouterUpgradeThreshold);
@@ -471,6 +472,12 @@ SpinelNCPInstance::get_supported_property_keys()const
 
 		if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
 			properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
+		}
+
+		if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			properties.insert(kWPANTUNDProperty_CommissionerState);
+			properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
+			properties.insert(kWPANTUNDProperty_CommissionerSessionId);
 		}
 	}
 
@@ -586,6 +593,62 @@ convert_rloc16_to_router_id(CallbackWithStatusArg1 cb, int status, const boost::
 		router_id = rloc16 >> 10;
 	}
 	cb(status, router_id);
+}
+
+static int
+convert_string_to_commissioner_state(const char *str, uint8_t &spinel_state)
+{
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (strcaseequal(str, kWPANTUNDCommissionerState_Disabled) || strcaseequal(str, "stop") || strcaseequal(str, "off")
+		|| strcaseequal(str, "0") || strcaseequal(str, "false")) {
+		spinel_state = SPINEL_MESHCOP_COMMISSIONER_STATE_DISABLED;
+
+	} else if (strcaseequal(str, kWPANTUNDCommissionerState_Active) || strcaseequal(str, "start") ||
+		strcaseequal(str, "on") || strcaseequal(str, "1") || strcaseequal(str, "true")) {
+		spinel_state = SPINEL_MESHCOP_COMMISSIONER_STATE_ACTIVE;
+
+	} else {
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+
+	return ret;
+}
+
+static int
+unpack_commissioner_state(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t state;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&state
+	);
+
+	if (len > 0) {
+		switch (state) {
+		case SPINEL_MESHCOP_COMMISSIONER_STATE_DISABLED:
+			value = std::string(kWPANTUNDCommissionerState_Disabled);
+			break;
+		case SPINEL_MESHCOP_COMMISSIONER_STATE_PETITION:
+			value = std::string(kWPANTUNDCommissionerState_Petition);
+			break;
+		case SPINEL_MESHCOP_COMMISSIONER_STATE_ACTIVE:
+			value = std::string(kWPANTUNDCommissionerState_Active);
+			break;
+		default:
+			ret = kWPANTUNDStatus_Failure;
+			break;
+		}
+	} else {
+		ret = kWPANTUNDStatus_Failure;
+	}
+
+	return ret;
 }
 
 static int
@@ -1595,9 +1658,6 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadStableNetworkDataVersion)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION, SPINEL_DATATYPE_UINT8_S);
 
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_COMMISSIONER_ENABLED, SPINEL_DATATYPE_BOOL_S);
-
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterRoleEnabled)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
@@ -1646,6 +1706,48 @@ SpinelNCPInstance::property_get_value(
 			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, true))
 			.finish()
 		);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerState)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Commissioner feature is not supported by NCP")));
+		} else {
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_MESHCOP_COMMISSIONER_STATE)
+				)
+				.set_reply_unpacker(unpack_commissioner_state)
+				.finish()
+			);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerProvisioningUrl)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Commissioner feature is not supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MESHCOP_COMMISSIONER_PROVISIONING_URL, SPINEL_DATATYPE_UTF8_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerSessionId)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Commissioner feature is not supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MESHCOP_COMMISSIONER_SESSION_ID, SPINEL_DATATYPE_UINT16_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerEnergyScanResult)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Commissioner feature is not supported by NCP")));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(mCommissionerEnergyScanResult));
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerPanIdConflictResult)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Commissioner feature is not supported by NCP")));
+		} else {
+			cb(kWPANTUNDStatus_Ok, boost::any(mCommissionerPanIdConflictResult));
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_IPv6MeshLocalPrefix) && !buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_IPV6_ML_PREFIX, SPINEL_DATATYPE_IPv6ADDR_S);
@@ -2826,18 +2928,6 @@ SpinelNCPInstance::property_set_value(
 				.finish()
 			);
 
-		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadCommissionerEnabled)) {
-			bool isEnabled = any_to_bool(value);
-
-			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-				.set_callback(cb)
-				.add_command(SpinelPackData(
-					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
-					SPINEL_PROP_THREAD_COMMISSIONER_ENABLED,
-					isEnabled
-				))
-				.finish()
-			);
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadRouterRoleEnabled)) {
 			bool isEnabled = any_to_bool(value);
@@ -2890,6 +2980,81 @@ SpinelNCPInstance::property_set_value(
 				))
 				.finish()
 			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerState)) {
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				uint8_t spinel_state;
+				int status = convert_string_to_commissioner_state(any_to_string(value).c_str(), spinel_state);
+
+				if (status == kWPANTUNDStatus_Ok) {
+					start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+						.set_callback(cb)
+						.add_command(SpinelPackData(
+							SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+							SPINEL_PROP_MESHCOP_COMMISSIONER_STATE,
+							spinel_state
+						))
+						.finish()
+					);
+				} else {
+					cb(status);
+				}
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerProvisioningUrl)) {
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				std::string url = any_to_string(value);
+
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S),
+						SPINEL_PROP_MESHCOP_COMMISSIONER_PROVISIONING_URL,
+						url.c_str()
+					))
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerSendMgmtGet)) {
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				Data tlvs = any_to_data(value);
+
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S),
+						SPINEL_PROP_MESHCOP_COMMISSIONER_MGMT_GET,
+						tlvs.data(),
+						tlvs.size()
+					))
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerSendMgmtSet)) {
+			if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				Data tlvs = any_to_data(value);
+
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(SpinelPackData(
+						SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_WLEN_S),
+						SPINEL_PROP_MESHCOP_COMMISSIONER_MGMT_SET,
+						tlvs.data(),
+						tlvs.size()
+					))
+					.finish()
+				);
+			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_OpenThreadLogLevel)) {
 			uint8_t logLevel = static_cast<uint8_t>(any_to_int(value));
@@ -4060,6 +4225,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
 		}
 
+	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_STATE) {
+		boost::any value;
+		int status;
+		status = unpack_commissioner_state(value_data_ptr, value_data_len, value);
+		if (status == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: Thread Commissioner state is \"%s\"", any_to_string(value).c_str());
+		}
+
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
 		handle_ncp_spinel_value_is_ON_MESH_NETS(value_data_ptr, value_data_len);
 
@@ -4393,6 +4566,63 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 			syslog(LOG_INFO, "[-NCP-]: ChildTable entry added: %s", child_entry.get_as_string().c_str());
 		}
 
+	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT) {
+		spinel_ssize_t len;
+		uint32_t channel_mask;
+		const uint8_t *energy_data = NULL;
+		uint16_t energy_data_len = 0;
+		ValueMap entry;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT32_S
+				SPINEL_DATATYPE_DATA_WLEN_S
+			),
+			&channel_mask,
+			&energy_data,
+			&energy_data_len
+		);
+
+		__ASSERT_MACROS_check(len > 0);
+
+		entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask] = channel_mask;
+		entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_Data] = Data(energy_data, energy_data_len);
+
+		if (mCommissionerEnergyScanResult.size() == kMaxCommissionerEnergyScanResultEntries) {
+			mCommissionerEnergyScanResult.pop_front();
+		}
+
+		mCommissionerEnergyScanResult.push_back(entry);
+
+	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_PAN_ID_CONFLICT_RESULT) {
+		spinel_ssize_t len;
+		uint16_t panid;
+		uint32_t channel_mask;
+		ValueMap entry;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT16_S
+				SPINEL_DATATYPE_UINT32_S
+			),
+			&panid,
+			&channel_mask
+		);
+
+		__ASSERT_MACROS_check(len > 0);
+
+		entry[kWPANTUNDValueMapKey_CommrPanIdConflict_PanId] = panid;
+		entry[kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask] = channel_mask;
+
+		if (mCommissionerPanIdConflictResult.size() == kMaxCommissionerPanIdConflictResultEntries) {
+			mCommissionerPanIdConflictResult.pop_front();
+		}
+
+		mCommissionerPanIdConflictResult.push_back(entry);
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
