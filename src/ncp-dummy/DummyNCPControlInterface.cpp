@@ -174,10 +174,52 @@ DummyNCPControlInterface::remove_external_route(
 }
 
 void
-DummyNCPControlInterface::joiner_add(
+DummyNCPControlInterface::commissioner_add_joiner(
+	const uint8_t *eui64,
+	uint32_t timeout,
 	const char *psk,
-	uint32_t joiner_timeout,
-	const uint8_t *addr,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::commissioner_remove_joiner(
+	const uint8_t *eui64,
+	uint32_t timeout,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::commissioner_send_announce_begin(
+	uint32_t channel_mask,
+	uint8_t count,
+	uint16_t period,         // in milliseconds
+	const struct in6_addr& dest,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::commissioner_send_energy_scan_query(
+	uint32_t channel_mask,
+	uint8_t count,
+	uint16_t period,         // in milliseconds
+	uint16_t scan_duration,  // in milliseconds
+	const struct in6_addr& dest,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::commissioner_send_pan_id_query(
+	uint16_t pan_id,
+	uint32_t channel_mask,
+	const struct in6_addr& dest,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);

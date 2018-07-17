@@ -44,7 +44,6 @@
 
 #include "DBUSHelpers.h"
 #include "any-to.h"
-#include "commissioner-utils.h"
 
 using namespace DBUSHelpers;
 using namespace nl;
@@ -80,8 +79,6 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_ADD, interface_route_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
 
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
-
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
 
@@ -104,8 +101,15 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TO_FD, interface_pcap_to_fd_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_REMOVE, interface_joiner_remove_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ANNOUNCE_BEGIN, interface_announce_begin_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_QUERY, interface_energy_scan_query_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PAN_ID_QUERY, interface_pan_id_query_handler);
+
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
+
 }
 
 static void
@@ -1469,14 +1473,14 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	const char* psk = NULL;
-	int psk_len = 0;
-	uint32_t joiner_timeout = 0;
+	uint32_t timeout = 0;
 	bool did_succeed = false;
+	const int ext_addr_size = 8;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_STRING, &psk,
-		DBUS_TYPE_UINT32, &joiner_timeout,
+		DBUS_TYPE_UINT32, &timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
 		DBUS_TYPE_INVALID
 	);
@@ -1486,26 +1490,208 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 		did_succeed = dbus_message_get_args(
 			message, NULL,
 			DBUS_TYPE_STRING, &psk,
-			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_UINT32, &timeout,
 			DBUS_TYPE_INVALID
 		);
+
+		ext_addr = NULL;
 	}
 
 	require(did_succeed, bail);
 	require(psk != NULL, bail);
+	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
 
 	dbus_message_ref(message);
-	interface->joiner_add(
-		psk,
-		joiner_timeout,
+
+	interface->commissioner_add_joiner(
 		ext_addr,
+		timeout,
+		psk,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
 bail:
+	return ret;
+}
 
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_remove_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t* ext_addr = NULL;
+	int ext_addr_len = 0;
+	uint32_t joiner_timeout = 0;
+	bool did_succeed = false;
+	const int ext_addr_size = 8;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &joiner_timeout,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	if (!did_succeed) {
+		// No extended address specified
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_INVALID
+		);
+
+		ext_addr = NULL;
+	}
+
+	require(did_succeed, bail);
+	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
+
+	dbus_message_ref(message);
+
+	interface->commissioner_remove_joiner(
+		ext_addr,
+		joiner_timeout,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_announce_begin_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	uint32_t channel_mask;
+	uint8_t count;
+	uint16_t period;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_BYTE, &count,
+		DBUS_TYPE_UINT16, &period,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->commissioner_send_announce_begin(
+		channel_mask,
+		count,
+		period,
+		dest,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_energy_scan_query_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	uint32_t channel_mask;
+	uint8_t count;
+	uint16_t period;
+	uint16_t scan_duration;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_BYTE, &count,
+		DBUS_TYPE_UINT16, &period,
+		DBUS_TYPE_UINT16, &scan_duration,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->commissioner_send_energy_scan_query(
+		channel_mask,
+		count,
+		period,
+		scan_duration,
+		dest,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_pan_id_query_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	uint16_t pan_id;
+	uint32_t channel_mask;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT16, &pan_id,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->commissioner_send_pan_id_query(
+		pan_id,
+		channel_mask,
+		dest,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 	return ret;
 }
 

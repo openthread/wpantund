@@ -15,19 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- *    Description:
- *      This file implements "commissioner" command in wpanctl.
- *
- *      The wpanctl "commissioner" command is implemented in `tool-cmd-commr.h`. This file contains the old
- *      implementation which is retained under command name "o-commissioner".
- *
  */
 
-#ifndef WPANCTL_TOOL_CMD_COMMISSIONER_H
-#define WPANCTL_TOOL_CMD_COMMISSIONER_H
+#ifndef COMMISSIONER_UTILS_H
+#define COMMISSIONER_UTILS_H
 
-#include "wpanctl-utils.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdbool.h>
 
-int tool_cmd_commissioner(int argc, char* argv[]);
+#define COMMR_EUI64_SIZE                  8
+#define COMMR_IPv6_ADDRESS_SIZE           16
+#define COMMR_TLVS_MAX_LEN                255
+#define COMMR_PSK_MIN_LENGTH              6
+#define COMMR_PSK_MAX_LENGTH              32
+#define COMMR_INVALID_PSK_CHARACTERS      "IOQZ"
 
-#endif // WPANCTL_TOOL_CMD_COMMISSIONER_H
+extern int check_psk_format(const char *psk);
+
+#endif

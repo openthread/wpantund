@@ -214,6 +214,26 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_joiner_remove_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_announce_begin_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_energy_scan_query_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_pan_id_query_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_peek_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message

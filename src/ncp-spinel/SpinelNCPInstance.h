@@ -234,6 +234,11 @@ private:
 	typedef std::map<std::string, SettingsEntry> SettingsMap;
 
 private:
+	enum {
+		kMaxCommissionerEnergyScanResultEntries = 64,
+		kMaxCommissionerPanIdConflictResultEntries = 64,
+	};
+
 	SpinelNCPControlInterface mControlInterface;
 
 	uint8_t mLastTID;
@@ -287,6 +292,9 @@ private:
 	uint32_t mSupportedChannelMask;
 	bool mXPANIDWasExplicitlySet;
 	uint8_t mChannelManagerNewChannel;
+
+	std::list<ValueMap> mCommissionerEnergyScanResult;
+	std::list<ValueMap> mCommissionerPanIdConflictResult;
 
 	bool mResetIsExpected;
 

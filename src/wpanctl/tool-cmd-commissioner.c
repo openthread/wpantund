@@ -18,6 +18,9 @@
  *    Description:
  *      This file implements "commissioner" command in wpanctl.
  *
+ *      The wpanctl "commissioner" command is implemented in `tool-cmd-commr.c`. This file contains the old
+ *      implementation which is retained under command name "o-commissioner".
+ *
  */
 
 #if HAVE_CONFIG_H
@@ -34,6 +37,10 @@
 #include "wpan-dbus-v1.h"
 #include "string-utils.h"
 #include "commissioner-utils.h"
+
+#define EXT_ADDRESS_LENGTH          8
+#define EXT_ADDRESS_LENGTH_CHAR     (2*EXT_ADDRESS_LENGTH)
+#define DEFAULT_JOINER_TIMEOUT      120
 
 const char commissioner_cmd_syntax[] = "[args] <psk> [address] [joiner_timeout [s]]";
 
@@ -63,8 +70,8 @@ int tool_cmd_commissioner(int argc, char* argv[])
 	int psk_len = 0;
 	uint32_t joiner_timeout = DEFAULT_JOINER_TIMEOUT;
 	dbus_bool_t enabled = false;
-	const char* invalid_psk_characters = INVALID_PSK_CHARACTERS;
-	const char* property_commissioner_enabled = kWPANTUNDProperty_ThreadCommissionerEnabled;
+	const char* invalid_psk_characters = COMMR_INVALID_PSK_CHARACTERS;
+	const char* property_commissioner_enabled = kWPANTUNDProperty_CommissionerState;
 	const char* property_commissioner_enabled_value = "false";
 	char path[DBUS_MAXIMUM_NAME_LENGTH+1];
 	char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH+1];
@@ -271,7 +278,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
 			if (optind < argc) {
 				if (!psk) {
 					psk = argv[optind];
-					psk_len = strnlen(psk, PSK_MAX_LENGTH+1);
+					psk_len = strnlen(psk, COMMR_PSK_MAX_LENGTH+1);
 					optind++;
 				}
 			}
@@ -317,7 +324,7 @@ int tool_cmd_commissioner(int argc, char* argv[])
 				goto bail;
 			}
 
-			if (psk_len < PSK_MIN_LENGTH || psk_len > PSK_MAX_LENGTH) {
+			if (psk_len < COMMR_PSK_MIN_LENGTH || psk_len > COMMR_PSK_MAX_LENGTH) {
 				fprintf(stderr, "%s: error: Invalid PSK length.\n", argv[0]);
 				ret = ERRORCODE_BADARG;
 				goto bail;

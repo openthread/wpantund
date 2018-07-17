@@ -47,6 +47,7 @@
 #include "tool-cmd-peek.h"
 #include "tool-cmd-poke.h"
 #include "tool-cmd-pcap.h"
+#include "tool-cmd-commr.h"
 #include "tool-cmd-commissioner.h"
 #include "tool-cmd-dataset.h"
 
@@ -121,8 +122,11 @@
 	{ \
 		"commissioner", \
 		"Commissioner commands", \
-		&tool_cmd_commissioner \
+		&tool_cmd_commr \
 	}, \
+	{ "commr", "", &tool_cmd_commr , 1 }, \
+	{ "o-commissioner", "", &tool_cmd_commissioner , 1 }, /* old commissioner command */ \
+	{ "o-commr", "", &tool_cmd_commissioner , 1 }, \
 	{ \
 		"list", \
 		"List available interfaces.", \
