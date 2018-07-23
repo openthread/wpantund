@@ -240,27 +240,65 @@ NCPInstanceBase::OnMeshPrefixEntry::encode_flag_set(
 	return flags;
 }
 
+bool
+NCPInstanceBase::OnMeshPrefixEntry::operator==(const OnMeshPrefixEntry &entry) const
+{
+	bool retval = true;
+
+	// Check the originator first.
+	if (get_origin() != entry.get_origin()) {
+		retval = false;
+		goto bail;
+	}
+
+	// If the entry is from NCP then ensure other fields also match.
+	if (is_from_ncp()) {
+		if ((mFlags != entry.mFlags) || (mStable != entry.mStable) || (mRloc != entry.mRloc)) {
+			retval = false;
+			goto bail;
+		}
+	}
+
+bail:
+	return retval;
+}
+
 std::string
-NCPInstanceBase::OnMeshPrefixEntry::get_description(const struct in6_addr &address, bool align) const
+NCPInstanceBase::OnMeshPrefixEntry::get_description(const IPv6Prefix &prefix, bool align) const
 {
 	char c_string[300];
 
 	if (align) {
-		snprintf(c_string, sizeof(c_string), "%-22s prefix_len:%-4d origin:%-8s stable:%s %s",
-			in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
-			is_stable() ? "yes" : "no ", on_mesh_prefix_flags_to_string(get_flags(), true).c_str());
+		snprintf(
+			c_string,
+			sizeof(c_string),
+			"%-22s prefix_len:%-4d origin:%-8s stable:%s %s rloc:0x%04x",
+			in6_addr_to_string(prefix.get_prefix()).c_str(),
+			prefix.get_length(),
+			get_origin_as_string().c_str(),
+			is_stable() ? "yes" : "no ",
+			on_mesh_prefix_flags_to_string(get_flags(), true).c_str(),
+			get_rloc()
+		);
 
 	} else {
-		snprintf(c_string, sizeof(c_string), "\"%s/%d\", origin:%s, stable:%s, flags:%s",
-			in6_addr_to_string(address).c_str(), get_prefix_len(), get_origin_as_string().c_str(),
-			is_stable() ? "yes" : "no", on_mesh_prefix_flags_to_string(get_flags()).c_str());
+		snprintf(
+			c_string,
+			sizeof(c_string),
+			"\"%s\", origin:%s, stable:%s, flags:%s, rloc:0x%04x",
+			prefix.to_string().c_str(),
+			get_origin_as_string().c_str(),
+			is_stable() ? "yes" : "no",
+			on_mesh_prefix_flags_to_string(get_flags()).c_str(),
+			get_rloc()
+		);
 	}
 
 	return std::string(c_string);
 }
 
 bool
-NCPInstanceBase::OffMeshRouteEntry::operator==(const OffMeshRouteEntry &entry)
+NCPInstanceBase::OffMeshRouteEntry::operator==(const OffMeshRouteEntry &entry) const
 {
 	bool retval = true;
 
@@ -426,7 +464,7 @@ NCPInstanceBase::remove_ncp_originated_address_prefix_route_entries(void)
 
 	// On-Mesh Prefixes
 	do {
-		std::map<struct in6_addr, OnMeshPrefixEntry>::iterator iter;
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
 
 		did_remove = false;
 
@@ -492,19 +530,20 @@ NCPInstanceBase::restore_address_prefix_route_entries_on_ncp(void)
 
 	// On-mesh prefixes
 	for (
-		std::map<struct in6_addr, OnMeshPrefixEntry>::iterator iter = mOnMeshPrefixes.begin();
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter = mOnMeshPrefixes.begin();
 		iter != mOnMeshPrefixes.end();
 		++iter
 	) {
 		if (iter->second.is_from_interface() || iter->second.is_from_user()) {
-			add_on_mesh_prefix_on_ncp(iter->first, iter->second.get_prefix_len(), iter->second.get_flags(), iter->second.is_stable(),
+			add_on_mesh_prefix_on_ncp(iter->first.get_prefix(), iter->first.get_length(),
+				iter->second.get_flags(), iter->second.is_stable(),
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "restoring on-mesh prefix", NilReturn()));
 		}
 	}
 
 	// Off-mesh-routes
 	for (
-		std::map<IPv6Prefix, OffMeshRouteEntry>::iterator iter = mOffMeshRoutes.begin();
+		std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter = mOffMeshRoutes.begin();
 		iter != mOffMeshRoutes.end();
 		++iter
 	) {
@@ -633,8 +672,18 @@ NCPInstanceBase::remove_address_on_ncp_and_update_prefixes(const in6_addr &addre
 	   && (!buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix)) || (0 != memcmp(mNCPV6Prefix, &address, sizeof(mNCPV6Prefix))))
 	) {
 		struct in6_addr prefix = address;
+		uint8_t flags = OnMeshPrefixEntry::kFlagOnMesh | OnMeshPrefixEntry::kFlagPreferred;
+
+		if (mSetDefaultRouteForAutoAddedPrefix) {
+			flags |= OnMeshPrefixEntry::kFlagDefaultRoute;
+		}
+
+		if (mSetSLAACForAutoAddedPrefix) {
+			flags |= OnMeshPrefixEntry::kFlagSLAAC;
+		}
+
 		in6_addr_apply_mask(prefix, entry.get_prefix_len());
-		on_mesh_prefix_was_removed(entry.get_origin(), address, entry.get_prefix_len());
+		on_mesh_prefix_was_removed(entry.get_origin(), address, entry.get_prefix_len(), flags);
 	}
 }
 
@@ -738,36 +787,60 @@ NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struc
 	return false;
 }
 
+// Searches for a given prefix entry in the `mOnMeshPrefixes` multimap.
+std::multimap<NCPInstanceBase::IPv6Prefix, NCPInstanceBase::OnMeshPrefixEntry>::iterator
+NCPInstanceBase::find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixEntry &entry)
+{
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+
+	iter = mOnMeshPrefixes.lower_bound(prefix);
+
+	if (iter != mOnMeshPrefixes.end()) {
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator upper_iter = mOnMeshPrefixes.upper_bound(prefix);
+
+		for (; iter != upper_iter; iter++) {
+			if (iter->second == entry) {
+				break;
+			}
+		}
+
+		if (iter == upper_iter) {
+			iter = mOnMeshPrefixes.end();
+		}
+	}
+
+	return iter;
+}
+
 void
 NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
-	uint8_t flags, bool stable, CallbackWithStatus cb)
+	uint8_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
 {
-	struct in6_addr prefix(prefix_address);
-	OnMeshPrefixEntry entry;
+	IPv6Prefix prefix(prefix_address, prefix_len);
+	OnMeshPrefixEntry entry(origin, flags, stable, rloc16);
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
 
-	in6_addr_apply_mask(prefix, prefix_len);
+	iter = find_prefix_entry(prefix, entry);
 
-	if (!mOnMeshPrefixes.count(prefix)) {
-		entry = OnMeshPrefixEntry(origin, flags, prefix_len, stable);
-
-		mOnMeshPrefixes[prefix] = entry;
+	if (iter == mOnMeshPrefixes.end()) {
+		mOnMeshPrefixes.insert(std::make_pair(prefix, entry));
 		syslog(LOG_INFO, "OnMeshPrefixes: Adding %s", entry.get_description(prefix).c_str());
 
-		if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
-			add_on_mesh_prefix_on_ncp(prefix, prefix_len, flags, stable,
+		if (origin != kOriginThreadNCP) {
+			add_on_mesh_prefix_on_ncp(prefix.get_prefix(), prefix.get_length(), flags, stable,
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding on-mesh prefix", cb));
 		} else {
 			cb(kWPANTUNDStatus_Ok);
 		}
 	} else {
-		entry = mOnMeshPrefixes[prefix];
 		cb(kWPANTUNDStatus_Ok);
 	}
 
 	if (entry.is_on_mesh() && entry.is_slaac()
-		&& !lookup_address_for_prefix(NULL, prefix, prefix_len)
+		&& !lookup_address_for_prefix(NULL, prefix.get_prefix(), prefix.get_length()) &&
+		prefix.get_length() == 64
 	) {
-		struct in6_addr address = make_slaac_addr_from_eui64(prefix.s6_addr, mMACAddress);
+		struct in6_addr address = make_slaac_addr_from_eui64(prefix.get_prefix().s6_addr, mMACAddress);
 		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to NCP", in6_addr_to_string(address).c_str(), prefix_len);
 		add_unicast_address_on_ncp(address, prefix_len,
 			boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding SLAAC address", NilReturn()));
@@ -777,41 +850,33 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 
 void
 NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
-	CallbackWithStatus cb)
+	uint8_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
 {
-	struct in6_addr prefix(prefix_address);
-	in6_addr_apply_mask(prefix, prefix_len);
+	IPv6Prefix prefix(prefix_address, prefix_len);
+	OnMeshPrefixEntry entry(origin, flags, stable, rloc16);
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+	struct in6_addr address;
 
-	if (mOnMeshPrefixes.count(prefix)) {
-		OnMeshPrefixEntry entry = mOnMeshPrefixes[prefix];
-		uint8_t prefix_len = entry.get_prefix_len();
+	iter = find_prefix_entry(prefix, entry);
 
-		// Allow remove if request is coming from the originator of the prefix, or if
-		// the prefix was added from an added IPv6 address on interface and now
-		// user is removing it.
+	if (iter != mOnMeshPrefixes.end()) {
+		syslog(LOG_INFO, "OnMeshPrefixes: Removing %s", entry.get_description(prefix).c_str());
+		mOnMeshPrefixes.erase(iter);
 
-		if ((entry.get_origin() == origin) || (entry.is_from_interface() && (origin == kOriginUser))) {
-			struct in6_addr address;
+		if (origin != kOriginThreadNCP) {
+			remove_on_mesh_prefix_on_ncp(prefix.get_prefix(), prefix.get_length(),
+				entry.get_flags(), entry.is_stable(),
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing on-mesh prefix", cb));
+		} else {
+			cb(kWPANTUNDStatus_Ok);
+		}
 
-			syslog(LOG_INFO, "OnMeshPrefixes: Removing %s", entry.get_description(prefix).c_str());
-			mOnMeshPrefixes.erase(prefix);
-
-			if ((origin == kOriginPrimaryInterface) || (origin == kOriginUser)) {
-				remove_on_mesh_prefix_on_ncp(prefix, entry.get_prefix_len(), entry.get_flags(), entry.is_stable(),
-					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing on-mesh prefix", cb));
-			} else {
-				cb(kWPANTUNDStatus_Ok);
-			}
-
-			if (lookup_address_for_prefix(&address, prefix, prefix_len)
-				&& entry.is_slaac() && entry.is_on_mesh()
-			) {
+		if (lookup_address_for_prefix(&address, prefix.get_prefix(), prefix.get_length())
+				&& entry.is_slaac() && entry.is_on_mesh() && prefix.get_length() == 64
+		) {
 				syslog(LOG_NOTICE, "Removing SLAAC address %s/%d from NCP", in6_addr_to_string(address).c_str(), prefix_len);
 				remove_unicast_address_on_ncp(address, prefix_len,
 					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing SLAAC address", NilReturn()));
-			}
-		} else {
-			cb(kWPANTUNDStatus_InvalidForCurrentState);
 		}
 	} else {
 		cb(kWPANTUNDStatus_Ok);

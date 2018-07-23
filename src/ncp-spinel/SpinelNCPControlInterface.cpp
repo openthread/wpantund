@@ -205,6 +205,7 @@ SpinelNCPControlInterface::add_on_mesh_prefix(
 		prefix_len,
 		SpinelNCPInstance::OnMeshPrefixEntry::encode_flag_set(flags, priority),
 		stable,
+		0,
 		cb
 	);
 
@@ -219,7 +220,7 @@ SpinelNCPControlInterface::remove_on_mesh_prefix(
 	CallbackWithStatus cb
 ) {
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
-	mNCPInstance->on_mesh_prefix_was_removed(SpinelNCPInstance::kOriginUser, prefix, prefix_len, cb);
+	mNCPInstance->on_mesh_prefix_was_removed(SpinelNCPInstance::kOriginUser, prefix, prefix_len, 0, true, 0, cb);
 
 bail:
 	return;

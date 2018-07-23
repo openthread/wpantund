@@ -3431,7 +3431,105 @@ SpinelNCPInstance::reset_tasks(wpantund_status_t status)
 }
 
 void
-SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTE(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry> on_mesh_prefixes(mOnMeshPrefixes);
+	int num_prefix = 0;
+
+	while (value_data_len > 0) {
+		spinel_ssize_t len = 0;
+		struct in6_addr *prefix_addr = NULL;
+		uint8_t prefix_len = 0;
+		bool stable = false;
+		uint8_t flags = 0;
+		bool is_local = false;
+		uint16_t rloc16 = 0;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_IPv6ADDR_S // Prefix
+				SPINEL_DATATYPE_UINT8_S    // Prefix length (in bits)
+				SPINEL_DATATYPE_BOOL_S     // stable
+				SPINEL_DATATYPE_UINT8_S    // flags
+				SPINEL_DATATYPE_BOOL_S     // is_local
+				SPINEL_DATATYPE_UINT16_S   // RLOC16
+			),
+			&prefix_addr,
+			&prefix_len,
+			&stable,
+			&flags,
+			&is_local,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		syslog(
+			LOG_INFO,
+			"[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s, rloc16:0x%04x",
+			num_prefix,
+			in6_addr_to_string(*prefix_addr).c_str(),
+			prefix_len,
+			stable ? "yes" : "no",
+			is_local ? "yes" : "no",
+			on_mesh_prefix_flags_to_string(flags).c_str(),
+			rloc16
+		);
+
+		num_prefix++;
+
+		if (!is_local) {
+
+			// Go through the `on_mesh_prefixes` list (which is the copy of mOnMeshPrefixes)
+			// and check if this entry is already on the list, if so remove it.
+
+			IPv6Prefix prefix(*prefix_addr, prefix_len);
+			OnMeshPrefixEntry entry(kOriginThreadNCP, flags, stable, rloc16);
+
+			iter = on_mesh_prefixes.lower_bound(prefix);
+
+			if (iter != on_mesh_prefixes.end()) {
+				std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator upper_iter = on_mesh_prefixes.upper_bound(prefix);
+
+				for (; iter != upper_iter; ++iter) {
+					if (iter->second == entry) {
+						on_mesh_prefixes.erase(iter);
+						break;
+					}
+				}
+			}
+
+			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix_addr, prefix_len, flags, stable, rloc16);
+		}
+
+		value_data_ptr += len;
+		value_data_len -= len;
+	}
+
+	// Since this was the whole list, we need to remove any prefixes
+	// which originated from NCP that that weren't in the new list.
+
+	for (iter = on_mesh_prefixes.begin(); iter != on_mesh_prefixes.end(); ++iter) {
+		if (iter->second.is_from_ncp()) {
+			on_mesh_prefix_was_removed(
+				kOriginThreadNCP,
+				iter->first.get_prefix(),
+				iter->first.get_length(),
+				iter->second.get_flags(),
+				iter->second.is_stable(),
+				iter->second.get_rloc()
+			);
+		}
+	}
+}
+
+void
+SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter;
 	std::multimap<IPv6Prefix, OffMeshRouteEntry> off_mesh_routes(mOffMeshRoutes);
@@ -3520,7 +3618,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTE(const uint8_t* valu
 		}
 	}
 }
-
 
 void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
@@ -3964,50 +4061,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
-		std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter;
-		std::map<struct in6_addr, OnMeshPrefixEntry> on_mesh_prefixes(mOnMeshPrefixes);
-		int num_prefix = 0;
-
-		while (value_data_len > 0) {
-			spinel_ssize_t len = 0;
-			struct in6_addr *prefix = NULL;
-			uint8_t prefix_len = 0;
-			bool stable = false;
-			uint8_t flags = 0;
-			bool is_local = false;
-
-			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "t(6CbCb)",
-						&prefix, &prefix_len, &stable, &flags, &is_local);
-
-			if (len < 1) {
-				break;
-			}
-
-			syslog(LOG_INFO, "[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s",
-				num_prefix,	in6_addr_to_string(*prefix).c_str(), prefix_len, stable ? "yes" : "no",
-				is_local ? "yes" : "no", on_mesh_prefix_flags_to_string(flags).c_str());
-
-			num_prefix++;
-
-			if (!is_local) {
-				on_mesh_prefixes.erase(*prefix);
-				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
-			}
-
-			value_data_ptr += len;
-			value_data_len -= len;
-		}
-
-		// Since this was the whole list, we need to remove any prefixes
-		// which originated from NCP that that weren't in the new list.
-		for (iter = on_mesh_prefixes.begin(); iter != on_mesh_prefixes.end(); ++iter) {
-			if (iter->second.is_from_ncp()) {
-				on_mesh_prefix_was_removed(kOriginThreadNCP, iter->first, iter->second.get_prefix_len());
-			}
-		}
+		handle_ncp_spinel_value_is_ON_MESH_NETS(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
-		handle_ncp_spinel_value_is_OFF_MESH_ROUTE(value_data_ptr, value_data_len);
+		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
@@ -4324,25 +4381,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 
 		if ((addr != NULL) && !IN6_IS_ADDR_UNSPECIFIED(addr)) {
 			multicast_address_was_joined(kOriginThreadNCP, *addr);
-		}
-
-	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
-		struct in6_addr *prefix = NULL;
-		uint8_t prefix_len = 0;
-		bool stable = false;
-		uint8_t flags = 0;
-		bool is_local = false;
-
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "6CbCb",
-			&prefix, &prefix_len, &stable, &flags, &is_local);
-
-		if (prefix != NULL) {
-			syslog(LOG_INFO, "[-NCP-]: On-mesh net added \"%s/%d\" stable:%s local:%s flags:%s", in6_addr_to_string(*prefix).c_str(),
-				prefix_len,	stable ? "yes" : "no", is_local ? "yes" : "no",	on_mesh_prefix_flags_to_string(flags).c_str());
-
-			if (!is_local) {
-				on_mesh_prefix_was_added(kOriginThreadNCP, *prefix, prefix_len, flags, stable);
-			}
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {

@@ -471,7 +471,7 @@ NCPInstanceBase::property_get_value(
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadOnMeshPrefixes)) {
 		std::list<std::string> result;
-		std::map<struct in6_addr, OnMeshPrefixEntry>::const_iterator iter;
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::const_iterator iter;
 		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++ ) {
 			result.push_back(iter->second.get_description(iter->first, true));
 		}
