@@ -158,10 +158,10 @@ public:
 	int join_multicast_group(const std::string &group_name);
 
 	void on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
-			uint8_t flags = 0, bool stable = true, CallbackWithStatus cb = NilReturn());
+			uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
 	void on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
-			CallbackWithStatus cb = NilReturn());
+			uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
 	void route_was_added(Origin origin, const struct in6_addr &route, uint8_t prefix_len = 64,
 			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
@@ -374,10 +374,9 @@ protected:
 			kPreferenceLow           = (3 << kPreferenceOffset),
 		};
 
-		OnMeshPrefixEntry(Origin origin = kOriginThreadNCP, uint8_t flags = 0, uint8_t prefix_len = 64, bool stable = true)
-			: EntryBase(origin), mFlags(flags), mPrefixLen(prefix_len), mStable(stable) { }
+		OnMeshPrefixEntry(Origin origin = kOriginThreadNCP, uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0)
+			: EntryBase(origin), mFlags(flags), mStable(stable), mRloc(rloc16) { }
 
-		uint8_t get_prefix_len(void) const { return mPrefixLen; }
 		uint8_t is_stable(void) const { return mStable; }
 
 		uint8_t get_flags(void) const { return mFlags; }
@@ -386,7 +385,11 @@ protected:
 		bool is_on_mesh(void) const { return (mFlags & kFlagOnMesh) == kFlagOnMesh; }
 		bool is_slaac(void) const { return (mFlags & kFlagSLAAC) == kFlagSLAAC; }
 
-		std::string get_description(const struct in6_addr &preifx, bool align = false) const;
+		uint16_t get_rloc(void) const { return mRloc; }
+
+		bool operator==(const OnMeshPrefixEntry &entry) const;
+
+		std::string get_description(const IPv6Prefix &prefix, bool align = false) const;
 
 		static uint8_t encode_flag_set(
 			NCPControlInterface::OnMeshPrefixFlags prefix_flags,
@@ -395,8 +398,8 @@ protected:
 
 	private:
 		uint8_t mFlags;
-		uint8_t mPrefixLen;
 		bool mStable;
+		uint16_t mRloc;
 	};
 
 	class OffMeshRouteEntry : public EntryBase {
@@ -411,7 +414,7 @@ protected:
 		uint16_t get_rloc(void) const { return mRloc; }
 		bool is_next_hop_host(void) const { return mNextHopIsHost; }
 
-		bool operator==(const OffMeshRouteEntry &entry);
+		bool operator==(const OffMeshRouteEntry &entry) const;
 
 		std::string get_description(const IPv6Prefix &route, bool align = false) const;
 
@@ -446,6 +449,7 @@ protected:
 private:
 	void add_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	void remove_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixEntry &entry);
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator find_route_entry(const IPv6Prefix &route, const OffMeshRouteEntry &entry);
 	void refresh_routes_on_interface(void);
 	bool should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric);
@@ -456,7 +460,8 @@ protected:
 
 	std::map<struct in6_addr, UnicastAddressEntry> mUnicastAddresses;
 	std::map<struct in6_addr, MulticastAddressEntry> mMulticastAddresses;
-	std::map<struct in6_addr, OnMeshPrefixEntry> mOnMeshPrefixes;
+
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry> mOnMeshPrefixes;
 
 	std::multimap<IPv6Prefix, OffMeshRouteEntry> mOffMeshRoutes;
 	std::map<IPv6Prefix, InterfaceRouteEntry> mInterfaceRoutes;
