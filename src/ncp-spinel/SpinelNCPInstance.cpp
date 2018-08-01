@@ -1944,7 +1944,7 @@ SpinelNCPInstance::property_get_value(
 		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_Thread_Child_Timeout, SPINEL_DATATYPE_INT32_S);
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_CHILD_TIMEOUT, SPINEL_DATATYPE_INT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -2650,6 +2650,17 @@ SpinelNCPInstance::property_set_value(
 				.set_callback(cb)
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID, routerId)
+				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
+			uint32_t child_timeout = any_to_int(value);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(
+					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_THREAD_CHILD_TIMEOUT, child_timeout)
 				)
 				.finish()
 			);
@@ -4230,19 +4241,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_INFO, "[-NCP-] Child: %02d %s", num_children, it->get_as_string().c_str());
 		}
 		syslog(LOG_INFO, "[-NCP-] Child: Total %d child%s", num_children, (num_children > 1) ? "ren" : "");
-
-	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
-		uint32_t child_timeout = static_cast<uint32_t>(any_to_int(value));
-
-		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
-			.set_callback(cb)
-			.add_command(SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
-				SPINEL_PROP_THREAD_CHILD_TIMEOUT,
-				child_timeout
-			))
-			.finish()
-		);
 
 	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE) {
 		SpinelNCPTaskGetNetworkTopology::Table neigh_table;
