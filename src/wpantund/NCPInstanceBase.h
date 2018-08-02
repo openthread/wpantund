@@ -276,6 +276,131 @@ public:
 	wpantund_status_t set_ncp_version_string(const std::string& version_string);
 
 protected:
+
+	// `PropGetHanlder` is used for "get" operation. `PropUpdateHandler` is used
+	// for property set, insert, and remove operations. A handler function is
+	// expected to perform  the "get", "set", "insert", "remove" operation and
+	// invoke the provided callback with the outcome. The name of the property
+	// (the one that is given in `register_prop_<action>_handler`) is passed as
+	// the last argument to the handler function (as a `const std::string&`).
+	// NOTE: Some handlers may have no need for the property name argument. The
+	// extra argument can be ignored when registering a handler created by
+	// `boost:bind`.
+
+	typedef boost::function<void(CallbackWithStatusArg1, const std::string&)> PropGetHandler;
+	typedef boost::function<void(const boost::any&, CallbackWithStatus, const std::string &)> PropUpdateHandler;
+
+	void register_prop_get_handler(const char *key, PropGetHandler handler);
+	void register_prop_set_handler(const char *key, PropUpdateHandler handler);
+	void register_prop_insert_handler(const char *key, PropUpdateHandler handler);
+	void register_prop_remove_handler(const char *key, PropUpdateHandler handler);
+
+	static std::string to_upper(const std::string &str);
+
+private:
+	void regsiter_all_get_handlers(void);
+
+	void get_prop_empty(CallbackWithStatusArg1 cb);
+	void get_prop_ConfigTUNInterfaceName(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonEnabled(CallbackWithStatusArg1 cb);
+	void get_prop_InterfaceUp(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonReadyForHostSleep(CallbackWithStatusArg1 cb);
+	void get_prop_NCPVersion(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkName(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkIsCommissioned(CallbackWithStatusArg1 cb);
+	void get_prop_NestLabs_LegacyEnabled(CallbackWithStatusArg1 cb);
+	void get_prop_NestLabs_NetworkAllowingJoin(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkPANID(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkXPANID(CallbackWithStatusArg1 cb);
+	void get_prop_NCPChannel(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonVersion(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonAutoAssociateAfterReset(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonAutoDeepSleep(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonAutoFirmwareUpdate(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonTerminateOnFault(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonIPv6AutoUpdateIntfaceAddrOnNCP(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonIPv6FilterUserAddedLinkLocal(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonSetDefRouteForAutoAddedPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_NestLabs_NetworkPassthruPort(CallbackWithStatusArg1 cb);
+	void get_prop_NCPMACAddress(CallbackWithStatusArg1 cb);
+	void get_prop_NCPHardwareAddress(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6SetSLAACForAutoAddedPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonOffMeshRouteAutoAddOnInterface(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonOffMeshRouteFilterSelfAutoAdded(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6MeshLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_NestLabs_LegacyMeshLocalPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_NestLabs_LegacyMeshLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_NCPState(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkNodeType(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadOnMeshPrefixes(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadOffMeshRoutes(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6AllAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6MulticastAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6InterfaceRoutes(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonSyslogMask(CallbackWithStatusArg1 cb);
+
+	void regsiter_all_set_handlers(void);
+
+	void set_prop_DaemonEnabled(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_InterfaceUp(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonAutoAssociateAfterReset(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_NestLabs_NetworkPassthruPort(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonAutoFirmwareUpdate(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonTerminateOnFault(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonIPv6AutoUpdateIntfaceAddrOnNCP(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonIPv6FilterUserAddedLinkLocal(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonSetDefRouteForAutoAddedPrefix(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_IPv6SetSLAACForAutoAddedPrefix(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonOffMeshRouteAutoAddOnInterface(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonOffMeshRouteFilterSelfAutoAdded(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_IPv6MeshLocalPrefix(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_IPv6MeshLocalAddress(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonAutoDeepSleep(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonSyslogMask(const boost::any &value, CallbackWithStatus cb);
+
+	void regsiter_all_insert_handlers(void);
+
+	void insert_prop_IPv6MulticastAddresses(const boost::any &value, CallbackWithStatus cb);
+
+	void regsiter_all_remove_handlers(void);
+
+	void remove_prop_IPv6MulticastAddresses(const boost::any &value, CallbackWithStatus cb);
+
+private:
+
+	struct PropGetHandlerEntry
+	{
+	public:
+		PropGetHandlerEntry(void) {}
+		PropGetHandlerEntry(const std::string &name, const PropGetHandler &handler)
+			: mName(name), mHandler(handler) {}
+		void operator()(CallbackWithStatusArg1 cb) { mHandler(cb, mName); }
+	private:
+		std::string mName;
+		PropGetHandler mHandler;
+	};
+
+	struct PropUpdateHandlerEntry
+	{
+	public:
+		PropUpdateHandlerEntry(void) {}
+		PropUpdateHandlerEntry(const std::string &name, const PropUpdateHandler &handler)
+			: mName(name), 	mHandler(handler) {}
+		void operator()(const boost::any &value, CallbackWithStatus cb) { mHandler(value, cb, mName); }
+
+	private:
+		std::string mName;
+		PropUpdateHandler mHandler;
+	};
+
+	std::map<std::string, PropGetHandlerEntry> mPropertyGetHandlers;
+	std::map<std::string, PropUpdateHandlerEntry> mPropertySetHandlers;
+	std::map<std::string, PropUpdateHandlerEntry> mPropertyInsertHandlers;
+	std::map<std::string, PropUpdateHandlerEntry> mPropertyRemoveHandlers;
+
+protected:
 	// ========================================================================
 	// MARK: Protected Data
 

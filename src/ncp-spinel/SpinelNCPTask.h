@@ -66,6 +66,7 @@ protected:
 };
 
 nl::Data SpinelPackData(const char* pack_format, ...);
+int SpinelAppendAny(nl::Data &frame, const boost::any &value, char pack_type);
 
 }; // namespace wpantund
 }; // namespace nl

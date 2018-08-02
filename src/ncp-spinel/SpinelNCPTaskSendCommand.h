@@ -21,13 +21,14 @@
 #define __wpantund__SpinelNCPTaskSendCommand__
 
 #include "SpinelNCPTask.h"
-#include "SpinelNCPInstance.h"
 
 using namespace nl;
 using namespace nl::wpantund;
 
 namespace nl {
 namespace wpantund {
+
+class SpinelNCPInstance;
 
 class SpinelNCPTaskSendCommand : public SpinelNCPTask
 {

@@ -178,6 +178,24 @@ spinel_iter_to_any(spinel_datatype_iter_t *iter)
 		}
 		break;
 
+	case SPINEL_DATATYPE_UINT64_C:
+		{
+			uint64_t val(0);
+			status = spinel_datatype_iter_unpack(iter, &val);
+			require_noerr(status, bail);
+			ret = val;
+		}
+		break;
+
+	case SPINEL_DATATYPE_INT64_C:
+		{
+			int64_t val(0);
+			status = spinel_datatype_iter_unpack(iter, &val);
+			require_noerr(status, bail);
+			ret = val;
+		}
+		break;
+
 	case SPINEL_DATATYPE_UINT_PACKED_C:
 		{
 			unsigned int val(0);
