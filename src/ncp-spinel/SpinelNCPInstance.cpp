@@ -1944,7 +1944,7 @@ SpinelNCPInstance::property_get_value(
 		));
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
-		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_CHILD_TIMEOUT, SPINEL_DATATYPE_INT32_S);
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_CHILD_TIMEOUT, SPINEL_DATATYPE_UINT32_S);
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
@@ -2656,6 +2656,9 @@ SpinelNCPInstance::property_set_value(
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
 			uint32_t child_timeout = any_to_int(value);
+			Data command = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S), SPINEL_PROP_THREAD_CHILD_TIMEOUT, child_timeout);
+
+			mSettings[kWPANTUNDProperty_ThreadChildTimeout] = SettingsEntry(command);
 
 			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
 				.set_callback(cb)
