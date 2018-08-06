@@ -107,17 +107,11 @@ parse_string_into_data(uint8_t* buffer, size_t len, const char* c_str)
 }
 
 int
-encode_data_into_string(
-    const uint8_t*  buffer,
-    size_t len,
-    char*                   c_str,
-    size_t c_str_max_len,
-    int pad_to
-    ) {
+encode_data_into_string(const uint8_t *buffer, size_t len, char *c_str, size_t c_str_max_len, int pad_to)
+{
 	int ret = 0;
 
-	c_str_max_len--;
-	while (len && (c_str_max_len > 4)) {
+	while (len && (c_str_max_len > 2)) {
 		uint8_t byte = *buffer++;
 		len--;
 		pad_to--;
@@ -127,7 +121,7 @@ encode_data_into_string(
 		ret += 2;
 	}
 
-	while (pad_to > 0 && (c_str_max_len > 4)) {
+	while (pad_to > 0 && (c_str_max_len > 2)) {
 		pad_to--;
 		*c_str++ = '0';
 		*c_str++ = '0';
