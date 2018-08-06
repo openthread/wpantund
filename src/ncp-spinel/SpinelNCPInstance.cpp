@@ -460,6 +460,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadChildTable);
 		properties.insert(kWPANTUNDProperty_ThreadChildTableAddresses);
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
+		properties.insert(kWPANTUNDProperty_ThreadChildTimeout);
 		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
 		properties.insert(kWPANTUNDProperty_ThreadParent);
 		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
@@ -2044,6 +2045,9 @@ SpinelNCPInstance::property_get_value(
 			)
 		));
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
+		SIMPLE_SPINEL_GET(SPINEL_PROP_THREAD_CHILD_TIMEOUT, SPINEL_DATATYPE_UINT32_S);
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadNeighborTable)) {
 		start_new_task(boost::shared_ptr<SpinelNCPTask>(
 			new SpinelNCPTaskGetNetworkTopology(
@@ -2749,6 +2753,22 @@ SpinelNCPInstance::property_set_value(
 				.add_command(
 					SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S), SPINEL_PROP_THREAD_PREFERRED_ROUTER_ID, routerId)
 				)
+				.finish()
+			);
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadChildTimeout)) {
+			uint32_t child_timeout = any_to_int(value);
+			Data command = SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
+					SPINEL_PROP_THREAD_CHILD_TIMEOUT,
+					child_timeout
+			);
+
+			mSettings[kWPANTUNDProperty_ThreadChildTimeout] = SettingsEntry(command);
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(command)
 				.finish()
 			);
 
