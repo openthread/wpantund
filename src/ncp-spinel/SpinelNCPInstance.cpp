@@ -1890,6 +1890,20 @@ SpinelNCPInstance::property_get_value(
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_NCPCCAFailureRate)) {
 		SIMPLE_SPINEL_GET(SPINEL_PROP_MAC_CCA_FAILURE_RATE, SPINEL_DATATYPE_UINT16_S);
 
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChildSupervisionInterval)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHILD_SUPERVISION)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Child Supervision Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHILD_SUPERVISION_INTERVAL, SPINEL_DATATYPE_UINT16_S);
+		}
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChildSupervisionCheckTimeout)) {
+		if (!mCapabilities.count(SPINEL_CAP_CHILD_SUPERVISION)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Child Supervision Feature Not Supported")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_CHILD_SUPERVISION_CHECK_TIMEOUT, SPINEL_DATATYPE_UINT16_S);
+		}
+
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelMonitorSampleInterval)) {
 		if (!mCapabilities.count(SPINEL_CAP_CHANNEL_MONITOR)) {
 			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Channel Monitoring Feature Not Supported")));
@@ -3165,6 +3179,50 @@ SpinelNCPInstance::property_set_value(
 						);
 			} else {
 				cb(kWPANTUNDStatus_InvalidArgument);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChildSupervisionInterval)) {
+			uint16_t interval = any_to_int(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+				SPINEL_PROP_CHILD_SUPERVISION_INTERVAL,
+				interval
+			);
+
+			mSettings[kWPANTUNDProperty_ChildSupervisionInterval] = SettingsEntry(command, SPINEL_CAP_CHILD_SUPERVISION);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHILD_SUPERVISION)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
+			}
+
+		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChildSupervisionCheckTimeout)) {
+			uint16_t timeout = any_to_int(value);
+			Data command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+				SPINEL_PROP_CHILD_SUPERVISION_CHECK_TIMEOUT,
+				timeout
+			);
+
+			mSettings[kWPANTUNDProperty_ChildSupervisionCheckTimeout] =
+				SettingsEntry(
+					command,
+					SPINEL_CAP_CHILD_SUPERVISION
+				);
+
+			if (!mCapabilities.count(SPINEL_CAP_CHILD_SUPERVISION)) {
+				cb(kWPANTUNDStatus_FeatureNotSupported);
+			} else {
+				start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+					.set_callback(cb)
+					.add_command(command)
+					.finish()
+				);
 			}
 
 		} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ChannelManagerNewChannel)) {

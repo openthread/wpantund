@@ -192,6 +192,9 @@
 #define kWPANTUNDProperty_JamDetectionBusyPeriod                "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap        "JamDetection:Debug:HistoryBitmap"
 
+#define kWPANTUNDProperty_ChildSupervisionInterval              "ChildSupervision:Interval"
+#define kWPANTUNDProperty_ChildSupervisionCheckTimeout          "ChildSupervision:CheckTimeout"
+
 #define kWPANTUNDProperty_ChannelMonitorSampleInterval          "ChannelMonitor:SampleInterval"
 #define kWPANTUNDProperty_ChannelMonitorRssiThreshold           "ChannelMonitor:RssiThreshold"
 #define kWPANTUNDProperty_ChannelMonitorSampleWindow            "ChannelMonitor:SampleWindow"
