@@ -80,6 +80,9 @@
 #define WPANTUND_IF_CMD_PROP_REMOVE           "PropRemove"
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
 
+#define WPANTUND_IF_CMD_JOINER_ATTACH         "JoinerAttach"
+#define WPANTUND_IF_CMD_JOINER_COMMISSIONING  "JoinerCommissioning"
+
 #define WPANTUND_IF_CMD_JOINER_ADD            "JoinerAdd"
 #define WPANTUND_IF_CMD_JOINER_REMOVE         "JoinerRemove"
 #define WPANTUND_IF_CMD_ANNOUNCE_BEGIN        "AnnounceBegin"

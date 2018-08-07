@@ -226,6 +226,8 @@
 #define kWPANTUNDCommissionerState_Petition                     "petition"
 #define kWPANTUNDCommissionerState_Active                       "active"
 
+#define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
+
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin          "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort          "com.nestlabs.internal:Network:PassthruPort"
 #define kWPANTUNDProperty_NestLabs_NCPTransmitHookActive        "com.nestlabs.internal:NCP:TransmitHookActive"

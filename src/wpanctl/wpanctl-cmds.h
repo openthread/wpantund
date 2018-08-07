@@ -49,6 +49,7 @@
 #include "tool-cmd-pcap.h"
 #include "tool-cmd-commr.h"
 #include "tool-cmd-commissioner.h"
+#include "tool-cmd-joiner.h"
 #include "tool-cmd-dataset.h"
 
 #include "wpanctl-utils.h"
@@ -118,6 +119,11 @@
 		"remove-route", \
 		"Remove external route prefix", \
 		&tool_cmd_remove_route \
+	}, \
+	{ \
+		"joiner", \
+		"Joiner commands", \
+		&tool_cmd_joiner \
 	}, \
 	{ \
 		"commissioner", \

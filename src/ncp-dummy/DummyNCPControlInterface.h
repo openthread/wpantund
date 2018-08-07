@@ -161,6 +161,17 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void joiner_attach(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void joiner_commissioning(
+		bool action,
+		const char *psk,
+		const char *provisioning_url,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void commissioner_add_joiner(
 		const uint8_t *eui64,
 		uint32_t timeout,

@@ -193,6 +193,17 @@ public:
 	// ========================================================================
 	// Thread Mesh Commissioning Protocol (MeshCoP) Member Functions
 
+	virtual void joiner_attach(
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void joiner_commissioning(
+		bool action,
+		const char *psk,
+		const char *provisioning_url,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 	virtual void commissioner_add_joiner(
 		const uint8_t *eui64,
 		uint32_t timeout,

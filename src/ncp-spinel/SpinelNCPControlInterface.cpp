@@ -47,6 +47,7 @@
 #include "SpinelNCPTask.h"
 #include "SpinelNCPTaskWake.h"
 #include "SpinelNCPTaskJoin.h"
+#include "SpinelNCPTaskJoinerCommissioning.h"
 #include "SpinelNCPTaskForm.h"
 #include "SpinelNCPTaskLeave.h"
 #include "SpinelNCPTaskScan.h"
@@ -278,6 +279,38 @@ SpinelNCPControlInterface::remove_external_route(
 
 bail:
 	return;
+}
+
+void
+SpinelNCPControlInterface::joiner_attach(CallbackWithStatus cb)
+{
+	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_NET_STACK_UP,
+					true
+					))
+			.finish()
+			);
+}
+
+void
+SpinelNCPControlInterface::joiner_commissioning(
+		bool action,
+		const char *psk,
+		const char *provisioning_url,
+		CallbackWithStatus cb
+) {
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskJoinerCommissioning(
+				mNCPInstance,
+				boost::bind(cb,_1),
+				action,
+				psk,
+				provisioning_url
+				)
+			));
 }
 
 /*

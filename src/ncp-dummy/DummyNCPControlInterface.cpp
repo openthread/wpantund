@@ -174,6 +174,23 @@ DummyNCPControlInterface::remove_external_route(
 }
 
 void
+DummyNCPControlInterface::joiner_attach(
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::joiner_commissioning(
+	bool action,
+	const char *psk,
+	const char *provisioning_url,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::commissioner_add_joiner(
 	const uint8_t *eui64,
 	uint32_t timeout,

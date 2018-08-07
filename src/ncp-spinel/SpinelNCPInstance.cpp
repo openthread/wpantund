@@ -480,6 +480,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 			properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
 			properties.insert(kWPANTUNDProperty_CommissionerSessionId);
 		}
+
+		if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+			properties.insert(kWPANTUNDProperty_ThreadJoinerState);
+		}
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
@@ -1707,6 +1711,13 @@ SpinelNCPInstance::property_get_value(
 			.set_reply_unpacker(boost::bind(unpack_dataset, _1, _2, _3, true))
 			.finish()
 		);
+
+	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_ThreadJoinerState)) {
+		if (!mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+			cb(kWPANTUNDStatus_FeatureNotSupported, boost::any(std::string("Thread Joiner feature is not supported by NCP")));
+		} else {
+			SIMPLE_SPINEL_GET(SPINEL_PROP_MESHCOP_JOINER_STATE, SPINEL_DATATYPE_UINT8_S);
+		}
 
 	} else if (strcaseequal(key.c_str(), kWPANTUNDProperty_CommissionerState)) {
 		if (!mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
@@ -3896,6 +3907,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			}
 			mResetIsExpected = false;
 			return;
+		} else if ((status >= SPINEL_STATUS_JOIN__BEGIN) && (status <= SPINEL_STATUS_JOIN__END)) {
+			if (status == SPINEL_STATUS_JOIN_SUCCESS)
+			{
+				change_ncp_state(COMMISSIONED);
+			}
+			else
+			{
+				change_ncp_state(CREDENTIALS_NEEDED);
+			}
 		} else if (status == SPINEL_STATUS_INVALID_COMMAND) {
 			syslog(LOG_NOTICE, "[-NCP-]: COMMAND NOT RECOGNIZED");
 		}

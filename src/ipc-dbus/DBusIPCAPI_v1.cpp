@@ -101,6 +101,9 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TO_FD, interface_pcap_to_fd_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ATTACH, interface_joiner_attach_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_COMMISSIONING, interface_joiner_commissioning_handler);
+
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_REMOVE, interface_joiner_remove_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ANNOUNCE_BEGIN, interface_announce_begin_handler);
@@ -1461,6 +1464,63 @@ DBusIPCAPI_v1::interface_route_remove_handler(
 
 bail:
 
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_attach_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	interface->joiner_attach(boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+								  this, _1, message));
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_commissioning_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_bool_t action = FALSE;
+	const char* psk = NULL;
+	const char* provisioning_url = NULL;
+	int psk_len = 0;
+	int provisioning_url_len = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_BOOLEAN, &action,
+		DBUS_TYPE_STRING, &psk,
+		DBUS_TYPE_STRING, &provisioning_url,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+
+	// psk must be specified if joiner starts commissioning
+	require(action == FALSE || psk != NULL, bail);
+
+	dbus_message_ref(message);
+	interface->joiner_commissioning(
+		action,
+		psk,
+		provisioning_url,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 	return ret;
 }
 
