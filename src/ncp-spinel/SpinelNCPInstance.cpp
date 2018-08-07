@@ -4252,6 +4252,24 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
 			mThreadMode = value;
 
+			switch (get_ncp_state())
+			{
+			case ISOLATED:
+				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+					change_ncp_state(ASSOCIATING);
+				}
+				break;
+
+			case ASSOCIATING:
+				if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
+					change_ncp_state(ISOLATED);
+				}
+				break;
+
+			default:
+				break;
+			}
+
 			switch (mNodeType)
 			{
 			case END_DEVICE:
@@ -4286,7 +4304,11 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 		if (is_stack_up) {
 			if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
-				change_ncp_state(ASSOCIATING);
+				if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
+					change_ncp_state(ISOLATED);
+				} else {
+					change_ncp_state(ASSOCIATING);
+				}
 			}
 		} else {
 			if (!ncp_state_is_joining(get_ncp_state())) {
