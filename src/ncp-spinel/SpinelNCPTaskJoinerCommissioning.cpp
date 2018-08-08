@@ -38,7 +38,7 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::SpinelNCPTaskJoinerCommissioning
 	bool action,
 	const char *psk,
 	const char *provisioning_url
-	):	SpinelNCPTask(instance, cb), mAction(action),
+	): SpinelNCPTask(instance, cb), mAction(action),
 	mPsk(psk), mProvisioningUrl(provisioning_url),
 	mLastState(instance->get_ncp_state())
 {
@@ -47,8 +47,7 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::SpinelNCPTaskJoinerCommissioning
 void
 nl::wpantund::SpinelNCPTaskJoinerCommissioning::finish(int status, const boost::any& value)
 {
-	if (mAction && status != kWPANTUNDStatus_Ok)
-	{
+	if (mAction && status != kWPANTUNDStatus_Ok) {
 		mInstance->change_ncp_state(mLastState);
 	}
 
@@ -96,8 +95,9 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
-	if (mAction)
-	{
+	if (mAction) {
+		mLastState = mInstance->get_ncp_state();
+
 		mInstance->change_ncp_state(ASSOCIATING);
 
 		// Turn off promiscuous mode, if it happens to be on

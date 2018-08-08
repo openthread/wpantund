@@ -3908,12 +3908,10 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			mResetIsExpected = false;
 			return;
 		} else if ((status >= SPINEL_STATUS_JOIN__BEGIN) && (status <= SPINEL_STATUS_JOIN__END)) {
-			if (status == SPINEL_STATUS_JOIN_SUCCESS)
-			{
+			if (status == SPINEL_STATUS_JOIN_SUCCESS) {
 				change_ncp_state(COMMISSIONED);
 			}
-			else
-			{
+			else {
 				change_ncp_state(CREDENTIALS_NEEDED);
 			}
 		} else if (status == SPINEL_STATUS_INVALID_COMMAND) {

@@ -65,8 +65,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 
 	dbus_error_init(&error);
 
-	if (argc == 1)
-	{
+	if (argc == 1) {
 		fprintf(stderr, "%s: error: Missing command.\n", argv[0]);
 		print_arg_list_help(joiner_option_list,
 				argv[0], joiner_cmd_syntax);
@@ -87,8 +86,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 		int option_index = 0;
 		c = getopt_long(argc, argv, "hst:eda", long_options,
 						&option_index);
-		if (c == -1)
-		{
+		if (c == -1) {
 			break;
 		}
 
@@ -231,8 +229,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 			else
 			{
 				ret = check_psk_format(psk);
-				if (ret != 0)
-				{
+				if (ret != 0) {
 					fprintf(stderr, "%s: error: Invalid PSKd %d\n", argv[0], ret);
 					goto bail;
 				}
@@ -244,8 +241,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 				optind++;
 			}
 
-			if (!provisioning_url && provisioning_url_len > COMMR_PROVIISIONING_URL_MAX_LENGTH)
-			{
+			if (!provisioning_url && provisioning_url_len > COMMR_PROVIISIONING_URL_MAX_LENGTH) {
 				fprintf(stderr, "%s: error: Invalid privisioning_url length.\n", argv[0]);
 				ret = ERRORCODE_BADARG;
 				goto bail;
@@ -285,8 +281,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 				uint8_t psk_bytes[psk_len + 1];
 				memset(psk_bytes, '\0', psk_len+1);
 
-				if (psk)
-				{
+				if (psk) {
 					memcpy(psk_bytes, psk, psk_len);
 				}
 				char *psk = psk_bytes;
@@ -302,8 +297,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 				uint8_t provisioning_url_bytes[provisioning_url_len];
 				memset(provisioning_url_bytes, '\0', provisioning_url_len+1);
 
-				if (provisioning_url)
-				{
+				if (provisioning_url) {
 					memcpy(provisioning_url_bytes, provisioning_url, provisioning_url_len);
 				}
 
