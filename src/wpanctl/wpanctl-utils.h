@@ -49,6 +49,12 @@
 
 #define DEFAULT_TIMEOUT_IN_SECONDS     60
 
+#define WPANCTL_PREFIX_SIZE            8
+#define WPANCTL_XPANID_SIZE            8
+#define WPANCTL_NETWORK_KEY_SIZE       16
+#define WPANCTL_IPv6_ADDRESS_SIZE      16
+#define WPANCTL_NETWORK_NAME_MAX_LEN   16  // Max number of chars
+
 struct command_info_s {
 	const char* name;
 	const char* desc;
@@ -80,12 +86,24 @@ enum joiner_state{
 void print_error_diagnosis(int error);
 int parse_network_info_from_iter(struct wpan_network_info_s *network_info, DBusMessageIter *iter);
 int parse_energy_scan_result_from_iter(int16_t *channel, int8_t *maxRssi, DBusMessageIter *iter);
+
+// Parses a given (ULA, mesh-local) prefix string `prefix_str` and output the result in `prefix` array (expected 8 bytes)
+// Returns ERRORCODE_OK on success or otherwise the error code.
+int parse_prefix(const char *prefix_str, uint8_t *prefix);
+
+// Parses a node type argument (e.g., for `form` or `join` command) and converts it to `kWPANTUNDNodeType_<type>`
+// string.
+const char *parse_node_type(const char *type_arg);
+
 int lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name);
 void dump_info_from_iter(FILE* file, DBusMessageIter *iter, int indent, bool bare, bool indentFirstLine);
 uint16_t node_type_str2int(const char *node_type);
 const char *node_type_int2str(uint16_t node_type);
 const char *joiner_state_int2str(uint8_t state);
+
 int create_new_wpan_dbus_message(DBusMessage **message, const char *dbus_command);
+void append_dbus_dict_entry_basic(DBusMessageIter *dict_iter, const char *key, char dbus_basic_type, void *value);
+void append_dbus_dict_entry_byte_array(DBusMessageIter *dict_iter, const char *key, const uint8_t *data, int data_len);
 
 extern char gInterfaceName[32];
 extern int gRet;
