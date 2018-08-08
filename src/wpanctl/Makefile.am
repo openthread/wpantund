@@ -101,6 +101,8 @@ wpanctl_SOURCES = \
 	tool-cmd-commr.c \
 	tool-cmd-commissioner.h \
 	tool-cmd-commissioner.c \
+	tool-cmd-joiner.h \
+	tool-cmd-joiner.c \
 	tool-cmd-dataset.h \
 	tool-cmd-dataset.c \
 	tool-updateprop.h \

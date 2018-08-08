@@ -94,6 +94,8 @@ NCP_SOURCES = \
 	SpinelNCPTaskForm.h \
 	SpinelNCPTaskJoin.cpp \
 	SpinelNCPTaskJoin.h \
+	SpinelNCPTaskJoinerCommissioning.cpp \
+	SpinelNCPTaskJoinerCommissioning.h \
 	SpinelNCPTaskLeave.cpp \
 	SpinelNCPTaskLeave.h \
 	SpinelNCPTaskPeek.cpp \

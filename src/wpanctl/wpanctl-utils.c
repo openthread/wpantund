@@ -595,3 +595,40 @@ int create_new_wpan_dbus_message(DBusMessage **message, const char *dbus_command
 bail:
 	return ret;
 }
+
+const char *joiner_state_int2str(uint8_t state)
+{
+    const char *ret = "idle";
+
+    switch (state)
+    {
+    case JOINER_STATE_IDLE:
+        ret = "idle";
+        break;
+
+    case JOINER_STATE_DISCOVER:
+        ret = "discover";
+        break;
+
+    case JOINER_STATE_CONNECT:
+        ret = "connect";
+        break;
+
+    case JOINER_STATE_CONNECTED:
+        ret = "connected";
+        break;
+
+    case JOINER_STATE_ENTRUST:
+        ret = "entrust";
+        break;
+
+    case JOINER_STATE_JOINED:
+        ret = "joined";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
