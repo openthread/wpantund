@@ -85,6 +85,8 @@ LOCAL_LDFLAGS := \
 $(LOCAL_PATH)/src/version.c: $(LOCAL_PATH)/src/version.c.in
 	sed 's/SOURCE_VERSION/"$(LOCAL_PRIVATE_SOURCE_VERSION)"/' < $< > $@
 
+NCP_SPINEL_SRC_FILES := $(wildcard $(LOCAL_PATH)/src/ncp-spinel/*.cpp) $(wildcard $(LOCAL_PATH)/src/ncp-spinel/*.c)
+
 LOCAL_SRC_FILES := \
 	src/ipc-dbus/DBUSIPCServer.cpp \
 	src/ipc-dbus/DBUSIPCServer.h \
@@ -145,43 +147,8 @@ LOCAL_SRC_FILES := \
 	src/util/ValueMap.cpp \
 	src/util/Timer.cpp \
 	src/util/sec-random.c \
-	src/ncp-spinel/SpinelNCPControlInterface.cpp \
-	src/ncp-spinel/SpinelNCPControlInterface.h \
-	src/ncp-spinel/SpinelNCPInstance.cpp \
-	src/ncp-spinel/SpinelNCPInstance.h \
-	src/ncp-spinel/SpinelNCPInstance-DataPump.cpp \
-	src/ncp-spinel/SpinelNCPInstance-Protothreads.cpp \
-	src/ncp-spinel/SpinelNCPTask.cpp \
-	src/ncp-spinel/SpinelNCPTask.h \
-	src/ncp-spinel/SpinelNCPTaskDeepSleep.cpp \
-	src/ncp-spinel/SpinelNCPTaskGetNetworkTopology.h \
-	src/ncp-spinel/SpinelNCPTaskGetNetworkTopology.cpp \
-	src/ncp-spinel/SpinelNCPTaskGetMsgBufferCounters.h \
-	src/ncp-spinel/SpinelNCPTaskGetMsgBufferCounters.cpp \
-	src/ncp-spinel/SpinelNCPTaskHostDidWake.h \
-	src/ncp-spinel/SpinelNCPTaskHostDidWake.cpp \
-	src/ncp-spinel/SpinelNCPTaskDeepSleep.h \
-	src/ncp-spinel/SpinelNCPTaskForm.cpp \
-	src/ncp-spinel/SpinelNCPTaskForm.h \
-	src/ncp-spinel/SpinelNCPTaskJoin.cpp \
-	src/ncp-spinel/SpinelNCPTaskJoin.h \
-	src/ncp-spinel/SpinelNCPTaskLeave.cpp \
-	src/ncp-spinel/SpinelNCPTaskLeave.h \
-	src/ncp-spinel/SpinelNCPTaskPeek.cpp \
-	src/ncp-spinel/SpinelNCPTaskPeek.h \
-	src/ncp-spinel/SpinelNCPTaskScan.cpp \
-	src/ncp-spinel/SpinelNCPTaskScan.h \
-	src/ncp-spinel/SpinelNCPTaskSendCommand.cpp \
-	src/ncp-spinel/SpinelNCPTaskSendCommand.h \
-	src/ncp-spinel/SpinelNCPTaskWake.cpp \
-	src/ncp-spinel/SpinelNCPTaskWake.h \
-	src/ncp-spinel/SpinelNCPThreadDataset.h \
-	src/ncp-spinel/SpinelNCPThreadDataset.cpp \
-	src/ncp-spinel/SpinelNCPVendorCustom.h \
-	src/ncp-spinel/SpinelNCPVendorCustom.cpp \
+	$(NCP_SPINEL_SRC_FILES:$(LOCAL_PATH)/%=%) \
 	third_party/openthread/src/ncp/spinel.c \
-	src/ncp-spinel/spinel-extra.c \
-	src/ncp-spinel/spinel-extra.h \
 	$(NULL)
 
 LOCAL_SHARED_LIBRARIES := libdbus
