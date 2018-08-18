@@ -112,13 +112,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 				goto bail;
 			}
 
-			connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-			if (!connection) {
-				dbus_error_free(&error);
-				dbus_error_init(&error);
-				connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-			}
+			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_PROP_GET);
 			require_action(ret == 0, bail, print_error_diagnosis(ret));
@@ -174,13 +168,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 
 		case 'a':
 			// joiner attaches to commissioned thread network
-			connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-			if (!connection) {
-				dbus_error_free(&error);
-				dbus_error_init(&error);
-				connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-			}
+			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_ATTACH);
 			require_action(ret == 0, bail, print_error_diagnosis(ret));
@@ -259,13 +247,8 @@ int tool_cmd_joiner(int argc, char* argv[])
 				goto bail;
 			}
 
-			connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
+			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
-			if (!connection) {
-				dbus_error_free(&error);
-				dbus_error_init(&error);
-				connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-			}
 			require_string(connection != NULL, bail, error.message);
 
 			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_COMMISSIONING);
