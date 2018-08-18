@@ -89,42 +89,22 @@ NCP_SPINEL_SRC_FILES := $(wildcard $(LOCAL_PATH)/src/ncp-spinel/*.cpp) $(wildcar
 
 LOCAL_SRC_FILES := \
 	src/ipc-dbus/DBUSIPCServer.cpp \
-	src/ipc-dbus/DBUSIPCServer.h \
 	src/ipc-dbus/DBusIPCAPI_v0.cpp \
-	src/ipc-dbus/DBusIPCAPI_v0.h \
 	src/ipc-dbus/DBusIPCAPI_v1.cpp \
-	src/ipc-dbus/DBusIPCAPI_v1.h \
-	src/ipc-dbus/wpan-dbus-v1.h \
-	src/ipc-dbus/wpan-dbus-v0.h \
 	src/util/DBUSHelpers.cpp \
 	src/version.c \
 	src/wpantund/wpantund.cpp \
-	src/wpantund/wpantund.h \
-	src/wpantund/IPCServer.h \
-	src/wpantund/NCPConstants.h \
 	src/wpantund/NCPControlInterface.cpp \
-	src/wpantund/NCPControlInterface.h \
 	src/wpantund/NCPInstance.cpp \
-	src/wpantund/NCPInstance.h \
 	src/wpantund/NCPInstanceBase.cpp \
-	src/wpantund/NCPInstanceBase.h \
-	src/wpantund/NCPMfgInterface_v1.h \
-	src/wpantund/NetworkInstance.h \
-	src/wpantund/NCPConstants.h \
-	src/wpantund/FirmwareUpgrade.h \
 	src/wpantund/FirmwareUpgrade.cpp \
-	src/wpantund/StatCollector.h \
 	src/wpantund/StatCollector.cpp \
 	src/wpantund/RunawayResetBackoffManager.cpp \
-	src/wpantund/RunawayResetBackoffManager.h \
 	src/wpantund/NCPInstanceBase-NetInterface.cpp \
 	src/wpantund/NCPInstanceBase-Addresses.cpp \
 	src/wpantund/NCPInstanceBase-AsyncIO.cpp \
-	src/wpantund/NCPTypes.h \
 	src/wpantund/NCPTypes.cpp \
-	src/wpantund/NetworkRetain.h \
 	src/wpantund/NetworkRetain.cpp \
-	src/wpantund/Pcap.h \
 	src/wpantund/Pcap.cpp \
 	src/wpantund/wpan-error.c \
 	src/util/IPv6PacketMatcher.cpp \
