@@ -145,13 +145,7 @@ int tool_updateprop(const char *dbus_method_name, int argc, char* argv[])
 		goto bail;
 	}
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-	if (!connection) {
-		dbus_error_free(&error);
-		dbus_error_init(&error);
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 	require_string(connection != NULL, bail, error.message);
 

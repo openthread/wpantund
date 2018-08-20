@@ -65,13 +65,7 @@ get_dbus_connection()
 	if (connection == NULL) {
 		syslog(LOG_DEBUG, "Getting DBus connection");
 
-		connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-		if (!connection) {
-			dbus_error_free(&error);
-			dbus_error_init(&error);
-			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-		}
+		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 		require_string(connection != NULL, bail, error.message);
 

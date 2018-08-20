@@ -413,13 +413,7 @@ lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 
 	memset(dbus_bus_name, 0, DBUS_MAXIMUM_NAME_LENGTH+1);
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-	if (!connection) {
-		dbus_error_free(&error);
-		dbus_error_init(&error);
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 	require_string(connection != NULL, bail, error.message);
 

@@ -195,13 +195,7 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 		goto bail;
 	}
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-	if (!connection) {
-		dbus_error_free(&error);
-		dbus_error_init(&error);
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 	require_action_string(connection != NULL, bail, ret = ERRORCODE_ALLOC, error.message);
 
