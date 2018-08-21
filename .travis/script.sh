@@ -18,7 +18,8 @@
 
 PREV_PATH="`pwd`"
 
-die() {
+die()
+{
 	echo " *** ERROR: " $*
 	exit 1
 }
@@ -35,6 +36,12 @@ set -x
 
     cd openthread
     ./tests/toranj/start.sh || die
+    exit 0
+}
+
+[ "$BUILD_TARGET" != android-build ] || {
+    cd ..
+    "${TRAVIS_BUILD_DIR}/.travis/android_check" || die
     exit 0
 }
 

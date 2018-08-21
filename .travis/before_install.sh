@@ -28,6 +28,11 @@ set -x
 	sudo tar xvjf connman-include.tar.bz2 -C / || die
 }
 
+[ $BUILD_TARGET != android-build ] || {
+	sudo apt-get install -y gcc-multilib g++-multilib
+	echo y | sdkmanager "ndk-bundle"
+}
+
 [ $TRAVIS_OS_NAME != osx ] || {
 	brew install d-bus
 	brew install autoconf-archive

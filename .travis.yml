@@ -51,3 +51,9 @@ matrix:
         - env: BUILD_TARGET="toranj-test-framework" VERBOSE=1
           os: linux
           compiler: gcc
+        - env: BUILD_TARGET="android-build" VERBOSE=1
+          language: android
+          android:
+            components:
+              - tools
+              - platform-tools
