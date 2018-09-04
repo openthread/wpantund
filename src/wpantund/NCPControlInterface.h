@@ -375,6 +375,9 @@ protected:
 
 	//! Returns the associated NCP instance.
 	virtual NCPInstance& get_ncp_instance(void) = 0;
+
+private:
+	static std::string to_upper(const std::string &str);
 };
 
 }; // namespace wpantund

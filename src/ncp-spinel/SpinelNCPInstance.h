@@ -23,6 +23,7 @@
 #include "NCPInstanceBase.h"
 #include "SpinelNCPControlInterface.h"
 #include "SpinelNCPThreadDataset.h"
+#include "SpinelNCPTaskSendCommand.h"
 #include "nlpt.h"
 #include "SocketWrapper.h"
 #include "SocketAsyncOp.h"
@@ -188,13 +189,159 @@ private:
 public:
 	static bool setup_property_supported_by_class(const std::string& prop_name);
 
-	virtual std::set<std::string> get_supported_property_keys()const;
+	virtual std::set<std::string> get_supported_property_keys(void) const;
+
+private:
+	typedef SpinelNCPTaskSendCommand::ReplyUnpacker ReplyUnpacker;
+
+	void get_spinel_prop(CallbackWithStatusArg1 cb, spinel_prop_key_t prop_key, const std::string &reply_format);
+	void get_spinel_prop_with_unpacker(CallbackWithStatusArg1 cb, spinel_prop_key_t prop_key, ReplyUnpacker unpacker);
+
+	void check_capability_prop_get(CallbackWithStatusArg1 cb, const std::string &prop_name, unsigned int capability,
+			PropGetHandler handler);
+
+	void register_get_handler(const char *prop_name, PropGetHandler handler);
+	void register_get_handler_capability(const char *prop_name, unsigned int capability, PropGetHandler handler);
+
+	void register_get_handler_spinel_simple(const char *prop_name, spinel_prop_key_t prop_key,
+			const char *reply_format);
+	void register_get_handler_spinel_unpacker(const char *prop_name, spinel_prop_key_t prop_key,
+			ReplyUnpacker unpacker);
+	void register_get_handler_capability_spinel_simple(const char *prop_name, unsigned int capability,
+			spinel_prop_key_t prop_key, const char *reply_format);
+	void register_get_handler_capability_spinel_unpacker(const char *prop_name, unsigned int capability,
+			spinel_prop_key_t prop_key, ReplyUnpacker unpacker);
+
+	void regsiter_all_get_handlers(void);
+
+	void get_prop_ConfigNCPDriverName(CallbackWithStatusArg1 cb);
+	void get_prop_NetworkIsCommissioned(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadRouterID(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadConfigFilterRLOCAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_CommissionerEnergyScanResult(CallbackWithStatusArg1 cb);
+	void get_prop_CommissionerPanIdConflictResult(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6MeshLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadChildTable(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadChildTableAsValMap(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadChildTableAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadNeighborTable(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadNeighborTableAsValMap(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadNeighborTableErrorRates(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadNeighborTableErrorRatesAsValMap(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadRouterTable(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadRouterTableAsValMap(CallbackWithStatusArg1 cb);
+	void get_prop_OpenThreadMsgBufferCounters(CallbackWithStatusArg1 cb);
+	void get_prop_OpenThreadMsgBufferCountersAsString(CallbackWithStatusArg1 cb);
+	void get_prop_OpenThreadSteeringDataSetWhenJoinable(CallbackWithStatusArg1 cb);
+	void get_prop_OpenThreadSteeringDataAddress(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetActiveTimestamp(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetPendingTimestamp(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetMasterKey(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetNetworkName(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetExtendedPanId(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetMeshLocalPrefix(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetDelay(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetPanId(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetChannel(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetPSKc(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetChannelMaskPage0(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetSecPolicyKeyRotation(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetSecPolicyFlags(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetRawTlvs(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetDestIpAddress(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetAllFileds(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetAllFiledsAsValMap(CallbackWithStatusArg1 cb);
+	void get_prop_DatasetCommand(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonTickleOnHostDidWake(CallbackWithStatusArg1 cb);
+
+private:
+	typedef boost::function<int(const boost::any&, boost::any&)> ValueConverter;
+
+	void set_spinel_prop(const boost::any &value, CallbackWithStatus cb, spinel_prop_key_t prop_key, char pack_type,
+			unsigned int capability = 0, bool save_in_settings = false, const std::string &prop_name = std::string());
+
+	static void convert_value_prop_set(const boost::any &value, CallbackWithStatus cb, const std::string &prop_name,
+			ValueConverter converter, PropUpdateHandler handler);
+
+	void register_set_handler(const char *prop_name, PropUpdateHandler handler,
+			ValueConverter converter = ValueConverter());
+	void register_set_handler_spinel(const char *prop_name, spinel_prop_key_t prop_key, char pack_type,
+			ValueConverter converter = ValueConverter());
+	void register_set_handler_spinel_persist(const char *prop_name, spinel_prop_key_t prop_key, char pack_type,
+			ValueConverter converter = ValueConverter());
+	void register_set_handler_capability_spinel(const char *prop_name, unsigned int capability,
+			spinel_prop_key_t prop_key, char pack_type, ValueConverter converter = ValueConverter());
+	void register_set_handler_capability_spinel_persist(const char *prop_name, unsigned int capability,
+			spinel_prop_key_t prop_key, char pack_type, ValueConverter converter = ValueConverter());
+
+	void regsiter_all_set_handlers(void);
+
+	static int convert_value_NCPMCUPowerState(const boost::any &value, boost::any &value_out);
+	static int convert_value_channel_mask(const boost::any &value, boost::any &value_out);
+	static int convert_value_CommissionerState(const boost::any &value, boost::any &value_out);
+
+	void set_prop_NetworkKey(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_InterfaceUp(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_NetworkXPANID(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_IPv6MeshLocalPrefix(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_ThreadConfigFilterRLOCAddresses(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_OpenThreadSteeringDataSetWhenJoinable(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_OpenThreadSteeringDataAddress(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_TmfProxyStream(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_UdpProxyStream(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetActiveTimestamp(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetPendingTimestamp(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetMasterKey(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetNetworkName(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetExtendedPanId(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetMeshLocalPrefix(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetDelay(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetPanId(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetChannel(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetPSKc(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetChannelMaskPage0(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetSecPolicyKeyRotation(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetSecPolicyFlags(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetRawTlvs(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetDestIpAddress(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DatasetCommand(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonTickleOnHostDidWake(const boost::any &value, CallbackWithStatus cb);
+
+private:
+	void check_capability_prop_update(const boost::any &value, CallbackWithStatus cb, const std::string &prop_name,
+			unsigned int capability, PropUpdateHandler handler);
+
+	void register_insert_handler(const char *prop_name, PropUpdateHandler handler);
+	void register_insert_handler_capability(const char *prop_name, unsigned int capability, PropUpdateHandler handler);
+
+	void regsiter_all_insert_handlers(void);
+
+	void insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+
+private:
+	void register_remove_handler(const char *prop_name, PropUpdateHandler handler);
+	void register_remove_handler_capability(const char *prop_name, unsigned int capability, PropUpdateHandler handler);
+
+	void regsiter_all_remove_handlers(void);
+
+	void remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+
+public:
 
 	virtual void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
+
 	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+
 	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+
 	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
 
+
+public:
 	virtual cms_t get_ms_to_next_event(void);
 
 	virtual void reset_tasks(wpantund_status_t status = kWPANTUNDStatus_Canceled);

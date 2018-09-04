@@ -208,6 +208,7 @@ struct SetPropertyHelper {
 #define kWPANTUNDPropertyNetWakeData               "NetWakeData"
 #define kWPANTUNDPropertyNetWakeRemaining          "NetWakeRemaining"
 #define kWPANTUNDPropertyActiveWakeupBlacklist     "ActiveWakeupBlacklist"
+#define kWPANTUNDPropertyActiveWakeupMask          "ActiveWakeupMask"
 #define kWPANTUNDPropertyLegacyInterfaceEnabled    "LegacyInterfaceEnabled"
 #define kWPANTUNDPropertyPrefix                    "Prefix"
 
@@ -245,165 +246,90 @@ NCPControlInterface::property_set_value(const std::string& key, const boost::any
 	return ret;
 }
 
+std::string
+NCPControlInterface::to_upper(const std::string &str)
+{
+	std::string new_str = str;
+
+	for (size_t i = 0; i < str.length(); i++) {
+		new_str[i] = std::toupper(new_str[i]);
+	}
+
+	return new_str;
+}
 
 bool
 NCPControlInterface::translate_deprecated_property(std::string& key, boost::any& value)
 {
+	static std::map<std::string, std::string> prop_map;
+	static bool initialized = false;
+
+	std::map<std::string, std::string>::iterator iter;
 	bool ret = false;
-	if (strcaseequal(key.c_str(), kWPANTUNDPropertyPrefix)) {
-		key = kWPANTUNDProperty_IPv6MeshLocalPrefix;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPSocketName )) {
-		key =  kWPANTUNDProperty_ConfigNCPSocketPath ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPSocketBaud )) {
-		key =  kWPANTUNDProperty_ConfigNCPSocketBaud ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPDriverName )) {
-		key =  kWPANTUNDProperty_ConfigNCPDriverName ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPHardResetPath )) {
-		key =  kWPANTUNDProperty_ConfigNCPHardResetPath ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPPowerPath )) {
-		key =  kWPANTUNDProperty_ConfigNCPPowerPath ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyWPANInterfaceName )) {
-		key =  kWPANTUNDProperty_ConfigTUNInterfaceName ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyPIDFile )) {
-		key =  kWPANTUNDProperty_ConfigDaemonPIDFile ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyFirmwareCheckCommand )) {
-		key =  kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyFirmwareUpgradeCommand )) {
-		key =  kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyTerminateOnFault )) {
-		key =  kWPANTUNDProperty_DaemonTerminateOnFault ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyPrivDropToUser )) {
-		key =  kWPANTUNDProperty_ConfigDaemonPrivDropToUser ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyChroot )) {
-		key =  kWPANTUNDProperty_ConfigDaemonChroot ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPReliabilityLayer )) {
-		key =  kWPANTUNDProperty_ConfigNCPReliabilityLayer ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPVersion )) {
-		key =  kWPANTUNDProperty_NCPVersion ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyDriverVersion )) {
-		key =  kWPANTUNDProperty_DaemonVersion ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAssociationState )) {
-		key =  kWPANTUNDProperty_NCPState ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyEnabled )) {
-		key =  kWPANTUNDProperty_DaemonEnabled ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAutoresume )) {
-		key =  kWPANTUNDProperty_DaemonAutoAssociateAfterReset ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAutoUpdateFirmware )) {
-		key =  kWPANTUNDProperty_DaemonAutoFirmwareUpdate ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyHWAddr )) {
-		key =  kWPANTUNDProperty_NCPHardwareAddress ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyChannel )) {
-		key =  kWPANTUNDProperty_NCPChannel ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyTXPower )) {
-		key =  kWPANTUNDProperty_NCPTXPower ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNCPTXPowerLimit )) {
-		key =  kWPANTUNDProperty_NCPTXPowerLimit ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyCCAThreshold )) {
-		key =  kWPANTUNDProperty_NCPCCAThreshold ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyDefaultChannelMask )) {
-		key =  kWPANTUNDProperty_NCPChannelMask ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNetworkName )) {
-		key =  kWPANTUNDProperty_NetworkName ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyXPANID )) {
-		key =  kWPANTUNDProperty_NetworkXPANID ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyPANID )) {
-		key =  kWPANTUNDProperty_NetworkPANID ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNodeType )) {
-		key =  kWPANTUNDProperty_NetworkNodeType ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNetworkKey )) {
-		key =  kWPANTUNDProperty_NetworkKey ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNetworkKeyIndex )) {
-		key =  kWPANTUNDProperty_NetworkKeyIndex ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyMeshLocalPrefix )) {
-		key =  kWPANTUNDProperty_IPv6MeshLocalPrefix ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAllowingJoin )) {
-		key =  kWPANTUNDProperty_NestLabs_NetworkAllowingJoin ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyIsAssociated )) {
-		key =  kWPANTUNDProperty_NetworkIsCommissioned ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyIsOKToSleep )) {
-		key =  kWPANTUNDProperty_DaemonReadyForHostSleep ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyUseDeepSleepOnLowPower )) {
-		key =  kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAlwaysResetToWake )) {
-		key =  kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyAutoDeepSleep )) {
-		key =  kWPANTUNDProperty_DaemonAutoDeepSleep ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertySleepPollInterval )) {
-		key =  kWPANTUNDProperty_NCPSleepyPollInterval ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertySyslogMask )) {
-		key =  kWPANTUNDProperty_DaemonSyslogMask ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyPassthruPort )) {
-		key =  kWPANTUNDProperty_NestLabs_NetworkPassthruPort ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyTransmitHookActive )) {
-		key =  kWPANTUNDProperty_NestLabs_NCPTransmitHookActive ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyLegacyPrefix )) {
-		key =  kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNetWakeData )) {
-		key =  kWPANTUNDProperty_NestLabs_NetworkWakeData ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyNetWakeRemaining )) {
-		key =  kWPANTUNDProperty_NestLabs_NetworkWakeRemaining ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyActiveWakeupBlacklist ) || strcaseequal(key.c_str(), "ActiveWakeupMask")) {
-		key =  kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyLegacyInterfaceEnabled )) {
-		key =  kWPANTUNDProperty_NestLabs_LegacyEnabled ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyUseLegacyChannel )) {
-		key =  kWPANTUNDProperty_NestLabs_LegacyPreferInterface ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyGlobalIPAddresses )) {
-		key =  kWPANTUNDProperty_IPv6AllAddresses ;
-		ret = true;
-	} else if (strcaseequal(key.c_str(),  kWPANTUNDPropertyGlobalIPAddressList )) {
-		key =  kWPANTUNDProperty_DebugIPv6GlobalIPAddressList ;
+
+	if (!initialized) {
+		prop_map[to_upper(kWPANTUNDPropertyPrefix)]                 = kWPANTUNDProperty_IPv6MeshLocalPrefix;
+		prop_map[to_upper(kWPANTUNDPropertyNCPSocketName)]          = kWPANTUNDProperty_ConfigNCPSocketPath;
+		prop_map[to_upper(kWPANTUNDPropertyNCPSocketBaud)]          = kWPANTUNDProperty_ConfigNCPSocketBaud;
+		prop_map[to_upper(kWPANTUNDPropertyNCPDriverName)]          = kWPANTUNDProperty_ConfigNCPDriverName;
+		prop_map[to_upper(kWPANTUNDPropertyNCPHardResetPath)]       = kWPANTUNDProperty_ConfigNCPHardResetPath;
+		prop_map[to_upper(kWPANTUNDPropertyNCPPowerPath)]           = kWPANTUNDProperty_ConfigNCPPowerPath;
+		prop_map[to_upper(kWPANTUNDPropertyWPANInterfaceName)]      = kWPANTUNDProperty_ConfigTUNInterfaceName;
+		prop_map[to_upper(kWPANTUNDPropertyPIDFile)]                = kWPANTUNDProperty_ConfigDaemonPIDFile;
+		prop_map[to_upper(kWPANTUNDPropertyFirmwareCheckCommand)]   = kWPANTUNDProperty_ConfigNCPFirmwareCheckCommand;
+		prop_map[to_upper(kWPANTUNDPropertyFirmwareUpgradeCommand)] = kWPANTUNDProperty_ConfigNCPFirmwareUpgradeCommand;
+		prop_map[to_upper(kWPANTUNDPropertyTerminateOnFault)]       = kWPANTUNDProperty_DaemonTerminateOnFault;
+		prop_map[to_upper(kWPANTUNDPropertyPrivDropToUser)]         = kWPANTUNDProperty_ConfigDaemonPrivDropToUser;
+		prop_map[to_upper(kWPANTUNDPropertyChroot)]                 = kWPANTUNDProperty_ConfigDaemonChroot;
+		prop_map[to_upper(kWPANTUNDPropertyNCPReliabilityLayer)]    = kWPANTUNDProperty_ConfigNCPReliabilityLayer;
+		prop_map[to_upper(kWPANTUNDPropertyNCPVersion)]             = kWPANTUNDProperty_NCPVersion;
+		prop_map[to_upper(kWPANTUNDPropertyDriverVersion)]          = kWPANTUNDProperty_DaemonVersion;
+		prop_map[to_upper(kWPANTUNDPropertyAssociationState)]       = kWPANTUNDProperty_NCPState;
+		prop_map[to_upper(kWPANTUNDPropertyEnabled)]                = kWPANTUNDProperty_DaemonEnabled;
+		prop_map[to_upper(kWPANTUNDPropertyAutoresume)]             = kWPANTUNDProperty_DaemonAutoAssociateAfterReset;
+		prop_map[to_upper(kWPANTUNDPropertyAutoUpdateFirmware)]     = kWPANTUNDProperty_DaemonAutoFirmwareUpdate;
+		prop_map[to_upper(kWPANTUNDPropertyHWAddr)]                 = kWPANTUNDProperty_NCPHardwareAddress;
+		prop_map[to_upper(kWPANTUNDPropertyChannel)]                = kWPANTUNDProperty_NCPChannel;
+		prop_map[to_upper(kWPANTUNDPropertyTXPower)]                = kWPANTUNDProperty_NCPTXPower;
+		prop_map[to_upper(kWPANTUNDPropertyNCPTXPowerLimit)]        = kWPANTUNDProperty_NCPTXPowerLimit;
+		prop_map[to_upper(kWPANTUNDPropertyCCAThreshold)]           = kWPANTUNDProperty_NCPCCAThreshold;
+		prop_map[to_upper(kWPANTUNDPropertyDefaultChannelMask)]     = kWPANTUNDProperty_NCPChannelMask;
+		prop_map[to_upper(kWPANTUNDPropertyNetworkName)]            = kWPANTUNDProperty_NetworkName;
+		prop_map[to_upper(kWPANTUNDPropertyXPANID)]                 = kWPANTUNDProperty_NetworkXPANID;
+		prop_map[to_upper(kWPANTUNDPropertyPANID)]                  = kWPANTUNDProperty_NetworkPANID;
+		prop_map[to_upper(kWPANTUNDPropertyNodeType)]               = kWPANTUNDProperty_NetworkNodeType;
+		prop_map[to_upper(kWPANTUNDPropertyNetworkKey)]             = kWPANTUNDProperty_NetworkKey;
+		prop_map[to_upper(kWPANTUNDPropertyNetworkKeyIndex)]        = kWPANTUNDProperty_NetworkKeyIndex;
+		prop_map[to_upper(kWPANTUNDPropertyMeshLocalPrefix)]        = kWPANTUNDProperty_IPv6MeshLocalPrefix;
+		prop_map[to_upper(kWPANTUNDPropertyAllowingJoin)]           = kWPANTUNDProperty_NestLabs_NetworkAllowingJoin;
+		prop_map[to_upper(kWPANTUNDPropertyIsAssociated)]           = kWPANTUNDProperty_NetworkIsCommissioned;
+		prop_map[to_upper(kWPANTUNDPropertyIsOKToSleep)]            = kWPANTUNDProperty_DaemonReadyForHostSleep;
+		prop_map[to_upper(kWPANTUNDPropertyUseDeepSleepOnLowPower)] = kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower;
+		prop_map[to_upper(kWPANTUNDPropertyAlwaysResetToWake)]      = kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake;
+		prop_map[to_upper(kWPANTUNDPropertyAutoDeepSleep)]          = kWPANTUNDProperty_DaemonAutoDeepSleep;
+		prop_map[to_upper(kWPANTUNDPropertySleepPollInterval)]      = kWPANTUNDProperty_NCPSleepyPollInterval;
+		prop_map[to_upper(kWPANTUNDPropertySyslogMask)]             = kWPANTUNDProperty_DaemonSyslogMask;
+		prop_map[to_upper(kWPANTUNDPropertyPassthruPort)]           = kWPANTUNDProperty_NestLabs_NetworkPassthruPort;
+		prop_map[to_upper(kWPANTUNDPropertyTransmitHookActive)]     = kWPANTUNDProperty_NestLabs_NCPTransmitHookActive;
+		prop_map[to_upper(kWPANTUNDPropertyLegacyPrefix)]           = kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix;
+		prop_map[to_upper(kWPANTUNDPropertyNetWakeData)]            = kWPANTUNDProperty_NestLabs_NetworkWakeData;
+		prop_map[to_upper(kWPANTUNDPropertyNetWakeRemaining)]       = kWPANTUNDProperty_NestLabs_NetworkWakeRemaining;
+		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupBlacklist)]  = kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist;
+		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupMask)]       = kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist;
+		prop_map[to_upper(kWPANTUNDPropertyLegacyInterfaceEnabled)] = kWPANTUNDProperty_NestLabs_LegacyEnabled;
+		prop_map[to_upper(kWPANTUNDPropertyUseLegacyChannel)]       = kWPANTUNDProperty_NestLabs_LegacyPreferInterface;
+		prop_map[to_upper(kWPANTUNDPropertyGlobalIPAddresses)]      = kWPANTUNDProperty_IPv6AllAddresses;
+		prop_map[to_upper(kWPANTUNDPropertyGlobalIPAddressList)]    = kWPANTUNDProperty_DebugIPv6GlobalIPAddressList;
+		initialized = true;
+	}
+
+	iter = prop_map.find(to_upper(key));
+
+	if (iter != prop_map.end()) {
+		key = iter->second;
 		ret = true;
 	}
+
 	return ret;
 }
 

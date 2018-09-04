@@ -26,6 +26,7 @@
 #include <errno.h>
 #include "SpinelNCPTask.h"
 #include "SpinelNCPInstance.h"
+#include "any-to.h"
 
 using namespace nl;
 using namespace nl::wpantund;
@@ -121,5 +122,82 @@ nl::wpantund::SpinelPackData(const char* pack_format, ...)
 	} while(true);
 
 	va_end(args);
+	return ret;
+}
+
+int
+nl::wpantund::SpinelAppendAny(nl::Data &frame, const boost::any &value, char pack_type)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	const char pack_format[2] = { pack_type, 0 };
+
+	switch (pack_type) {
+	case SPINEL_DATATYPE_BOOL_C:
+		frame.append(SpinelPackData(pack_format, any_to_bool(value)));
+		break;
+
+	case SPINEL_DATATYPE_UINT8_C:
+	case SPINEL_DATATYPE_INT8_C:
+	case SPINEL_DATATYPE_UINT16_C:
+	case SPINEL_DATATYPE_INT16_C:
+	case SPINEL_DATATYPE_UINT32_C:
+	case SPINEL_DATATYPE_INT32_C:
+	case SPINEL_DATATYPE_UINT_PACKED_C:
+		frame.append(SpinelPackData(pack_format, any_to_int(value)));
+		break;
+
+	case SPINEL_DATATYPE_INT64_C:
+	case SPINEL_DATATYPE_UINT64_C:
+		frame.append(SpinelPackData(pack_format, any_to_uint64(value)));
+		break;
+
+	case SPINEL_DATATYPE_IPv6ADDR_C:
+	{
+		struct in6_addr addr = any_to_ipv6(value);
+		frame.append(SpinelPackData(pack_format, &addr));
+		break;
+	}
+
+	case SPINEL_DATATYPE_EUI64_C:
+	{
+		Data eui64 = any_to_data(value);
+		if (eui64.size() == sizeof(spinel_eui64_t)) {
+			frame.append(SpinelPackData(pack_format, eui64.data()));
+		} else {
+			ret = kWPANTUNDStatus_InvalidArgument;
+		}
+		break;
+	}
+
+	case SPINEL_DATATYPE_EUI48_C:
+	{
+		Data eui48 = any_to_data(value);
+		if (eui48.size() == sizeof(spinel_eui48_t)) {
+			frame.append(SpinelPackData(pack_format, eui48.data()));
+		} else {
+			ret = kWPANTUNDStatus_InvalidArgument;
+		}
+		break;
+	}
+
+	case SPINEL_DATATYPE_DATA_WLEN_C:
+	case SPINEL_DATATYPE_DATA_C:
+	{
+		Data data = any_to_data(value);
+		frame.append(SpinelPackData(pack_format, data.data(), data.size()));
+		break;
+	}
+
+	case SPINEL_DATATYPE_UTF8_C:
+		frame.append(SpinelPackData(pack_format, any_to_string(value).c_str()));
+		break;
+
+	case SPINEL_DATATYPE_STRUCT_C:
+	case SPINEL_DATATYPE_ARRAY_C:
+	default:
+		ret = kWPANTUNDStatus_FeatureNotSupported;
+		break;
+	}
+
 	return ret;
 }
