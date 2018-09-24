@@ -40,8 +40,7 @@ set -x
 }
 
 [ "$BUILD_TARGET" != android-build ] || {
-    cd ..
-    "${TRAVIS_BUILD_DIR}/.travis/android_check" || die
+    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build") || die
     exit 0
 }
 

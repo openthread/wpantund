@@ -52,8 +52,4 @@ matrix:
           os: linux
           compiler: gcc
         - env: BUILD_TARGET="android-build" VERBOSE=1
-          language: android
-          android:
-            components:
-              - tools
-              - platform-tools
+          os: linux
