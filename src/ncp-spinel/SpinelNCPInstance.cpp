@@ -43,6 +43,7 @@
 #include "IPv6Helpers.h"
 
 #define kWPANTUND_Whitelist_RssiOverrideDisabled    127
+#define kWPANTUND_SpinelPropValueDumpLen            8
 
 using namespace nl;
 using namespace wpantund;
@@ -4700,49 +4701,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 {
 	switch (command) {
 	case SPINEL_CMD_PROP_VALUE_IS:
-		{
-			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
-			uint8_t* value_data_ptr = NULL;
-			spinel_size_t value_data_len = 0;
-			spinel_ssize_t ret;
-
-			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiiD", NULL, NULL, &key, &value_data_ptr, &value_data_len);
-
-			__ASSERT_MACROS_check(ret != -1);
-
-			if (ret == -1) {
-				return;
-			}
-
-			if ((key != SPINEL_PROP_STREAM_DEBUG) && (key != SPINEL_PROP_STREAM_LOG)) {
-				syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_IS(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
-			}
-
-			return handle_ncp_spinel_value_is(key, value_data_ptr, value_data_len);
-		}
-		break;
-
 	case SPINEL_CMD_PROP_VALUE_INSERTED:
-		{
-			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
-			uint8_t* value_data_ptr = NULL;
-			spinel_size_t value_data_len = 0;
-			spinel_ssize_t ret;
-
-			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiiD", NULL, NULL, &key, &value_data_ptr, &value_data_len);
-
-			__ASSERT_MACROS_check(ret != -1);
-
-			if (ret == -1) {
-				return;
-			}
-
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_INSERTED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
-
-			return handle_ncp_spinel_value_inserted(key, value_data_ptr, value_data_len);
-		}
-		break;
-
 	case SPINEL_CMD_PROP_VALUE_REMOVED:
 		{
 			spinel_prop_key_t key = SPINEL_PROP_LAST_STATUS;
@@ -4755,37 +4714,26 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 			__ASSERT_MACROS_check(ret != -1);
 
 			if (ret == -1) {
-				return;
+				break;
 			}
 
-			syslog(LOG_INFO, "[NCP->] CMD_PROP_VALUE_REMOVED(%s) tid:%d", spinel_prop_key_to_cstr(key), SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
-
-			return handle_ncp_spinel_value_removed(key, value_data_ptr, value_data_len);
-		}
-		break;
-
-	case SPINEL_CMD_PEEK_RET:
-		{
-			uint32_t address = 0;
-			uint16_t count = 0;
-			spinel_ssize_t ret;
-
-			ret = spinel_datatype_unpack(cmd_data_ptr, cmd_data_len, "CiLS", NULL, NULL, &address, &count);
-
-			__ASSERT_MACROS_check(ret != -1);
-
-			if (ret > 0) {
-				syslog(LOG_INFO, "[NCP->] CMD_PEEK_RET(0x%x,%d) tid:%d", address, count, SPINEL_HEADER_GET_TID(cmd_data_ptr[0]));
+			switch (command) {
+			case SPINEL_CMD_PROP_VALUE_IS:
+				handle_ncp_spinel_value_is(key, value_data_ptr, value_data_len);
+				break;
+			case SPINEL_CMD_PROP_VALUE_INSERTED:
+				handle_ncp_spinel_value_inserted(key, value_data_ptr, value_data_len);
+				break;
+			case SPINEL_CMD_PROP_VALUE_REMOVED:
+				handle_ncp_spinel_value_removed(key, value_data_ptr, value_data_len);
+				break;
 			}
 		}
 		break;
-
 
 	default:
-		break;
+		process_event(EVENT_NCP(command), cmd_data_ptr[0], cmd_data_ptr, cmd_data_len);
 	}
-
-	process_event(EVENT_NCP(command), cmd_data_ptr[0], cmd_data_ptr, cmd_data_len);
 }
 
 bool
@@ -5090,6 +5038,112 @@ SpinelNCPInstance::convert_route_preference_to_flags(RoutePreference preference)
 	}
 
 	return flags;
+}
+
+void
+SpinelNCPInstance::log_spinel_frame(SpinelFrameOrigin origin, const uint8_t *frame_ptr, spinel_size_t frame_len)
+{
+	int logmask = setlogmask(0);
+
+	setlogmask(logmask);
+
+	if (logmask & LOG_MASK(LOG_INFO)) {
+		std::string log;
+		uint8_t header = 0;
+		unsigned int command = 0;
+		const uint8_t *cmd_payload_ptr = NULL;
+		spinel_size_t cmd_payload_len = 0;
+		spinel_ssize_t read_len;
+		uint8_t tid;
+		const char *command_str;
+		const char *origin_str = (origin == kDriverToNCP) ? "[->NCP]" : "[NCP->]";
+
+		read_len = spinel_datatype_unpack(frame_ptr, frame_len, "CiD", &header, &command, &cmd_payload_ptr,
+			&cmd_payload_len);
+		require_quiet(read_len > 0, bail);
+
+		tid = SPINEL_HEADER_GET_TID(header);
+		command_str = spinel_command_to_cstr(command);
+
+		switch (command) {
+		case SPINEL_CMD_NOOP:
+		case SPINEL_CMD_RESET:
+		case SPINEL_CMD_NET_CLEAR:
+			syslog(LOG_INFO, "%s (%d) %s", origin_str, tid, command_str);
+			break;
+
+		case SPINEL_CMD_PROP_VALUE_GET:
+		case SPINEL_CMD_PROP_VALUE_SET:
+		case SPINEL_CMD_PROP_VALUE_INSERT:
+		case SPINEL_CMD_PROP_VALUE_REMOVE:
+		case SPINEL_CMD_PROP_VALUE_IS:
+		case SPINEL_CMD_PROP_VALUE_INSERTED:
+		case SPINEL_CMD_PROP_VALUE_REMOVED:
+			{
+				spinel_prop_key_t prop_key = SPINEL_PROP_LAST_STATUS;
+				const uint8_t *value_ptr = NULL;
+				spinel_size_t value_len = 0;
+				const char *prop_str;
+				bool skip_value_dump = false;
+				char value_dump_str[2 * kWPANTUND_SpinelPropValueDumpLen + 1];
+
+				read_len = spinel_datatype_unpack(cmd_payload_ptr, cmd_payload_len, "iD", &prop_key, &value_ptr,
+					&value_len);
+				require_quiet(read_len > 0, bail);
+
+				prop_str = spinel_prop_key_to_cstr(prop_key);
+
+				switch (prop_key) {
+				case SPINEL_PROP_STREAM_DEBUG:           // Handled by `handle_ncp_debug_stream()`
+				case SPINEL_PROP_STREAM_LOG:             // Handled by `handle_ncp_log_stream()`
+				case SPINEL_PROP_STREAM_NET:             // Handled by `handle_normal_ipv6_from_ncp()
+				case SPINEL_PROP_STREAM_NET_INSECURE:    // Handled by `handle_normal_ipv6_from_ncp()
+					// Skip logging any of above properties
+					goto bail;
+
+				case SPINEL_PROP_NET_MASTER_KEY:
+				case SPINEL_PROP_THREAD_ACTIVE_DATASET:
+				case SPINEL_PROP_THREAD_PENDING_DATASET:
+					// Hide the value by skipping value dump
+					skip_value_dump = true;
+					break;
+
+				default:
+					skip_value_dump = false;
+					encode_data_into_string(value_ptr, value_len, value_dump_str, sizeof(value_dump_str), 0);
+					break;
+				}
+
+				if (command == SPINEL_CMD_PROP_VALUE_GET) {
+					syslog(LOG_INFO, "%s (%d) %s(%s)", origin_str, tid, command_str, prop_str);
+				} else {
+					syslog(LOG_INFO, "%s (%d) %s(%s) [%s%s]", origin_str, tid, command_str, prop_str,
+						skip_value_dump ? "-- value hidden --" : value_dump_str,
+						skip_value_dump || (value_len <= kWPANTUND_SpinelPropValueDumpLen) ? "" : "...");
+				}
+			}
+			break;
+
+		case SPINEL_CMD_PEEK:
+		case SPINEL_CMD_POKE:
+		case SPINEL_CMD_PEEK_RET:
+			{
+				uint32_t address = 0;
+				uint16_t count = 0;
+				read_len = spinel_datatype_unpack(cmd_payload_ptr, cmd_payload_len, "LS", &address, &count);
+				require_quiet(read_len > 0, bail);
+				syslog(LOG_INFO, "%s (%d) %s(0x%x, %d)", origin_str, tid, command_str, address, count);
+			}
+			break;
+
+		default:
+			syslog(LOG_INFO, "%s (%d) %s(cmd_id:%d)", origin_str, tid, command_str, command);
+			break;
+		}
+	}
+
+bail:
+	return;
 }
 
 bool
