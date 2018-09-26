@@ -164,7 +164,7 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 		// when setting the `router_role_enabled` (in code above).
 
 		if (node_type == SLEEPY_END_DEVICE) {
-			new_thread_mode &= ~ (SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE | SPINEL_THREAD_MODE_FULL_FUNCTION_DEV);
+			new_thread_mode &= ~ (SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE | SPINEL_THREAD_MODE_FULL_THREAD_DEV);
 		} else {
 			new_thread_mode |= SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE;
 		}
