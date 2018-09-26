@@ -70,8 +70,6 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 
 		reset_tasks(kWPANTUNDStatus_Canceled);
 
-		mPrimaryInterface->set_up(false);
-
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
 			start_new_task(boost::shared_ptr<SpinelNCPTask>(new SpinelNCPTaskDeepSleep(this, NilReturn())));
 
@@ -593,8 +591,12 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 			EH_RESTART();
 
 		} else if (!mEnabled) {
-			syslog(LOG_NOTICE, "Interface Disabled.");
+			syslog(LOG_NOTICE, "Driver disabled.");
 			EH_SPAWN(&mSubPT, vprocess_disabled(event, args));
+			if (mEnabled) {
+				syslog(LOG_NOTICE, "Driver enabled - reinitializing NCP.");
+				EH_RESTART();
+			}
 
 		} else if (ncp_state_is_joining_or_joined(get_ncp_state())) {
 			EH_SPAWN(&mSubPT, vprocess_associated(event, args));

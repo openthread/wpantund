@@ -1292,6 +1292,11 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 	} else if (ncp_state_is_interface_up(old_ncp_state)
 				&& (new_ncp_state == COMMISSIONED)
 				&& mAutoResume
+				// The `mEnabled` check covers the case where driver is disabled
+				// causing a transition to COMMISSIONED state. In that case
+				// we want to fall to "InterfaceUp -> InterfaceDown (General Case)"
+				// to take the interface down.
+				&& mEnabled
 	) {
 		// We don't bother going further if autoresume is on.
 		return;
