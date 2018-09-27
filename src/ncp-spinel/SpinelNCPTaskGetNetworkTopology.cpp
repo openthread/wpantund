@@ -600,7 +600,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void)
 			"Timeout:%u, "
 			"Age:%u, "
 			"RxOnIdle:%s, "
-			"FFD:%s, "
+			"FTD:%s, "
 			"SecDataReq:%s, "
 			"FullNetData:%s",
 			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],
@@ -676,7 +676,7 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void)
 			"MleFC:%u, "
 			"IsChild:%s, "
 			"RxOnIdle:%s, "
-			"FFD:%s, "
+			"FTD:%s, "
 			"SecDataReq:%s, "
 			"FullNetData:%s",
 			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],

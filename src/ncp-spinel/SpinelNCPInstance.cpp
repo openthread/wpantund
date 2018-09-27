@@ -401,9 +401,9 @@ SpinelNCPInstance::thread_mode_to_string(uint8_t mode)
 	snprintf(
 		c_string,
 		sizeof(c_string),
-		"RxOnWhenIdle:%s FFD:%s FullNetData:%s SecDataReq:%s",
+		"RxOnWhenIdle:%s FTD:%s FullNetData:%s SecDataReq:%s",
 		((mode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0)     ? "yes" : "no",
-		((mode & SPINEL_THREAD_MODE_FULL_FUNCTION_DEV) != 0)   ? "yes" : "no",
+		((mode & SPINEL_THREAD_MODE_FULL_THREAD_DEV) != 0)     ? "yes" : "no",
 		((mode & SPINEL_THREAD_MODE_FULL_NETWORK_DATA) != 0)   ? "yes" : "no",
 		((mode & SPINEL_THREAD_MODE_SECURE_DATA_REQUEST) != 0) ? "yes" : "no"
 	);
