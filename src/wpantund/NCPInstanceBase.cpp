@@ -75,6 +75,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mNodeTypeSupportsLegacy = false;
 	mAutoUpdateInterfaceIPv6AddrsOnNCP = true;
 	mFilterUserAddedLinkLocalIPv6Address = true;
+	mAutoAddSLAACAddress = true;
 	mSetDefaultRouteForAutoAddedPrefix = false;
 	mSetSLAACForAutoAddedPrefix = false;
 	mAutoAddOffMeshRoutesOnInterface = true;
@@ -366,6 +367,7 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(DaemonTerminateOnFault);
 	REGISTER_GET_HANDLER(DaemonIPv6AutoUpdateIntfaceAddrOnNCP);
 	REGISTER_GET_HANDLER(DaemonIPv6FilterUserAddedLinkLocal);
+	REGISTER_GET_HANDLER(DaemonIPv6AutoAddSLAACAddress);
 	REGISTER_GET_HANDLER(DaemonSetDefRouteForAutoAddedPrefix);
 	REGISTER_GET_HANDLER(NestLabs_NetworkPassthruPort);
 	REGISTER_GET_HANDLER(NCPMACAddress);
@@ -540,6 +542,12 @@ void
 NCPInstanceBase::get_prop_DaemonIPv6FilterUserAddedLinkLocal(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mFilterUserAddedLinkLocalIPv6Address));
+}
+
+void
+NCPInstanceBase::get_prop_DaemonIPv6AutoAddSLAACAddress(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mAutoAddSLAACAddress));
 }
 
 void
@@ -783,6 +791,7 @@ NCPInstanceBase::regsiter_all_set_handlers(void)
 	REGISTER_SET_HANDLER(DaemonTerminateOnFault);
 	REGISTER_SET_HANDLER(DaemonIPv6AutoUpdateIntfaceAddrOnNCP);
 	REGISTER_SET_HANDLER(DaemonIPv6FilterUserAddedLinkLocal);
+	REGISTER_SET_HANDLER(DaemonIPv6AutoAddSLAACAddress);
 	REGISTER_SET_HANDLER(DaemonSetDefRouteForAutoAddedPrefix);
 	REGISTER_SET_HANDLER(IPv6SetSLAACForAutoAddedPrefix);
 	REGISTER_SET_HANDLER(DaemonOffMeshRouteAutoAddOnInterface);
@@ -917,6 +926,13 @@ void
 NCPInstanceBase::set_prop_DaemonIPv6FilterUserAddedLinkLocal(const boost::any &value, CallbackWithStatus cb)
 {
 	mFilterUserAddedLinkLocalIPv6Address = any_to_bool(value);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_DaemonIPv6AutoAddSLAACAddress(const boost::any &value, CallbackWithStatus cb)
+{
+	mAutoAddSLAACAddress = any_to_bool(value);
 	cb(kWPANTUNDStatus_Ok);
 }
 
