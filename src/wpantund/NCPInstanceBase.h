@@ -575,6 +575,7 @@ private:
 	void add_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	void remove_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixEntry &entry);
+	bool has_slaac_on_mesh_prefix(Origin origin, const IPv6Prefix &prefix);
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator find_route_entry(const IPv6Prefix &route, const OffMeshRouteEntry &entry);
 	void refresh_routes_on_interface(void);
 	bool should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric);
