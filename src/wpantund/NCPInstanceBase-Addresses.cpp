@@ -787,6 +787,27 @@ NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struc
 	return false;
 }
 
+bool NCPInstanceBase::has_slaac_on_mesh_prefix(Origin origin, const IPv6Prefix &prefix)
+{
+	bool rval = false;
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+
+	iter = mOnMeshPrefixes.lower_bound(prefix);
+
+	if (iter != mOnMeshPrefixes.end()) {
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator upper_iter = mOnMeshPrefixes.upper_bound(prefix);
+
+		for (; iter != upper_iter; iter++) {
+			if (iter->second.get_origin() == origin && iter->second.is_slaac() && iter->second.is_on_mesh()) {
+				rval = true;
+				break;
+			}
+		}
+	}
+
+	return rval;
+}
+
 // Searches for a given prefix entry in the `mOnMeshPrefixes` multimap.
 std::multimap<NCPInstanceBase::IPv6Prefix, NCPInstanceBase::OnMeshPrefixEntry>::iterator
 NCPInstanceBase::find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixEntry &entry)
@@ -874,9 +895,12 @@ NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr
 		if (lookup_address_for_prefix(&address, prefix.get_prefix(), prefix.get_length())
 				&& entry.is_slaac() && entry.is_on_mesh() && prefix.get_length() == 64
 		) {
+			if (mOnMeshPrefixes.count(prefix) == 0 || !has_slaac_on_mesh_prefix(origin, prefix))
+			{
 				syslog(LOG_NOTICE, "Removing SLAAC address %s/%d from NCP", in6_addr_to_string(address).c_str(), prefix_len);
 				remove_unicast_address_on_ncp(address, prefix_len,
 					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing SLAAC address", NilReturn()));
+			}
 		}
 	} else {
 		cb(kWPANTUNDStatus_Ok);
