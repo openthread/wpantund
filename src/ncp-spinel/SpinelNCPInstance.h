@@ -177,6 +177,14 @@ protected:
 	static uint8_t convert_route_preference_to_flags(RoutePreference priority);
 
 private:
+	enum SpinelFrameOrigin {
+		kDriverToNCP,
+		kNCPToDriver,
+	};
+
+	void log_spinel_frame(SpinelFrameOrigin origin, const uint8_t *frame_ptr, spinel_size_t frame_len);
+
+private:
 	void update_node_type(NodeType node_type);
 	void update_link_local_address(struct in6_addr *addr);
 	void update_mesh_local_address(struct in6_addr *addr);
