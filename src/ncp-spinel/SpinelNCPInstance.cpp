@@ -442,6 +442,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 	properties.insert(kWPANTUNDProperty_NCPCCAFailureRate);
+	properties.insert(kWPANTUNDProperty_NCPCapabilities);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -1989,6 +1990,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ConfigNCPDriverName,
 		boost::bind(&SpinelNCPInstance::get_prop_ConfigNCPDriverName, this, _1));
 	register_get_handler(
+		kWPANTUNDProperty_NCPCapabilities,
+		boost::bind(&SpinelNCPInstance::get_prop_NCPCapabilities, this, _1));
+	register_get_handler(
 		kWPANTUNDProperty_NetworkIsCommissioned,
 		boost::bind(&SpinelNCPInstance::get_prop_NetworkIsCommissioned, this, _1));
 	register_get_handler(
@@ -2124,6 +2128,21 @@ void
 SpinelNCPInstance::get_prop_ConfigNCPDriverName(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(std::string("spinel")));
+}
+
+void
+SpinelNCPInstance::get_prop_NCPCapabilities(CallbackWithStatusArg1 cb)
+{
+	std::list<std::string> capability_list;
+	std::set<unsigned int>::iterator iter;
+
+	for (iter = mCapabilities.begin(); iter != mCapabilities.end(); iter++)	{
+		char str[200];
+		snprintf(str, sizeof(str), "%s (%d)", spinel_capability_to_cstr(*iter), *iter);
+		capability_list.push_back(std::string(str));
+	}
+
+	cb(kWPANTUNDStatus_Ok, boost::any(capability_list));
 }
 
 void
