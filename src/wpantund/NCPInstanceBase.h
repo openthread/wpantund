@@ -171,8 +171,6 @@ public:
 			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
 			uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
-	bool lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len = 64);
-
 	static std::string on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed = false);
 
 protected:
@@ -571,11 +569,17 @@ protected:
 		uint32_t mMetric;
 	};
 
+	enum {
+		kSLAACPrefixLength = 64, // Expected prefix length to add SLAAC address.
+	};
+
 private:
+	bool has_address_with_prefix(const IPv6Prefix &prefix);
+	bool has_slaac_on_mesh_prefix(const IPv6Prefix &prefix);
+	std::map<struct in6_addr, UnicastAddressEntry>::iterator find_address_with_prefix(const IPv6Prefix &prefix, Origin origin);
 	void add_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	void remove_address_on_ncp_and_update_prefixes(const in6_addr &address, const UnicastAddressEntry &entry);
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixEntry &entry);
-	bool has_slaac_on_mesh_prefix(Origin origin, const IPv6Prefix &prefix);
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator find_route_entry(const IPv6Prefix &route, const OffMeshRouteEntry &entry);
 	void refresh_routes_on_interface(void);
 	bool should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric);

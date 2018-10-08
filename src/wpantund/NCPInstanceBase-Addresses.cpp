@@ -765,29 +765,45 @@ NCPInstanceBase::multicast_address_was_left(Origin origin, const struct in6_addr
 // ========================================================================
 // MARK: On-Mesh Prefix Management
 
+// Checks whether there is a unicast address matching the given `prefix` from any origin.
 bool
-NCPInstanceBase::lookup_address_for_prefix(struct in6_addr *address, const struct in6_addr &prefix, int prefix_len)
+NCPInstanceBase::has_address_with_prefix(const IPv6Prefix &prefix)
 {
-	struct in6_addr masked_prefix(prefix);
-
-	in6_addr_apply_mask(masked_prefix, prefix_len);
-
+	bool rval = false;
 	std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
-	for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); ++iter) {
-		struct in6_addr iter_prefix(iter->first);
-		in6_addr_apply_mask(iter_prefix, prefix_len);
 
-		if (iter_prefix == masked_prefix) {
-			if (address != NULL) {
-				*address = iter->first;
-			}
-			return true;
+	for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); ++iter) {
+		IPv6Prefix addr_prefix(iter->first, iter->second.get_prefix_len());
+
+		if (addr_prefix == prefix) {
+			rval = true;
+			break;
 		}
 	}
-	return false;
+
+	return rval;
 }
 
-bool NCPInstanceBase::has_slaac_on_mesh_prefix(Origin origin, const IPv6Prefix &prefix)
+// Searches for a unicast address in `mUnicastAddresses` map matching the given `prefix` from the given `origin`.
+std::map<struct in6_addr, NCPInstanceBase::UnicastAddressEntry>::iterator
+NCPInstanceBase::find_address_with_prefix(const IPv6Prefix &prefix, Origin origin)
+{
+	std::map<struct in6_addr, UnicastAddressEntry>::iterator iter;
+
+	for (iter = mUnicastAddresses.begin(); iter != mUnicastAddresses.end(); ++iter) {
+		IPv6Prefix addr_prefix(iter->first, iter->second.get_prefix_len());
+
+		if ((iter->second.get_origin() == origin) && (addr_prefix == prefix)) {
+			break;
+		}
+	}
+
+	return iter;
+}
+
+// Checks whether the given `prefix` is present in the `mOnMeshPrefixes` multimap with SLAAC and on-mesh flags set.
+bool
+NCPInstanceBase::has_slaac_on_mesh_prefix(const IPv6Prefix &prefix)
 {
 	bool rval = false;
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
@@ -798,7 +814,7 @@ bool NCPInstanceBase::has_slaac_on_mesh_prefix(Origin origin, const IPv6Prefix &
 		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator upper_iter = mOnMeshPrefixes.upper_bound(prefix);
 
 		for (; iter != upper_iter; iter++) {
-			if (iter->second.get_origin() == origin && iter->second.is_slaac() && iter->second.is_on_mesh()) {
+			if (iter->second.is_slaac() && iter->second.is_on_mesh()) {
 				rval = true;
 				break;
 			}
@@ -857,14 +873,14 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 		cb(kWPANTUNDStatus_Ok);
 	}
 
-	if (entry.is_on_mesh() && entry.is_slaac()
-		&& !lookup_address_for_prefix(NULL, prefix.get_prefix(), prefix.get_length()) &&
-		prefix.get_length() == 64
+	if (entry.is_on_mesh() && entry.is_slaac() && prefix.get_length() == kSLAACPrefixLength
+		&& !has_address_with_prefix(prefix)
 	) {
 		struct in6_addr address = make_slaac_addr_from_eui64(prefix.get_prefix().s6_addr, mMACAddress);
 		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to NCP", in6_addr_to_string(address).c_str(), prefix_len);
 		add_unicast_address_on_ncp(address, prefix_len,
 			boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding SLAAC address", NilReturn()));
+		// Note that SLAAC address is added with origin NCP independent of the origin of the prefix.
 		unicast_address_was_added(kOriginThreadNCP, address, prefix_len);
 	}
 }
@@ -876,7 +892,6 @@ NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr
 	IPv6Prefix prefix(prefix_address, prefix_len);
 	OnMeshPrefixEntry entry(origin, flags, stable, rloc16);
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
-	struct in6_addr address;
 
 	iter = find_prefix_entry(prefix, entry);
 
@@ -892,14 +907,20 @@ NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr
 			cb(kWPANTUNDStatus_Ok);
 		}
 
-		if (lookup_address_for_prefix(&address, prefix.get_prefix(), prefix.get_length())
-				&& entry.is_slaac() && entry.is_on_mesh() && prefix.get_length() == 64
+		if (entry.is_on_mesh() && entry.is_slaac() && prefix.get_length() == kSLAACPrefixLength
+			&& !has_slaac_on_mesh_prefix(prefix)
 		) {
-			if (mOnMeshPrefixes.count(prefix) == 0 || !has_slaac_on_mesh_prefix(origin, prefix))
-			{
+			std::map<struct in6_addr, UnicastAddressEntry>::iterator addr_iter;
+
+			// Note that SLAAC addresses are added with origin NCP.
+			addr_iter = find_address_with_prefix(prefix, kOriginThreadNCP);
+
+			if (addr_iter != mUnicastAddresses.end()) {
+				const struct in6_addr &address = addr_iter->first;
 				syslog(LOG_NOTICE, "Removing SLAAC address %s/%d from NCP", in6_addr_to_string(address).c_str(), prefix_len);
 				remove_unicast_address_on_ncp(address, prefix_len,
 					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing SLAAC address", NilReturn()));
+				unicast_address_was_removed(kOriginThreadNCP, address);
 			}
 		}
 	} else {
