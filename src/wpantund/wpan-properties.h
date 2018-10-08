@@ -69,6 +69,7 @@
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
 #define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
 #define kWPANTUNDProperty_NCPMCUPowerState                      "NCP:MCUPowerState"
+#define kWPANTUNDProperty_NCPCapabilities                       "NCP:Capabilities"
 
 #define kWPANTUNDProperty_InterfaceUp                           "Interface:Up"
 
