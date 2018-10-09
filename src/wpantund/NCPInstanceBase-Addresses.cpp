@@ -916,7 +916,7 @@ NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr
 			addr_iter = find_address_with_prefix(prefix, kOriginThreadNCP);
 
 			if (addr_iter != mUnicastAddresses.end()) {
-				const struct in6_addr &address = addr_iter->first;
+				struct in6_addr address = addr_iter->first;
 				syslog(LOG_NOTICE, "Removing SLAAC address %s/%d from NCP", in6_addr_to_string(address).c_str(), prefix_len);
 				remove_unicast_address_on_ncp(address, prefix_len,
 					boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing SLAAC address", NilReturn()));
