@@ -448,47 +448,45 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_0)) {
-		properties.insert(kWPANTUNDProperty_ThreadRLOC16);
-		properties.insert(kWPANTUNDProperty_ThreadDeviceMode);
-		properties.insert(kWPANTUNDProperty_ThreadRouterID);
-		properties.insert(kWPANTUNDProperty_ThreadLeaderAddress);
-		properties.insert(kWPANTUNDProperty_ThreadLeaderRouterID);
-		properties.insert(kWPANTUNDProperty_ThreadLeaderWeight);
-		properties.insert(kWPANTUNDProperty_ThreadLeaderLocalWeight);
-		properties.insert(kWPANTUNDProperty_ThreadNetworkData);
-		properties.insert(kWPANTUNDProperty_ThreadNetworkDataVersion);
-		properties.insert(kWPANTUNDProperty_ThreadStableNetworkData);
-		properties.insert(kWPANTUNDProperty_ThreadStableNetworkDataVersion);
-		properties.insert(kWPANTUNDProperty_ThreadLeaderNetworkData);
-		properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
-		properties.insert(kWPANTUNDProperty_ThreadChildTable);
-		properties.insert(kWPANTUNDProperty_ThreadChildTableAddresses);
-		properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
-		properties.insert(kWPANTUNDProperty_ThreadChildTimeout);
-		properties.insert(kWPANTUNDProperty_ThreadRouterTable);
-		properties.insert(kWPANTUNDProperty_ThreadParent);
-		properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
-		properties.insert(kWPANTUNDProperty_NetworkPartitionId);
-		properties.insert(kWPANTUNDProperty_ThreadRouterUpgradeThreshold);
-		properties.insert(kWPANTUNDProperty_ThreadRouterDowngradeThreshold);
-		properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
-		properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
-		properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
+	properties.insert(kWPANTUNDProperty_ThreadRLOC16);
+	properties.insert(kWPANTUNDProperty_ThreadDeviceMode);
+	properties.insert(kWPANTUNDProperty_ThreadRouterID);
+	properties.insert(kWPANTUNDProperty_ThreadLeaderAddress);
+	properties.insert(kWPANTUNDProperty_ThreadLeaderRouterID);
+	properties.insert(kWPANTUNDProperty_ThreadLeaderWeight);
+	properties.insert(kWPANTUNDProperty_ThreadLeaderLocalWeight);
+	properties.insert(kWPANTUNDProperty_ThreadNetworkData);
+	properties.insert(kWPANTUNDProperty_ThreadNetworkDataVersion);
+	properties.insert(kWPANTUNDProperty_ThreadStableNetworkData);
+	properties.insert(kWPANTUNDProperty_ThreadStableNetworkDataVersion);
+	properties.insert(kWPANTUNDProperty_ThreadLeaderNetworkData);
+	properties.insert(kWPANTUNDProperty_ThreadStableLeaderNetworkData);
+	properties.insert(kWPANTUNDProperty_ThreadChildTable);
+	properties.insert(kWPANTUNDProperty_ThreadChildTableAddresses);
+	properties.insert(kWPANTUNDProperty_ThreadNeighborTable);
+	properties.insert(kWPANTUNDProperty_ThreadChildTimeout);
+	properties.insert(kWPANTUNDProperty_ThreadRouterTable);
+	properties.insert(kWPANTUNDProperty_ThreadParent);
+	properties.insert(kWPANTUNDProperty_ThreadOffMeshRoutes);
+	properties.insert(kWPANTUNDProperty_NetworkPartitionId);
+	properties.insert(kWPANTUNDProperty_ThreadRouterUpgradeThreshold);
+	properties.insert(kWPANTUNDProperty_ThreadRouterDowngradeThreshold);
+	properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
+	properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
+	properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
 
-		if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
-			properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
-		}
+	if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
+		properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
+	}
 
-		if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
-			properties.insert(kWPANTUNDProperty_CommissionerState);
-			properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
-			properties.insert(kWPANTUNDProperty_CommissionerSessionId);
-		}
+	if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+		properties.insert(kWPANTUNDProperty_CommissionerState);
+		properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
+		properties.insert(kWPANTUNDProperty_CommissionerSessionId);
+	}
 
-		if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
-			properties.insert(kWPANTUNDProperty_ThreadJoinerState);
-		}
+	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+		properties.insert(kWPANTUNDProperty_ThreadJoinerState);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
