@@ -491,6 +491,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		}
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_POSIX_APP)) {
+		properties.insert(kWPANTUNDProperty_POSIXAppRCPVersion);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
 		properties.insert(kWPANTUNDProperty_NCPCounterAllMac);
 		properties.insert(kWPANTUNDProperty_NCPCounter_TX_IP_SEC_TOTAL);
@@ -1886,6 +1890,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCounter_IP_RX_FAILURE,
 		SPINEL_CAP_COUNTERS,
 		SPINEL_PROP_CNTR_IP_RX_FAILURE, SPINEL_DATATYPE_UINT32_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_POSIXAppRCPVersion,
+		SPINEL_CAP_POSIX_APP,
+		SPINEL_PROP_RCP_VERSION, SPINEL_DATATYPE_UTF8_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
@@ -4552,6 +4560,16 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		char net_data_cstr_buf[540];
 		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
 		syslog(LOG_INFO, "[-NCP-] Leader network data: [%s]", net_data_cstr_buf);
+
+	} else if (key == SPINEL_PROP_RCP_VERSION) {
+		const char *rcp_version = NULL;
+		spinel_ssize_t len;
+
+		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UTF8_S, &rcp_version);
+
+		if (len > 0) {
+			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
+		}
 	}
 
 bail:
