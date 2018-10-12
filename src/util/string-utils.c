@@ -189,13 +189,13 @@ strtomask_uint32(const char* in_string)
 			}
 
 			while (channel_start <= channel_stop) {
-				mask |= (1 << channel_start);
+				mask |= (0x80000000 >> channel_start);
 				channel_start++;
 			}
 		} else {
 			// no range, just add channel to the scan mask
 
-			mask |= (1 << strtol(chan_ranges, NULL, 0));
+			mask |= (0x80000000 >> strtol(chan_ranges, NULL, 0));
 		}
 		chan_ranges = strtok(NULL, ",");
 	}
