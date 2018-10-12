@@ -167,6 +167,8 @@
 #define kWPANTUNDDatasetCommand_SendMgmtGetPending              "SendMgmtGetPending"
 #define kWPANTUNDDatasetCommand_SendMgmtSetPending              "SendMgmtSetPending"
 
+#define kWPANTUNDProperty_POSIXAppRCPVersion                    "POSIXApp:RCPVersion"
+
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadSteeringDataAddress         "OpenThread:SteeringData:Address"
 #define kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable "OpenThread:SteeringData:SetWhenJoinable"
