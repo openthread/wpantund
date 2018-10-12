@@ -20,14 +20,17 @@
 #ifndef SEC_RANDOM_HEADER_INCLUDED
 #define SEC_RANDOM_HEADER_INCLUDED 1
 
-#include <sys/cdefs.h>
 #include <stdint.h>
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 int sec_random_init(void);
 int sec_random_fill(uint8_t* buffer, int length);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif // SEC_RANDOM_HEADER_INCLUDED

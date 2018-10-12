@@ -129,9 +129,13 @@ using ::boost::shared_ptr;
 
 #ifndef SOURCE_VERSION
 #define SOURCE_VERSION		PACKAGE_VERSION
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #include "version.c.in"
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 #endif
 
 using namespace nl;

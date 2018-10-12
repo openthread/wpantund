@@ -35,12 +35,16 @@
 
 #define TUNNEL_MAX_INTERFACE_NAME_LEN	60
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 extern int tunnel_open(const char* tun_name);
 extern int tunnel_get_name(int fd, char* name, int maxlen);
 extern int tunnel_set_hwaddr(int fd, uint8_t *addr, int addr_len);
 extern void tunnel_close(int fd);
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif
