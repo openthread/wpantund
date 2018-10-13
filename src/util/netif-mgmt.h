@@ -26,7 +26,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 extern int netif_mgmt_open();
 extern void netif_mgmt_close(int fd);
 
@@ -53,7 +55,9 @@ extern int netif_mgmt_remove_ipv6_route(int fd, const char* if_name, const uint8
 extern int netif_mgmt_join_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16]);
 extern int netif_mgmt_leave_ipv6_multicast_address(int reqfd, const char* if_name, const uint8_t addr[16]);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif

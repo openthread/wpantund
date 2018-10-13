@@ -22,7 +22,9 @@
 
 #include "spinel.h"
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -74,6 +76,8 @@ SPINEL_API_EXTERN spinel_ssize_t spinel_cmd_prop_type_get(uint8_t* cmd_data_ptr,
 
 SPINEL_API_EXTERN spinel_ssize_t spinel_cmd_prop_type_get(uint8_t* cmd_data_ptr, spinel_size_t cmd_data_len, spinel_prop_key_t prop_key);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif // SPINEL_EXTRA_HEADER_INCLUDED

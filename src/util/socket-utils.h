@@ -38,7 +38,9 @@
 #define SOCKET_UTILS_DEFAULT_SHELL         "/bin/sh"
 #endif
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 extern int gSocketWrapperBaud;
 bool socket_name_is_device(const char* socket_name);
 int lookup_sockaddr_from_host_and_port( struct sockaddr_in6* outaddr, const char* host, const char* port);
@@ -61,7 +63,9 @@ int get_super_socket_type_from_path(const char* path);
 
 int fork_unixdomain_socket(int* fd_pointer);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif

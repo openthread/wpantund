@@ -26,9 +26,10 @@
 #include <stdbool.h>
 #include <poll.h>
 #include <sys/select.h>
-#include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 struct nlpt {
 	struct pt pt;
@@ -70,6 +71,8 @@ extern void nlpt_select_update_fd_set(
 );
 extern bool _nlpt_checkpoll(int fd, short poll_flags);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

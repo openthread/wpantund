@@ -18,7 +18,9 @@
 #ifndef __WPAN_CONFIG_FILE_H__
 #define __WPAN_CONFIG_FILE_H__ 1
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 extern char* get_next_arg(char *buf, char **rest);
 
 typedef int (*config_param_set_func)(void* context, const char* key, const char* value);
@@ -26,6 +28,8 @@ typedef int (*config_param_set_func)(void* context, const char* key, const char*
 extern int read_config(const char* filename, config_param_set_func setter, void* context);
 
 extern int fread_config(FILE* file, config_param_set_func setter, void* context);
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif // __WPAN_CONFIG_FILE_H__

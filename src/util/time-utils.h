@@ -30,7 +30,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <sys/cdefs.h>
 #include <time.h>
 
 #ifndef MSEC_PER_SEC
@@ -55,7 +54,9 @@
 
 #define CMS_SINCE(x)	(time_ms() - (x))
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 typedef int32_t cms_t;
 
 extern cms_t time_ms(void);
@@ -68,6 +69,8 @@ extern void fuzz_set_cms(cms_t value);
 extern void fuzz_ff_cms(cms_t increment);
 #endif
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
