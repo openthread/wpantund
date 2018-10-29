@@ -64,8 +64,6 @@ SOURCES = \
 	NCPConstants.h \
 	FirmwareUpgrade.h \
 	FirmwareUpgrade.cpp \
-	NetworkTime.h \
-	NetworkTime.cpp \
 	StatCollector.h \
 	StatCollector.cpp \
 	RunawayResetBackoffManager.cpp \

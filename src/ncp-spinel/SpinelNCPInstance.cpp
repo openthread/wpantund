@@ -45,9 +45,6 @@
 #define kWPANTUND_Whitelist_RssiOverrideDisabled    127
 #define kWPANTUND_SpinelPropValueDumpLen            8
 
-#define kWPANTUND_NetworkTimeStatusUnsynchronized -1
-#define kWPANTUND_NetworkTimeStatusResyncNeeded    0
-#define kWPANTUND_NetworkTimeStatusSynchronized    1
 
 using namespace nl;
 using namespace wpantund;
@@ -1256,6 +1253,7 @@ unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost
 			entry.clear();
 			entry[kWPANTUNDValueMapKey_TimeSync_Time] = time;
 			entry[kWPANTUNDValueMapKey_TimeSync_Status] = timeSyncStatus;
+			entry[kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs] = time_get_monotonic_us();
 			result_as_val_map.push_back(entry);
 			value = result_as_val_map;
 		} else {
@@ -1273,7 +1271,7 @@ unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost
 }
 
 static bool
-extract_thread_network_time(const boost::any& value, uint64_t& network_time, int8_t& status)
+extract_thread_network_time(const boost::any& value, NetworkTimeUpdate& update)
 {
 	bool extracted = false;
 
@@ -1285,12 +1283,18 @@ extract_thread_network_time(const boost::any& value, uint64_t& network_time, int
 
 			const ValueMap::const_iterator network_time_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Time);
 			const ValueMap::const_iterator status_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Status);
+			const ValueMap::const_iterator received_mt_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs);
 
-			if (network_time_value_it != value_map.end() && status_value_it != value_map.end() && 
-				network_time_value_it->second.type() == typeid(uint64_t) && status_value_it->second.type() == typeid(int8_t)) {
+			if (network_time_value_it != value_map.end() && 
+				status_value_it != value_map.end() && 
+				received_mt_value_it != value_map.end() && 
+				network_time_value_it->second.type() == typeid(uint64_t) && 
+				status_value_it->second.type() == typeid(int8_t) &&
+				received_mt_value_it->second.type() == typeid(uint64_t)) {
 
-				network_time = boost::any_cast<uint64_t>(network_time_value_it->second);
-				status = boost::any_cast<int8_t>(status_value_it->second);
+				update.mNetworkTime = boost::any_cast<uint64_t>(network_time_value_it->second);
+				update.mStatus = boost::any_cast<int8_t>(status_value_it->second);
+				update.mReceivedMonoTimeUs = boost::any_cast<uint64_t>(received_mt_value_it->second);
 
 				extracted = true;
 			}
@@ -1298,38 +1302,6 @@ extract_thread_network_time(const boost::any& value, uint64_t& network_time, int
 	}
 
 	return extracted;
-}
-
-static NetworkTime::NetworkTimeStatus
-map_network_time_status_from_raw(int8_t raw_status)
-{
-	switch(raw_status) {
-		case kWPANTUND_NetworkTimeStatusUnsynchronized:
-			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
-		case kWPANTUND_NetworkTimeStatusResyncNeeded:
-			return NetworkTime::NETWORK_TIME_RESYNC_NEEDED;
-		case kWPANTUND_NetworkTimeStatusSynchronized:
-			return NetworkTime::NETWORK_TIME_SYNCHRONIZED;
-		default:
-			assert(false);
-			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
-	}
-}
-
-static int8_t 
-map_network_time_status_to_raw(NetworkTime::NetworkTimeStatus status)
-{
-	switch(status) {
-		case NetworkTime::NETWORK_TIME_UNSYNCHRONIZED:
-			return kWPANTUND_NetworkTimeStatusUnsynchronized;
-		case NetworkTime::NETWORK_TIME_RESYNC_NEEDED:
-			return kWPANTUND_NetworkTimeStatusResyncNeeded;
-		case NetworkTime::NETWORK_TIME_SYNCHRONIZED:
-			return kWPANTUND_NetworkTimeStatusSynchronized;
-		default:
-			assert(false);
-			return kWPANTUND_NetworkTimeStatusUnsynchronized;
-	}
 }
 
 void
@@ -2057,12 +2029,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	// Properties with a dedicated handler method
 
 	register_get_handler(
-		kWPANTUNDProperty_TimeSync_NetworkTimeCached,
-		boost::bind(&SpinelNCPInstance::get_prop_ThreadNetworkTimeCached, this, _1));
-	register_get_handler(
-		kWPANTUNDProperty_TimeSync_NetworkTimeCachedAsValMap,
-		boost::bind(&SpinelNCPInstance::get_prop_ThreadNetworkTimeCachedAsValMap, this, _1));
-	register_get_handler(
 		kWPANTUNDProperty_ConfigNCPDriverName,
 		boost::bind(&SpinelNCPInstance::get_prop_ConfigNCPDriverName, this, _1));
 	register_get_handler(
@@ -2198,59 +2164,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadNeighborTableErrorRatesAsValMap,
 		SPINEL_CAP_ERROR_RATE_TRACKING,
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRatesAsValMap, this, _1));
-}
-
-void
-SpinelNCPInstance::get_prop_ThreadNetworkTimeCached(CallbackWithStatusArg1 cb)
-{
-	std::list<std::string> result_as_string;
-	uint64_t network_time;
-	NetworkTime::NetworkTimeStatus status;
-	uint64_t updated_at_mono_time_us;
-	uint64_t now_mono_time_us;
-	char c_string[500];
-	
-	wpantund_status_t op_status = kWPANTUNDStatus_Failure;
-	
-	if (mNetworkTime.get_network_time(network_time, status, updated_at_mono_time_us, now_mono_time_us)) {
-		snprintf(
-			c_string, 
-			sizeof(c_string), 
-			"ThreadNetworkTime: %" PRIu64 ", TimeSyncStatus:%d, TimeSyncRespAtMonoTimeUs: %" PRIu64 ", TimeSyncUpdatedAtMonoTimeUs: %" PRIu64,
-			network_time, 
-			map_network_time_status_to_raw(status),
-			now_mono_time_us,
-			updated_at_mono_time_us);
-		
-		result_as_string.push_back(std::string(c_string));
-		op_status = kWPANTUNDStatus_Ok;
-	}
-	
-	cb(op_status, result_as_string);
-}
-
-void
-SpinelNCPInstance::get_prop_ThreadNetworkTimeCachedAsValMap(CallbackWithStatusArg1 cb)
-{
-	std::list<ValueMap> result_as_val_map;
-	ValueMap entry;
-	uint64_t network_time;
-	NetworkTime::NetworkTimeStatus status;
-	uint64_t updated_at_mono_time_us;
-	uint64_t now_mono_time_us;
-
-	wpantund_status_t op_status = kWPANTUNDStatus_Failure;
-	
-	if (mNetworkTime.get_network_time(network_time, status, updated_at_mono_time_us, now_mono_time_us)) {
-		entry[kWPANTUNDValueMapKey_TimeSync_Time] = network_time;
-		entry[kWPANTUNDValueMapKey_TimeSync_Status] = map_network_time_status_to_raw(status);
-		entry[kWPANTUNDValueMapKey_TimeSync_RespAtMonoTimeUs] = now_mono_time_us;
-		entry[kWPANTUNDValueMapKey_TimeSync_UpdatedAtMonoTimeUs] = updated_at_mono_time_us;
-		result_as_val_map.push_back(entry);
-		op_status = kWPANTUNDStatus_Ok;
-	}
-	
-	cb(op_status, result_as_val_map);
 }
 
 void
@@ -4693,14 +4606,14 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		}
 	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
 		boost::any value;
-		uint64_t network_time;
-		int8_t status;
+		NetworkTimeUpdate update;
 
 		if (unpack_thread_network_time(value_data_ptr, value_data_len, value, true) == kWPANTUNDStatus_Ok && 
-			extract_thread_network_time(value, network_time, status)) {
+			extract_thread_network_time(value, update)) {
 			
-			syslog(LOG_INFO, "[-NCP-]: Network time update: network_time:%lu, status:%d", network_time, status);
-			handle_network_time_update(network_time, map_network_time_status_from_raw(status));
+			syslog(LOG_INFO, "[-NCP-]: Network time update: network_time:%lu, status:%d", update.mNetworkTime, update.mStatus);
+
+			handle_network_time_update(update);
 		} else {
 			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack or extract network time update");
 		}

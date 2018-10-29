@@ -69,6 +69,19 @@ struct EnergyScanResultEntry
 	int8_t 	mMaxRssi;
 };
 
+enum NetworkTimeStatus {
+	NETWORK_TIME_STATUS_UNSYNCHONIZED = -1,
+	NETWORK_TIME_STATUS_RESYNC_NEEDED =  0,
+	NETWORK_TIME_STATUS_SYNCHRONIZED =   1
+};
+
+struct NetworkTimeUpdate
+{
+	uint64_t mNetworkTime;
+	int8_t   mStatus; // References NetworkTimeStatus
+	uint64_t mReceivedMonoTimeUs;
+};
+
 std::string address_flags_to_string(uint8_t flags);
 
 std::string flags_to_string(uint8_t flags, const char flag_lookup[8] = "76543210");

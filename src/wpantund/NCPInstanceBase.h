@@ -31,7 +31,6 @@
 #include "NetworkRetain.h"
 #include "RunawayResetBackoffManager.h"
 #include "Pcap.h"
-#include "NetworkTime.h"
 
 namespace nl {
 namespace wpantund {
@@ -125,7 +124,7 @@ public:
 	// ========================================================================
 	// MARK: Network Time Update
 
-	void handle_network_time_update(uint64_t network_time, NetworkTime::NetworkTimeStatus status);
+	void handle_network_time_update(const NetworkTimeUpdate& update);
 
 public:
 	// ========================================================================
@@ -716,7 +715,6 @@ protected:
 	bool mNodeTypeSupportsLegacy;
 
 	PcapManager mPcapManager;
-	NetworkTime mNetworkTime;
 
 private:
 	// ========================================================================
