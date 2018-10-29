@@ -1301,21 +1301,34 @@ extract_thread_network_time(const boost::any& value, uint64_t& network_time, int
 }
 
 static NetworkTime::NetworkTimeStatus
-map_network_time_status(int8_t raw_status)
+map_network_time_status_from_raw(int8_t raw_status)
 {
 	switch(raw_status) {
 		case kWPANTUND_NetworkTimeStatusUnsynchronized:
 			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
-			break;
 		case kWPANTUND_NetworkTimeStatusResyncNeeded:
 			return NetworkTime::NETWORK_TIME_RESYNC_NEEDED;
-			break;
 		case kWPANTUND_NetworkTimeStatusSynchronized:
 			return NetworkTime::NETWORK_TIME_SYNCHRONIZED;
-			break;
 		default:
 			assert(false);
 			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
+	}
+}
+
+static int8_t 
+map_network_time_status_to_raw(NetworkTime::NetworkTimeStatus status)
+{
+	switch(status) {
+		case NetworkTime::NETWORK_TIME_UNSYNCHRONIZED:
+			return kWPANTUND_NetworkTimeStatusUnsynchronized;
+		case NetworkTime::NETWORK_TIME_RESYNC_NEEDED:
+			return kWPANTUND_NetworkTimeStatusResyncNeeded;
+		case NetworkTime::NETWORK_TIME_SYNCHRONIZED:
+			return kWPANTUND_NetworkTimeStatusSynchronized;
+		default:
+			assert(false);
+			return kWPANTUND_NetworkTimeStatusUnsynchronized;
 	}
 }
 
@@ -2044,6 +2057,12 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	// Properties with a dedicated handler method
 
 	register_get_handler(
+		kWPANTUNDProperty_TimeSync_NetworkTimeCached,
+		boost::bind(&SpinelNCPInstance::get_prop_ThreadNetworkTimeCached, this, _1));
+	register_get_handler(
+		kWPANTUNDProperty_TimeSync_NetworkTimeCachedAsValMap,
+		boost::bind(&SpinelNCPInstance::get_prop_ThreadNetworkTimeCachedAsValMap, this, _1));
+	register_get_handler(
 		kWPANTUNDProperty_ConfigNCPDriverName,
 		boost::bind(&SpinelNCPInstance::get_prop_ConfigNCPDriverName, this, _1));
 	register_get_handler(
@@ -2179,6 +2198,59 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadNeighborTableErrorRatesAsValMap,
 		SPINEL_CAP_ERROR_RATE_TRACKING,
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRatesAsValMap, this, _1));
+}
+
+void
+SpinelNCPInstance::get_prop_ThreadNetworkTimeCached(CallbackWithStatusArg1 cb)
+{
+	std::list<std::string> result_as_string;
+	uint64_t network_time;
+	NetworkTime::NetworkTimeStatus status;
+	uint64_t updated_at_mono_time_us;
+	uint64_t now_mono_time_us;
+	char c_string[500];
+	
+	wpantund_status_t op_status = kWPANTUNDStatus_Failure;
+	
+	if (mNetworkTime.get_network_time(network_time, status, updated_at_mono_time_us, now_mono_time_us)) {
+		snprintf(
+			c_string, 
+			sizeof(c_string), 
+			"ThreadNetworkTime: %" PRIu64 ", TimeSyncStatus:%d, TimeSyncRespAtMonoTimeUs: %" PRIu64 ", TimeSyncUpdatedAtMonoTimeUs: %" PRIu64,
+			network_time, 
+			map_network_time_status_to_raw(status),
+			now_mono_time_us,
+			updated_at_mono_time_us);
+		
+		result_as_string.push_back(std::string(c_string));
+		op_status = kWPANTUNDStatus_Ok;
+	}
+	
+	cb(op_status, result_as_string);
+}
+
+void
+SpinelNCPInstance::get_prop_ThreadNetworkTimeCachedAsValMap(CallbackWithStatusArg1 cb)
+{
+	std::list<ValueMap> result_as_val_map;
+	ValueMap entry;
+	uint64_t network_time;
+	NetworkTime::NetworkTimeStatus status;
+	uint64_t updated_at_mono_time_us;
+	uint64_t now_mono_time_us;
+
+	wpantund_status_t op_status = kWPANTUNDStatus_Failure;
+	
+	if (mNetworkTime.get_network_time(network_time, status, updated_at_mono_time_us, now_mono_time_us)) {
+		entry[kWPANTUNDValueMapKey_TimeSync_Time] = network_time;
+		entry[kWPANTUNDValueMapKey_TimeSync_Status] = map_network_time_status_to_raw(status);
+		entry[kWPANTUNDValueMapKey_TimeSync_RespAtMonoTimeUs] = now_mono_time_us;
+		entry[kWPANTUNDValueMapKey_TimeSync_UpdatedAtMonoTimeUs] = updated_at_mono_time_us;
+		result_as_val_map.push_back(entry);
+		op_status = kWPANTUNDStatus_Ok;
+	}
+	
+	cb(op_status, result_as_val_map);
 }
 
 void
@@ -4628,7 +4700,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			extract_thread_network_time(value, network_time, status)) {
 			
 			syslog(LOG_INFO, "[-NCP-]: Network time update: network_time:%lu, status:%d", network_time, status);
-			handle_network_time_update(network_time, map_network_time_status(status));
+			handle_network_time_update(network_time, map_network_time_status_from_raw(status));
 		} else {
 			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack or extract network time update");
 		}

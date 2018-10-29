@@ -716,6 +716,7 @@ protected:
 	bool mNodeTypeSupportsLegacy;
 
 	PcapManager mPcapManager;
+	NetworkTime mNetworkTime;
 
 private:
 	// ========================================================================
@@ -739,7 +740,7 @@ private:
 	NetworkRetain mNetworkRetain;
 
 	StatCollector mStatCollector;  // Statistic collector
-	NetworkTime mNetworkTime;
+	
 }; // class NCPInstance
 
 }; // namespace wpantund

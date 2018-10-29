@@ -292,6 +292,8 @@
 
 #define kWPANTUNDProperty_TimeSync_NetworkTime                  "TimeSync:ThreadNetworkTime"
 #define kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap          "TimeSync:ThreadNetworkTime:AsValMap"
+#define kWPANTUNDProperty_TimeSync_NetworkTimeCachedAsValMap    "TimeSync:ThreadNetworkTimeCached:AsValMap"
+#define kWPANTUNDProperty_TimeSync_NetworkTimeCached            "TimeSync:ThreadNetworkTimeCached"
 #define kWPANTUNDProperty_TimeSync_Period                       "TimeSync:Period"
 #define kWPANTUNDProperty_TimeSync_XtalThreshold                "TimeSync:XtalThreshold"
 
@@ -441,5 +443,7 @@
 
 #define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
 #define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
+#define kWPANTUNDValueMapKey_TimeSync_RespAtMonoTimeUs          "TimeSyncRespAtMonoTimeUs"
+#define kWPANTUNDValueMapKey_TimeSync_UpdatedAtMonoTimeUs       "TimeSyncUpdatedAtMonoTimeUs"
 
 #endif

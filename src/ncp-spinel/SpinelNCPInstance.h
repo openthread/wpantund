@@ -223,6 +223,8 @@ private:
 
 	void regsiter_all_get_handlers(void);
 
+	void get_prop_ThreadNetworkTimeCached(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadNetworkTimeCachedAsValMap(CallbackWithStatusArg1 cb);
 	void get_prop_ConfigNCPDriverName(CallbackWithStatusArg1 cb);
 	void get_prop_NCPCapabilities(CallbackWithStatusArg1 cb);
 	void get_prop_NetworkIsCommissioned(CallbackWithStatusArg1 cb);
