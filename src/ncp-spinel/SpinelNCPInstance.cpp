@@ -45,6 +45,10 @@
 #define kWPANTUND_Whitelist_RssiOverrideDisabled    127
 #define kWPANTUND_SpinelPropValueDumpLen            8
 
+#define kWPANTUND_NetworkTimeStatusUnsynchronized -1
+#define kWPANTUND_NetworkTimeStatusResyncNeeded    0
+#define kWPANTUND_NetworkTimeStatusSynchronized    1
+
 using namespace nl;
 using namespace wpantund;
 
@@ -1266,6 +1270,53 @@ unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost
 	}
 
 	return ret;
+}
+
+static bool
+extract_thread_network_time(const boost::any& value, uint64_t& network_time, int8_t& status)
+{
+	bool extracted = false;
+
+	if (value.type() == typeid(std::list<ValueMap>)) {
+		const std::list<ValueMap> value_map_list = boost::any_cast<std::list<ValueMap> >(value);
+
+		if (value_map_list.size() > 0) {
+			const ValueMap &value_map = value_map_list.front();
+
+			const ValueMap::const_iterator network_time_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Time);
+			const ValueMap::const_iterator status_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Status);
+
+			if (network_time_value_it != value_map.end() && status_value_it != value_map.end() && 
+				network_time_value_it->second.type() == typeid(uint64_t) && status_value_it->second.type() == typeid(int8_t)) {
+
+				network_time = boost::any_cast<uint64_t>(network_time_value_it->second);
+				status = boost::any_cast<int8_t>(status_value_it->second);
+
+				extracted = true;
+			}
+		}
+	}
+
+	return extracted;
+}
+
+static NetworkTime::NetworkTimeStatus
+map_network_time_status(int8_t raw_status)
+{
+	switch(raw_status) {
+		case kWPANTUND_NetworkTimeStatusUnsynchronized:
+			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
+			break;
+		case kWPANTUND_NetworkTimeStatusResyncNeeded:
+			return NetworkTime::NETWORK_TIME_RESYNC_NEEDED;
+			break;
+		case kWPANTUND_NetworkTimeStatusSynchronized:
+			return NetworkTime::NETWORK_TIME_SYNCHRONIZED;
+			break;
+		default:
+			assert(false);
+			return NetworkTime::NETWORK_TIME_UNSYNCHRONIZED;
+	}
 }
 
 void
@@ -4567,6 +4618,19 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 		if (len > 0) {
 			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
+		}
+	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
+		boost::any value;
+		uint64_t network_time;
+		int8_t status;
+
+		if (unpack_thread_network_time(value_data_ptr, value_data_len, value, true) == kWPANTUNDStatus_Ok && 
+			extract_thread_network_time(value, network_time, status)) {
+			
+			syslog(LOG_INFO, "[-NCP-]: Network time update: network_time:%lu, status:%d", network_time, status);
+			handle_network_time_update(network_time, map_network_time_status(status));
+		} else {
+			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack or extract network time update");
 		}
 	}
 

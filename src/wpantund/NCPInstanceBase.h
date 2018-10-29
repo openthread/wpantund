@@ -31,6 +31,7 @@
 #include "NetworkRetain.h"
 #include "RunawayResetBackoffManager.h"
 #include "Pcap.h"
+#include "NetworkTime.h"
 
 namespace nl {
 namespace wpantund {
@@ -119,6 +120,12 @@ public:
 	virtual void set_initializing_ncp(bool x);
 
 	virtual bool is_initializing_ncp()const;
+
+public:
+	// ========================================================================
+	// MARK: Network Time Update
+
+	void handle_network_time_update(uint64_t network_time, NetworkTime::NetworkTimeStatus status);
 
 public:
 	// ========================================================================
@@ -732,6 +739,7 @@ private:
 	NetworkRetain mNetworkRetain;
 
 	StatCollector mStatCollector;  // Statistic collector
+	NetworkTime mNetworkTime;
 }; // class NCPInstance
 
 }; // namespace wpantund
