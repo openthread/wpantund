@@ -464,8 +464,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				SPINEL_PROP_NET_SAVED,
 				SPINEL_PROP_NET_IF_UP,
 				SPINEL_PROP_NET_STACK_UP,
-				SPINEL_PROP_NET_ROLE,
-				SPINEL_PROP_THREAD_NETWORK_TIME
+				SPINEL_PROP_NET_ROLE
 			};
 
 			for (mSubPTIndex = 0; mSubPTIndex < sizeof(keys_to_fetch)/sizeof(keys_to_fetch[0]); mSubPTIndex++) {
