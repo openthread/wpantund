@@ -69,16 +69,10 @@ struct EnergyScanResultEntry
 	int8_t 	mMaxRssi;
 };
 
-enum NetworkTimeStatus {
-	NETWORK_TIME_STATUS_UNSYNCHONIZED = -1,
-	NETWORK_TIME_STATUS_RESYNC_NEEDED =  0,
-	NETWORK_TIME_STATUS_SYNCHRONIZED =   1
-};
-
 struct NetworkTimeUpdate
 {
 	uint64_t mNetworkTime;
-	int8_t   mStatus; // References NetworkTimeStatus
+	int8_t   mStatus;
 	uint64_t mReceivedMonoTimeUs;
 };
 
