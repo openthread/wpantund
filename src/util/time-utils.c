@@ -25,8 +25,6 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-#define USEC_IN_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
-
 #if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 static uint64_t sFuzzCms = 0;
 
