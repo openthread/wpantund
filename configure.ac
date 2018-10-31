@@ -215,6 +215,7 @@ AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlca
 NL_DEBUG
 NL_CHECK_DBUS
 NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR([Unable to find a usable implementation of boost::signals2 (not even our internal copy)]))
+NL_CHECK_BOOST_CHRONO([],AC_MSG_ERROR([Unable to find a usable implementation of boost::chrono (not even our internal copy)]))
 NL_CHECK_READLINE
 NL_CHECK_PTS
 
