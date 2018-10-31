@@ -60,12 +60,6 @@ time_get_monotonic(void)
 	return (time_t)(sFuzzCms/MSEC_PER_SEC);
 }
 
-uint64_t
-time_get_monotonic_us()
-{
-	return (uint64_t)sFuzzCms * USEC_PER_MSEC;
-}
-
 #else // if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 cms_t
@@ -98,26 +92,6 @@ time_get_monotonic(void)
 #else
 	return time(NULL);
 #endif // !__linux__
-}
-
-uint64_t
-time_get_monotonic_us(void)
-{
-	const uint64_t imprecise_time_us = (uint64_t)time(NULL) * USEC_IN_SEC;
-
-#if HAVE_CLOCK_GETTIME
-	struct timespec ts;
-	int ret;
-
-	ret = clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	return ret == 0 ? 
-		((uint64_t)ts.tv_sec * USEC_IN_SEC) + (uint64_t)(ts.tv_nsec / NSEC_PER_MSEC) : 
-		imprecise_time_us;
-#else
-	#warning clock_gettime() is required for precise time correction
-	return imprecise_time_us;
-#endif // HAVE_CLOCK_GETTIME
 }
 #endif // else FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 

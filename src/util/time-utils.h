@@ -61,7 +61,6 @@ typedef int32_t cms_t;
 
 extern cms_t time_ms(void);
 extern time_t time_get_monotonic(void);
-extern uint64_t time_get_monotonic_us(void);
 extern cms_t cms_until_time(time_t time);
 
 
