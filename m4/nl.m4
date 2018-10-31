@@ -222,6 +222,87 @@ AC_DEFUN([NL_CHECK_BOOST_SIGNALS2], [
 	AC_LANG_POP([C++])
 ])
 
+AC_DEFUN([NL_CHECK_BOOST_CHRONO], [
+	AC_LANG_PUSH([C++])
+
+	AC_ARG_VAR([BOOST_CXXFLAGS], [C compiler flags for boost])
+	AC_ARG_VAR([BOOST_LIBS], [linker flags for boost])
+
+	boost_internal_cxxflags="-I$(cd $srcdir && pwd)/third_party/boost -DBOOST_NO_CXX11_VARIADIC_TEMPLATES -DBOOST_NO_CXX11_HDR_ARRAY -DBOOST_NO_CXX11_HDR_CODECVT -DBOOST_NO_CXX11_HDR_CONDITION_VARIABLE -DBOOST_NO_CXX11_HDR_FORWARD_LIST -DBOOST_NO_CXX11_HDR_INITIALIZER_LIST -DBOOST_NO_CXX11_HDR_MUTEX -DBOOST_NO_CXX11_HDR_RANDOM -DBOOST_NO_CXX11_HDR_RATIO -DBOOST_NO_CXX11_HDR_REGEX -DBOOST_NO_CXX11_HDR_SYSTEM_ERROR -DBOOST_NO_CXX11_HDR_THREAD -DBOOST_NO_CXX11_HDR_TUPLE -DBOOST_NO_CXX11_HDR_TYPEINDEX -DBOOST_NO_CXX11_HDR_UNORDERED_MAP -DBOOST_NO_CXX11_HDR_UNORDERED_SET -DBOOST_NO_CXX11_NUMERIC_LIMITS -DBOOST_NO_CXX11_ALLOCATOR -DBOOST_NO_CXX11_SMART_PTR -DBOOST_NO_CXX11_HDR_FUNCTIONAL -DBOOST_NO_CXX11_STD_ALIGN -DBOOST_NO_CXX11_ADDRESSOF -DBOOST_NO_CXX11_DECLTYPE_N3276 -Wp,-w"
+
+	AC_ARG_WITH(
+		[boost],
+		AC_HELP_STRING([--with-boost=internal], [Use internal copy of boost])
+	)
+
+	with_boost=${with_boost-yes}
+
+	case ${with_boost} in
+		no)
+			$2
+			;;
+		internal)
+			BOOST_CXXFLAGS="${boost_internal_cxxflags}"
+			$1
+			;;
+		yes)
+			if test -z "${BOOST_CXXFLAGS}"
+			then
+				# If BOOST_CFLAGS was set for some reason, merge them into BOOST_CXXFLAGS.
+				test -n "${BOOST_CFLAGS}" && BOOST_CXXFLAGS="${BOOST_CXXFLAGS} ${BOOST_CFLAGS}"
+
+				# Go ahead and add the BOOST_CPPFLAGS into CFLAGS for now.
+				nl_check_boost_chrono_CXXFLAGS="${CXXFLAGS}"
+				nl_check_boost_chrono_CPPFLAGS="${CPPFLAGS}"
+				CXXFLAGS+=" ${BOOST_CXXFLAGS}"
+				CPPFLAGS+=" ${BOOST_CXXFLAGS}"
+
+				AC_CHECK_HEADERS([boost/chrono/chrono.hpp], [$1],[
+
+					# Sometimes boost explicitly needs this flag to work.
+					AX_CHECK_COMPILE_FLAG([-std=c++11], [
+						CXXFLAGS="$CXXFLAGS -std=c++11"
+						CPPFLAGS="$CPPFLAGS -std=c++11"
+						BOOST_CXXFLAGS="$BOOST_CXXFLAGS -std=c++11"
+					], [$2])
+
+					## Clear the cache entry we that we try again
+					unset ac_cv_header_boost_chrono_chrono_hpp
+
+					AC_CHECK_HEADERS([boost/chrono/chrono.hpp], [$1], [
+						with_boost=internal
+						BOOST_CXXFLAGS="${boost_internal_cxxflags}"
+						CXXFLAGS="${nl_check_boost_chrono_CXXFLAGS} ${BOOST_CXXFLAGS}"
+						CPPFLAGS="${nl_check_boost_chrono_CPPFLAGS} ${BOOST_CXXFLAGS}"
+						unset ac_cv_header_boost_chrono_chrono_hpp
+						AC_CHECK_HEADERS([boost/chrono/chrono.hpp], [
+							$1
+							with_boost=internal
+						], [
+							$2
+						])
+					])
+				])
+
+				CXXFLAGS="${nl_check_boost_chrono_CXXFLAGS}"
+				unset nl_check_boost_chrono_CXXFLAGS
+
+				CPPFLAGS="${nl_check_boost_chrono_CPPFLAGS}"
+				unset nl_check_boost_chrono_CPPFLAGS
+			fi
+
+			;;
+		*)
+			BOOST_CXXFLAGS="-I${with_boost}"
+			;;
+	esac
+
+	AC_SUBST(BOOST_CXXFLAGS)
+	AC_SUBST(BOOST_LIBS)
+
+	AC_LANG_POP([C++])
+])
+
 AC_DEFUN([NL_CHECK_READLINE], [
 	AC_LANG_PUSH([C])
 
