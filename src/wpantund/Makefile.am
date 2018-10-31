@@ -87,6 +87,7 @@ SOURCES = \
 	../util/any-to.cpp \
 	../util/string-utils.c \
 	../util/time-utils.c \
+	../util/time-utils-extra.cpp \
 	../util/nlpt-select.c \
 	../util/Data.cpp \
 	../util/SocketWrapper.cpp \
@@ -133,7 +134,7 @@ wpantund_CFLAGS = $(AM_CFLAGS)
 wpantund_CPPFLAGS += $(CODE_COVERAGE_CPPFLAGS)
 wpantund_CXXFLAGS += $(CODE_COVERAGE_CXXFLAGS)
 wpantund_CFLAGS += $(CODE_COVERAGE_CFLAGS)
-wpantund_LDADD += $(CODE_COVERAGE_LIBS)
+wpantund_LDADD += $(CODE_COVERAGE_LIBS) -l:libboost_system.a -l:libboost_chrono.a
 
 wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
 
