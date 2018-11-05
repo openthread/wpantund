@@ -41,6 +41,8 @@ RUN apt-get -y update \
 				autoconf-archive \
 				libboost-dev \
 				libboost-signals-dev \
+				libboost-chrono-dev \
+				libboost-system \
 				llvm \
 				clang-3.8 clang++-3.8 \
 				subversion \
