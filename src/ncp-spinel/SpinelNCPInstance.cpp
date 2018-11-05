@@ -493,6 +493,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_POSIXAppRCPVersion);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_PERFORMANCE_TEST)) {
+		properties.insert(kWPANTUNDProperty_Latency);
+		properties.insert(kWPANTUNDProperty_Hoplimit);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_COUNTERS)) {
 		properties.insert(kWPANTUNDProperty_NCPCounterAllMac);
 		properties.insert(kWPANTUNDProperty_NCPCounter_TX_IP_SEC_TOTAL);
@@ -1015,6 +1020,75 @@ bail:
 	return ret;
 }
 
+static int
+unpack_latency(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::string result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+	uint32_t latency;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_UINT32_S        // Latency
+		),
+		&latency
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	if (!as_val_map) {
+		char c_string[200];
+
+		snprintf(c_string, sizeof(c_string),
+			"Latency:%d",
+			latency
+		);
+
+		value = std::string(c_string);
+
+	}
+bail:
+	return ret;
+}
+
+static int
+unpack_hoplimit(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::string result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+	uint8_t hoplimit;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_UINT8_S        // Latency
+		),
+		&hoplimit
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	if (!as_val_map) {
+		char c_string[200];
+
+		snprintf(c_string, sizeof(c_string),
+			"hoplimit:%d",
+			hoplimit
+		);
+
+		value = std::string(c_string);
+
+	}
+bail:
+	return ret;
+}
 static int
 unpack_parent_info(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
@@ -1607,11 +1681,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogLevel,
 		SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// Properties requiring capability check and associated with a spinel property
-	// with simple packing format
-
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_NCPSleepyPollInterval,
 		SPINEL_CAP_ROLE_SLEEPY,
@@ -1892,6 +1961,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_POSIXAppRCPVersion,
 		SPINEL_CAP_POSIX_APP,
 		SPINEL_PROP_RCP_VERSION, SPINEL_DATATYPE_UTF8_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_Latency,
+		SPINEL_CAP_PERFORMANCE_TEST,
+		SPINEL_PROP_PERFORMANCE_LATENCY, SPINEL_DATATYPE_UINT32_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_Hoplimit,
+		SPINEL_CAP_PERFORMANCE_TEST,
+		SPINEL_PROP_PERFORMANCE_HOPLIMIT, SPINEL_DATATYPE_UINT8_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
@@ -1927,7 +2004,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadAddressCacheTableAsValMap,
 		SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE,
 		boost::bind(unpack_address_cache_table, _1, _2, _3, /* as_val_map */ true));
-
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
 	// using an unpacker
@@ -1988,7 +2064,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap,
 		SPINEL_CAP_TIME_SYNC,
 		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time, _1, _2, _3, true));
-
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
 
@@ -2887,6 +2962,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_UdpProxyStream,
 		boost::bind(&SpinelNCPInstance::set_prop_UdpProxyStream, this, _1, _2));
 	register_set_handler(
+		kWPANTUNDProperty_PerformanceTest,
+		boost::bind(&SpinelNCPInstance::set_prop_PerformanceTest, this, _1, _2));
+	register_set_handler(
 		kWPANTUNDProperty_DatasetActiveTimestamp,
 		boost::bind(&SpinelNCPInstance::set_prop_DatasetActiveTimestamp, this, _1, _2));
 	register_set_handler(
@@ -3180,6 +3258,43 @@ SpinelNCPInstance::set_prop_UdpProxyStream(const boost::any &value, CallbackWith
 			peer_port,
 			&peer_addr,
 			sock_port
+		);
+
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(command)
+			.finish()
+		);
+	} else {
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
+}
+
+
+void
+SpinelNCPInstance::set_prop_PerformanceTest(const boost::any &value, CallbackWithStatus cb)
+{
+	Data packet = any_to_data(value);
+
+	if (packet.size() > sizeof(uint16_t) * 2 + sizeof(in6_addr) * 2 + sizeof(uint16_t)) {
+		struct in6_addr peer_addr;
+		size_t i = 0;
+		memcpy(peer_addr.s6_addr, &packet[i], sizeof(peer_addr));
+		i += sizeof(peer_addr);
+		const uint16_t length = (packet[i] << 8 | packet[i + 1]);
+		i += sizeof(length);
+		const bool isSender = (bool)packet[i];
+
+		Data command = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+				SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
+				SPINEL_DATATYPE_UINT16_S    // length
+				SPINEL_DATATYPE_BOOL_S      // isSender
+			),
+			SPINEL_PROP_PERFORMANCE_LATENCY_TEST,
+			&peer_addr,
+			length,
+			isSender
 		);
 
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -4996,6 +5111,28 @@ SpinelNCPInstance::add_route_on_ncp(const struct in6_addr &route, uint8_t prefix
 	));
 
 	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::performance_test(const struct in6_addr* peerAddr, uint16_t length, bool isSender,CallbackWithStatus cb)
+{
+	Data command = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+			SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
+			SPINEL_DATATYPE_UINT16_S    // length
+			SPINEL_DATATYPE_BOOL_S      // isSender
+		),
+		SPINEL_PROP_PERFORMANCE_LATENCY_TEST,
+		peerAddr,
+		length,
+		isSender
+	);
+
+	start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+		.set_callback(cb)
+		.add_command(command)
+		.finish()
+	);
 }
 
 void

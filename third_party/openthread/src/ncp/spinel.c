@@ -61,7 +61,7 @@
 
 // IAR's errno.h apparently doesn't define EOVERFLOW.
 #ifndef EOVERFLOW
-// There is no real good choice for what to set
+/// There is no real good choice for what to set
 // errno to in this case, so we just pick the
 // value '1' somewhat arbitrarily.
 #define EOVERFLOW 1
@@ -1842,6 +1842,18 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "RCP_VERSION";
         break;
 
+    case SPINEL_PROP_PERFORMANCE_LATENCY_TEST:
+        ret = "PERFORMANCE_LATENCY_TEST";
+        break;
+
+    case SPINEL_PROP_PERFORMANCE_LATENCY:
+        ret = "PERFORMANCE_LATENCY";
+        break;
+
+    case SPINEL_PROP_PERFORMANCE_HOPLIMIT:
+        ret = "PERFORMANCE_HOPLIMIT";
+        break;
+
     case SPINEL_PROP_UART_BITRATE:
         ret = "UART_BITRATE";
         break;
@@ -2449,6 +2461,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_POSIX_APP:
         ret = "POSIX_APP";
+        break;
+
+    case SPINEL_CAP_PERFORMANCE_TEST:
+        ret = "PERFORMANCE_TEST";
         break;
 
     case SPINEL_CAP_ERROR_RATE_TRACKING:

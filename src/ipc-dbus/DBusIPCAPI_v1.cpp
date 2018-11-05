@@ -113,6 +113,7 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PERFORMANCE_TEST, interface_performance_test_handler);
 }
 
 static void
@@ -1184,6 +1185,45 @@ DBusIPCAPI_v1::interface_data_poll_handler(
 								 this, _1, message));
 	ret = DBUS_HANDLER_RESULT_HANDLED;
 
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_performance_test_handler(
+	NCPControlInterface* interface,
+	DBusMessage*         message
+){
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	dbus_bool_t isSender = FALSE;
+	bool did_succeed(false);
+	const uint8_t* address(NULL);
+
+	uint16_t payloadSize = 0;
+	struct in6_addr peerAddr = {};
+	int addrLength(0);
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &address, &addrLength,
+		DBUS_TYPE_INT16, &payloadSize,
+		DBUS_TYPE_BOOLEAN, &isSender,
+		DBUS_TYPE_INVALID
+	);
+
+	dbus_message_ref(message);
+
+	memcpy(peerAddr.s6_addr, address, addrLength);
+
+	interface->performance_test(
+		&peerAddr,
+		payloadSize,
+		isSender,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
 	return ret;
 }
 

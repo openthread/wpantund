@@ -189,6 +189,14 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+
+	virtual void performance_test(
+		const struct in6_addr* peerAddr,
+		uint16_t length,
+		bool isSender,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 public:
 	// ========================================================================
 	// Thread Mesh Commissioning Protocol (MeshCoP) Member Functions

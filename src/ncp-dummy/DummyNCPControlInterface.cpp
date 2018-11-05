@@ -164,6 +164,16 @@ DummyNCPControlInterface::add_external_route(
 }
 
 void
+DummyNCPControlInterface::performance_test(
+	const struct in6_addr* peerAddr,
+	uint16_t length,
+	bool isSender,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::remove_external_route(
 	const struct in6_addr *prefix,
 	int prefix_len_in_bits,

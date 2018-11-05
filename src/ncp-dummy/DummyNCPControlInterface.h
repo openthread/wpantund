@@ -154,6 +154,13 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void performance_test(
+		const struct in6_addr* peerAddr,
+		uint16_t length,
+		bool isSender,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void remove_external_route(
 		const struct in6_addr *prefix,
 		int prefix_len_in_bits,

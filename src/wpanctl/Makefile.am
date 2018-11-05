@@ -106,6 +106,8 @@ wpanctl_SOURCES = \
 	tool-cmd-dataset.h \
 	tool-cmd-dataset.c \
 	tool-updateprop.h \
+	tool-cmd-performance.c \
+	tool-cmd-performance.h \
 	$(NULL)
 
 wpanctl_LDADD = \

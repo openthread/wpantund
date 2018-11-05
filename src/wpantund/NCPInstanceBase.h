@@ -678,6 +678,14 @@ private:
 	bool mRequestRouteRefresh;
 
 protected:
+	// bool performance_test(
+	// 	const struct in6_addr* peerAddr,
+	// 	uint16_t length,
+	// 	bool isSender,
+	// 	CallbackWithStatus cb
+	// );
+
+protected:
 	//! This is set to the currently used MAC address (EUI64).
 	uint8_t mMACAddress[8];
 

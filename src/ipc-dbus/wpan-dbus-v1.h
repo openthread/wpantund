@@ -92,6 +92,8 @@
 #define WPANTUND_IF_CMD_PEEK                  "Peek"
 #define WPANTUND_IF_CMD_POKE                  "Poke"
 
+#define WPANTUND_IF_CMD_PERFORMANCE_TEST      "PerformanceTest"
+
 // ============================================================================
 // NestLabs Internal API Interface
 

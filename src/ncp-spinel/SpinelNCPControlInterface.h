@@ -147,6 +147,13 @@ public:
 		CallbackWithStatus cb
 	);
 
+	virtual void performance_test(
+		const struct in6_addr* peerAddr,
+		uint16_t length,
+		bool isSender,
+		CallbackWithStatus cb
+	);
+
 	virtual void add_external_route(
 		const struct in6_addr *prefix,
 		int prefix_len,

@@ -214,6 +214,25 @@ bail:
 }
 
 void
+SpinelNCPControlInterface::performance_test(
+	const struct in6_addr* peerAddr,
+	uint16_t length,
+	bool isSender,
+	CallbackWithStatus cb
+) {
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+	mNCPInstance->performance_test(
+		peerAddr,
+		length,
+		isSender,
+		cb
+	);
+
+bail:
+	return;
+}
+
+void
 SpinelNCPControlInterface::remove_on_mesh_prefix(
 	const struct in6_addr& prefix,
 	uint8_t prefix_len,

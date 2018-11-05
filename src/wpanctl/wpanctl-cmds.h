@@ -51,6 +51,7 @@
 #include "tool-cmd-commissioner.h"
 #include "tool-cmd-joiner.h"
 #include "tool-cmd-dataset.h"
+#include "tool-cmd-performance.h"
 
 #include "wpanctl-utils.h"
 
@@ -210,6 +211,11 @@
 		"poke", \
 		"Poke NCP memory (change content at a NCP memory address)", \
 		&tool_cmd_poke \
+	}, \
+	{ \
+		"performance", \
+		"Performance test include latency and throughput test", \
+		&tool_cmd_performance_test \
 	}, \
 	{ \
 		"dataset", \

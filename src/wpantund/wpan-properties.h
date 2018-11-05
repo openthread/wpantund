@@ -219,6 +219,12 @@
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 #define kWPANTUNDProperty_UdpProxyStream                        "UdpProxy:Stream"
 
+#define kWPANTUNDProperty_PerformanceTest                       "perf:test"
+#define kWPANTUNDProperty_Latency                               "latency"
+#define kWPANTUNDProperty_Hoplimit                              "hoplimit"
+
+
+
 #define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
 #define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
 #define kWPANTUNDProperty_CommissionerSessionId                 "Commissioner:SessionId"

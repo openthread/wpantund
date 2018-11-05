@@ -173,6 +173,8 @@ protected:
 	virtual void remove_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
 					bool stable, CallbackWithStatus cb);
 
+	virtual void performance_test(const struct in6_addr* peerAddr, uint16_t length, bool isSender, CallbackWithStatus cb);
+
 	static RoutePreference convert_flags_to_route_preference(uint8_t flags);
 	static uint8_t convert_route_preference_to_flags(RoutePreference priority);
 
@@ -301,6 +303,7 @@ private:
 	void set_prop_OpenThreadSteeringDataAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_TmfProxyStream(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_UdpProxyStream(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_PerformanceTest(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetActiveTimestamp(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetPendingTimestamp(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetMasterKey(const boost::any &value, CallbackWithStatus cb);
