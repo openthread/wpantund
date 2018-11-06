@@ -26,13 +26,15 @@
 #endif
 
 #include <stdio.h>
-#include "string-utils.h"
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
+#ifndef __USE_GNU
 #define __USE_GNU // Needed for `strcasestr`
-#include <string.h>
+#endif
+
+#include "string-utils.h"
 
 void
 memcpyrev(void *dest_, const void *src_, size_t len)

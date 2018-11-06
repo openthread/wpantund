@@ -24,8 +24,12 @@
 #include <config.h>
 #endif
 
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 1 // For the "fds_bits" member of "fd_set"
+#ifndef __USE_XOPEN
 #define __USE_XOPEN   1 // This too
+#endif // __USE_XOPEN
+#endif // _XOPEN_SOURCE
 
 #include <stdio.h>
 #include <stdint.h>
