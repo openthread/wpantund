@@ -300,7 +300,7 @@ private:
 	void set_prop_OpenThreadSteeringDataSetWhenJoinable(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_OpenThreadSteeringDataAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_TmfProxyStream(const boost::any &value, CallbackWithStatus cb);
-	void set_prop_UdpProxyStream(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_UdpForwardStream(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetActiveTimestamp(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetPendingTimestamp(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetMasterKey(const boost::any &value, CallbackWithStatus cb);

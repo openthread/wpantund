@@ -2884,8 +2884,8 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_TmfProxyStream,
 		boost::bind(&SpinelNCPInstance::set_prop_TmfProxyStream, this, _1, _2));
 	register_set_handler(
-		kWPANTUNDProperty_UdpProxyStream,
-		boost::bind(&SpinelNCPInstance::set_prop_UdpProxyStream, this, _1, _2));
+		kWPANTUNDProperty_UdpForwardStream,
+		boost::bind(&SpinelNCPInstance::set_prop_UdpForwardStream, this, _1, _2));
 	register_set_handler(
 		kWPANTUNDProperty_DatasetActiveTimestamp,
 		boost::bind(&SpinelNCPInstance::set_prop_DatasetActiveTimestamp, this, _1, _2));
@@ -3153,7 +3153,7 @@ SpinelNCPInstance::set_prop_TmfProxyStream(const boost::any &value, CallbackWith
 }
 
 void
-SpinelNCPInstance::set_prop_UdpProxyStream(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::set_prop_UdpForwardStream(const boost::any &value, CallbackWithStatus cb)
 {
 	Data packet = any_to_data(value);
 
@@ -3174,7 +3174,7 @@ SpinelNCPInstance::set_prop_UdpProxyStream(const boost::any &value, CallbackWith
 				SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
 				SPINEL_DATATYPE_UINT16_S    // Sock port
 			),
-			SPINEL_PROP_THREAD_UDP_PROXY_STREAM,
+			SPINEL_PROP_THREAD_UDP_FORWARD_STREAM,
 			packet.data(),
 			payload_len,
 			peer_port,
@@ -4408,7 +4408,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
 		}
 
-	} else if (key == SPINEL_PROP_THREAD_UDP_PROXY_STREAM) {
+	} else if (key == SPINEL_PROP_THREAD_UDP_FORWARD_STREAM) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
 		uint16_t peer_port = 0;
@@ -4444,7 +4444,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			// pack the port in big endian.
 			data.push_back(sock_port >> 8);
 			data.push_back(sock_port & 0xff);
-			signal_property_changed(kWPANTUNDProperty_UdpProxyStream, data);
+			signal_property_changed(kWPANTUNDProperty_UdpForwardStream, data);
 		}
 
 	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {
