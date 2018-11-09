@@ -217,7 +217,7 @@
 
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
-#define kWPANTUNDProperty_UdpProxyStream                        "UdpProxy:Stream"
+#define kWPANTUNDProperty_UdpForwardStream                      "UdpForward:Stream"
 
 #define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
 #define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
