@@ -1253,7 +1253,9 @@ unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost
 			entry.clear();
 			entry[kWPANTUNDValueMapKey_TimeSync_Time] = time;
 			entry[kWPANTUNDValueMapKey_TimeSync_Status] = timeSyncStatus;
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 			entry[kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs] = time_get_monotonic_us();
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 			result_as_val_map.push_back(entry);
 			value = result_as_val_map;
 		} else {
@@ -1283,19 +1285,23 @@ extract_thread_network_time(const boost::any& value, NetworkTimeUpdate& update)
 
 			const ValueMap::const_iterator network_time_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Time);
 			const ValueMap::const_iterator status_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_Status);
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 			const ValueMap::const_iterator received_mt_value_it = value_map.find(kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs);
-
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 			if (network_time_value_it != value_map.end() && 
-				status_value_it != value_map.end() && 
-				received_mt_value_it != value_map.end() && 
-				network_time_value_it->second.type() == typeid(uint64_t) && 
-				status_value_it->second.type() == typeid(int8_t) &&
-				received_mt_value_it->second.type() == typeid(uint64_t)) {
-
+				network_time_value_it->second.type() == typeid(uint64_t) &&
+				status_value_it != value_map.end() &&
+				status_value_it->second.type() == typeid(int8_t)
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP				
+				&& received_mt_value_it != value_map.end()
+				&& received_mt_value_it->second.type() == typeid(uint64_t)
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
+			) {
 				update.mNetworkTime = boost::any_cast<uint64_t>(network_time_value_it->second);
 				update.mStatus = boost::any_cast<int8_t>(status_value_it->second);
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 				update.mReceivedMonoTimeUs = boost::any_cast<uint64_t>(received_mt_value_it->second);
-
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 				extracted = true;
 			}
 		}

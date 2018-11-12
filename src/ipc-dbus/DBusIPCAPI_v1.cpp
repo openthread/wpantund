@@ -358,12 +358,14 @@ ipc_append_network_time_update_dict(
 		DBUS_TYPE_INT16, 
 		&status);
 
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 	uint64_t received_mono_time_us = network_time_update.mReceivedMonoTimeUs;
 	append_dict_entry(
 		&dict, 
 		kWPANTUNDProperty_TimeSync_ReceivedMonoTimeUs, 
 		DBUS_TYPE_UINT64, 
 		&received_mono_time_us);
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 
 	dbus_message_iter_close_container(iter, &dict);
 }

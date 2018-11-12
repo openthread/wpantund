@@ -503,3 +503,14 @@ AC_DEFUN([NL_CHECK_PTS], [
 	AM_CONDITIONAL([_XOPEN_SOURCE],[true])
 	AC_CHECK_FUNCS([forkpty ptsname], [$1], [$2])
 ])
+
+AC_DEFUN([NL_APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP], [
+AC_ARG_ENABLE(
+append-network-time-received-timestamp,
+	AC_HELP_STRING(
+		[--enable-append-network-time-received-timestamp],
+		[Append received monotonic timestamp to incoming network time]
+	)
+)
+AM_CONDITIONAL([APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP],[(case "${enable_append_network_time_received_timestamp}" in yes) true ;; *) false ;; esac)])
+])

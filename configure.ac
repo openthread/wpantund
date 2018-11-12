@@ -187,6 +187,7 @@ AC_PROG_CC([],AC_MSG_ERROR(["A working C compiler is required"]))
 AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 
 NL_FUZZ_TARGETS
+NL_APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 
 AC_HEADER_STDC
 AC_HEADER_TIME

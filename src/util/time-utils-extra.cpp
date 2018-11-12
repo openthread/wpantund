@@ -18,6 +18,8 @@
  */
 
 #include "time-utils.h"
+
+#if USE_BOOST_CHRONO_MONOTONIC_TIME
 #include <boost/chrono.hpp>
 
 extern "C" uint64_t time_get_monotonic_us() {
@@ -25,3 +27,4 @@ extern "C" uint64_t time_get_monotonic_us() {
 		boost::chrono::steady_clock::now().time_since_epoch())
 			.count();
 }
+#endif // USE_BOOST_CHRONO_MONOTONIC_TIME

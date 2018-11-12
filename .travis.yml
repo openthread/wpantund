@@ -9,6 +9,8 @@ addons:
             - libglib2.0-dev
             - libboost-dev
             - libboost-signals-dev
+            - libboost-system-dev
+            - libboost-chrono-dev
             - libreadline-dev
             - libtool
             - autoconf-archive

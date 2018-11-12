@@ -73,7 +73,9 @@ struct NetworkTimeUpdate
 {
 	uint64_t mNetworkTime;
 	int8_t   mStatus;
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 	uint64_t mReceivedMonoTimeUs;
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 };
 
 std::string address_flags_to_string(uint8_t flags);
