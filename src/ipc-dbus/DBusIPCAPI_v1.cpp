@@ -329,50 +329,9 @@ DBusIPCAPI_v1::received_beacon(NCPControlInterface* interface, const WPAN::Netwo
 	dbus_message_unref(signal);
 }
 
-static void
-ipc_append_network_time_update_dict(
-	DBusMessageIter *iter, const NetworkTimeUpdate& network_time_update)
-{
-	DBusMessageIter dict;
-
-	dbus_message_iter_open_container(
-		iter,
-		DBUS_TYPE_ARRAY,
-		DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
-		DBUS_TYPE_STRING_AS_STRING
-		DBUS_TYPE_VARIANT_AS_STRING
-		DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
-		&dict);
-	
-	uint64_t network_time = network_time_update.mNetworkTime;
-	append_dict_entry(
-		&dict, 
-		kWPANTUNDProperty_TimeSync_NetworkTimeValue, 
-		DBUS_TYPE_UINT64, 
-		&network_time);
-	
-	int16_t status = network_time_update.mStatus;
-	append_dict_entry(
-		&dict, 
-		kWPANTUNDProperty_TimeSync_Status, 
-		DBUS_TYPE_INT16, 
-		&status);
-
-#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
-	uint64_t received_mono_time_us = network_time_update.mReceivedMonoTimeUs;
-	append_dict_entry(
-		&dict, 
-		kWPANTUNDProperty_TimeSync_ReceivedMonoTimeUs, 
-		DBUS_TYPE_UINT64, 
-		&received_mono_time_us);
-#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
-
-	dbus_message_iter_close_container(iter, &dict);
-}
-
 void
 DBusIPCAPI_v1::received_network_time_update(
-	NCPControlInterface* interface, const NetworkTimeUpdate& network_time_update)
+	NCPControlInterface* interface, const ValueMap &network_time_update)
 {
 	DBusMessageIter iter;
 	DBusMessage* signal;
@@ -385,7 +344,7 @@ DBusIPCAPI_v1::received_network_time_update(
 
 	dbus_message_iter_init_append(signal, &iter);
 
-	ipc_append_network_time_update_dict(&iter, network_time_update);
+	append_any_to_dbus_iter(&iter, network_time_update);
 
 	dbus_connection_send(mConnection, signal, NULL);
 

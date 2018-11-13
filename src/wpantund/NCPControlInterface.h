@@ -288,7 +288,7 @@ public:
 	// ========================================================================
 	// Network time-related Member Functions
 
-	boost::signals2::signal<void(const NetworkTimeUpdate&)> mOnNetworkTimeUpdate;
+	boost::signals2::signal<void(const ValueMap&)> mOnNetworkTimeUpdate;
 
 public:
 	// ========================================================================

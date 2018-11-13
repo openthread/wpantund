@@ -124,7 +124,7 @@ public:
 	// ========================================================================
 	// MARK: Network Time Update
 
-	void handle_network_time_update(const NetworkTimeUpdate& update);
+	void handle_network_time_update(const ValueMap &update);
 
 public:
 	// ========================================================================
