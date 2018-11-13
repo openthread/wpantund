@@ -286,6 +286,12 @@ public:
 
 public:
 	// ========================================================================
+	// Network time-related Member Functions
+
+	boost::signals2::signal<void(const ValueMap&)> mOnNetworkTimeUpdate;
+
+public:
+	// ========================================================================
 	// Power-related Member Functions
 
 	virtual void begin_low_power(

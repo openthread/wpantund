@@ -87,6 +87,7 @@ SOURCES = \
 	../util/any-to.cpp \
 	../util/string-utils.c \
 	../util/time-utils.c \
+	../util/time-utils-extra.cpp \
 	../util/nlpt-select.c \
 	../util/Data.cpp \
 	../util/SocketWrapper.cpp \
@@ -134,6 +135,11 @@ wpantund_CPPFLAGS += $(CODE_COVERAGE_CPPFLAGS)
 wpantund_CXXFLAGS += $(CODE_COVERAGE_CXXFLAGS)
 wpantund_CFLAGS += $(CODE_COVERAGE_CFLAGS)
 wpantund_LDADD += $(CODE_COVERAGE_LIBS)
+
+if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
+wpantund_LDADD += -l:libboost_system.a -l:libboost_chrono.a
+wpantund_CPPFLAGS += -DUSE_BOOST_CHRONO_MONOTONIC_TIME=1
+endif
 
 wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
 

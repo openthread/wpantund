@@ -187,6 +187,7 @@ AC_PROG_CC([],AC_MSG_ERROR(["A working C compiler is required"]))
 AC_PROG_CXX([],AC_MSG_ERROR(["A working C++ compiler is required"]))
 
 NL_FUZZ_TARGETS
+NL_APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
 
 AC_HEADER_STDC
 AC_HEADER_TIME
@@ -215,6 +216,7 @@ AC_CHECK_FUNCS([alloca fgetln memcmp memset strtol strdup strndup strlcpy strlca
 NL_DEBUG
 NL_CHECK_DBUS
 NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR([Unable to find a usable implementation of boost::signals2 (not even our internal copy)]))
+NL_CHECK_BOOST_CHRONO([],AC_MSG_ERROR([Unable to find a usable implementation of boost::chrono (not even our internal copy)]))
 NL_CHECK_READLINE
 NL_CHECK_PTS
 

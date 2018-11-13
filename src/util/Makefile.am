@@ -21,6 +21,7 @@ EXTRA_DIST = \
 	socket-utils.c \
 	string-utils.c \
 	time-utils.c \
+	time-utils-extra.cpp \
 	tunnel.c \
 	netif-mgmt.c \
 	netif-mgmt.h \

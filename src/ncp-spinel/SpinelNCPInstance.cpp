@@ -1223,18 +1223,10 @@ bail:
 	return ret;
 }
 
-static int
-unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+static int 
+unpack_thread_network_time_spinel(const uint8_t *data_in, spinel_size_t data_len, uint64_t &time, int8_t &time_sync_status)
 {
-	spinel_ssize_t len;
-	ValueMap entry;
-	std::list<ValueMap> result_as_val_map;
-	std::list<std::string> result_as_string;
-	uint64_t time;
-	int8_t timeSyncStatus;
-	int ret = kWPANTUNDStatus_Failure;
-
-	len = spinel_datatype_unpack(
+	return spinel_datatype_unpack(
 		data_in,
 		data_len,
 		(
@@ -1242,26 +1234,83 @@ unpack_thread_network_time(const uint8_t *data_in, spinel_size_t data_len, boost
 			SPINEL_DATATYPE_INT8_S     // time sync status
 		),
 		&time,
-		&timeSyncStatus
+		&time_sync_status
 	);
+}
+
+static int
+unpack_thread_network_time_as_string(const uint8_t *data_in, spinel_size_t data_len, std::string &result)
+{
+	spinel_ssize_t len;
+	uint64_t time;
+	int8_t time_sync_status;
+	char c_string[500];
+	int ret = kWPANTUNDStatus_Failure;
+	
+	len = unpack_thread_network_time_spinel(data_in, data_len, time, time_sync_status);
 
 	if (len > 0)
 	{
 		ret = kWPANTUNDStatus_Ok;
-		if (as_val_map) {
-			entry.clear();
-			entry[kWPANTUNDValueMapKey_TimeSync_Time] = time;
-			entry[kWPANTUNDValueMapKey_TimeSync_Status] = timeSyncStatus;
-			result_as_val_map.push_back(entry);
-			value = result_as_val_map;
-		} else {
-			char c_string[500];
-			int index;
+		snprintf(c_string, sizeof(c_string), "ThreadNetworkTime: %" PRIu64 ", TimeSyncStatus:%d", time, time_sync_status);
+		result.assign(c_string);
+	}
 
-			index = snprintf(c_string, sizeof(c_string), "ThreadNetworkTime: %" PRIu64 ", TimeSyncStatus:%d", time, timeSyncStatus);
+	return ret;
+}
 
-			result_as_string.push_back(std::string(c_string));
-			value = result_as_string;
+static int
+unpack_thread_network_time_as_valmap(const uint8_t *data_in, spinel_size_t data_len, ValueMap &result)
+{
+	spinel_ssize_t len;
+	ValueMap entry;
+	uint64_t time;
+	int8_t time_sync_status;
+	int ret = kWPANTUNDStatus_Failure;
+
+	len = unpack_thread_network_time_spinel(data_in, data_len, time, time_sync_status);
+
+	if (len > 0)
+	{
+		ret = kWPANTUNDStatus_Ok;
+		result.clear();
+		result[kWPANTUNDValueMapKey_TimeSync_Time] = time;
+		result[kWPANTUNDValueMapKey_TimeSync_Status] = time_sync_status;
+#if APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
+		result[kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs] = time_get_monotonic_us();
+#endif // APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP
+	}
+
+	return ret;
+}
+
+static int
+unpack_thread_network_time_as_any(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	ValueMap result_as_val_map;
+	std::list<ValueMap> result_as_val_map_list;
+	std::string result_as_string;
+	std::list<std::string> result_as_string_list;
+	int ret;
+
+	if (as_val_map)
+	{
+		ret = unpack_thread_network_time_as_valmap(data_in, data_len, result_as_val_map);
+
+		if (ret == kWPANTUNDStatus_Ok)
+		{
+			result_as_val_map_list.push_back(result_as_val_map);
+			value = result_as_val_map_list;
+		}
+	}
+	else
+	{
+		ret = unpack_thread_network_time_as_string(data_in, data_len, result_as_string);
+
+		if (ret == kWPANTUNDStatus_Ok)
+		{
+			result_as_string_list.push_back(result_as_string);
+			value = result_as_string_list;
 		}
 	}
 
@@ -1983,11 +2032,11 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_TimeSync_NetworkTime,
 		SPINEL_CAP_TIME_SYNC,
-		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time, _1, _2, _3, false));
+		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time_as_any, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap,
 		SPINEL_CAP_TIME_SYNC,
-		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time, _1, _2, _3, true));
+		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time_as_any, _1, _2, _3, true));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -4567,6 +4616,21 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 		if (len > 0) {
 			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
+		}
+	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
+		ValueMap result;
+		std::string result_as_string;
+
+		if (unpack_thread_network_time_as_valmap(value_data_ptr, value_data_len, result) == kWPANTUNDStatus_Ok) {
+			if (unpack_thread_network_time_as_string(value_data_ptr, value_data_len, result_as_string) == kWPANTUNDStatus_Ok) {
+				syslog(LOG_INFO, "[-NCP-]: Network time update: %s", result_as_string.c_str());
+			} else {
+				syslog(LOG_WARNING, "[-NCP-]: Failed to extract network time update for logging");
+			}
+
+			handle_network_time_update(result);
+		} else {
+			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
 		}
 	}
 

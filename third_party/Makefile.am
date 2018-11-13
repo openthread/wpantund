@@ -59,6 +59,53 @@ EXTRA_DIST += \
 EXTRA_DIST += \
 	boost/LICENSE \
 	boost/README.google \
+	boost/boost/chrono/config.hpp \
+	boost/boost/chrono/io/time_point_put.hpp \
+	boost/boost/chrono/io/duration_units.hpp \
+	boost/boost/chrono/io/duration_io.hpp \
+	boost/boost/chrono/io/duration_put.hpp \
+	boost/boost/chrono/io/ios_base_state.hpp \
+	boost/boost/chrono/io/time_point_units.hpp \
+	boost/boost/chrono/io/utility/ios_base_state_ptr.hpp \
+	boost/boost/chrono/io/utility/manip_base.hpp \
+	boost/boost/chrono/io/utility/to_string.hpp \
+	boost/boost/chrono/io/duration_style.hpp \
+	boost/boost/chrono/io/time_point_get.hpp \
+	boost/boost/chrono/io/time_point_io.hpp \
+	boost/boost/chrono/io/duration_get.hpp \
+	boost/boost/chrono/io/timezone.hpp \
+	boost/boost/chrono/thread_clock.hpp \
+	boost/boost/chrono/round.hpp \
+	boost/boost/chrono/floor.hpp \
+	boost/boost/chrono/include.hpp \
+	boost/boost/chrono/chrono_io.hpp \
+	boost/boost/chrono/chrono.hpp \
+	boost/boost/chrono/io_v1/chrono_io.hpp \
+	boost/boost/chrono/process_cpu_clocks.hpp \
+	boost/boost/chrono/duration.hpp \
+	boost/boost/chrono/clock_string.hpp \
+	boost/boost/chrono/system_clocks.hpp \
+	boost/boost/chrono/ceil.hpp \
+	boost/boost/chrono/time_point.hpp \
+	boost/boost/chrono/detail/system.hpp \
+	boost/boost/chrono/detail/static_assert.hpp \
+	boost/boost/chrono/detail/scan_keyword.hpp \
+	boost/boost/chrono/detail/no_warning/signed_unsigned_cmp.hpp \
+	boost/boost/chrono/detail/inlined/mac/thread_clock.hpp \
+	boost/boost/chrono/detail/inlined/mac/chrono.hpp \
+	boost/boost/chrono/detail/inlined/mac/process_cpu_clocks.hpp \
+	boost/boost/chrono/detail/inlined/thread_clock.hpp \
+	boost/boost/chrono/detail/inlined/win/thread_clock.hpp \
+	boost/boost/chrono/detail/inlined/win/chrono.hpp \
+	boost/boost/chrono/detail/inlined/win/process_cpu_clocks.hpp \
+	boost/boost/chrono/detail/inlined/chrono.hpp \
+	boost/boost/chrono/detail/inlined/process_cpu_clocks.hpp \
+	boost/boost/chrono/detail/inlined/posix/thread_clock.hpp \
+	boost/boost/chrono/detail/inlined/posix/chrono.hpp \
+	boost/boost/chrono/detail/inlined/posix/process_cpu_clocks.hpp \
+	boost/boost/chrono/detail/is_evenly_divisible_by.hpp \
+	boost/boost/chrono/typeof/boost/ratio.hpp  \
+	boost/boost/chrono/typeof/boost/chrono/chrono.hpp \
 	boost/boost/aligned_storage.hpp \
 	boost/boost/any.hpp \
 	boost/boost/assert.hpp \

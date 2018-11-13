@@ -176,6 +176,14 @@ DBusIPCAPI_v1::add_interface(NCPControlInterface* interface)
 		)
 	);
 
+	interface->mOnNetworkTimeUpdate.connect(
+		boost::bind(
+			&DBusIPCAPI_v1::received_network_time_update,
+			this,
+			interface,
+			_1
+		)
+	);
 
 bail:
 	return 0;
@@ -315,6 +323,28 @@ DBusIPCAPI_v1::received_beacon(NCPControlInterface* interface, const WPAN::Netwo
 	dbus_message_iter_init_append(signal, &iter);
 
 	ipc_append_network_dict(&iter, network);
+
+	dbus_connection_send(mConnection, signal, NULL);
+
+	dbus_message_unref(signal);
+}
+
+void
+DBusIPCAPI_v1::received_network_time_update(
+	NCPControlInterface* interface, const ValueMap &network_time_update)
+{
+	DBusMessageIter iter;
+	DBusMessage* signal;
+
+	signal = dbus_message_new_signal(
+		path_for_iface(interface).c_str(),
+		WPANTUND_DBUS_APIv1_INTERFACE,
+		WPANTUND_IF_SIGNAL_NETWORK_TIME_UPDATE
+	);
+
+	dbus_message_iter_init_append(signal, &iter);
+
+	append_any_to_dbus_iter(&iter, network_time_update);
 
 	dbus_connection_send(mConnection, signal, NULL);
 

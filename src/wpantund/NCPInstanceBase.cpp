@@ -1372,6 +1372,15 @@ NCPInstanceBase::reset_tasks(wpantund_status_t status)
 }
 
 // ----------------------------------------------------------------------------
+// MARK: Network Time Update
+
+void
+NCPInstanceBase::handle_network_time_update(const ValueMap &update)
+{
+	get_control_interface().mOnNetworkTimeUpdate(update);
+}
+
+// ----------------------------------------------------------------------------
 // MARK: -
 
 bool

@@ -9,6 +9,8 @@ addons:
             - libglib2.0-dev
             - libboost-dev
             - libboost-signals-dev
+            - libboost-system-dev
+            - libboost-chrono-dev
             - libreadline-dev
             - libtool
             - autoconf-archive
@@ -40,6 +42,7 @@ after_success:
 env:
     - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar
     - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal --enable-append-network-time-received-timestamp
 
 matrix:
     allow_failures:

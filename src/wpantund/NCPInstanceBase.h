@@ -122,6 +122,12 @@ public:
 
 public:
 	// ========================================================================
+	// MARK: Network Time Update
+
+	void handle_network_time_update(const ValueMap &update);
+
+public:
+	// ========================================================================
 	// MARK: Network Interface Methods
 
 	int set_online(bool is_online);
@@ -732,6 +738,7 @@ private:
 	NetworkRetain mNetworkRetain;
 
 	StatCollector mStatCollector;  // Statistic collector
+	
 }; // class NCPInstance
 
 }; // namespace wpantund
