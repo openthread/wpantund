@@ -42,6 +42,7 @@ after_success:
 env:
     - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar
     - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal --enable-append-network-time-received-timestamp
 
 matrix:
     allow_failures:
