@@ -1290,6 +1290,10 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "PHY_RX_SENSITIVITY";
         break;
 
+    case SPINEL_PROP_PHY_PCAP_ENABLED:
+        ret = "PHY_PCAP_ENABLED";
+        break;
+
     case SPINEL_PROP_JAM_DETECT_ENABLE:
         ret = "JAM_DETECT_ENABLE";
         break;
@@ -2359,6 +2363,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
         ret = "MCU_POWER_STATE";
         break;
 
+    case SPINEL_CAP_PCAP:
+        ret = "PCAP";
+        break;
+
     case SPINEL_CAP_802_15_4_2003:
         ret = "802_15_4_2003";
         break;
@@ -2401,6 +2409,18 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_802_15_4_868MHZ_ASK:
         ret = "802_15_4_868MHZ_ASK";
+        break;
+
+    case SPINEL_CAP_CONFIG_FTD:
+        ret = "CONFIG_FTD";
+        break;
+
+    case SPINEL_CAP_CONFIG_MTD:
+        ret = "CONFIG_MTD";
+        break;
+
+    case SPINEL_CAP_CONFIG_RADIO:
+        ret = "CONFIG_RADIO";
         break;
 
     case SPINEL_CAP_ROLE_ROUTER:
@@ -2473,6 +2493,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_THREAD_JOINER:
         ret = "THREAD_JOINER";
+        break;
+
+    case SPINEL_CAP_THREAD_BORDER_ROUTER:
+        ret = "THREAD_BORDER_ROUTER";
         break;
 
     case SPINEL_CAP_NEST_LEGACY_INTERFACE:
