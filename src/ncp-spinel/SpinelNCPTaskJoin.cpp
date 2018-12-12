@@ -139,11 +139,13 @@ nl::wpantund::SpinelNCPTaskJoin::vprocess_event(int event, va_list args)
 			goto on_error;
 		}
 
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
-			SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
-			router_role_enabled
-		);
+		if (mInstance->mCapabilities.count(SPINEL_CAP_CONFIG_FTD)) {
+			mNextCommand = SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+					SPINEL_PROP_THREAD_ROUTER_ROLE_ENABLED,
+					router_role_enabled
+					);
+		}
 
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 
