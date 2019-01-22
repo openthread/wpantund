@@ -636,14 +636,6 @@ protected:
 	// wpantund property "Daemon:IPv6:FilterUserAddedLinkLocal"
 	bool mFilterUserAddedLinkLocalIPv6Address;
 
-	// This boolean flag indicates whether wpantund would generate and add
-	// an SLAAC address on seeing/adding an on-mesh prefix with SLAAC flag.
-	// Note that the SLAAC address is added only if there is no existing
-	// address with the same prefix. By default this feature is enabled
-	// (i.e., SLAAC addresses are added by wpantund). It can be changed
-	// using the wpantund property "Daemon:IPv6:AutoAddSLAACAddress".
-	bool mAutoAddSLAACAddress;
-
 	// When an unicast address is added on interface, the related on-mesh prefix
 	// is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
