@@ -344,6 +344,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mInboundHeader = 0;
 	mIsCommissioned = false;
 	mFilterRLOCAddresses = true;
+	mFilterALOCAddresses = true;
 	mTickleOnHostDidWake = false;
 	mIsPcapInProgress = false;
 	mLastHeader = 0;
@@ -2057,6 +2058,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses,
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadConfigFilterRLOCAddresses, this, _1));
 	register_get_handler(
+		kWPANTUNDProperty_ThreadConfigFilterALOCAddresses,
+		boost::bind(&SpinelNCPInstance::get_prop_ThreadConfigFilterALOCAddresses, this, _1));
+	register_get_handler(
 		kWPANTUNDProperty_IPv6MeshLocalPrefix,
 		boost::bind(&SpinelNCPInstance::get_prop_IPv6MeshLocalPrefix, this, _1));
 	register_get_handler(
@@ -2217,6 +2221,12 @@ void
 SpinelNCPInstance::get_prop_ThreadConfigFilterRLOCAddresses(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mFilterRLOCAddresses));
+}
+
+void
+SpinelNCPInstance::get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mFilterALOCAddresses));
 }
 
 void
@@ -2924,6 +2934,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_ThreadConfigFilterRLOCAddresses,
 		boost::bind(&SpinelNCPInstance::set_prop_ThreadConfigFilterRLOCAddresses, this, _1, _2));
 	register_set_handler(
+		kWPANTUNDProperty_ThreadConfigFilterALOCAddresses,
+		boost::bind(&SpinelNCPInstance::set_prop_ThreadConfigFilterALOCAddresses, this, _1, _2));
+	register_set_handler(
 		kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable,
 		boost::bind(&SpinelNCPInstance::set_prop_OpenThreadSteeringDataSetWhenJoinable, this, _1, _2));
 	register_set_handler(
@@ -3141,6 +3154,13 @@ void
 SpinelNCPInstance::set_prop_ThreadConfigFilterRLOCAddresses(const boost::any &value, CallbackWithStatus cb)
 {
 	mFilterRLOCAddresses = any_to_bool(value);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+SpinelNCPInstance::set_prop_ThreadConfigFilterALOCAddresses(const boost::any &value, CallbackWithStatus cb)
+{
+	mFilterALOCAddresses = any_to_bool(value);
 	cb(kWPANTUNDStatus_Ok);
 }
 
@@ -4845,14 +4865,18 @@ SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t pr
 		// Filter RLOC link-local or mesh-local addresses
 
 		if (0 == memcmp(rloc_bytes, addr.s6_addr + 8, sizeof(rloc_bytes))) {
-			if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
-				should_filter = true;
-			}
+			if( addr.s6_addr[ 14 ] == 0xFC ) {
+				should_filter = mFilterALOCAddresses;
+			} else {
+				if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
+					should_filter = true;
+				}
 
-			if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))
-				&& (0 == memcmp(mNCPV6Prefix, &addr, sizeof(mNCPV6Prefix)))
-			) {
-				should_filter = true;
+				if (buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix))
+					&& (0 == memcmp(mNCPV6Prefix, &addr, sizeof(mNCPV6Prefix)))
+				) {
+					should_filter = true;
+				}
 			}
 		}
 	}

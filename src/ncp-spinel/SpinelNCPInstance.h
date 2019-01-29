@@ -228,6 +228,7 @@ private:
 	void get_prop_NetworkIsCommissioned(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadRouterID(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadConfigFilterRLOCAddresses(CallbackWithStatusArg1 cb);
+    void get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerEnergyScanResult(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerPanIdConflictResult(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
@@ -297,6 +298,7 @@ private:
 	void set_prop_NetworkXPANID(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_IPv6MeshLocalPrefix(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_ThreadConfigFilterRLOCAddresses(const boost::any &value, CallbackWithStatus cb);
+    void set_prop_ThreadConfigFilterALOCAddresses(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_OpenThreadSteeringDataSetWhenJoinable(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_OpenThreadSteeringDataAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_TmfProxyStream(const boost::any &value, CallbackWithStatus cb);
@@ -424,6 +426,7 @@ private:
 	uint8_t mThreadMode;
 	bool mIsCommissioned;
 	bool mFilterRLOCAddresses;
+    bool mFilterALOCAddresses;
 	bool mTickleOnHostDidWake;
 
 	std::set<unsigned int> mCapabilities;
