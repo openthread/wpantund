@@ -1727,7 +1727,7 @@ StatCollector::did_rx_net_scan_beacon(const WPAN::NetworkInstance& network)
 		network.xpanid[0], network.xpanid[1], network.xpanid[2], network.xpanid[3],
 		network.xpanid[4], network.xpanid[5], network.xpanid[6], network.xpanid[7],
 		network.hwaddr[0], network.hwaddr[1], network.hwaddr[2], network.hwaddr[3],
-		network.hwaddr[4], network.hwaddr[5], network.hwaddr[6], network.xpanid[7],
+		network.hwaddr[4], network.hwaddr[5], network.hwaddr[6], network.hwaddr[7],
 		network.rssi,
 		network.lqi,
 		network.type,
