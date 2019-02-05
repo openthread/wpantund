@@ -178,9 +178,6 @@
 #define kWPANTUNDProperty_OpenThreadDebugTestAssert             "OpenThread:Debug:TestAssert"
 #define kWPANTUNDProperty_OpenThreadDebugTestWatchdog           "OpenThread:Debug:TestWatchdog"
 
-#define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
-#define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"
-
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList          "Debug:IPv6:GlobalIPAddressList"
 
 #define kWPANTUNDProperty_MACWhitelistEnabled                   "MAC:Whitelist:Enabled"
@@ -233,6 +230,11 @@
 #define kWPANTUNDCommissionerState_Active                       "active"
 
 #define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
+
+#define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
+#define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"
+#define kWPANTUNDProperty_NCPCounterThreadMle                   "NCP:Counter:Thread:Mle"
+#define kWPANTUNDProperty_NCPCounterThreadMleAsValMap           "NCP:Counter:Thread:Mle:AsValMap"
 
 #define kWPANTUNDProperty_NCPCounter_TX_PKT_TOTAL               "NCP:Counter:TX_PKT_TOTAL"
 #define kWPANTUNDProperty_NCPCounter_TX_PKT_UNICAST             "NCP:Counter:TX_PKT_UNICAST"
@@ -439,6 +441,16 @@
 #define kWPANTUNDValueMapKey_Counter_RxErrSec                   "RxErrSec"             // Number of received packets with security error
 #define kWPANTUNDValueMapKey_Counter_RxErrFcs                   "RxErrFcs"             // Number of received packets with FCS error
 #define kWPANTUNDValueMapKey_Counter_RxErrOther                 "RxErrOther"           // Number of received packets with other error
+
+#define kWPANTUNDValueMapKey_MleCounter_DisabledRole            "DisabledRole"         // The number of times device entered DISABLED role.
+#define kWPANTUNDValueMapKey_MleCounter_DetachedRole            "DetachedRole"         // The number of times device entered DETACHED role.
+#define kWPANTUNDValueMapKey_MleCounter_ChildRole               "ChildRole"            // The number of times device entered CHILD role.
+#define kWPANTUNDValueMapKey_MleCounter_RouterRole              "RouterRole"           // The number of times device entered ROUTER role.
+#define kWPANTUNDValueMapKey_MleCounter_LeaderRole              "LeaderRole"           // The number of times device entered LEADER role.
+#define kWPANTUNDValueMapKey_MleCounter_AttachAttempts          "AttachAttempts"       // The number of attach attempts while device was detached.
+#define kWPANTUNDValueMapKey_MleCounter_PartitionIdChanges      "PartitionIdChanges"   // The number of changes to partition ID.
+#define kWPANTUNDValueMapKey_MleCounter_BetterPartitionAttaches "BetterPartAttaches"   // The number of attempts to attach to a better partition.
+#define kWPANTUNDValueMapKey_MleCounter_ParentChanges           "ParentChanges"        // The number of times device changed its parents.
 
 #define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
 #define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
