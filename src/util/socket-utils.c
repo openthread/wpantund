@@ -21,8 +21,6 @@
 #include <config.h>
 #endif
 
-#define _GNU_SOURCE 1
-
 #include "assert-macros.h"
 
 #include <stdio.h>
@@ -90,7 +88,7 @@ system_socket_table_close_alarm_(int sig)
 	static const char message[] = "\nclose_super_socket: Unable to terminate child in a timely manner, watchdog fired\n";
 
 	// Can't use syslog here, write to stderr instead.
-	(void)write(STDERR_FILENO, message, sizeof(message) - 1);
+	ssize_t len = write(STDERR_FILENO, message, sizeof(message) - 1);
 
 	_exit(EXIT_FAILURE);
 }
