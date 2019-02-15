@@ -31,7 +31,10 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#ifndef __USE_GNU
 #define __USE_GNU // Needed for `strcasestr`
+#endif
+
 #include <string.h>
 
 void
