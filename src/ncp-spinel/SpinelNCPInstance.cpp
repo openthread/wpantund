@@ -505,6 +505,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NCPCounter_TX_SPINEL_TOTAL);
 		properties.insert(kWPANTUNDProperty_NCPCounter_RX_SPINEL_TOTAL);
 		properties.insert(kWPANTUNDProperty_NCPCounter_RX_SPINEL_ERR);
+		properties.insert(kWPANTUNDProperty_NCPCounterThreadMle);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
@@ -978,6 +979,65 @@ bail:
 }
 
 static int
+unpack_ncp_counters_mle(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+
+	const char *mle_counter_names[] = {
+		kWPANTUNDValueMapKey_MleCounter_DisabledRole,
+		kWPANTUNDValueMapKey_MleCounter_DetachedRole,
+		kWPANTUNDValueMapKey_MleCounter_ChildRole,
+		kWPANTUNDValueMapKey_MleCounter_RouterRole,
+		kWPANTUNDValueMapKey_MleCounter_LeaderRole,
+		kWPANTUNDValueMapKey_MleCounter_AttachAttempts,
+		kWPANTUNDValueMapKey_MleCounter_PartitionIdChanges,
+		kWPANTUNDValueMapKey_MleCounter_BetterPartitionAttaches,
+		kWPANTUNDValueMapKey_MleCounter_ParentChanges,
+		NULL
+	};
+
+	const char **counter_names = mle_counter_names;
+
+	while (*counter_names != NULL) {
+		uint16_t counter_value;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_UINT16_S,
+			&counter_value
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in  += len;
+		data_len -= len;
+
+		if (!as_val_map) {
+			char c_string[200];
+			snprintf(c_string, sizeof(c_string), "%-20s = %d", *counter_names, counter_value);
+			result_as_string.push_back(std::string(c_string));
+		} else {
+			result_as_val_map[*counter_names] = counter_value;
+		}
+
+		counter_names++;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
+	return ret;
+}
+
+static int
 unpack_mcu_power_state(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
 {
 	spinel_ssize_t len;
@@ -1224,7 +1284,7 @@ bail:
 	return ret;
 }
 
-static int 
+static int
 unpack_thread_network_time_spinel(const uint8_t *data_in, spinel_size_t data_len, uint64_t &time, int8_t &time_sync_status)
 {
 	return spinel_datatype_unpack(
@@ -1247,7 +1307,7 @@ unpack_thread_network_time_as_string(const uint8_t *data_in, spinel_size_t data_
 	int8_t time_sync_status;
 	char c_string[500];
 	int ret = kWPANTUNDStatus_Failure;
-	
+
 	len = unpack_thread_network_time_spinel(data_in, data_len, time, time_sync_status);
 
 	if (len > 0)
@@ -2030,6 +2090,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCounterAllMacAsValMap,
 		SPINEL_CAP_COUNTERS,
 		SPINEL_PROP_CNTR_ALL_MAC_COUNTERS, boost::bind(unpack_ncp_counters_all_mac, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCounterThreadMle,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_MLE_COUNTERS, boost::bind(unpack_ncp_counters_mle, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCounterThreadMleAsValMap,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_MLE_COUNTERS, boost::bind(unpack_ncp_counters_mle, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_TimeSync_NetworkTime,
 		SPINEL_CAP_TIME_SYNC,
