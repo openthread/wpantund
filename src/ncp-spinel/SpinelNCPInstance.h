@@ -266,6 +266,7 @@ private:
 	void get_prop_DatasetAllFiledsAsValMap(CallbackWithStatusArg1 cb);
 	void get_prop_DatasetCommand(CallbackWithStatusArg1 cb);
 	void get_prop_DaemonTickleOnHostDidWake(CallbackWithStatusArg1 cb);
+	void get_prop_POSIXAppRCPVersionCached(CallbackWithStatusArg1 cb);
 
 private:
 	typedef boost::function<int(const boost::any&, boost::any&)> ValueConverter;
@@ -428,6 +429,7 @@ private:
 	bool mFilterRLOCAddresses;
 	bool mFilterALOCAddresses;
 	bool mTickleOnHostDidWake;
+	std::string mRcpVersion;
 
 	std::set<unsigned int> mCapabilities;
 

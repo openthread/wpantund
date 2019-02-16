@@ -439,44 +439,58 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 
 		if (mEnabled) {
 			// Refresh our internal copies of the following radio parameters:
-			static const spinel_prop_key_t keys_to_fetch[] = {
-				SPINEL_PROP_NCP_VERSION,
-				SPINEL_PROP_INTERFACE_TYPE,
-				SPINEL_PROP_VENDOR_ID,
-				SPINEL_PROP_CAPS,
-				SPINEL_PROP_HWADDR,
-				SPINEL_PROP_PHY_CHAN,
-				SPINEL_PROP_PHY_CHAN_SUPPORTED,
-				SPINEL_PROP_MAC_15_4_PANID,
-				SPINEL_PROP_MAC_15_4_LADDR,
-				SPINEL_PROP_NET_MASTER_KEY,
-				SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER,
-				SPINEL_PROP_NET_NETWORK_NAME,
-				SPINEL_PROP_NET_XPANID,
-				SPINEL_PROP_IPV6_LL_ADDR,
-				SPINEL_PROP_IPV6_ML_ADDR,
-				SPINEL_PROP_IPV6_ADDRESS_TABLE,
-				SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE,
-				SPINEL_PROP_THREAD_ON_MESH_NETS,
-				SPINEL_PROP_THREAD_OFF_MESH_ROUTES,
-				SPINEL_PROP_THREAD_ASSISTING_PORTS,
-				SPINEL_PROP_THREAD_MODE,
-				SPINEL_PROP_NET_SAVED,
-				SPINEL_PROP_NET_IF_UP,
-				SPINEL_PROP_NET_STACK_UP,
-				SPINEL_PROP_NET_ROLE
+			static const struct {
+				spinel_prop_key_t property;
+				unsigned int capability;     // Use 0 if not tied to any capability.
+			} props_to_fetch[] = {
+				{ SPINEL_PROP_NCP_VERSION, 0 },
+				{ SPINEL_PROP_INTERFACE_TYPE, 0 },
+				{ SPINEL_PROP_VENDOR_ID, 0 },
+				{ SPINEL_PROP_CAPS, 0 },
+				{ SPINEL_PROP_HWADDR, 0 },
+				{ SPINEL_PROP_PHY_CHAN, 0 },
+				{ SPINEL_PROP_PHY_CHAN_SUPPORTED, 0 },
+				{ SPINEL_PROP_MAC_15_4_PANID, 0 },
+				{ SPINEL_PROP_MAC_15_4_LADDR, 0 },
+				{ SPINEL_PROP_NET_MASTER_KEY, 0 },
+				{ SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER, 0 },
+				{ SPINEL_PROP_NET_NETWORK_NAME, 0 },
+				{ SPINEL_PROP_NET_XPANID, 0 },
+				{ SPINEL_PROP_IPV6_LL_ADDR, 0 },
+				{ SPINEL_PROP_IPV6_ML_ADDR, 0 },
+				{ SPINEL_PROP_IPV6_ADDRESS_TABLE, 0 },
+				{ SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE, 0 },
+				{ SPINEL_PROP_THREAD_ON_MESH_NETS, 0 },
+				{ SPINEL_PROP_THREAD_OFF_MESH_ROUTES, 0 },
+				{ SPINEL_PROP_THREAD_ASSISTING_PORTS, 0 },
+				{ SPINEL_PROP_THREAD_MODE, 0 },
+				{ SPINEL_PROP_NET_SAVED, 0 },
+				{ SPINEL_PROP_NET_IF_UP, 0 },
+				{ SPINEL_PROP_NET_STACK_UP, 0 },
+				{ SPINEL_PROP_NET_ROLE, 0 },
+				{ SPINEL_PROP_RCP_VERSION , SPINEL_CAP_POSIX_APP },
 			};
 
-			for (mSubPTIndex = 0; mSubPTIndex < sizeof(keys_to_fetch)/sizeof(keys_to_fetch[0]); mSubPTIndex++) {
+			for (mSubPTIndex = 0; mSubPTIndex < sizeof(props_to_fetch) / sizeof(props_to_fetch[0]); mSubPTIndex++) {
+				if ((props_to_fetch[mSubPTIndex].capability != 0)
+					&& !mCapabilities.count(props_to_fetch[mSubPTIndex].capability)
+				) {
+					continue;
+				}
+
 				CONTROL_REQUIRE_PREP_TO_SEND_COMMAND_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
-				GetInstance(this)->mOutboundBufferLen = spinel_cmd_prop_value_get(GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer), keys_to_fetch[mSubPTIndex]);
+				GetInstance(this)->mOutboundBufferLen = spinel_cmd_prop_value_get(
+					GetInstance(this)->mOutboundBuffer, sizeof(GetInstance(this)->mOutboundBuffer),
+					props_to_fetch[mSubPTIndex].property);
 				CONTROL_REQUIRE_OUTBOUND_BUFFER_FLUSHED_WITHIN(NCP_DEFAULT_COMMAND_SEND_TIMEOUT, on_error);
 				CONTROL_REQUIRE_COMMAND_RESPONSE_WITHIN(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT, on_error);
 
 				status = peek_ncp_callback_status(event, args);
 
 				if (status != 0) {
-					syslog(LOG_WARNING, "Unsuccessful fetching property \"%s\" from NCP: \"%s\" (%d)", spinel_prop_key_to_cstr(keys_to_fetch[mSubPTIndex]), spinel_status_to_cstr(static_cast<spinel_status_t>(status)), status);
+					syslog(LOG_WARNING, "Unsuccessful fetching property %s from NCP: \"%s\" (%d)",
+						spinel_prop_key_to_cstr(props_to_fetch[mSubPTIndex].property),
+						spinel_status_to_cstr(static_cast<spinel_status_t>(status)), status);
 				}
 			}
 

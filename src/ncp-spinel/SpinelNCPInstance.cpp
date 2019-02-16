@@ -2249,6 +2249,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadNeighborTableErrorRatesAsValMap,
 		SPINEL_CAP_ERROR_RATE_TRACKING,
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRatesAsValMap, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDProperty_POSIXAppRCPVersionCached,
+		SPINEL_CAP_POSIX_APP,
+		boost::bind(&SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached, this, _1));
 }
 
 void
@@ -2672,6 +2676,12 @@ void
 SpinelNCPInstance::get_prop_DaemonTickleOnHostDidWake(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mTickleOnHostDidWake));
+}
+
+void
+SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mRcpVersion));
 }
 
 void
@@ -4703,6 +4713,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UTF8_S, &rcp_version);
 
 		if (len > 0) {
+			mRcpVersion = std::string(rcp_version);
 			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
 		}
 	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
