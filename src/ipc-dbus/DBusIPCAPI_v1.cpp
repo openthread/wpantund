@@ -492,6 +492,11 @@ DBusIPCAPI_v1::status_response_helper(
 			append_dict_entry(&dict, kWPANTUNDProperty_NCPVersion, value);
 		}
 
+		value = interface->property_get_value(kWPANTUNDProperty_POSIXAppRCPVersionCached);
+		if (!value.empty()) {
+			append_dict_entry(&dict, kWPANTUNDProperty_POSIXAppRCPVersion, value);
+		}
+
 		value = interface->property_get_value(kWPANTUNDProperty_DaemonVersion);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_DaemonVersion, value);
