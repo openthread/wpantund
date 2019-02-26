@@ -192,55 +192,6 @@ ot_log_region_to_string(unsigned int log_region)
 }
 
 void
-SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
-{
-	spinel_ssize_t len;
-	char prefix_string[NCP_DEBUG_LINE_LENGTH_MAX + 1];
-	const char *log_string;
-
-	len = spinel_datatype_unpack(
-		data_in,
-		data_len,
-		SPINEL_DATATYPE_UTF8_S,
-		&log_string
-	);
-	require(len >= 0, bail);
-
-	data_in += len;
-	data_len -= len;
-
-	prefix_string[0] = 0;
-
-	if ((data_len > 0) && mCapabilities.count(SPINEL_CAP_OPENTHREAD_LOG_METADATA)) {
-		uint8_t log_level;
-		unsigned int log_region;
-
-		len = spinel_datatype_unpack(
-			data_in,
-			data_len,
-			SPINEL_DATATYPE_UINT8_S SPINEL_DATATYPE_UINT_PACKED_S,
-			&log_level,
-			&log_region
-		);
-
-		require(len >= 0, bail);
-
-		snprintf(
-			prefix_string,
-			sizeof(prefix_string),
-			"[%s]%s: ",
-			ot_log_level_to_string(log_level),
-			ot_log_region_to_string(log_region)
-		);
-	}
-
-	syslog(LOG_WARNING, "NCP => %s%s\n", prefix_string, log_string);
-
-bail:
-	return;
-}
-
-void
 SpinelNCPInstance::start_new_task(const boost::shared_ptr<SpinelNCPTask> &task)
 {
 	if (ncp_state_is_detached_from_ncp(get_ncp_state())) {
@@ -3747,8 +3698,620 @@ SpinelNCPInstance::reset_tasks(wpantund_status_t status)
 	}
 }
 
-void
-SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+// ----------------------------------------------------------------------------
+// PROP_VALUE_IS event handlers
+
+namespace nl {
+namespace wpantund {
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_LAST_STATUS>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	spinel_status_t status = SPINEL_STATUS_OK;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
+	syslog(LOG_INFO, "[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
+	if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
+		syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
+		process_event(EVENT_NCP_RESET, status);
+		if (!mResetIsExpected && (mDriverState == NORMAL_OPERATION)) {
+			wpantund_status_t wstatus = kWPANTUNDStatus_NCP_Reset;
+			switch(status) {
+			case SPINEL_STATUS_RESET_CRASH:
+			case SPINEL_STATUS_RESET_FAULT:
+			case SPINEL_STATUS_RESET_ASSERT:
+			case SPINEL_STATUS_RESET_WATCHDOG:
+			case SPINEL_STATUS_RESET_OTHER:
+				wstatus = kWPANTUNDStatus_NCP_Crashed;
+				break;
+			default:
+				break;
+			}
+			reset_tasks(wstatus);
+		}
+
+		if (mDriverState == NORMAL_OPERATION) {
+			reinitialize_ncp();
+		}
+		mResetIsExpected = false;
+		return;
+	} else if ((status >= SPINEL_STATUS_JOIN__BEGIN) && (status <= SPINEL_STATUS_JOIN__END)) {
+		if (status == SPINEL_STATUS_JOIN_SUCCESS) {
+			change_ncp_state(COMMISSIONED);
+		}
+		else {
+			change_ncp_state(CREDENTIALS_NEEDED);
+		}
+	} else if (status == SPINEL_STATUS_INVALID_COMMAND) {
+		syslog(LOG_NOTICE, "[-NCP-]: COMMAND NOT RECOGNIZED");
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NCP_VERSION>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const char* ncp_version = NULL;
+	spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &ncp_version);
+	if ((len <= 0) || (ncp_version == NULL)) {
+		syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
+		// TODO: Properly handle NCP Misbehavior
+		change_ncp_state(FAULT);
+	} else {
+		set_ncp_version_string(ncp_version);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_INTERFACE_TYPE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	unsigned int interface_type = 0;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &interface_type);
+
+	if (interface_type != SPINEL_PROTOCOL_TYPE_THREAD) {
+		syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol type (%d)", interface_type);
+		change_ncp_state(FAULT);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_PROTOCOL_VERSION>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	unsigned int protocol_version_major = 0;
+	unsigned int protocol_version_minor = 0;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "ii", &protocol_version_major, &protocol_version_minor);
+
+	if (protocol_version_major != SPINEL_PROTOCOL_VERSION_THREAD_MAJOR) {
+		syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol version (NCP:%d, wpantund:%d)", protocol_version_major, SPINEL_PROTOCOL_VERSION_THREAD_MAJOR);
+		change_ncp_state(FAULT);
+	}
+
+	if (protocol_version_minor != SPINEL_PROTOCOL_VERSION_THREAD_MINOR) {
+		syslog(LOG_WARNING, "[-NCP-]: NCP is using different protocol minor version (NCP:%d, wpantund:%d)", protocol_version_minor, SPINEL_PROTOCOL_VERSION_THREAD_MINOR);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_CAPS>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const uint8_t* data_ptr = value_data_ptr;
+	spinel_size_t data_len = value_data_len;
+	std::set<unsigned int> capabilities;
+
+	while(data_len != 0) {
+		unsigned int value = 0;
+		spinel_ssize_t parse_len = spinel_datatype_unpack(data_ptr, data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
+		if (parse_len <= 0) {
+			syslog(LOG_WARNING, "[-NCP-]: Capability Parse failure");
+			break;
+		}
+		capabilities.insert(value);
+		syslog(LOG_INFO, "[-NCP-]: Capability (%s, %d)", spinel_capability_to_cstr(value), value);
+
+		data_ptr += parse_len;
+		data_len -= parse_len;
+	}
+
+	if (capabilities != mCapabilities) {
+		mCapabilities = capabilities;
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_NETWORK_NAME>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const char* value = NULL;
+	spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
+
+	if ((len <= 0) || (value == NULL)) {
+		syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
+		// TODO: Properly handle NCP Misbehavior
+		change_ncp_state(FAULT);
+	} else {
+		syslog(LOG_INFO, "[-NCP-]: Network name \"%s\"", value);
+		if (mCurrentNetworkInstance.name != value) {
+			mCurrentNetworkInstance.name = value;
+			signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_MCU_POWER_STATE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint8_t power_state = 0;
+	spinel_ssize_t len = 0;
+
+	len  = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &power_state);
+
+	if (len > 0) {
+		syslog(LOG_INFO, "[-NCP-]: MCU power state \"%s\" (%d)",
+			spinel_mcu_power_state_to_cstr(static_cast<spinel_mcu_power_state_t>(power_state)), power_state);
+
+		switch (get_ncp_state()) {
+		case OFFLINE:
+		case COMMISSIONED:
+			if (power_state == SPINEL_MCU_POWER_STATE_LOW_POWER) {
+				change_ncp_state(DEEP_SLEEP);
+			}
+			break;
+
+		case DEEP_SLEEP:
+			if (power_state == SPINEL_MCU_POWER_STATE_ON) {
+				change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_IPV6_LL_ADDR>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	struct in6_addr *addr = NULL;
+
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
+	if (addr != NULL) {
+		syslog(LOG_INFO, "[-NCP-]: Link-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
+	}
+	update_link_local_address(addr);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_IPV6_ML_ADDR>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	struct in6_addr *addr = NULL;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
+	if (addr != NULL) {
+		syslog(LOG_INFO, "[-NCP-]: Mesh-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
+	}
+	update_mesh_local_address(addr);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_IPV6_ML_PREFIX>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	struct in6_addr *addr = NULL;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
+	if (addr != NULL) {
+		syslog(LOG_INFO, "[-NCP-]: Mesh-local prefix \"%s\"", (in6_addr_to_string(*addr) + "/64").c_str());
+	}
+	update_mesh_local_prefix(addr);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_IPV6_ADDRESS_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
+	std::map<struct in6_addr, UnicastAddressEntry> unicast_addresses(mUnicastAddresses);
+	const struct in6_addr *addr = NULL;
+	int num_address = 0;
+
+	while (value_data_len > 0) {
+		const uint8_t *entry_ptr = NULL;
+		spinel_size_t entry_len = 0;
+		spinel_ssize_t len = 0;
+		len = spinel_datatype_unpack(value_data_ptr, value_data_len, "D.", &entry_ptr, &entry_len);
+		if (len < 1) {
+			break;
+		}
+
+		addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
+		syslog(LOG_INFO, "[-NCP-]: IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
+		num_address++;
+		unicast_addresses.erase(*addr);
+		handle_ncp_spinel_value_inserted(SPINEL_PROP_IPV6_ADDRESS_TABLE, entry_ptr, entry_len);
+
+		value_data_ptr += len;
+		value_data_len -= len;
+	}
+
+	syslog(LOG_INFO, "[-NCP-]: IPv6 address: Total %d address%s", num_address, (num_address > 1) ? "es" : "");
+
+	// Since this was the whole list, we need to remove the addresses
+	// which originated from NCP that that weren't in the list.
+	for (iter = unicast_addresses.begin(); iter != unicast_addresses.end(); ++iter) {
+		if (iter->second.is_from_ncp()) {
+			unicast_address_was_removed(kOriginThreadNCP, iter->first);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
+	std::map<struct in6_addr, MulticastAddressEntry> multicast_addresses(mMulticastAddresses);
+	const struct in6_addr *addr = NULL;
+	int num_address = 0;
+
+	while (value_data_len > 0) {
+		const uint8_t *entry_ptr = NULL;
+		spinel_size_t entry_len = 0;
+		spinel_ssize_t len = 0;
+		len = spinel_datatype_unpack(value_data_ptr, value_data_len, "D.", &entry_ptr, &entry_len);
+		if (len < 1) {
+			break;
+		}
+
+		addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
+		syslog(LOG_INFO, "[-NCP-]: Multicast IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
+		num_address++;
+		multicast_addresses.erase(*addr);
+		handle_ncp_spinel_value_inserted(SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE, entry_ptr, entry_len);
+
+		value_data_ptr += len;
+		value_data_len -= len;
+	}
+
+	// Since this was the whole list, we need to remove the addresses
+	// which originated from NCP that that weren't in the list.
+	for (iter = multicast_addresses.begin(); iter != multicast_addresses.end(); ++iter) {
+		if (iter->second.is_from_ncp()) {
+			multicast_address_was_left(kOriginThreadNCP, iter->first);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_HWADDR>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	nl::Data hwaddr(value_data_ptr, value_data_len);
+	if (value_data_len == sizeof(mMACHardwareAddress)) {
+		set_mac_hardware_address(value_data_ptr);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_MAC_15_4_LADDR>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	nl::Data hwaddr(value_data_ptr, value_data_len);
+	if (value_data_len == sizeof(mMACAddress)) {
+		set_mac_address(value_data_ptr);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_MAC_15_4_PANID>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint16_t panid;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &panid);
+	syslog(LOG_INFO, "[-NCP-]: PANID 0x%04X", panid);
+	if (panid != mCurrentNetworkInstance.panid) {
+		mCurrentNetworkInstance.panid = panid;
+		signal_property_changed(kWPANTUNDProperty_NetworkPANID, panid);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_XPANID>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	nl::Data xpanid(value_data_ptr, value_data_len);
+	char cstr_buf[200];
+	encode_data_into_string(value_data_ptr, value_data_len, cstr_buf, sizeof(cstr_buf), 0);
+	syslog(LOG_INFO, "[-NCP-] XPANID 0x%s", cstr_buf);
+
+	if ((value_data_len == 8) && 0 != memcmp(xpanid.data(), mCurrentNetworkInstance.xpanid, 8)) {
+		memcpy(mCurrentNetworkInstance.xpanid, xpanid.data(), 8);
+		signal_property_changed(kWPANTUNDProperty_NetworkXPANID, xpanid);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_PSKC>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	nl::Data network_pskc(value_data_ptr, value_data_len);
+	if (network_pskc != mNetworkPSKc) {
+		mNetworkPSKc = network_pskc;
+		signal_property_changed(kWPANTUNDProperty_NetworkPSKc, mNetworkPSKc);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_MASTER_KEY>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	nl::Data network_key(value_data_ptr, value_data_len);
+	if (ncp_state_is_joining_or_joined(get_ncp_state())) {
+		if (network_key != mNetworkKey) {
+			mNetworkKey = network_key;
+			signal_property_changed(kWPANTUNDProperty_NetworkKey, mNetworkKey);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint32_t network_key_index = 0;
+	spinel_ssize_t ret;
+
+	ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	if ((ret > 0) && (network_key_index != mNetworkKeyIndex)) {
+		mNetworkKeyIndex = network_key_index;
+		signal_property_changed(kWPANTUNDProperty_NetworkKeyIndex, mNetworkKeyIndex);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_PHY_CHAN>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	unsigned int value = 0;
+	spinel_ssize_t ret;
+
+	ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	if (ret > 0) {
+		syslog(LOG_INFO, "[-NCP-]: Channel %d", value);
+		if (value != mCurrentNetworkInstance.channel) {
+			mCurrentNetworkInstance.channel = value;
+			signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_PHY_CHAN_SUPPORTED>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	boost::any mask_value;
+	int ret = unpack_channel_mask(value_data_ptr, value_data_len, mask_value);
+
+	if (ret == kWPANTUNDStatus_Ok) {
+		mSupportedChannelMask = any_to_int(mask_value);
+		syslog(LOG_INFO, "[-NCP-]: Supported Channel Mask 0x%x", mSupportedChannelMask);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_PHY_TX_POWER>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	int8_t value = 0;
+	spinel_ssize_t ret;
+
+	ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	if (ret > 0) {
+		syslog(LOG_INFO, "[-NCP-]: Tx power %d", value);
+		if (value != mTXPower) {
+			mTXPower = value;
+			signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_STREAM_DEBUG>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+		handle_ncp_debug_stream(value_data_ptr, value_data_len);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_STREAM_LOG>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	spinel_ssize_t len;
+	char prefix_string[NCP_DEBUG_LINE_LENGTH_MAX + 1];
+	const char *log_string;
+
+	len = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		SPINEL_DATATYPE_UTF8_S,
+		&log_string
+	);
+	require(len >= 0, bail);
+
+	value_data_ptr += len;
+	value_data_len -= len;
+
+	prefix_string[0] = 0;
+
+	if ((value_data_len > 0) && mCapabilities.count(SPINEL_CAP_OPENTHREAD_LOG_METADATA)) {
+		uint8_t log_level;
+		unsigned int log_region;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_UINT8_S SPINEL_DATATYPE_UINT_PACKED_S,
+			&log_level,
+			&log_region
+		);
+
+		require(len >= 0, bail);
+
+		snprintf(
+			prefix_string,
+			sizeof(prefix_string),
+			"[%s]%s: ",
+			ot_log_level_to_string(log_level),
+			ot_log_region_to_string(log_region)
+		);
+	}
+
+	syslog(LOG_WARNING, "NCP => %s%s\n", prefix_string, log_string);
+
+bail:
+	return;
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_ROLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint8_t value = 0;
+	spinel_ssize_t ret;
+
+	ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	if (ret > 0) {
+		syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
+
+		if (ncp_state_is_joining_or_joined(get_ncp_state())
+		  && (value != SPINEL_NET_ROLE_DETACHED)
+		) {
+			change_ncp_state(ASSOCIATED);
+		}
+
+		if (value == SPINEL_NET_ROLE_CHILD) {
+			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+				update_node_type(END_DEVICE);
+			} else {
+				update_node_type(SLEEPY_END_DEVICE);
+			}
+
+		} else if (value == SPINEL_NET_ROLE_ROUTER) {
+			update_node_type(ROUTER);
+
+		} else if (value == SPINEL_NET_ROLE_LEADER) {
+			update_node_type(LEADER);
+
+		} else if (value == SPINEL_NET_ROLE_DETACHED) {
+			update_node_type(UNKNOWN);
+			if (ncp_state_is_associated(get_ncp_state())) {
+				change_ncp_state(ISOLATED);
+			}
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_MODE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint8_t value = mThreadMode;
+	spinel_ssize_t ret;
+
+	ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	if (ret > 0) {
+		syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
+		mThreadMode = value;
+
+		switch (get_ncp_state())
+		{
+		case ISOLATED:
+			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+				change_ncp_state(ASSOCIATING);
+			}
+			break;
+
+		case ASSOCIATING:
+			if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
+				change_ncp_state(ISOLATED);
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		switch (mNodeType)
+		{
+		case END_DEVICE:
+		case SLEEPY_END_DEVICE:
+			if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
+				update_node_type(END_DEVICE);
+			} else {
+				update_node_type(SLEEPY_END_DEVICE);
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_SAVED>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	bool is_commissioned = false;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
+	syslog(LOG_INFO, "[-NCP-]: NetSaved (NCP is commissioned?) \"%s\" ", is_commissioned ? "yes" : "no");
+	mIsCommissioned = is_commissioned;
+	if (mIsCommissioned && (get_ncp_state() == OFFLINE)) {
+		change_ncp_state(COMMISSIONED);
+	} else if (!mIsCommissioned && (get_ncp_state() == COMMISSIONED)) {
+		change_ncp_state(OFFLINE);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_STACK_UP>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	bool is_stack_up = false;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
+	syslog(LOG_INFO, "[-NCP-]: Stack is %sup", is_stack_up ? "" : "not ");
+
+	if (is_stack_up) {
+		if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
+			if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
+				change_ncp_state(ISOLATED);
+			} else {
+				change_ncp_state(ASSOCIATING);
+			}
+		}
+	} else {
+		if (!ncp_state_is_joining(get_ncp_state())) {
+			change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
+		}
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_IF_UP>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	bool is_if_up = false;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_if_up);
+	syslog(LOG_INFO, "[-NCP-]: Interface is %sup", is_if_up ? "" : "not ");
+
+	if (ncp_state_is_interface_up(get_ncp_state()) && !is_if_up) {
+		change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_MESHCOP_COMMISSIONER_STATE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	boost::any value;
+	int status;
+	status = unpack_commissioner_state(value_data_ptr, value_data_len, value);
+	if (status == kWPANTUNDStatus_Ok) {
+		syslog(LOG_INFO, "[-NCP-]: Thread Commissioner state is \"%s\"", any_to_string(value).c_str());
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_ON_MESH_NETS>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
 {
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
 	std::multimap<IPv6Prefix, OnMeshPrefixEntry> on_mesh_prefixes(mOnMeshPrefixes);
@@ -3845,8 +4408,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 	}
 }
 
-void
-SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_OFF_MESH_ROUTES>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
 {
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter;
 	std::multimap<IPv6Prefix, OffMeshRouteEntry> off_mesh_routes(mOffMeshRoutes);
@@ -3936,922 +4499,704 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* val
 	}
 }
 
-void
-SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_ASSISTING_PORTS>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
 {
-	const uint8_t *original_value_data_ptr = value_data_ptr;
-	spinel_size_t original_value_data_len = value_data_len;
+	bool is_assisting = (value_data_len != 0);
+	uint16_t assisting_port(0);
 
-	if (key == SPINEL_PROP_LAST_STATUS) {
-		spinel_status_t status = SPINEL_STATUS_OK;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &status);
-		syslog(LOG_INFO, "[-NCP-]: Last status (%s, %d)", spinel_status_to_cstr(status), status);
-		if ((status >= SPINEL_STATUS_RESET__BEGIN) && (status <= SPINEL_STATUS_RESET__END)) {
-			syslog(LOG_NOTICE, "[-NCP-]: NCP was reset (%s, %d)", spinel_status_to_cstr(status), status);
-			process_event(EVENT_NCP_RESET, status);
-			if (!mResetIsExpected && (mDriverState == NORMAL_OPERATION)) {
-				wpantund_status_t wstatus = kWPANTUNDStatus_NCP_Reset;
-				switch(status) {
-				case SPINEL_STATUS_RESET_CRASH:
-				case SPINEL_STATUS_RESET_FAULT:
-				case SPINEL_STATUS_RESET_ASSERT:
-				case SPINEL_STATUS_RESET_WATCHDOG:
-				case SPINEL_STATUS_RESET_OTHER:
-					wstatus = kWPANTUNDStatus_NCP_Crashed;
-					break;
-				default:
-					break;
-				}
-				reset_tasks(wstatus);
-			}
+	if (is_assisting != get_current_network_instance().joinable) {
+		mCurrentNetworkInstance.joinable = is_assisting;
+		signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
+	}
 
-			if (mDriverState == NORMAL_OPERATION) {
-				reinitialize_ncp();
-			}
-			mResetIsExpected = false;
-			return;
-		} else if ((status >= SPINEL_STATUS_JOIN__BEGIN) && (status <= SPINEL_STATUS_JOIN__END)) {
-			if (status == SPINEL_STATUS_JOIN_SUCCESS) {
-				change_ncp_state(COMMISSIONED);
-			}
-			else {
-				change_ncp_state(CREDENTIALS_NEEDED);
-			}
-		} else if (status == SPINEL_STATUS_INVALID_COMMAND) {
-			syslog(LOG_NOTICE, "[-NCP-]: COMMAND NOT RECOGNIZED");
-		}
-	} else if (key == SPINEL_PROP_NCP_VERSION) {
-		const char* ncp_version = NULL;
-		spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &ncp_version);
-		if ((len <= 0) || (ncp_version == NULL)) {
-			syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
-			// TODO: Properly handle NCP Misbehavior
-			change_ncp_state(FAULT);
-		} else {
-			set_ncp_version_string(ncp_version);
-		}
-
-	} else if (key == SPINEL_PROP_INTERFACE_TYPE) {
-		unsigned int interface_type = 0;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "i", &interface_type);
-
-		if (interface_type != SPINEL_PROTOCOL_TYPE_THREAD) {
-			syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol type (%d)", interface_type);
-			change_ncp_state(FAULT);
-		}
-
-	} else if (key == SPINEL_PROP_PROTOCOL_VERSION) {
-		unsigned int protocol_version_major = 0;
-		unsigned int protocol_version_minor = 0;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "ii", &protocol_version_major, &protocol_version_minor);
-
-		if (protocol_version_major != SPINEL_PROTOCOL_VERSION_THREAD_MAJOR) {
-			syslog(LOG_CRIT, "[-NCP-]: NCP is using unsupported protocol version (NCP:%d, wpantund:%d)", protocol_version_major, SPINEL_PROTOCOL_VERSION_THREAD_MAJOR);
-			change_ncp_state(FAULT);
-		}
-
-		if (protocol_version_minor != SPINEL_PROTOCOL_VERSION_THREAD_MINOR) {
-			syslog(LOG_WARNING, "[-NCP-]: NCP is using different protocol minor version (NCP:%d, wpantund:%d)", protocol_version_minor, SPINEL_PROTOCOL_VERSION_THREAD_MINOR);
-		}
-
-	} else if (key == SPINEL_PROP_CAPS) {
-		const uint8_t* data_ptr = value_data_ptr;
-		spinel_size_t data_len = value_data_len;
-		std::set<unsigned int> capabilities;
-
-		while(data_len != 0) {
-			unsigned int value = 0;
-			spinel_ssize_t parse_len = spinel_datatype_unpack(data_ptr, data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
-			if (parse_len <= 0) {
-				syslog(LOG_WARNING, "[-NCP-]: Capability Parse failure");
-				break;
-			}
-			capabilities.insert(value);
-			syslog(LOG_INFO, "[-NCP-]: Capability (%s, %d)", spinel_capability_to_cstr(value), value);
-
-			data_ptr += parse_len;
-			data_len -= parse_len;
-		}
-
-		if (capabilities != mCapabilities) {
-			mCapabilities = capabilities;
-		}
-
-	} else if (key == SPINEL_PROP_NET_NETWORK_NAME) {
-		const char* value = NULL;
-		spinel_ssize_t len = spinel_datatype_unpack(value_data_ptr, value_data_len, "U", &value);
-
-		if ((len <= 0) || (value == NULL)) {
-			syslog(LOG_CRIT, "[-NCP-]: Got a corrupted NCP version");
-			// TODO: Properly handle NCP Misbehavior
-			change_ncp_state(FAULT);
-		} else {
-			syslog(LOG_INFO, "[-NCP-]: Network name \"%s\"", value);
-			if (mCurrentNetworkInstance.name != value) {
-				mCurrentNetworkInstance.name = value;
-				signal_property_changed(kWPANTUNDProperty_NetworkName, mCurrentNetworkInstance.name);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_MCU_POWER_STATE) {
-		uint8_t power_state = 0;
-		spinel_ssize_t len = 0;
-
-		len  = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &power_state);
-
-		if (len > 0) {
-			syslog(LOG_INFO, "[-NCP-]: MCU power state \"%s\" (%d)",
-				spinel_mcu_power_state_to_cstr(static_cast<spinel_mcu_power_state_t>(power_state)), power_state);
-
-			switch (get_ncp_state()) {
-			case OFFLINE:
-			case COMMISSIONED:
-				if (power_state == SPINEL_MCU_POWER_STATE_LOW_POWER) {
-					change_ncp_state(DEEP_SLEEP);
-				}
-				break;
-
-			case DEEP_SLEEP:
-				if (power_state == SPINEL_MCU_POWER_STATE_ON) {
-					change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-
-	} else if (key == SPINEL_PROP_IPV6_LL_ADDR) {
-		struct in6_addr *addr = NULL;
-
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr != NULL) {
-			syslog(LOG_INFO, "[-NCP-]: Link-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
-		}
-		update_link_local_address(addr);
-
-	} else if (key == SPINEL_PROP_IPV6_ML_ADDR) {
-		struct in6_addr *addr = NULL;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr != NULL) {
-			syslog(LOG_INFO, "[-NCP-]: Mesh-local IPv6 address \"%s\"", in6_addr_to_string(*addr).c_str());
-		}
-		update_mesh_local_address(addr);
-
-	} else if (key == SPINEL_PROP_IPV6_ML_PREFIX) {
-		struct in6_addr *addr = NULL;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
-		if (addr != NULL) {
-			syslog(LOG_INFO, "[-NCP-]: Mesh-local prefix \"%s\"", (in6_addr_to_string(*addr) + "/64").c_str());
-		}
-		update_mesh_local_prefix(addr);
-
-	} else if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
-		std::map<struct in6_addr, UnicastAddressEntry>::const_iterator iter;
-		std::map<struct in6_addr, UnicastAddressEntry> unicast_addresses(mUnicastAddresses);
-		const struct in6_addr *addr = NULL;
-		int num_address = 0;
-
+	if (is_assisting) {
+		int i;
+		syslog(LOG_NOTICE, "Network is joinable");
 		while (value_data_len > 0) {
-			const uint8_t *entry_ptr = NULL;
-			spinel_size_t entry_len = 0;
-			spinel_ssize_t len = 0;
-			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "D.", &entry_ptr, &entry_len);
-			if (len < 1) {
+			i = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &assisting_port);
+			if (i <= 0) {
 				break;
 			}
-
-			addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
-			syslog(LOG_INFO, "[-NCP-]: IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
-			num_address++;
-			unicast_addresses.erase(*addr);
-			handle_ncp_spinel_value_inserted(key, entry_ptr, entry_len);
-
-			value_data_ptr += len;
-			value_data_len -= len;
+			syslog(LOG_NOTICE, "Assisting on port %d", assisting_port);
+			value_data_ptr += i;
+			value_data_len -= i;
 		}
-
-		syslog(LOG_INFO, "[-NCP-]: IPv6 address: Total %d address%s", num_address, (num_address > 1) ? "es" : "");
-
-		// Since this was the whole list, we need to remove the addresses
-		// which originated from NCP that that weren't in the list.
-		for (iter = unicast_addresses.begin(); iter != unicast_addresses.end(); ++iter) {
-			if (iter->second.is_from_ncp()) {
-				unicast_address_was_removed(kOriginThreadNCP, iter->first);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE) {
-		std::map<struct in6_addr, MulticastAddressEntry>::const_iterator iter;
-		std::map<struct in6_addr, MulticastAddressEntry> multicast_addresses(mMulticastAddresses);
-		const struct in6_addr *addr = NULL;
-		int num_address = 0;
-
-		while (value_data_len > 0) {
-			const uint8_t *entry_ptr = NULL;
-			spinel_size_t entry_len = 0;
-			spinel_ssize_t len = 0;
-			len = spinel_datatype_unpack(value_data_ptr, value_data_len, "D.", &entry_ptr, &entry_len);
-			if (len < 1) {
-				break;
-			}
-
-			addr = reinterpret_cast<const struct in6_addr*>(entry_ptr);
-			syslog(LOG_INFO, "[-NCP-]: Multicast IPv6 address [%d] \"%s\"", num_address, in6_addr_to_string(*addr).c_str());
-			num_address++;
-			multicast_addresses.erase(*addr);
-			handle_ncp_spinel_value_inserted(key, entry_ptr, entry_len);
-
-			value_data_ptr += len;
-			value_data_len -= len;
-		}
-
-		// Since this was the whole list, we need to remove the addresses
-		// which originated from NCP that that weren't in the list.
-		for (iter = multicast_addresses.begin(); iter != multicast_addresses.end(); ++iter) {
-			if (iter->second.is_from_ncp()) {
-				multicast_address_was_left(kOriginThreadNCP, iter->first);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_HWADDR) {
-		nl::Data hwaddr(value_data_ptr, value_data_len);
-		if (value_data_len == sizeof(mMACHardwareAddress)) {
-			set_mac_hardware_address(value_data_ptr);
-		}
-
-	} else if (key == SPINEL_PROP_MAC_15_4_LADDR) {
-		nl::Data hwaddr(value_data_ptr, value_data_len);
-		if (value_data_len == sizeof(mMACAddress)) {
-			set_mac_address(value_data_ptr);
-		}
-
-	} else if (key == SPINEL_PROP_MAC_15_4_PANID) {
-		uint16_t panid;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &panid);
-		syslog(LOG_INFO, "[-NCP-]: PANID 0x%04X", panid);
-		if (panid != mCurrentNetworkInstance.panid) {
-			mCurrentNetworkInstance.panid = panid;
-			signal_property_changed(kWPANTUNDProperty_NetworkPANID, panid);
-		}
-
-	} else if (key == SPINEL_PROP_NET_XPANID) {
-		nl::Data xpanid(value_data_ptr, value_data_len);
-		char cstr_buf[200];
-		encode_data_into_string(value_data_ptr, value_data_len, cstr_buf, sizeof(cstr_buf), 0);
-		syslog(LOG_INFO, "[-NCP-] XPANID 0x%s", cstr_buf);
-
-		if ((value_data_len == 8) && 0 != memcmp(xpanid.data(), mCurrentNetworkInstance.xpanid, 8)) {
-			memcpy(mCurrentNetworkInstance.xpanid, xpanid.data(), 8);
-			signal_property_changed(kWPANTUNDProperty_NetworkXPANID, xpanid);
-		}
-
-	} else if (key == SPINEL_PROP_NET_PSKC) {
-		nl::Data network_pskc(value_data_ptr, value_data_len);
-		if (network_pskc != mNetworkPSKc) {
-			mNetworkPSKc = network_pskc;
-			signal_property_changed(kWPANTUNDProperty_NetworkPSKc, mNetworkPSKc);
-		}
-
-	} else if (key == SPINEL_PROP_NET_MASTER_KEY) {
-		nl::Data network_key(value_data_ptr, value_data_len);
-		if (ncp_state_is_joining_or_joined(get_ncp_state())) {
-			if (network_key != mNetworkKey) {
-				mNetworkKey = network_key;
-				signal_property_changed(kWPANTUNDProperty_NetworkKey, mNetworkKey);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER) {
-		uint32_t network_key_index = 0;
-		spinel_ssize_t ret;
-
-		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &network_key_index);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		if ((ret > 0) && (network_key_index != mNetworkKeyIndex)) {
-			mNetworkKeyIndex = network_key_index;
-			signal_property_changed(kWPANTUNDProperty_NetworkKeyIndex, mNetworkKeyIndex);
-		}
-
-	} else if (key == SPINEL_PROP_PHY_CHAN) {
-		unsigned int value = 0;
-		spinel_ssize_t ret;
-
-		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT_PACKED_S, &value);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		if (ret > 0) {
-			syslog(LOG_INFO, "[-NCP-]: Channel %d", value);
-			if (value != mCurrentNetworkInstance.channel) {
-				mCurrentNetworkInstance.channel = value;
-				signal_property_changed(kWPANTUNDProperty_NCPChannel, mCurrentNetworkInstance.channel);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_PHY_CHAN_SUPPORTED) {
-		boost::any mask_value;
-		int ret = unpack_channel_mask(value_data_ptr, value_data_len, mask_value);
-
-		if (ret == kWPANTUNDStatus_Ok) {
-			mSupportedChannelMask = any_to_int(mask_value);
-			syslog(LOG_INFO, "[-NCP-]: Supported Channel Mask 0x%x", mSupportedChannelMask);
-		}
-
-	} else if (key == SPINEL_PROP_PHY_TX_POWER) {
-		int8_t value = 0;
-		spinel_ssize_t ret;
-
-		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_INT8_S, &value);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		if (ret > 0) {
-			syslog(LOG_INFO, "[-NCP-]: Tx power %d", value);
-			if (value != mTXPower) {
-				mTXPower = value;
-				signal_property_changed(kWPANTUNDProperty_NCPTXPower, mTXPower);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_STREAM_DEBUG) {
-		handle_ncp_debug_stream(value_data_ptr, value_data_len);
-
-	} else if (key == SPINEL_PROP_STREAM_LOG) {
-		handle_ncp_log_stream(value_data_ptr, value_data_len);
-
-	} else if (key == SPINEL_PROP_NET_ROLE) {
-		uint8_t value = 0;
-		spinel_ssize_t ret;
-
-		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		if (ret > 0) {
-			syslog(LOG_INFO, "[-NCP-]: Net Role \"%s\" (%d)", spinel_net_role_to_cstr(value), value);
-
-			if (ncp_state_is_joining_or_joined(get_ncp_state())
-			  && (value != SPINEL_NET_ROLE_DETACHED)
-			) {
-				change_ncp_state(ASSOCIATED);
-			}
-
-			if (value == SPINEL_NET_ROLE_CHILD) {
-				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
-					update_node_type(END_DEVICE);
-				} else {
-					update_node_type(SLEEPY_END_DEVICE);
-				}
-
-			} else if (value == SPINEL_NET_ROLE_ROUTER) {
-				update_node_type(ROUTER);
-
-			} else if (value == SPINEL_NET_ROLE_LEADER) {
-				update_node_type(LEADER);
-
-			} else if (value == SPINEL_NET_ROLE_DETACHED) {
-				update_node_type(UNKNOWN);
-				if (ncp_state_is_associated(get_ncp_state())) {
-					change_ncp_state(ISOLATED);
-				}
-			}
-		}
-
-	} else if (key == SPINEL_PROP_THREAD_MODE) {
-		uint8_t value = mThreadMode;
-		spinel_ssize_t ret;
-
-		ret = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &value);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		if (ret > 0) {
-			syslog(LOG_INFO, "[-NCP-]: Thread Mode \"%s\" (0x%02x)", thread_mode_to_string(value).c_str(), value);
-			mThreadMode = value;
-
-			switch (get_ncp_state())
-			{
-			case ISOLATED:
-				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
-					change_ncp_state(ASSOCIATING);
-				}
-				break;
-
-			case ASSOCIATING:
-				if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
-					change_ncp_state(ISOLATED);
-				}
-				break;
-
-			default:
-				break;
-			}
-
-			switch (mNodeType)
-			{
-			case END_DEVICE:
-			case SLEEPY_END_DEVICE:
-				if ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) != 0) {
-					update_node_type(END_DEVICE);
-				} else {
-					update_node_type(SLEEPY_END_DEVICE);
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-
-	} else if (key == SPINEL_PROP_NET_SAVED) {
-		bool is_commissioned = false;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_commissioned);
-		syslog(LOG_INFO, "[-NCP-]: NetSaved (NCP is commissioned?) \"%s\" ", is_commissioned ? "yes" : "no");
-		mIsCommissioned = is_commissioned;
-		if (mIsCommissioned && (get_ncp_state() == OFFLINE)) {
-			change_ncp_state(COMMISSIONED);
-		} else if (!mIsCommissioned && (get_ncp_state() == COMMISSIONED)) {
-			change_ncp_state(OFFLINE);
-		}
-
-	} else if (key == SPINEL_PROP_NET_STACK_UP) {
-		bool is_stack_up = false;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_stack_up);
-		syslog(LOG_INFO, "[-NCP-]: Stack is %sup", is_stack_up ? "" : "not ");
-
-		if (is_stack_up) {
-			if (!ncp_state_is_joining_or_joined(get_ncp_state())) {
-				if (mIsCommissioned && ((mThreadMode & SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE) == 0)) {
-					change_ncp_state(ISOLATED);
-				} else {
-					change_ncp_state(ASSOCIATING);
-				}
-			}
-		} else {
-			if (!ncp_state_is_joining(get_ncp_state())) {
-				change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
-			}
-		}
-
-	} else if (key == SPINEL_PROP_NET_IF_UP) {
-		bool is_if_up = false;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &is_if_up);
-		syslog(LOG_INFO, "[-NCP-]: Interface is %sup", is_if_up ? "" : "not ");
-
-		if (ncp_state_is_interface_up(get_ncp_state()) && !is_if_up) {
-			change_ncp_state(mIsCommissioned ? COMMISSIONED : OFFLINE);
-		}
-
-	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_STATE) {
-		boost::any value;
-		int status;
-		status = unpack_commissioner_state(value_data_ptr, value_data_len, value);
-		if (status == kWPANTUNDStatus_Ok) {
-			syslog(LOG_INFO, "[-NCP-]: Thread Commissioner state is \"%s\"", any_to_string(value).c_str());
-		}
-
-	} else if (key == SPINEL_PROP_THREAD_ON_MESH_NETS) {
-		handle_ncp_spinel_value_is_ON_MESH_NETS(value_data_ptr, value_data_len);
-
-	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
-		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
-
-	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
-		bool is_assisting = (value_data_len != 0);
-		uint16_t assisting_port(0);
-
-		if (is_assisting != get_current_network_instance().joinable) {
-			mCurrentNetworkInstance.joinable = is_assisting;
-			signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
-		}
-
-		if (is_assisting) {
-			int i;
-			syslog(LOG_NOTICE, "Network is joinable");
-			while (value_data_len > 0) {
-				i = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT16_S, &assisting_port);
-				if (i <= 0) {
-					break;
-				}
-				syslog(LOG_NOTICE, "Assisting on port %d", assisting_port);
-				value_data_ptr += i;
-				value_data_len -= i;
-			}
-		} else {
-			syslog(LOG_NOTICE, "Network is not joinable");
-		}
-
-	} else if (key == SPINEL_PROP_JAM_DETECTED) {
-		bool jamDetected = false;
-
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &jamDetected);
-		signal_property_changed(kWPANTUNDProperty_JamDetectionStatus, jamDetected);
-
-		if (jamDetected) {
-			syslog(LOG_NOTICE, "Signal jamming is detected");
-		} else {
-			syslog(LOG_NOTICE, "Signal jamming cleared");
-		}
-
-	} else if (key == SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL) {
-		uint8_t new_channel = 0;
-		spinel_ssize_t len;
-
-		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &new_channel);
-
-		if ((len >= 0) && (new_channel != mChannelManagerNewChannel)) {
-			mChannelManagerNewChannel = new_channel;
-			signal_property_changed(kWPANTUNDProperty_ChannelManagerNewChannel, new_channel);
-			syslog(LOG_INFO, "[-NCP-]: ChannelManager about to switch to new channel %d", new_channel);
-		}
-
-	} else if (key == SPINEL_PROP_STREAM_RAW) {
-		if (mPcapManager.is_enabled()) {
-			const uint8_t* frame_ptr(NULL);
-			unsigned int frame_len(0);
-			const uint8_t* meta_ptr(NULL);
-			unsigned int meta_len(0);
-			spinel_ssize_t ret;
-			PcapPacket packet;
-			uint16_t flags = 0;
-
-			packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
-
-			// Unpack the packet.
-			ret = spinel_datatype_unpack(
-				value_data_ptr,
-				value_data_len,
-				SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_DATA_S,
-				&frame_ptr,
-				&frame_len,
-				&meta_ptr,
-				&meta_len
-			);
-
-			require(ret > 0, bail);
-
-			// Unpack the metadata.
-			ret = spinel_datatype_unpack(
-				meta_ptr,
-				meta_len,
-				SPINEL_DATATYPE_INT8_S     // RSSI/TXPower
-				SPINEL_DATATYPE_INT8_S     // Noise Floor
-				SPINEL_DATATYPE_UINT16_S,  // Flags
-				NULL,   // Ignore RSSI/TXPower
-				NULL,	// Ignore Noise Floor
-				&flags
-			);
-
-			__ASSERT_MACROS_check(ret > 0);
-
-			if ((flags & SPINEL_MD_FLAG_TX) == SPINEL_MD_FLAG_TX)
-			{
-				// Ignore FCS for transmitted packets
-				frame_len -= 2;
-				packet.set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
-			}
-
-			mPcapManager.push_packet(
-				packet
-					.append_ppi_field(PCAP_PPI_TYPE_SPINEL, meta_ptr, meta_len)
-					.append_payload(frame_ptr, frame_len)
-			);
-		}
-
-	} else if (key == SPINEL_PROP_THREAD_TMF_PROXY_STREAM) {
+	} else {
+		syslog(LOG_NOTICE, "Network is not joinable");
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_JAM_DETECTED>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	bool jamDetected = false;
+
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &jamDetected);
+	signal_property_changed(kWPANTUNDProperty_JamDetectionStatus, jamDetected);
+
+	if (jamDetected) {
+		syslog(LOG_NOTICE, "Signal jamming is detected");
+	} else {
+		syslog(LOG_NOTICE, "Signal jamming cleared");
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint8_t new_channel = 0;
+	spinel_ssize_t len;
+
+	len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT8_S, &new_channel);
+
+	if ((len >= 0) && (new_channel != mChannelManagerNewChannel)) {
+		mChannelManagerNewChannel = new_channel;
+		signal_property_changed(kWPANTUNDProperty_ChannelManagerNewChannel, new_channel);
+		syslog(LOG_INFO, "[-NCP-]: ChannelManager about to switch to new channel %d", new_channel);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_STREAM_RAW>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	if (mPcapManager.is_enabled()) {
 		const uint8_t* frame_ptr(NULL);
 		unsigned int frame_len(0);
-		uint16_t locator = 0;
-		uint16_t port = 0;
+		const uint8_t* meta_ptr(NULL);
+		unsigned int meta_len(0);
 		spinel_ssize_t ret;
-		Data data;
+		PcapPacket packet;
+		uint16_t flags = 0;
 
+		packet.set_timestamp().set_dlt(PCAP_DLT_IEEE802_15_4);
+
+		// Unpack the packet.
 		ret = spinel_datatype_unpack(
 			value_data_ptr,
 			value_data_len,
-			SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S,
+			SPINEL_DATATYPE_DATA_WLEN_S SPINEL_DATATYPE_DATA_S,
 			&frame_ptr,
 			&frame_len,
-			&locator,
-			&port
+			&meta_ptr,
+			&meta_len
+		);
+
+		require(ret > 0, bail);
+
+		// Unpack the metadata.
+		ret = spinel_datatype_unpack(
+			meta_ptr,
+			meta_len,
+			SPINEL_DATATYPE_INT8_S     // RSSI/TXPower
+			SPINEL_DATATYPE_INT8_S     // Noise Floor
+			SPINEL_DATATYPE_UINT16_S,  // Flags
+			NULL,   // Ignore RSSI/TXPower
+			NULL,	// Ignore Noise Floor
+			&flags
 		);
 
 		__ASSERT_MACROS_check(ret > 0);
 
-		// Analyze the packet to determine if it should be dropped.
-		if ((ret > 0)) {
-			// append frame
-			data.append(frame_ptr, frame_len);
-			// pack the locator in big endian.
-			data.push_back(locator >> 8);
-			data.push_back(locator & 0xff);
-			// pack the port in big endian.
-			data.push_back(port >> 8);
-			data.push_back(port & 0xff);
-			signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
+		if ((flags & SPINEL_MD_FLAG_TX) == SPINEL_MD_FLAG_TX)
+		{
+			// Ignore FCS for transmitted packets
+			frame_len -= 2;
+			packet.set_dlt(PCAP_DLT_IEEE802_15_4_NOFCS);
 		}
 
-	} else if (key == SPINEL_PROP_THREAD_UDP_FORWARD_STREAM) {
-		const uint8_t* frame_ptr(NULL);
-		unsigned int frame_len(0);
-		uint16_t peer_port = 0;
-		in6_addr *peer_addr;
-		uint16_t sock_port = 0;
-		spinel_ssize_t ret;
-		Data data;
-
-		ret = spinel_datatype_unpack(
-			value_data_ptr,
-			value_data_len,
-			SPINEL_DATATYPE_DATA_S
-			SPINEL_DATATYPE_UINT16_S    // Peer port
-			SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
-			SPINEL_DATATYPE_UINT16_S,   // Sock port
-			&frame_ptr,
-			&frame_len,
-			&peer_port,
-			&peer_addr,
-			&sock_port
+		mPcapManager.push_packet(
+			packet
+				.append_ppi_field(PCAP_PPI_TYPE_SPINEL, meta_ptr, meta_len)
+				.append_payload(frame_ptr, frame_len)
 		);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		// Analyze the packet to determine if it should be dropped.
-		if (ret > 0) {
-			// append frame
-			data.append(frame_ptr, frame_len);
-			// pack the locator in big endian.
-			data.push_back(peer_port >> 8);
-			data.push_back(peer_port & 0xff);
-			data.append(peer_addr->s6_addr, sizeof(*peer_addr));
-			// pack the port in big endian.
-			data.push_back(sock_port >> 8);
-			data.push_back(sock_port & 0xff);
-			signal_property_changed(kWPANTUNDProperty_UdpForwardStream, data);
-		}
-
-	} else if ((key == SPINEL_PROP_STREAM_NET) || (key == SPINEL_PROP_STREAM_NET_INSECURE)) {
-		const uint8_t* frame_ptr(NULL);
-		unsigned int frame_len(0);
-		spinel_ssize_t ret;
-		uint8_t frame_data_type = FRAME_TYPE_DATA;
-
-		if (SPINEL_PROP_STREAM_NET_INSECURE == key) {
-			frame_data_type = FRAME_TYPE_INSECURE_DATA;
-		}
-
-		ret = spinel_datatype_unpack(
-			value_data_ptr,
-			value_data_len,
-			SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_DATA_S,
-			&frame_ptr,
-			&frame_len,
-			NULL,
-			NULL
-		);
-
-		__ASSERT_MACROS_check(ret > 0);
-
-		// Analyze the packet to determine if it should be dropped.
-		if ((ret > 0) && should_forward_hostbound_frame(&frame_data_type, frame_ptr, frame_len)) {
-			if (static_cast<bool>(mLegacyInterface) && (frame_data_type == FRAME_TYPE_LEGACY_DATA)) {
-				handle_alt_ipv6_from_ncp(frame_ptr, frame_len);
-			} else {
-				handle_normal_ipv6_from_ncp(frame_ptr, frame_len);
-			}
-		}
-	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
-		SpinelNCPTaskGetNetworkTopology::Table child_table;
-		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
-		int num_children = 0;
-
-		SpinelNCPTaskGetNetworkTopology::parse_child_table(value_data_ptr, value_data_len, child_table);
-
-		for (it = child_table.begin(); it != child_table.end(); it++)
-		{
-			num_children++;
-			syslog(LOG_INFO, "[-NCP-] Child: %02d %s", num_children, it->get_as_string().c_str());
-		}
-		syslog(LOG_INFO, "[-NCP-] Child: Total %d child%s", num_children, (num_children > 1) ? "ren" : "");
-
-	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE) {
-		SpinelNCPTaskGetNetworkTopology::Table neigh_table;
-		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
-		int num_neighbor = 0;
-
-		SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(value_data_ptr, value_data_len, neigh_table);
-
-		for (it = neigh_table.begin(); it != neigh_table.end(); it++)
-		{
-			num_neighbor++;
-			syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
-		}
-		syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
-
-	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE_ERROR_RATES) {
-		SpinelNCPTaskGetNetworkTopology::Table neigh_table;
-		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
-		int num_neighbor = 0;
-
-		SpinelNCPTaskGetNetworkTopology::prase_neighbor_error_rates_table(value_data_ptr, value_data_len, neigh_table);
-
-		for (it = neigh_table.begin(); it != neigh_table.end(); it++)
-		{
-			num_neighbor++;
-			syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
-		}
-		syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
-
-	} else if (key == SPINEL_PROP_THREAD_ROUTER_TABLE) {
-		SpinelNCPTaskGetNetworkTopology::Table router_table;
-		SpinelNCPTaskGetNetworkTopology::Table::iterator it;
-		int num_router = 0;
-
-		SpinelNCPTaskGetNetworkTopology::parse_router_table(value_data_ptr, value_data_len, router_table);
-
-		for (it = router_table.begin(); it != router_table.end(); it++)
-		{
-			num_router++;
-			syslog(LOG_INFO, "[-NCP-] Router: %02d %s", num_router, it->get_as_string().c_str());
-		}
-		syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "s" : "");
-
-
-	} else if (key == SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE) {
-		boost::any value;
-		if ((unpack_address_cache_table(value_data_ptr, value_data_len, value, false) == kWPANTUNDStatus_Ok)
-			&& (value.type() == typeid(std::list<std::string>))
-		) {
-			std::list<std::string> list = boost::any_cast<std::list<std::string> >(value);
-			int num_entries = 0;
-
-			for (std::list<std::string>::iterator it = list.begin(); it != list.end(); it++) {
-				num_entries++;
-				syslog(LOG_INFO, "[-NCP-] AddressCache: %02d %s", num_entries, it->c_str());
-			}
-			syslog(LOG_INFO, "[-NCP-] AddressCache: Total %d entr%s", num_entries, (num_entries > 1) ? "ies" : "y");
-		}
-
-	} else if (key == SPINEL_PROP_NET_PARTITION_ID) {
-		uint32_t paritition_id = 0;
-		spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &paritition_id);
-		syslog(LOG_INFO, "[-NCP-] Partition id: %u (0x%x)", paritition_id, paritition_id);
-
-	} else if (key == SPINEL_PROP_THREAD_LEADER_NETWORK_DATA) {
-		char net_data_cstr_buf[540];
-		encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
-		syslog(LOG_INFO, "[-NCP-] Leader network data: [%s]", net_data_cstr_buf);
-
-	} else if (key == SPINEL_PROP_RCP_VERSION) {
-		const char *rcp_version = NULL;
-		spinel_ssize_t len;
-
-		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UTF8_S, &rcp_version);
-
-		if (len > 0) {
-			mRcpVersion = std::string(rcp_version);
-			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
-		}
-	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
-		ValueMap result;
-		std::string result_as_string;
-
-		if (unpack_thread_network_time_as_valmap(value_data_ptr, value_data_len, result) == kWPANTUNDStatus_Ok) {
-			if (unpack_thread_network_time_as_string(value_data_ptr, value_data_len, result_as_string) == kWPANTUNDStatus_Ok) {
-				syslog(LOG_INFO, "[-NCP-]: Network time update: %s", result_as_string.c_str());
-			} else {
-				syslog(LOG_WARNING, "[-NCP-]: Failed to extract network time update for logging");
-			}
-
-			handle_network_time_update(result);
-		} else {
-			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
-		}
 	}
 
 bail:
-	process_event(EVENT_NCP_PROP_VALUE_IS, key, original_value_data_ptr, original_value_data_len);
+	return;
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_TMF_PROXY_STREAM>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const uint8_t* frame_ptr(NULL);
+	unsigned int frame_len(0);
+	uint16_t locator = 0;
+	uint16_t port = 0;
+	spinel_ssize_t ret;
+	Data data;
+
+	ret = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_UINT16_S SPINEL_DATATYPE_UINT16_S,
+		&frame_ptr,
+		&frame_len,
+		&locator,
+		&port
+	);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	// Analyze the packet to determine if it should be dropped.
+	if ((ret > 0)) {
+		// append frame
+		data.append(frame_ptr, frame_len);
+		// pack the locator in big endian.
+		data.push_back(locator >> 8);
+		data.push_back(locator & 0xff);
+		// pack the port in big endian.
+		data.push_back(port >> 8);
+		data.push_back(port & 0xff);
+		signal_property_changed(kWPANTUNDProperty_TmfProxyStream, data);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_UDP_FORWARD_STREAM>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const uint8_t* frame_ptr(NULL);
+	unsigned int frame_len(0);
+	uint16_t peer_port = 0;
+	in6_addr *peer_addr;
+	uint16_t sock_port = 0;
+	spinel_ssize_t ret;
+	Data data;
+
+	ret = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		SPINEL_DATATYPE_DATA_S
+		SPINEL_DATATYPE_UINT16_S    // Peer port
+		SPINEL_DATATYPE_IPv6ADDR_S  // Peer address
+		SPINEL_DATATYPE_UINT16_S,   // Sock port
+		&frame_ptr,
+		&frame_len,
+		&peer_port,
+		&peer_addr,
+		&sock_port
+	);
+
+	__ASSERT_MACROS_check(ret > 0);
+
+	// Analyze the packet to determine if it should be dropped.
+	if (ret > 0) {
+		// append frame
+		data.append(frame_ptr, frame_len);
+		// pack the locator in big endian.
+		data.push_back(peer_port >> 8);
+		data.push_back(peer_port & 0xff);
+		data.append(peer_addr->s6_addr, sizeof(*peer_addr));
+		// pack the port in big endian.
+		data.push_back(sock_port >> 8);
+		data.push_back(sock_port & 0xff);
+		signal_property_changed(kWPANTUNDProperty_UdpForwardStream, data);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_STREAM_NET>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	handle_spinel_value_is_stream_net(/* is_secure */ true, value_data_ptr, value_data_len);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_STREAM_NET_INSECURE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	handle_spinel_value_is_stream_net(/* is_secure */ false, value_data_ptr, value_data_len);
 }
 
 void
-SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+SpinelNCPInstance::handle_spinel_value_is_stream_net(bool is_secure, const uint8_t *value_data_ptr, spinel_size_t value_data_len)
 {
-	if (key == SPINEL_PROP_IPV6_ADDRESS_TABLE) {
-			struct in6_addr *addr = NULL;
-			uint8_t prefix_len = 0;
-			uint32_t valid_lifetime = 0xFFFFFFFF;
-			uint32_t preferred_lifetime = 0xFFFFFFFF;
+	const uint8_t* frame_ptr(NULL);
+	unsigned int frame_len(0);
+	spinel_ssize_t ret;
+	uint8_t frame_data_type = FRAME_TYPE_DATA;
 
-			spinel_datatype_unpack(value_data_ptr, value_data_len, "6CLL", &addr, &prefix_len, &valid_lifetime, &preferred_lifetime);
+	if (!is_secure) {
+		frame_data_type = FRAME_TYPE_INSECURE_DATA;
+	}
 
-			if (addr != NULL) {
-				if (!should_filter_address(*addr, prefix_len)) {
-					unicast_address_was_added(kOriginThreadNCP, *addr, prefix_len, valid_lifetime, preferred_lifetime);
-				}
-			}
+	ret = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		SPINEL_DATATYPE_DATA_S SPINEL_DATATYPE_DATA_S,
+		&frame_ptr,
+		&frame_len,
+		NULL,
+		NULL
+	);
 
-	} else if (key == SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE) {
-		struct in6_addr *addr = NULL;
+	__ASSERT_MACROS_check(ret > 0);
 
-		spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
+	// Analyze the packet to determine if it should be dropped.
+	if ((ret > 0) && should_forward_hostbound_frame(&frame_data_type, frame_ptr, frame_len)) {
+		if (static_cast<bool>(mLegacyInterface) && (frame_data_type == FRAME_TYPE_LEGACY_DATA)) {
+			handle_alt_ipv6_from_ncp(frame_ptr, frame_len);
+		} else {
+			handle_normal_ipv6_from_ncp(frame_ptr, frame_len);
+		}
+	}
+}
 
-		if ((addr != NULL) && !IN6_IS_ADDR_UNSPECIFIED(addr)) {
-			multicast_address_was_joined(kOriginThreadNCP, *addr);
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_CHILD_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::Table child_table;
+	SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+	int num_children = 0;
+
+	SpinelNCPTaskGetNetworkTopology::parse_child_table(value_data_ptr, value_data_len, child_table);
+
+	for (it = child_table.begin(); it != child_table.end(); it++)
+	{
+		num_children++;
+		syslog(LOG_INFO, "[-NCP-] Child: %02d %s", num_children, it->get_as_string().c_str());
+	}
+	syslog(LOG_INFO, "[-NCP-] Child: Total %d child%s", num_children, (num_children > 1) ? "ren" : "");
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_NEIGHBOR_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::Table neigh_table;
+	SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+	int num_neighbor = 0;
+
+	SpinelNCPTaskGetNetworkTopology::parse_neighbor_table(value_data_ptr, value_data_len, neigh_table);
+
+	for (it = neigh_table.begin(); it != neigh_table.end(); it++)
+	{
+		num_neighbor++;
+		syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
+	}
+	syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_NEIGHBOR_TABLE_ERROR_RATES>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::Table neigh_table;
+	SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+	int num_neighbor = 0;
+
+	SpinelNCPTaskGetNetworkTopology::prase_neighbor_error_rates_table(value_data_ptr, value_data_len, neigh_table);
+
+	for (it = neigh_table.begin(); it != neigh_table.end(); it++)
+	{
+		num_neighbor++;
+		syslog(LOG_INFO, "[-NCP-] Neighbor: %02d %s", num_neighbor, it->get_as_string().c_str());
+	}
+	syslog(LOG_INFO, "[-NCP-] Neighbor: Total %d neighbor%s", num_neighbor, (num_neighbor > 1) ? "s" : "");
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_ROUTER_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::Table router_table;
+	SpinelNCPTaskGetNetworkTopology::Table::iterator it;
+	int num_router = 0;
+
+	SpinelNCPTaskGetNetworkTopology::parse_router_table(value_data_ptr, value_data_len, router_table);
+
+	for (it = router_table.begin(); it != router_table.end(); it++)
+	{
+		num_router++;
+		syslog(LOG_INFO, "[-NCP-] Router: %02d %s", num_router, it->get_as_string().c_str());
+	}
+	syslog(LOG_INFO, "[-NCP-] Router: Total %d router%s", num_router, (num_router > 1) ? "s" : "");
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	boost::any value;
+	if ((unpack_address_cache_table(value_data_ptr, value_data_len, value, false) == kWPANTUNDStatus_Ok)
+		&& (value.type() == typeid(std::list<std::string>))
+	) {
+		std::list<std::string> list = boost::any_cast<std::list<std::string> >(value);
+		int num_entries = 0;
+
+		for (std::list<std::string>::iterator it = list.begin(); it != list.end(); it++) {
+			num_entries++;
+			syslog(LOG_INFO, "[-NCP-] AddressCache: %02d %s", num_entries, it->c_str());
+		}
+		syslog(LOG_INFO, "[-NCP-] AddressCache: Total %d entr%s", num_entries, (num_entries > 1) ? "ies" : "y");
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_NET_PARTITION_ID>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	uint32_t paritition_id = 0;
+	spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UINT32_S, &paritition_id);
+	syslog(LOG_INFO, "[-NCP-] Partition id: %u (0x%x)", paritition_id, paritition_id);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_LEADER_NETWORK_DATA>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	char net_data_cstr_buf[540];
+	encode_data_into_string(value_data_ptr, value_data_len, net_data_cstr_buf, sizeof(net_data_cstr_buf), 0);
+	syslog(LOG_INFO, "[-NCP-] Leader network data: [%s]", net_data_cstr_buf);
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_RCP_VERSION>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	const char *rcp_version = NULL;
+	spinel_ssize_t len;
+
+	len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_UTF8_S, &rcp_version);
+
+	if (len > 0) {
+		mRcpVersion = std::string(rcp_version);
+		syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
+	}
+}
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_is<SPINEL_PROP_THREAD_NETWORK_TIME>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	ValueMap result;
+	std::string result_as_string;
+
+	if (unpack_thread_network_time_as_valmap(value_data_ptr, value_data_len, result) == kWPANTUNDStatus_Ok) {
+		if (unpack_thread_network_time_as_string(value_data_ptr, value_data_len, result_as_string) == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: Network time update: %s", result_as_string.c_str());
+		} else {
+			syslog(LOG_WARNING, "[-NCP-]: Failed to extract network time update for logging");
 		}
 
-	} else if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
-		SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
-		int status;
+		handle_network_time_update(result);
+	} else {
+		syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
+	}
+}
 
-		status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
+void
+SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr,	spinel_size_t value_data_len)
+{
+	switch (key) {
+	case SPINEL_PROP_LAST_STATUS:
+		handle_spinel_value_is<SPINEL_PROP_LAST_STATUS>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NCP_VERSION:
+		handle_spinel_value_is<SPINEL_PROP_NCP_VERSION>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_INTERFACE_TYPE:
+		handle_spinel_value_is<SPINEL_PROP_INTERFACE_TYPE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_PROTOCOL_VERSION:
+		handle_spinel_value_is<SPINEL_PROP_PROTOCOL_VERSION>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_CAPS:
+		handle_spinel_value_is<SPINEL_PROP_CAPS>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_NETWORK_NAME:
+		handle_spinel_value_is<SPINEL_PROP_NET_NETWORK_NAME>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MCU_POWER_STATE:
+		handle_spinel_value_is<SPINEL_PROP_MCU_POWER_STATE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_LL_ADDR:
+		handle_spinel_value_is<SPINEL_PROP_IPV6_LL_ADDR>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_ML_ADDR:
+		handle_spinel_value_is<SPINEL_PROP_IPV6_ML_ADDR>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_ML_PREFIX:
+		handle_spinel_value_is<SPINEL_PROP_IPV6_ML_PREFIX>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_ADDRESS_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_IPV6_ADDRESS_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_HWADDR:
+		handle_spinel_value_is<SPINEL_PROP_HWADDR>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MAC_15_4_LADDR:
+		handle_spinel_value_is<SPINEL_PROP_MAC_15_4_LADDR>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MAC_15_4_PANID:
+		handle_spinel_value_is<SPINEL_PROP_MAC_15_4_PANID>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_XPANID:
+		handle_spinel_value_is<SPINEL_PROP_NET_XPANID>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_PSKC:
+		handle_spinel_value_is<SPINEL_PROP_NET_PSKC>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_MASTER_KEY:
+		handle_spinel_value_is<SPINEL_PROP_NET_MASTER_KEY>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER:
+		handle_spinel_value_is<SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_PHY_CHAN:
+		handle_spinel_value_is<SPINEL_PROP_PHY_CHAN>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_PHY_CHAN_SUPPORTED:
+		handle_spinel_value_is<SPINEL_PROP_PHY_CHAN_SUPPORTED>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_PHY_TX_POWER:
+		handle_spinel_value_is<SPINEL_PROP_PHY_TX_POWER>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_STREAM_DEBUG:
+		handle_spinel_value_is<SPINEL_PROP_STREAM_DEBUG>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_STREAM_LOG:
+		handle_spinel_value_is<SPINEL_PROP_STREAM_LOG>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_ROLE:
+		handle_spinel_value_is<SPINEL_PROP_NET_ROLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_MODE:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_MODE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_SAVED:
+		handle_spinel_value_is<SPINEL_PROP_NET_SAVED>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_STACK_UP:
+		handle_spinel_value_is<SPINEL_PROP_NET_STACK_UP>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_IF_UP:
+		handle_spinel_value_is<SPINEL_PROP_NET_IF_UP>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MESHCOP_COMMISSIONER_STATE:
+		handle_spinel_value_is<SPINEL_PROP_MESHCOP_COMMISSIONER_STATE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_ON_MESH_NETS:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_ON_MESH_NETS>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_OFF_MESH_ROUTES:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_OFF_MESH_ROUTES>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_ASSISTING_PORTS:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_ASSISTING_PORTS>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_JAM_DETECTED:
+		handle_spinel_value_is<SPINEL_PROP_JAM_DETECTED>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL:
+		handle_spinel_value_is<SPINEL_PROP_CHANNEL_MANAGER_NEW_CHANNEL>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_STREAM_RAW:
+		handle_spinel_value_is<SPINEL_PROP_STREAM_RAW>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_TMF_PROXY_STREAM:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_TMF_PROXY_STREAM>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_UDP_FORWARD_STREAM:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_UDP_FORWARD_STREAM>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_CHILD_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_CHILD_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_NEIGHBOR_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_NEIGHBOR_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_NEIGHBOR_TABLE_ERROR_RATES:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_NEIGHBOR_TABLE_ERROR_RATES>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_ROUTER_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_ROUTER_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_NET_PARTITION_ID:
+		handle_spinel_value_is<SPINEL_PROP_NET_PARTITION_ID>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_LEADER_NETWORK_DATA:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_LEADER_NETWORK_DATA>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_RCP_VERSION:
+		handle_spinel_value_is<SPINEL_PROP_RCP_VERSION>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_NETWORK_TIME:
+		handle_spinel_value_is<SPINEL_PROP_THREAD_NETWORK_TIME>(value_data_ptr, value_data_len);
+		break;
+	default:
+		break;
+	}
 
-		if (status == kWPANTUNDStatus_Ok) {
-			syslog(LOG_INFO, "[-NCP-]: ChildTable entry added: %s", child_entry.get_as_string().c_str());
+	process_event(EVENT_NCP_PROP_VALUE_IS, key, value_data_ptr, value_data_len);
+}
+
+// ----------------------------------------------------------------------------
+// PROP_VALUE_INSERTED event handlers
+
+template<> void
+nl::wpantund::SpinelNCPInstance::handle_spinel_value_inserted<SPINEL_PROP_IPV6_ADDRESS_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	struct in6_addr *addr = NULL;
+	uint8_t prefix_len = 0;
+	uint32_t valid_lifetime = 0xFFFFFFFF;
+	uint32_t preferred_lifetime = 0xFFFFFFFF;
+
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "6CLL", &addr, &prefix_len, &valid_lifetime, &preferred_lifetime);
+
+	if (addr != NULL) {
+		if (!should_filter_address(*addr, prefix_len)) {
+			unicast_address_was_added(kOriginThreadNCP, *addr, prefix_len, valid_lifetime, preferred_lifetime);
 		}
+	}
+}
 
-	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT) {
-		spinel_ssize_t len;
-		uint32_t channel_mask;
-		const uint8_t *energy_data = NULL;
-		uint16_t energy_data_len = 0;
-		ValueMap entry;
+template<> void
+nl::wpantund::SpinelNCPInstance::handle_spinel_value_inserted<SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	struct in6_addr *addr = NULL;
 
-		len = spinel_datatype_unpack(
-			value_data_ptr,
-			value_data_len,
-			(
-				SPINEL_DATATYPE_UINT32_S
-				SPINEL_DATATYPE_DATA_WLEN_S
-			),
-			&channel_mask,
-			&energy_data,
-			&energy_data_len
-		);
+	spinel_datatype_unpack(value_data_ptr, value_data_len, "6", &addr);
 
-		__ASSERT_MACROS_check(len > 0);
+	if ((addr != NULL) && !IN6_IS_ADDR_UNSPECIFIED(addr)) {
+		multicast_address_was_joined(kOriginThreadNCP, *addr);
+	}
+}
 
-		entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask] = channel_mask;
-		entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_Data] = Data(energy_data, energy_data_len);
+template<> void
+nl::wpantund::SpinelNCPInstance::handle_spinel_value_inserted<SPINEL_PROP_THREAD_CHILD_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
+	int status;
 
-		if (mCommissionerEnergyScanResult.size() == kMaxCommissionerEnergyScanResultEntries) {
-			mCommissionerEnergyScanResult.pop_front();
-		}
+	status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
 
-		mCommissionerEnergyScanResult.push_back(entry);
+	if (status == kWPANTUNDStatus_Ok) {
+		syslog(LOG_INFO, "[-NCP-]: ChildTable entry added: %s", child_entry.get_as_string().c_str());
+	}
+}
 
-	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_PAN_ID_CONFLICT_RESULT) {
-		spinel_ssize_t len;
-		uint16_t panid;
-		uint32_t channel_mask;
-		ValueMap entry;
+template<> void
+nl::wpantund::SpinelNCPInstance::handle_spinel_value_inserted<SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	spinel_ssize_t len;
+	uint32_t channel_mask;
+	const uint8_t *energy_data = NULL;
+	uint16_t energy_data_len = 0;
+	ValueMap entry;
 
-		len = spinel_datatype_unpack(
-			value_data_ptr,
-			value_data_len,
-			(
-				SPINEL_DATATYPE_UINT16_S
-				SPINEL_DATATYPE_UINT32_S
-			),
-			&panid,
-			&channel_mask
-		);
+	len = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		(
+			SPINEL_DATATYPE_UINT32_S
+			SPINEL_DATATYPE_DATA_WLEN_S
+		),
+		&channel_mask,
+		&energy_data,
+		&energy_data_len
+	);
 
-		__ASSERT_MACROS_check(len > 0);
+	__ASSERT_MACROS_check(len > 0);
 
-		entry[kWPANTUNDValueMapKey_CommrPanIdConflict_PanId] = panid;
-		entry[kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask] = channel_mask;
+	entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask] = channel_mask;
+	entry[kWPANTUNDValueMapKey_CommrEnergyScanResult_Data] = Data(energy_data, energy_data_len);
 
-		if (mCommissionerPanIdConflictResult.size() == kMaxCommissionerPanIdConflictResultEntries) {
-			mCommissionerPanIdConflictResult.pop_front();
-		}
+	if (mCommissionerEnergyScanResult.size() == kMaxCommissionerEnergyScanResultEntries) {
+		mCommissionerEnergyScanResult.pop_front();
+	}
 
-		mCommissionerPanIdConflictResult.push_back(entry);
+	mCommissionerEnergyScanResult.push_back(entry);
+}
+
+template<> void
+nl::wpantund::SpinelNCPInstance::handle_spinel_value_inserted<SPINEL_PROP_MESHCOP_COMMISSIONER_PAN_ID_CONFLICT_RESULT>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	spinel_ssize_t len;
+	uint16_t panid;
+	uint32_t channel_mask;
+	ValueMap entry;
+
+	len = spinel_datatype_unpack(
+		value_data_ptr,
+		value_data_len,
+		(
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT32_S
+		),
+		&panid,
+		&channel_mask
+	);
+
+	__ASSERT_MACROS_check(len > 0);
+
+	entry[kWPANTUNDValueMapKey_CommrPanIdConflict_PanId] = panid;
+	entry[kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask] = channel_mask;
+
+	if (mCommissionerPanIdConflictResult.size() == kMaxCommissionerPanIdConflictResultEntries) {
+		mCommissionerPanIdConflictResult.pop_front();
+	}
+
+	mCommissionerPanIdConflictResult.push_back(entry);
+}
+
+void
+SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	switch (key)
+	{
+	case SPINEL_PROP_IPV6_ADDRESS_TABLE:
+		handle_spinel_value_inserted<SPINEL_PROP_IPV6_ADDRESS_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE:
+		handle_spinel_value_inserted<SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_THREAD_CHILD_TABLE:
+		handle_spinel_value_inserted<SPINEL_PROP_THREAD_CHILD_TABLE>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT:
+		handle_spinel_value_inserted<SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT>(value_data_ptr, value_data_len);
+		break;
+	case SPINEL_PROP_MESHCOP_COMMISSIONER_PAN_ID_CONFLICT_RESULT:
+		handle_spinel_value_inserted<SPINEL_PROP_MESHCOP_COMMISSIONER_PAN_ID_CONFLICT_RESULT>(value_data_ptr, value_data_len);
+		break;
+	default:
+		break;
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_INSERTED, key, value_data_ptr, value_data_len);
 }
 
+// ----------------------------------------------------------------------------
+// PROP_VALUE_REMOVED event handlers
+
+template <> void
+SpinelNCPInstance::handle_spinel_value_removed<SPINEL_PROP_THREAD_CHILD_TABLE>(const uint8_t *value_data_ptr, spinel_size_t value_data_len)
+{
+	SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
+	int status;
+
+	status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
+
+	if (status == kWPANTUNDStatus_Ok) {
+		syslog(LOG_INFO, "[-NCP-]: ChildTable entry removed: %s", child_entry.get_as_string().c_str());
+	}
+}
+
 void
 SpinelNCPInstance::handle_ncp_spinel_value_removed(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
-	if (key == SPINEL_PROP_THREAD_CHILD_TABLE) {
-		SpinelNCPTaskGetNetworkTopology::TableEntry child_entry;
-		int status;
+	switch (key)
+	{
+	case SPINEL_PROP_THREAD_CHILD_TABLE:
+		handle_spinel_value_removed<SPINEL_PROP_THREAD_CHILD_TABLE>(value_data_ptr, value_data_len);
+		break;
 
-		status = SpinelNCPTaskGetNetworkTopology::parse_child_entry(value_data_ptr, value_data_len, child_entry);
-
-		if (status == kWPANTUNDStatus_Ok) {
-			syslog(LOG_INFO, "[-NCP-]: ChildTable entry removed: %s", child_entry.get_as_string().c_str());
-		}
-
+	default:
+		break;
 	}
 
 	process_event(EVENT_NCP_PROP_VALUE_REMOVED, key, value_data_ptr, value_data_len);
 }
+
+} // namespace wpantund
+} // namespace nl
 
 void
 SpinelNCPInstance::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_state)
@@ -5296,7 +5641,7 @@ SpinelNCPInstance::log_spinel_frame(SpinelFrameOrigin origin, const uint8_t *fra
 				prop_str = spinel_prop_key_to_cstr(prop_key);
 
 				switch (prop_key) {
-				case SPINEL_PROP_STREAM_DEBUG:           // Handled by `handle_ncp_debug_stream()`
+				case SPINEL_PROP_STREAM_DEBUG:           // Handled by `handle_spinel_value_is<PROP_STREAM_DEBUG>()`
 				case SPINEL_PROP_STREAM_LOG:             // Handled by `handle_ncp_log_stream()`
 				case SPINEL_PROP_STREAM_NET:             // Handled by `handle_normal_ipv6_from_ncp()
 				case SPINEL_PROP_STREAM_NET_INSECURE:    // Handled by `handle_normal_ipv6_from_ncp()
