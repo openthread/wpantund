@@ -58,7 +58,7 @@ SOURCE_VERSION=m4_esyscmd([
 
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
+AC_CONFIG_FILES(Makefile doxygen.cfg src/Makefile doc/Makefile src/connman-plugin/Makefile src/ipc-dbus/Makefile src/ipc-dbus/wpantund.conf src/wpanctl/Makefile src/wpantund/Makefile src/util/Makefile src/scripts/Makefile src/missing/Makefile src/missing/strlcat/Makefile src/missing/strlcpy/Makefile third_party/Makefile)
 
 # Set up AC_CONFIG_FILES for all of the available plugins.
 AC_CONFIG_FILES(m4_normalize(m4_foreach_w(THIS_PLUGIN,AVAILABLE_NCP_PLUGINS,[src/ncp-[]THIS_PLUGIN/Makefile ])))
@@ -130,6 +130,25 @@ AC_ARG_ENABLE(
 		fi
 	]
 )
+
+#
+# Service user
+#
+
+AC_ARG_WITH(
+    [service-user],
+    [AS_HELP_STRING([--with-service-user=<SERVICE_USER>],[Specify the user to run wpantund service @<:@default=root@:>@.])],
+    [
+	    WPANTUND_SERVICE_USER="${withval}"
+    ],
+    [
+	    WPANTUND_SERVICE_USER=root
+    ])
+
+AC_MSG_CHECKING([Service user])
+AC_MSG_RESULT(${WPANTUND_SERVICE_USER})
+AC_SUBST(WPANTUND_SERVICE_USER)
+AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_USER],[${WPANTUND_SERVICE_USER}],[Define to user to run wpantund service])
 
 #
 # NCP Spinel Encrypter
