@@ -1,7 +1,7 @@
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
-    <policy user="root">
+    <policy user="@WPANTUND_SERVICE_USER@">
         <allow own="org.wpantund"/>
         <allow own="org.wpantund.wpanctl"/>
 
