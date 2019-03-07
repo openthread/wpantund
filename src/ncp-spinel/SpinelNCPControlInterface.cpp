@@ -281,6 +281,42 @@ bail:
 	return;
 }
 
+void SpinelNCPControlInterface::add_service(
+	uint32_t enterprise_number, 
+	const uint8_t *service_data, 
+	unsigned int service_data_len, 
+	bool stable, 
+	const uint8_t *server_data, 
+	unsigned int server_data_len, 
+	CallbackWithStatus cb
+) {
+	require_action(service_data != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(service_data_len > 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(server_data != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(server_data_len > 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+
+	mNCPInstance->add_service(enterprise_number, service_data, service_data_len, stable, server_data, server_data_len, cb);
+
+bail:
+	return;
+}
+
+void SpinelNCPControlInterface::remove_service(
+	uint32_t enterprise_number, 
+	const uint8_t *service_data, 
+	unsigned int service_data_len, 
+	CallbackWithStatus cb
+) {
+	require_action(service_data != NULL, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(service_data_len > 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
+	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
+
+	mNCPInstance->remove_service(enterprise_number, service_data, service_data_len, cb);
+bail:
+	return;
+}
+
 void
 SpinelNCPControlInterface::joiner_attach(CallbackWithStatus cb)
 {

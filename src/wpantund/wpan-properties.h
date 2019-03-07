@@ -323,6 +323,11 @@
 #define kWPANTUNDProperty_StatLinkQualityPeriod                 "Stat:LinkQuality:Period"
 #define kWPANTUNDProperty_StatHelp                              "Stat:Help"
 
+#define kWPANTUNDProperty_ThreadServices                        "Thread:Services"
+#define kWPANTUNDProperty_ThreadServicesAsValMap                "Thread:Services:AsValMap"
+#define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
+#define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
@@ -456,5 +461,12 @@
 #define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
 #define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
 #define kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs        "TimeSyncReceivedMonoTimeUs"
+
+#define kWPANTUNDValueMapKey_Service_ServiceId                  "ServiceId"
+#define kWPANTUNDValueMapKey_Service_EnterpriseNumber           "EnterpriseNumber"
+#define kWPANTUNDValueMapKey_Service_ServiceData                "ServiceData"
+#define kWPANTUNDValueMapKey_Service_Stable                     "Stable"
+#define kWPANTUNDValueMapKey_Service_ServerData                 "ServerData"
+#define kWPANTUNDValueMapKey_Service_RLOC16                     "RLOC16"
 
 #endif

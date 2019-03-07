@@ -79,6 +79,9 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_ADD, interface_route_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_SERVICE_ADD, service_add_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_SERVICE_REMOVE, service_remove_handler);
+
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
 
@@ -1365,6 +1368,78 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 
 bail:
 
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::service_add_handler(
+	NCPControlInterface *interface,
+	DBusMessage *message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed;
+	uint32_t enterprise_number;
+	uint8_t *service_data;
+	int service_data_len;
+	bool stable;
+	uint8_t *server_data;
+	int server_data_len;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &enterprise_number,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &service_data, &service_data_len,
+		DBUS_TYPE_BOOLEAN, &stable,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &server_data, &server_data_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+
+	interface->add_service(
+		enterprise_number, 
+		service_data, 
+		service_data_len,
+		stable, 
+		server_data, 
+		server_data_len,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+
+	dbus_message_ref(message);
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::service_remove_handler(
+	NCPControlInterface *interface,
+	DBusMessage *message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed;
+	uint32_t enterprise_number;
+	uint8_t *service_data;
+	int service_data_len;
+	
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &enterprise_number,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &service_data, &service_data_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+
+	interface->remove_service(
+		enterprise_number, 
+		service_data, 
+		service_data_len, 
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
+
+	dbus_message_ref(message);
+
+bail:
 	return ret;
 }
 

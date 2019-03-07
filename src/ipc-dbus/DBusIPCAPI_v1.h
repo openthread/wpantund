@@ -95,6 +95,16 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult service_add_handler(
+		NCPControlInterface *interface,
+		DBusMessage *message
+	);
+
+	DBusHandlerResult service_remove_handler(
+		NCPControlInterface *interface,
+		DBusMessage *message
+	);
+
 	DBusHandlerResult interface_reset_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message

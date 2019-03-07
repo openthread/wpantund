@@ -173,6 +173,29 @@ DummyNCPControlInterface::remove_external_route(
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
+void 
+DummyNCPControlInterface::add_service(
+	uint32_t enterprise_number, 
+	const uint8_t *service_data, 
+	unsigned int service_data_len, 
+	bool stable, 
+	const uint8_t *server_data, 
+	unsigned int server_data_len, 
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void 
+DummyNCPControlInterface::remove_service(
+	uint32_t enterprise_number, 
+	const uint8_t *service_data, 
+	unsigned int service_data_len, 
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
 void
 DummyNCPControlInterface::joiner_attach(
 	CallbackWithStatus cb

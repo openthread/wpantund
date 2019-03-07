@@ -115,6 +115,21 @@ DummyNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, C
 	return;
 }
 
+void 
+DummyNCPInstance::add_service_on_ncp(uint32_t enterprise_number, 
+					const uint8_t *service_data, unsigned int service_data_len, bool stable, 
+					const uint8_t *server_data, unsigned int server_data_len, CallbackWithStatus cb)
+{
+	return;
+}
+
+void 
+DummyNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const uint8_t *service_data, 
+					unsigned int service_data_len, CallbackWithStatus cb)
+{
+	return;
+}
+
 void
 DummyNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
 	bool stable, CallbackWithStatus cb)
