@@ -55,8 +55,8 @@
 
 #define WPANTUND_IF_CMD_ROUTE_ADD             "RouteAdd"
 #define WPANTUND_IF_CMD_ROUTE_REMOVE          "RouteRemove"
-#define WPANTUND_IF_SERVICE_ADD               "ServiceAdd"
-#define WPANTUND_IF_SERVICE_REMOVE            "ServiceRemove"
+#define WPANTUND_IF_CMD_SERVICE_ADD               "ServiceAdd"
+#define WPANTUND_IF_CMD_SERVICE_REMOVE            "ServiceRemove"
 #define WPANTUND_IF_CMD_CONFIG_GATEWAY        "ConfigGateway"
 #define WPANTUND_IF_CMD_DATA_POLL             "DataPoll"
 
