@@ -1314,9 +1314,9 @@ unpack_server_services_as_any(const uint8_t *data_in, spinel_size_t data_len, bo
 			data_len,
 			SPINEL_DATATYPE_STRUCT_S(
 				SPINEL_DATATYPE_UINT32_S // Enterprise Number
-				SPINEL_DATATYPE_DATA_S   // Service Data
+				SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
 				SPINEL_DATATYPE_BOOL_S   // stable
-				SPINEL_DATATYPE_DATA_S   // Server Data
+				SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
 				SPINEL_DATATYPE_UINT16_S // RLOC
 			),
 			&enterprise_number,
@@ -1386,9 +1386,9 @@ unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_
 			SPINEL_DATATYPE_STRUCT_S(
 				SPINEL_DATATYPE_UINT8_S  // Service ID
 				SPINEL_DATATYPE_UINT32_S // Enterprise Number
-				SPINEL_DATATYPE_DATA_S   // Service Data
+				SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
 				SPINEL_DATATYPE_BOOL_S   // stable
-				SPINEL_DATATYPE_DATA_S   // Server Data
+				SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
 				SPINEL_DATATYPE_UINT16_S // RLOC
 			),
 			&service_id,
@@ -5269,9 +5269,9 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number,
 	factory.add_command(SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 			SPINEL_DATATYPE_UINT32_S // Enterprise Number
-			SPINEL_DATATYPE_DATA_S   // Service Data
+			SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
 			SPINEL_DATATYPE_BOOL_S   // stable
-			SPINEL_DATATYPE_DATA_S   // Server Data
+			SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
 		),
 		SPINEL_PROP_SERVER_SERVICES,
 		enterprise_number,
@@ -5279,8 +5279,7 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number,
 		service_data_len,
 		stable,
 		server_data,
-		server_data_len,
-		0
+		server_data_len
 	));
 
 	start_new_task(factory.finish());
@@ -5300,8 +5299,9 @@ SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const uint8
 	factory.add_command(SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
 			SPINEL_DATATYPE_UINT32_S // Enterprise Number
-			SPINEL_DATATYPE_DATA_S   // Service Data
+			SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
 		),
+		SPINEL_PROP_SERVER_SERVICES,
 		enterprise_number,
 		service_data,
 		service_data_len
