@@ -191,6 +191,8 @@ int tool_cmd_remove_service(int argc, char* argv[])
 
 		if (ret) {
 			fprintf(stderr, "%s failed with error %d. %s\n", argv[0], ret, wpantund_status_to_cstr(ret));
+		} else {
+			fprintf(stderr, "Service removed.\n");
 		}
 	}
 
