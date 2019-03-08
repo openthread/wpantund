@@ -51,6 +51,8 @@
 #include "tool-cmd-commissioner.h"
 #include "tool-cmd-joiner.h"
 #include "tool-cmd-dataset.h"
+#include "tool-cmd-add-service.h"
+#include "tool-cmd-remove-service.h"
 
 #include "wpanctl-utils.h"
 
@@ -119,6 +121,16 @@
 		"remove-route", \
 		"Remove external route prefix", \
 		&tool_cmd_remove_route \
+	}, \
+	{ \
+		"add-service", \
+		"Add service", \
+		&tool_cmd_add_service \
+	}, \
+	{ \
+		"remove-service", \
+		"Remove service", \
+		&tool_cmd_remove_service \
 	}, \
 	{ \
 		"joiner", \
