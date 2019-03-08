@@ -2719,9 +2719,9 @@ typedef enum
      * Array of structures containing:
      *
      *  `L`: Enterprise Number
-     *  `D`: Service Data
+     *  `d`: Service Data
      *  `b`: Stable
-     *  `D`: Server Data
+     *  `d`: Server Data
      *  `s`: RLOC
      *
      */
@@ -2738,9 +2738,9 @@ typedef enum
      *
      *  `C`: Service ID
      *  `L`: Enterprise Number
-     *  `D`: Service Data
+     *  `d`: Service Data
      *  `b`: Stable
-     *  `D`: Server Data
+     *  `d`: Server Data
      *  `s`: RLOC
      *
      */
