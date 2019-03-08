@@ -1295,6 +1295,76 @@ unpack_server_services_as_any(const uint8_t *data_in, spinel_size_t data_len, bo
 {
 	int ret = kWPANTUNDStatus_Ok;
 	spinel_ssize_t len;
+	uint32_t enterprise_number;
+	const uint8_t *service_data;
+	spinel_size_t service_data_len;
+	bool stable;
+	const uint8_t *server_data;
+	spinel_size_t server_data_len;
+	uint16_t rloc16;
+	int num_service = 0;
+	char c_string[500];
+	
+	std::list<ValueMap> result_as_val_map_list;
+	std::list<std::string> result_as_string_list;
+
+	while (data_len > 0) {
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT32_S // Enterprise Number
+				SPINEL_DATATYPE_DATA_S   // Service Data
+				SPINEL_DATATYPE_BOOL_S   // stable
+				SPINEL_DATATYPE_DATA_S   // Server Data
+				SPINEL_DATATYPE_UINT16_S // RLOC
+			),
+			&enterprise_number,
+			&service_data,
+			&service_data_len,
+			&stable,
+			&server_data,
+			&server_data_len,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		if (as_val_map) {
+			ValueMap result_as_val_map;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_EnterpriseNumber] = enterprise_number;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_ServiceData] = Data(service_data, service_data_len);
+			result_as_val_map[kWPANTUNDValueMapKey_Service_Stable] = stable;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_ServerData] = Data(server_data, server_data_len);
+			result_as_val_map[kWPANTUNDValueMapKey_Service_RLOC16] = rloc16;
+			result_as_val_map_list.push_back(result_as_val_map);
+		} else {
+			snprintf(c_string, sizeof(c_string), "EnterpriseNumber:%u, Stable:%d, RLOC16:%04x", enterprise_number, stable, rloc16);
+			result_as_string_list.push_back(std::string(c_string));
+		}
+
+		num_service++;
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map_list;
+	} else {
+		value = result_as_string_list;
+	}
+
+	return ret;
+}
+
+static int
+unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
 	uint8_t service_id;
 	uint32_t enterprise_number;
 	const uint8_t *service_data;
@@ -1305,7 +1375,6 @@ unpack_server_services_as_any(const uint8_t *data_in, spinel_size_t data_len, bo
 	uint16_t rloc16;
 	int num_service = 0;
 	char c_string[500];
-
 	
 	std::list<ValueMap> result_as_val_map_list;
 	std::list<std::string> result_as_string_list;
@@ -2198,11 +2267,11 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ThreadLeaderServices,
 		SPINEL_CAP_THREAD_SERVICE,
-		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_services_as_any, _1, _2, _3, false));
+		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_leader_services_as_any, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ThreadLeaderServicesAsValMap,
 		SPINEL_CAP_THREAD_SERVICE,
-		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_services_as_any, _1, _2, _3, true));
+		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_leader_services_as_any, _1, _2, _3, true));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -5203,7 +5272,6 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number,
 			SPINEL_DATATYPE_DATA_S   // Service Data
 			SPINEL_DATATYPE_BOOL_S   // stable
 			SPINEL_DATATYPE_DATA_S   // Server Data
-			SPINEL_DATATYPE_UINT16_S // RLOC
 		),
 		SPINEL_PROP_SERVER_SERVICES,
 		enterprise_number,
