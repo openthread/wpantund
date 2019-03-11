@@ -37,7 +37,7 @@ static const arg_list_item_t add_service_option_list[] = {
 	{'t', "timeout", "ms", "Set timeout period"},
 	{'d', "data", NULL, "Data is binary data (in hex)"},
 	{'s', "string", NULL, "Data is a string"},
-    {'n', "not-stable", NULL, "Indicate the service is NOT part of stable Network Data"},
+	{'n', "not-stable", NULL, "Indicate the service is NOT part of stable Network Data"},
 	{0}
 };
 

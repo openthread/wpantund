@@ -1313,11 +1313,11 @@ unpack_server_services_as_any(const uint8_t *data_in, spinel_size_t data_len, bo
 			data_in,
 			data_len,
 			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT32_S // Enterprise Number
-				SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
-				SPINEL_DATATYPE_BOOL_S   // stable
-				SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
-				SPINEL_DATATYPE_UINT16_S // RLOC
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+				SPINEL_DATATYPE_UINT16_S    // RLOC
 			),
 			&enterprise_number,
 			&service_data,
@@ -1384,12 +1384,12 @@ unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_
 			data_in,
 			data_len,
 			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT8_S  // Service ID
-				SPINEL_DATATYPE_UINT32_S // Enterprise Number
-				SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
-				SPINEL_DATATYPE_BOOL_S   // stable
-				SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
-				SPINEL_DATATYPE_UINT16_S // RLOC
+				SPINEL_DATATYPE_UINT8_S		// Service ID
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+				SPINEL_DATATYPE_UINT16_S    // RLOC
 			),
 			&service_id,
 			&enterprise_number,
@@ -5106,7 +5106,7 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 bool
 SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t prefix_len)
 {
-	static const uint16_t service_aloc_start = 0x10;
+	static const uint8_t service_aloc_start = 0x10;
 	static const uint8_t service_aloc_end = 0x2F;
 	static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
 	bool should_filter = false;
@@ -5268,10 +5268,10 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number,
 
 	factory.add_command(SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-			SPINEL_DATATYPE_UINT32_S // Enterprise Number
-			SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
-			SPINEL_DATATYPE_BOOL_S   // stable
-			SPINEL_DATATYPE_DATA_WLEN_S   // Server Data
+			SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+			SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+			SPINEL_DATATYPE_BOOL_S      // stable
+			SPINEL_DATATYPE_DATA_WLEN_S // Server Data
 		),
 		SPINEL_PROP_SERVER_SERVICES,
 		enterprise_number,
@@ -5298,8 +5298,8 @@ SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const uint8
 
 	factory.add_command(SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-			SPINEL_DATATYPE_UINT32_S // Enterprise Number
-			SPINEL_DATATYPE_DATA_WLEN_S   // Service Data
+			SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+			SPINEL_DATATYPE_DATA_WLEN_S // Service Data
 		),
 		SPINEL_PROP_SERVER_SERVICES,
 		enterprise_number,
