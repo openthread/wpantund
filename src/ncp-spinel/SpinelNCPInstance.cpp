@@ -4586,9 +4586,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
 		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
 
-	} else if (key == SPINEL_PROP_SERVER_SERVICES) {
-		//handle_ncp_spinel_value_is_SERVICES(value_data_ptr, value_data_len);
-
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
 		uint16_t assisting_port(0);
