@@ -1763,14 +1763,6 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "MESHCOP_COMMISSIONER_PROVISIONING_URL";
         break;
 
-    case SPINEL_PROP_SERVER_SERVICES:
-        ret = "SPINEL_PROP_SERVER_SERVICES";
-        break;
-
-    case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
-        ret = "SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE";
-        break;
-
     case SPINEL_PROP_MESHCOP_COMMISSIONER_SESSION_ID:
         ret = "MESHCOP_COMMISSIONER_SESSION_ID";
         break;
@@ -2097,6 +2089,18 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_DEBUG_TEST_WATCHDOG:
         ret = "DEBUG_TEST_WATCHDOG";
+        break;
+
+    case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
+        ret = "SERVER_ALLOW_LOCAL_DATA_CHANGE";
+        break;
+
+    case SPINEL_PROP_SERVER_SERVICES:
+        ret = "SERVER_SERVICES";
+        break;
+
+    case SPINEL_PROP_SERVER_LEADER_SERVICES:
+        ret = "SERVER_LEADER_SERVICES";
         break;
 
     default:
@@ -2512,10 +2516,6 @@ const char *spinel_capability_to_cstr(unsigned int capability)
         ret = "THREAD_BORDER_ROUTER";
         break;
 
-    case SPINEL_CAP_THREAD_SERVICE:
-        ret = "SPINEL_CAP_THREAD_SERVICE";
-        break;
-
     case SPINEL_CAP_NEST_LEGACY_INTERFACE:
         ret = "NEST_LEGACY_INTERFACE";
         break;
@@ -2526,6 +2526,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_NEST_TRANSMIT_HOOK:
         ret = "NEST_TRANSMIT_HOOK";
+        break;
+
+    case SPINEL_CAP_THREAD_SERVICE:
+        ret = "THREAD_SERVICE";
         break;
 
     default:
