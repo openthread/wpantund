@@ -2002,6 +2002,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_POSIXAppRCPVersion,
 		SPINEL_CAP_POSIX_APP,
 		SPINEL_PROP_RCP_VERSION, SPINEL_DATATYPE_UTF8_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_OpenThreadSLAACEnabled,
+		SPINEL_CAP_SLAAC,
+		SPINEL_PROP_SLAAC_ENABLED, SPINEL_DATATYPE_BOOL_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
@@ -2975,6 +2979,10 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_ChannelManagerAutoSelectInterval,
 		SPINEL_CAP_CHANNEL_MANAGER,
 		SPINEL_PROP_CHANNEL_MANAGER_AUTO_SELECT_INTERVAL, SPINEL_DATATYPE_UINT32_C);
+	register_set_handler_capability_spinel_persist(
+		kWPANTUNDProperty_OpenThreadSLAACEnabled,
+		SPINEL_CAP_SLAAC,
+		SPINEL_PROP_SLAAC_ENABLED, SPINEL_DATATYPE_BOOL_C);
 
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel_persist(
@@ -4716,6 +4724,18 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			mRcpVersion = std::string(rcp_version);
 			syslog(LOG_NOTICE, "[-NCP-]: RCP is running \"%s\"", rcp_version);
 		}
+
+	} else if (key == SPINEL_PROP_SLAAC_ENABLED) {
+		bool enabled;
+		spinel_ssize_t len;
+
+		len = spinel_datatype_unpack(value_data_ptr, value_data_len, SPINEL_DATATYPE_BOOL_S, &enabled);
+
+		if (len > 0) {
+			syslog(LOG_NOTICE, "[-NCP-]: SLAAC %sabled", enabled ? "en" : "dis");
+			mNCPHandlesSLAAC = enabled;
+		}
+
 	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {
 		ValueMap result;
 		std::string result_as_string;
