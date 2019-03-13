@@ -176,11 +176,9 @@ DummyNCPControlInterface::remove_external_route(
 void 
 DummyNCPControlInterface::add_service(
 	uint32_t enterprise_number, 
-	const uint8_t *service_data, 
-	unsigned int service_data_len, 
+	const Data &service_data,
 	bool stable, 
-	const uint8_t *server_data, 
-	unsigned int server_data_len, 
+	const Data &server_data,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -189,8 +187,7 @@ DummyNCPControlInterface::add_service(
 void 
 DummyNCPControlInterface::remove_service(
 	uint32_t enterprise_number, 
-	const uint8_t *service_data, 
-	unsigned int service_data_len, 
+	const Data &service_data, 
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);

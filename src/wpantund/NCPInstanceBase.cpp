@@ -230,16 +230,16 @@ NCPInstanceBase::process_event_helper(int event)
 // MARK: -
 
 void NCPInstanceBase::add_service(uint32_t enterprise_number, 
-					const uint8_t *service_data, unsigned int service_data_len, bool stable, 
-					const uint8_t *server_data, unsigned int server_data_len, CallbackWithStatus cb)
+	const Data &service_data, bool stable, const Data &server_data, 
+	CallbackWithStatus cb)
 {
-	add_service_on_ncp(enterprise_number, service_data, service_data_len, stable, server_data, server_data_len, cb);
+	add_service_on_ncp(enterprise_number, service_data, stable, server_data, cb);
 }
 
-void NCPInstanceBase::remove_service(uint32_t enterprise_number, const uint8_t *service_data, 
-					unsigned int service_data_len, CallbackWithStatus cb)
+void NCPInstanceBase::remove_service(uint32_t enterprise_number, 
+	const Data &service_data, CallbackWithStatus cb)
 {
-	remove_service_on_ncp(enterprise_number, service_data, service_data_len, cb);
+	remove_service_on_ncp(enterprise_number, service_data, cb);
 }
 
 wpantund_status_t

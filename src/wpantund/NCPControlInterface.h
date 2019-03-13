@@ -191,18 +191,15 @@ public:
 
 	virtual void add_service(
 		uint32_t enterprise_number, 
-		const uint8_t *service_data, 
-		unsigned int service_data_len, 
+		const Data &service_data, 
 		bool stable, 
-		const uint8_t *server_data, 
-		unsigned int server_data_len, 
+		const Data &server_data,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 	virtual void remove_service(
 		uint32_t enterprise_number, 
-		const uint8_t *service_data, 
-		unsigned int service_data_len, 
+		const Data &service_data,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 

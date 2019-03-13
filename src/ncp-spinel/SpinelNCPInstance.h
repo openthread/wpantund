@@ -163,12 +163,10 @@ protected:
 	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 
-	virtual void add_service_on_ncp(uint32_t enterprise_number, 
-					const uint8_t *service_data, unsigned int service_data_len, bool stable, 
-					const uint8_t *server_data, unsigned int server_data_len, CallbackWithStatus cb);
+	virtual void add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable, 
+					const Data& server_data, CallbackWithStatus cb);
 
-	virtual void remove_service_on_ncp(uint32_t enterprise_number, const uint8_t *service_data, 
-					unsigned int service_data_len, CallbackWithStatus cb);
+	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data& service_data, CallbackWithStatus cb);
 
 	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
 					CallbackWithStatus cb);

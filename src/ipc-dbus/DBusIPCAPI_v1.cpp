@@ -1396,18 +1396,16 @@ DBusIPCAPI_v1::service_add_handler(
 
 	require(did_succeed, bail);
 
+	dbus_message_ref(message);
+
 	interface->add_service(
-		enterprise_number, 
-		service_data, 
-		service_data_len,
+		enterprise_number,
+		Data(service_data, service_data_len),
 		stable, 
-		server_data, 
-		server_data_len,
+		Data(server_data, server_data_len),
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
-
-	dbus_message_ref(message);
 
 bail:
 	return ret;
@@ -1433,15 +1431,14 @@ DBusIPCAPI_v1::service_remove_handler(
 
 	require(did_succeed, bail);
 
+	dbus_message_ref(message);
+
 	interface->remove_service(
 		enterprise_number, 
-		service_data, 
-		service_data_len, 
+		Data(service_data, service_data_len),
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;
-
-	dbus_message_ref(message);
 
 bail:
 	return ret;
