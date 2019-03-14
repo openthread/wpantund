@@ -873,8 +873,8 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 		cb(kWPANTUNDStatus_Ok);
 	}
 
-	if (mAutoAddSLAACAddress && entry.is_on_mesh() && entry.is_slaac() && prefix.get_length() == kSLAACPrefixLength
-		&& !has_address_with_prefix(prefix)
+	if (mAutoAddSLAACAddress && !mNCPHandlesSLAAC && entry.is_on_mesh() && entry.is_slaac()
+		&& prefix.get_length() == kSLAACPrefixLength && !has_address_with_prefix(prefix)
 	) {
 		struct in6_addr address = make_slaac_addr_from_eui64(prefix.get_prefix().s6_addr, mMACAddress);
 		syslog(LOG_NOTICE, "Pushing a new SLAAC address %s/%d to NCP", in6_addr_to_string(address).c_str(), prefix_len);

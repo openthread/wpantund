@@ -33,6 +33,17 @@
 #ifndef SPINEL_HEADER_INCLUDED
 #define SPINEL_HEADER_INCLUDED 1
 
+/*
+ * Spinel definition guideline:
+ *
+ * New NCP firmware should work with an older host driver, i.e., NCP implementation should remain backward compatible.
+ *
+ *  - Existing fields in the format of an already implemented spinel property or command cannot change.
+ *  - New fields may be appended at the end of the format (or the end of a struct) as long as the NCP implementation
+ *    treats the new fields as optional (i.e., a driver not aware of and therefore not using the new fields should
+ *    continue to function as before).
+ */
+
 #ifdef SPINEL_PLATFORM_HEADER
 #include SPINEL_PLATFORM_HEADER
 #else // ifdef SPINEL_PLATFORM_HEADER
@@ -767,6 +778,7 @@ enum
     SPINEL_CAP_TIME_SYNC               = (SPINEL_CAP_OPENTHREAD__BEGIN + 7),
     SPINEL_CAP_CHILD_SUPERVISION       = (SPINEL_CAP_OPENTHREAD__BEGIN + 8),
     SPINEL_CAP_POSIX_APP               = (SPINEL_CAP_OPENTHREAD__BEGIN + 9),
+    SPINEL_CAP_SLAAC                   = (SPINEL_CAP_OPENTHREAD__BEGIN + 10),
     SPINEL_CAP_OPENTHREAD__END         = 640,
 
     SPINEL_CAP_THREAD__BEGIN        = 1024,
@@ -3013,6 +3025,17 @@ typedef enum
      *
      */
     SPINEL_PROP_PARENT_RESPONSE_INFO = SPINEL_PROP_OPENTHREAD__BEGIN + 13,
+
+    /// SLAAC enabled
+    /** Format `b` - Read-Write
+     *  Required capability: `SPINEL_CAP_SLAAC`
+     *
+     * This property allows the host to enable/disable SLAAC module on NCP at run-time. When SLAAC module is enabled,
+     * SLAAC addresses (based on on-mesh prefixes in Network Data) are added to the interface. When SLAAC module is
+     * disabled any previously added SLAAC address is removed.
+     *
+     */
+    SPINEL_PROP_SLAAC_ENABLED = SPINEL_PROP_OPENTHREAD__BEGIN + 14,
 
     SPINEL_PROP_OPENTHREAD__END = 0x2000,
 
