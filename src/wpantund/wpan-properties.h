@@ -172,6 +172,7 @@
 #define kWPANTUNDProperty_POSIXAppRCPVersionCached              "POSIXApp:RCPVersion:Cached"
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
+#define kWPANTUNDProperty_OpenThreadSLAACEnabled                "OpenThread:SLAAC:Enabled"
 #define kWPANTUNDProperty_OpenThreadSteeringDataAddress         "OpenThread:SteeringData:Address"
 #define kWPANTUNDProperty_OpenThreadSteeringDataSetWhenJoinable "OpenThread:SteeringData:SetWhenJoinable"
 #define kWPANTUNDProperty_OpenThreadMsgBufferCounters           "OpenThread:MsgBufferCounters"

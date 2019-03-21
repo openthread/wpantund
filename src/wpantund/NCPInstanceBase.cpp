@@ -76,6 +76,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mAutoUpdateInterfaceIPv6AddrsOnNCP = true;
 	mFilterUserAddedLinkLocalIPv6Address = true;
 	mAutoAddSLAACAddress = true;
+	mNCPHandlesSLAAC = false;
 	mSetDefaultRouteForAutoAddedPrefix = false;
 	mSetSLAACForAutoAddedPrefix = false;
 	mAutoAddOffMeshRoutesOnInterface = true;

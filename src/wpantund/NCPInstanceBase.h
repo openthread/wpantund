@@ -654,6 +654,12 @@ protected:
 	// using the wpantund property "Daemon:IPv6:AutoAddSLAACAddress".
 	bool mAutoAddSLAACAddress;
 
+	// This boolean flag indicates whether NCP itself supports SLAAC.
+	// If NCP does support SLAAC, then `wpantund` lets NCP handle it
+	// (independent of state of `mAutoAddSLAACAddress` flag). By default this
+	// flag is set to `false`. It should be controlled by sub-classes.
+	bool mNCPHandlesSLAAC;
+
 	// When an unicast address is added on interface, the related on-mesh prefix
 	// is updated on NCP if `mDefaultRouteForAutoAddedPrefix` is true the prefix
 	// is added with flag "DefaultRoute" set.
@@ -748,7 +754,7 @@ private:
 	NetworkRetain mNetworkRetain;
 
 	StatCollector mStatCollector;  // Statistic collector
-	
+
 }; // class NCPInstance
 
 }; // namespace wpantund
