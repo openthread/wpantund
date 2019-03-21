@@ -5255,12 +5255,11 @@ void
 SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable, 
 	const Data& server_data, CallbackWithStatus cb)
 {
-	static const unsigned int requiredCapability = SPINEL_CAP_THREAD_SERVICE;
 	SpinelNCPTaskSendCommand::Factory factory(this);
 
 	syslog(LOG_NOTICE, "Adding service with enterprise number:%u to NCP", enterprise_number);
 
-	if (mCapabilities.count(requiredCapability) > 0) {
+	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE) > 0) {
 		factory.set_lock_property(SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE);
 		factory.set_callback(cb);
 
@@ -5282,7 +5281,7 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& se
 
 		start_new_task(factory.finish());
 	} else {
-		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(requiredCapability));
+		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(SPINEL_CAP_THREAD_SERVICE));
 		cb(kWPANTUNDStatus_FeatureNotSupported);
 	}
 }
@@ -5290,7 +5289,6 @@ SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& se
 void
 SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data& service_data, CallbackWithStatus cb)
 {
-	static const unsigned int requiredCapability = SPINEL_CAP_THREAD_SERVICE;
 	SpinelNCPTaskSendCommand::Factory factory(this);
 
 	syslog(LOG_NOTICE, "Removing service with enterprise number:%u from NCP", enterprise_number);
@@ -5312,7 +5310,7 @@ SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data&
 
 		start_new_task(factory.finish());
 	} else {
-		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(requiredCapability));
+		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(SPINEL_CAP_THREAD_SERVICE));
 		cb(kWPANTUNDStatus_FeatureNotSupported);
 	}
 }
