@@ -132,6 +132,25 @@ AC_ARG_ENABLE(
 )
 
 #
+# Service group
+#
+
+AC_ARG_WITH(
+    [service-group],
+    [AS_HELP_STRING([--with-service-group=<SERVICE_GROUP>],[Specify the group allowed to send d-bus messages to wpantund service @<:@default=root@:>@.])],
+    [
+	    WPANTUND_SERVICE_GROUP="${withval}"
+    ],
+    [
+	    WPANTUND_SERVICE_GROUP=root
+    ])
+
+AC_MSG_CHECKING([Service group])
+AC_MSG_RESULT(${WPANTUND_SERVICE_GROUP})
+AC_SUBST(WPANTUND_SERVICE_GROUP)
+AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_GROUP],[${WPANTUND_SERVICE_GROUP}],[Define to group allowed to send d-bus messages to wpantund service])
+
+#
 # Service user
 #
 

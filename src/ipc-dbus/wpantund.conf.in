@@ -5,6 +5,12 @@
         <allow own="org.wpantund"/>
         <allow own="org.wpantund.wpanctl"/>
 
+        <!-- Deprecated -->
+        <allow own="com.nestlabs.WPANTunnelDriver"/>
+        <allow own="com.nestlabs.WPANTunnelDriver.wpanctl"/>
+    </policy>
+
+    <policy group="@WPANTUND_SERVICE_GROUP@">
         <allow send_interface="org.wpantund.Join"/>
         <allow send_interface="org.wpantund.Form"/>
         <allow send_interface="org.wpantund.Leave"/>
@@ -15,10 +21,7 @@
         <allow send_interface="org.wpantund.NetScanStop"/>
         <allow send_interface="org.wpantund.List"/>
 
-
         <!-- Deprecated -->
-        <allow own="com.nestlabs.WPANTunnelDriver"/>
-        <allow own="com.nestlabs.WPANTunnelDriver.wpanctl"/>
         <allow send_destination="com.nestlabs.WPANTunnelDriver"/>
         <allow send_interface="com.nestlabs.WPANTunnelDriver.Join"/>
         <allow send_interface="com.nestlabs.WPANTunnelDriver.Form"/>
