@@ -2328,7 +2328,7 @@ const char *spinel_status_to_cstr(spinel_status_t status)
 
 const char *spinel_capability_to_cstr(unsigned int capability)
 {
-        const char *ret = "UNKNOWN";
+    const char *ret = "UNKNOWN";
 
     switch (capability)
     {
