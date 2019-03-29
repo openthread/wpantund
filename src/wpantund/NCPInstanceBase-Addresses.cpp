@@ -370,7 +370,7 @@ NCPInstanceBase::ServiceEntry::get_description(void) const
 	char c_string[100];
 	char const * const base_c_string = ServiceEntryBase::get_description().c_str();
 
-	snprintf(c_string, sizeof(c_string), "%s, Stable:%d", base_c_str, mStable);
+	snprintf(c_string, sizeof(c_string), "%s, Stable:%d", base_c_string, mStable);
 
 	return std::string(c_string);
 }

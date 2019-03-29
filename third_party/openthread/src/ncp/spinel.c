@@ -1163,7 +1163,7 @@ const char *spinel_command_to_cstr(unsigned int command)
 
 const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 {
-    const char *ret = "UNKNOWN";
+        const char *ret = "UNKNOWN";
 
     switch (prop_key)
     {
@@ -1855,6 +1855,18 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SLAAC_ENABLED";
         break;
 
+    case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
+        ret = "SERVER_ALLOW_LOCAL_DATA_CHANGE";
+        break;
+
+    case SPINEL_PROP_SERVER_SERVICES:
+        ret = "SERVER_SERVICES";
+        break;
+
+    case SPINEL_PROP_SERVER_LEADER_SERVICES:
+        ret = "SERVER_LEADER_SERVICES";
+        break;
+
     case SPINEL_PROP_UART_BITRATE:
         ret = "UART_BITRATE";
         break;
@@ -2095,18 +2107,6 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "DEBUG_TEST_WATCHDOG";
         break;
 
-    case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
-        ret = "SERVER_ALLOW_LOCAL_DATA_CHANGE";
-        break;
-
-    case SPINEL_PROP_SERVER_SERVICES:
-        ret = "SERVER_SERVICES";
-        break;
-
-    case SPINEL_PROP_SERVER_LEADER_SERVICES:
-        ret = "SERVER_LEADER_SERVICES";
-        break;
-
     default:
         break;
     }
@@ -2328,7 +2328,7 @@ const char *spinel_status_to_cstr(spinel_status_t status)
 
 const char *spinel_capability_to_cstr(unsigned int capability)
 {
-    const char *ret = "UNKNOWN";
+        const char *ret = "UNKNOWN";
 
     switch (capability)
     {
@@ -2524,6 +2524,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
         ret = "THREAD_BORDER_ROUTER";
         break;
 
+    case SPINEL_CAP_THREAD_SERVICE:
+        ret = "THREAD_SERVICE";
+        break;
+
     case SPINEL_CAP_NEST_LEGACY_INTERFACE:
         ret = "NEST_LEGACY_INTERFACE";
         break;
@@ -2534,10 +2538,6 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_NEST_TRANSMIT_HOOK:
         ret = "NEST_TRANSMIT_HOOK";
-        break;
-
-    case SPINEL_CAP_THREAD_SERVICE:
-        ret = "THREAD_SERVICE";
         break;
 
     default:

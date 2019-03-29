@@ -468,5 +468,6 @@
 #define kWPANTUNDValueMapKey_Service_ServiceData                "ServiceData"
 #define kWPANTUNDValueMapKey_Service_Stable                     "Stable"
 #define kWPANTUNDValueMapKey_Service_ServerData                 "ServerData"
+#define kWPANTUNDValueMapKey_Service_RLOC16                     "RLOC16"
 
 #endif
