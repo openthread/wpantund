@@ -292,7 +292,12 @@ void SpinelNCPControlInterface::add_service(
 	require_action(server_data.size() > 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
-	mNCPInstance->add_service(enterprise_number, service_data, stable, server_data, cb);
+	mNCPInstance->service_was_added(
+		SpinelNCPInstance::kOriginUser, 
+		enterprise_number, service_data, 
+		stable, 
+		server_data, 
+		cb);
 
 bail:
 	return;
@@ -306,7 +311,12 @@ void SpinelNCPControlInterface::remove_service(
 	require_action(service_data.size()> 0, bail, cb(kWPANTUNDStatus_InvalidArgument));
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
-	mNCPInstance->remove_service(enterprise_number, service_data, cb);
+	mNCPInstance->service_was_removed(
+		SpinelNCPInstance::kOriginUser, 
+		enterprise_number, 
+		service_data, 
+		cb);
+
 bail:
 	return;
 }

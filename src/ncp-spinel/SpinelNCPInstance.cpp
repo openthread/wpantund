@@ -21,6 +21,7 @@
 #include <config.h>
 #endif
 
+#include <algorithm>
 #include <inttypes.h>
 #include "SpinelNCPInstance.h"
 #include "time-utils.h"
@@ -1291,76 +1292,6 @@ bail:
 }
 
 static int
-unpack_server_services_as_any(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
-{
-	int ret = kWPANTUNDStatus_Ok;
-	spinel_ssize_t len;
-	uint32_t enterprise_number;
-	const uint8_t *service_data;
-	spinel_size_t service_data_len;
-	bool stable;
-	const uint8_t *server_data;
-	spinel_size_t server_data_len;
-	uint16_t rloc16;
-	int num_service = 0;
-	char c_string[500];
-	
-	std::list<ValueMap> result_as_val_map_list;
-	std::list<std::string> result_as_string_list;
-
-	while (data_len > 0) {
-		len = spinel_datatype_unpack(
-			data_in,
-			data_len,
-			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
-				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
-				SPINEL_DATATYPE_BOOL_S      // stable
-				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
-				SPINEL_DATATYPE_UINT16_S    // RLOC
-			),
-			&enterprise_number,
-			&service_data,
-			&service_data_len,
-			&stable,
-			&server_data,
-			&server_data_len,
-			&rloc16
-		);
-
-		if (len <= 0) {
-			break;
-		}
-
-		if (as_val_map) {
-			ValueMap result_as_val_map;
-			result_as_val_map[kWPANTUNDValueMapKey_Service_EnterpriseNumber] = enterprise_number;
-			result_as_val_map[kWPANTUNDValueMapKey_Service_ServiceData] = Data(service_data, service_data_len);
-			result_as_val_map[kWPANTUNDValueMapKey_Service_Stable] = stable;
-			result_as_val_map[kWPANTUNDValueMapKey_Service_ServerData] = Data(server_data, server_data_len);
-			result_as_val_map[kWPANTUNDValueMapKey_Service_RLOC16] = rloc16;
-			result_as_val_map_list.push_back(result_as_val_map);
-		} else {
-			snprintf(c_string, sizeof(c_string), "EnterpriseNumber:%u, Stable:%d, RLOC16:%04x", enterprise_number, stable, rloc16);
-			result_as_string_list.push_back(std::string(c_string));
-		}
-
-		num_service++;
-
-		data_in += len;
-		data_len -= len;
-	}
-
-	if (as_val_map) {
-		value = result_as_val_map_list;
-	} else {
-		value = result_as_string_list;
-	}
-
-	return ret;
-}
-
-static int
 unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
 	int ret = kWPANTUNDStatus_Ok;
@@ -2260,14 +2191,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap,
 		SPINEL_CAP_TIME_SYNC,
 		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time_as_any, _1, _2, _3, true));
-	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_ThreadServices,
-		SPINEL_CAP_THREAD_SERVICE,
-		SPINEL_PROP_SERVER_SERVICES, boost::bind(unpack_server_services_as_any, _1, _2, _3, false));
-	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_ThreadServicesAsValMap,
-		SPINEL_CAP_THREAD_SERVICE,
-		SPINEL_PROP_SERVER_SERVICES, boost::bind(unpack_server_services_as_any, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ThreadLeaderServices,
 		SPINEL_CAP_THREAD_SERVICE,
@@ -4111,6 +4034,73 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* val
 }
 
 void
+SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+{
+	uint32_t enterprise_number;
+	const uint8_t *service_data_ptr;
+	spinel_size_t service_data_len;
+	bool stable;
+	const uint8_t *server_data_ptr;
+	spinel_size_t server_data_len;
+	uint16_t rloc16;
+	int num_services = 0;
+	spinel_ssize_t len;
+
+	std::vector<ServiceEntry> entries(mServiceEntries);
+	std::vector<ServiceEntry>::iterator iter;
+
+	while (value_data_len > 0) {
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+				SPINEL_DATATYPE_UINT16_S    // RLOC
+			),
+			&enterprise_number,
+			&service_data_ptr,
+			&service_data_len,
+			&stable,
+			&server_data_ptr,
+			&server_data_len,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		syslog(LOG_INFO, "[-NCP-]: Service [%d] enterprise_number:%u stable:%d RLOC16:%04x",
+			num_services, enterprise_number, stable, rloc16);
+		
+		Data service_data(service_data_ptr, service_data_len);
+		Data server_data(server_data_ptr, server_data_len);
+
+		ServiceEntry entry(kOriginThreadNCP, enterprise_number, service_data, stable, server_data);
+
+		iter = std::find(entries.begin(), entries.end(), entry);
+		if (iter != entries.end()) {
+			entries.erase(iter);
+		}
+
+		service_was_added(kOriginThreadNCP, enterprise_number, service_data, stable, server_data);
+	
+		value_data_ptr += len;
+		value_data_len -= len;
+		num_services += 1;
+	}
+
+	for (iter = entries.begin(); iter != entries.end(); ++iter) {
+		if (iter->is_from_ncp()) {
+			service_was_removed(kOriginThreadNCP, iter->get_enterprise_number(), iter->get_service_data());
+		}
+	}
+}
+
+void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	const uint8_t *original_value_data_ptr = value_data_ptr;
@@ -4593,6 +4583,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
 		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
+	
+	} else if (key == SPINEL_PROP_SERVER_SERVICES) {
+		handle_ncp_spinel_value_is_SERVICES(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
