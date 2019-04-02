@@ -362,6 +362,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mXPANIDWasExplicitlySet = false;
 	mChannelManagerNewChannel = 0;
 	mSupportedChannelMask = 0;
+	mPreferredChannelMask = 0;
 	mCommissionerEnergyScanResult.clear();
 	mCommissionerPanIdConflictResult.clear();
 
@@ -439,6 +440,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_ConfigNCPDriverName);
 	properties.insert(kWPANTUNDProperty_NCPChannel);
 	properties.insert(kWPANTUNDProperty_NCPChannelMask);
+	properties.insert(kWPANTUNDProperty_NCPPreferredChannelMask);
 	properties.insert(kWPANTUNDProperty_NCPFrequency);
 	properties.insert(kWPANTUNDProperty_NCPRSSI);
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
@@ -2013,6 +2015,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_NCPChannelMask,
 		SPINEL_PROP_PHY_CHAN_SUPPORTED, unpack_channel_mask);
+	register_get_handler_spinel_unpacker(
+		kWPANTUNDProperty_NCPPreferredChannelMask,
+		SPINEL_PROP_PHY_CHAN_PREFERRED, unpack_channel_mask);
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_ThreadActiveDataset,
 		SPINEL_PROP_THREAD_ACTIVE_DATASET, boost::bind(unpack_dataset, _1, _2, _3, /* as_val_map */ false));
@@ -4267,6 +4272,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if (ret == kWPANTUNDStatus_Ok) {
 			mSupportedChannelMask = any_to_int(mask_value);
 			syslog(LOG_INFO, "[-NCP-]: Supported Channel Mask 0x%x", mSupportedChannelMask);
+		}
+
+	} else if (key == SPINEL_PROP_PHY_CHAN_PREFERRED) {
+		boost::any mask_value;
+		int ret = unpack_channel_mask(value_data_ptr, value_data_len, mask_value);
+
+		if (ret == kWPANTUNDStatus_Ok) {
+			mPreferredChannelMask = any_to_int(mask_value);
+			syslog(LOG_INFO, "[-NCP-]: Preferred Channel Mask 0x%x", mPreferredChannelMask);
 		}
 
 	} else if (key == SPINEL_PROP_PHY_TX_POWER) {
