@@ -693,6 +693,31 @@ baud_rate_to_termios_constant(int baud)
 		ret = B230400;
 		break;
 #endif
+#ifdef B460800
+	case 460800:
+		ret = B460800;
+		break;
+#endif
+#ifdef B500000
+	case 500000:
+		ret = B500000;
+		break;
+#endif
+#ifdef B576000
+	case 576000:
+		ret = B576000;
+		break;
+#endif
+#ifdef B921600
+	case 921600:
+		ret = B921600;
+		break;
+#endif
+#ifdef B1000000
+	case 1000000:
+		ret = B1000000;
+		break;
+#endif
 	default:
 		ret = 0;
 		break;
@@ -881,9 +906,15 @@ open_super_socket(const char* socket_name)
 		for (; NULL != options; options = strchr(options+1, ',')) {
 			if (strcasehasprefix(options, ",b") && isdigit(options[2])) {
 				// Change Baud rate
-				int baud = baud_rate_to_termios_constant((int)strtol(options+2,NULL,10));
+				const int baud = (int)strtol(options+2,NULL,10);
+				const int baud_opt = baud_rate_to_termios_constant(baud);
+				if(baud_opt <= 0) {
+					syslog(LOG_ERR, "Unsupported baud rate %d", baud);
+				} else {
+					syslog(LOG_DEBUG, "Setting baud rate to %d", baud);
+				}
 				FETCH_TERMIOS();
-				cfsetspeed(&tios, baud);
+				cfsetspeed(&tios, baud_opt);
 				COMMIT_TERMIOS();
 			} else if (strcasehasprefix(options, ",default")) {
 				FETCH_TERMIOS();
@@ -896,8 +927,15 @@ open_super_socket(const char* socket_name)
 				tios.c_oflag = 0;
 				tios.c_lflag = 0;
 
+				const int baud_opt = baud_rate_to_termios_constant(gSocketWrapperBaud);
+				if(baud_opt <= 0) {
+					syslog(LOG_ERR, "Unsupported baud rate %d", gSocketWrapperBaud);
+				} else {
+					syslog(LOG_DEBUG, "Setting baud rate to %d", gSocketWrapperBaud);
+				}
+
 				cfmakeraw(&tios);
-				cfsetspeed(&tios, baud_rate_to_termios_constant(gSocketWrapperBaud));
+				cfsetspeed(&tios, baud_opt);
 				COMMIT_TERMIOS();
 			} else if (strcasehasprefix(options, ",raw")) {
 				// Raw mode
