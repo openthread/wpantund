@@ -453,6 +453,7 @@ private:
 	Data mNetworkKey;
 	uint32_t mNetworkKeyIndex;
 	uint32_t mSupportedChannelMask;
+	uint32_t mPreferredChannelMask;
 	bool mXPANIDWasExplicitlySet;
 	uint8_t mChannelManagerNewChannel;
 

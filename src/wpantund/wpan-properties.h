@@ -67,6 +67,7 @@
 #define kWPANTUNDProperty_NCPTXPowerLimit                       "NCP:TXPowerLimit"
 #define kWPANTUNDProperty_NCPCCAThreshold                       "NCP:CCAThreshold"
 #define kWPANTUNDProperty_NCPChannelMask                        "NCP:ChannelMask"
+#define kWPANTUNDProperty_NCPPreferredChannelMask               "NCP:PreferredChannelMask"
 #define kWPANTUNDProperty_NCPSleepyPollInterval                 "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
 #define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
