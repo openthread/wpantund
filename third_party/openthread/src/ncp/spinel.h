@@ -787,6 +787,7 @@ enum
     SPINEL_CAP_THREAD_UDP_FORWARD   = (SPINEL_CAP_THREAD__BEGIN + 2),
     SPINEL_CAP_THREAD_JOINER        = (SPINEL_CAP_THREAD__BEGIN + 3),
     SPINEL_CAP_THREAD_BORDER_ROUTER = (SPINEL_CAP_THREAD__BEGIN + 4),
+    SPINEL_CAP_THREAD_SERVICE       = (SPINEL_CAP_THREAD__BEGIN + 5),
     SPINEL_CAP_THREAD__END          = 1152,
 
     SPINEL_CAP_NEST__BEGIN           = 15296,
@@ -819,6 +820,7 @@ enum
  *    Stream       | 0x070 - 0x07F, 0x1700 - 0x17FF | Stream
  *    MeshCop      | 0x080 - 0x08F, 0x1800 - 0x18FF | Thread Mesh Commissioning
  *    OpenThread   |                0x1900 - 0x19FF | OpenThread specific
+ *    Server       | 0x0A0 - 0x0AF                  | ALOC Service Server
  *    Interface    | 0x100 - 0x1FF                  | Interface (e.g., UART)
  *    PIB          | 0x400 - 0x4FF                  | 802.15.4 PIB
  *    Counter      | 0x500 - 0x7FF                  | Counters (MAC, IP, etc).
@@ -3040,6 +3042,58 @@ typedef enum
 
     SPINEL_PROP_OPENTHREAD__END = 0x2000,
 
+    SPINEL_PROP_SERVER__BEGIN = 0xA0,
+
+    /// Server Allow Local Network Data Change
+    /** Format `b` - Read-write
+     *
+     * Required capability: SPINEL_CAP_THREAD_SERVICE
+     *
+     * Set to true before changing local server net data. Set to false when finished.
+     * This allows changes to be aggregated into a single event.
+     *
+     */
+    SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE = SPINEL_PROP_SERVER__BEGIN + 0,
+
+    // Server Services
+    /** Format: `A(t(LdbdS))`
+     *
+     * This property provides all services registered on the device
+     *
+     * Required capability: SPINEL_CAP_THREAD_SERVICE
+     *
+     * Array of structures containing:
+     *
+     *  `L`: Enterprise Number
+     *  `d`: Service Data
+     *  `b`: Stable
+     *  `d`: Server Data
+     *  `S`: RLOC
+     *
+     */
+    SPINEL_PROP_SERVER_SERVICES = SPINEL_PROP_SERVER__BEGIN + 1,
+
+    // Server Leader Services
+    /** Format: `A(t(CLdbdS))`
+     *
+     * This property provides all services registered on the leader
+     *
+     * Required capability: SPINEL_CAP_THREAD_SERVICE
+     *
+     * Array of structures containing:
+     *
+     *  `C`: Service ID
+     *  `L`: Enterprise Number
+     *  `d`: Service Data
+     *  `b`: Stable
+     *  `d`: Server Data
+     *  `S`: RLOC
+     *
+     */
+    SPINEL_PROP_SERVER_LEADER_SERVICES = SPINEL_PROP_SERVER__BEGIN + 2,
+
+    SPINEL_PROP_SERVER__END = 0xB0,
+
     SPINEL_PROP_INTERFACE__BEGIN = 0x100,
 
     /// UART Bitrate
@@ -3531,11 +3585,11 @@ typedef char spinel_datatype_t;
 #define SPINEL_MAX_UINT_PACKED 2097151
 
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_pack(uint8_t *     data_out,
-                                                      spinel_size_t data_len,
+                                                      spinel_size_t data_len_max,
                                                       const char *  pack_format,
                                                       ...);
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_vpack(uint8_t *     data_out,
-                                                       spinel_size_t data_len,
+                                                       spinel_size_t data_len_max,
                                                        const char *  pack_format,
                                                        va_list       args);
 SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_unpack(const uint8_t *data_in,
@@ -3603,7 +3657,7 @@ SPINEL_API_EXTERN spinel_ssize_t spinel_datatype_vunpack_in_place(const uint8_t 
 
 SPINEL_API_EXTERN spinel_ssize_t spinel_packed_uint_decode(const uint8_t *bytes,
                                                            spinel_size_t  len,
-                                                           unsigned int * value);
+                                                           unsigned int * value_ptr);
 SPINEL_API_EXTERN spinel_ssize_t spinel_packed_uint_encode(uint8_t *bytes, spinel_size_t len, unsigned int value);
 SPINEL_API_EXTERN spinel_ssize_t spinel_packed_uint_size(unsigned int value);
 
