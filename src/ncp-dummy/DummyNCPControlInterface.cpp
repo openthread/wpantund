@@ -183,8 +183,7 @@ DummyNCPControlInterface::joiner_attach(
 void
 DummyNCPControlInterface::joiner_commissioning(
 	bool action,
-	const char *psk,
-	const char *provisioning_url,
+	const ValueMap &options,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);

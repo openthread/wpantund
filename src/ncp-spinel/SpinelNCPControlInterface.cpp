@@ -298,19 +298,16 @@ SpinelNCPControlInterface::joiner_attach(CallbackWithStatus cb)
 void
 SpinelNCPControlInterface::joiner_commissioning(
 		bool action,
-		const char *psk,
-		const char *provisioning_url,
+		const ValueMap &options,
 		CallbackWithStatus cb
 ) {
 	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
 		new SpinelNCPTaskJoinerCommissioning(
 				mNCPInstance,
-				boost::bind(cb,_1),
+				boost::bind(cb, _1),
 				action,
-				psk,
-				provisioning_url
-				)
-			));
+				options
+	)));
 }
 
 /*

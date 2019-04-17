@@ -412,6 +412,13 @@
 #define kWPANTUNDValueMapKey_Scan_EnableFiltering               "Scan:EnableFiltering"
 #define kWPANTUNDValueMapKey_Scan_PANIDFilter                   "Scan:PANID"
 
+#define kWPANTUNDValueMapKey_Joiner_ProvisioningUrl             "Joiner:ProvisioningUrl"
+#define kWPANTUNDValueMapKey_Joiner_PSKd                        "Joiner:PSKd"
+#define kWPANTUNDValueMapKey_Joiner_VendorName                  "Joiner:Vendor:Name"
+#define kWPANTUNDValueMapKey_Joiner_VendorModel                 "Joiner:Vendor:Model"
+#define kWPANTUNDValueMapKey_Joiner_VendorSwVersion             "Joiner:Vendor:SwVersion"
+#define kWPANTUNDValueMapKey_Joiner_VendorData                  "Joiner:Vendor:Data"
+
 #define kWPANTUNDValueMapKey_Counter_TxTotal                    "TxTotal"              // Number of transmissions
 #define kWPANTUNDValueMapKey_Counter_TxUnicast                  "TxUnicast"            // Number of unicast transmissions
 #define kWPANTUNDValueMapKey_Counter_TxBroadcast                "TxBroadcast"          // Number of broadcast transmissions
