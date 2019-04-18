@@ -1282,6 +1282,56 @@ bail:
 }
 
 static int
+unpack_meshcop_joiner_state(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	spinel_ssize_t len;
+	uint8_t joiner_state;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&joiner_state
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	switch (joiner_state) {
+	case SPINEL_MESHCOP_JOINER_STATE_IDLE:
+		value = std::string(kWPANTUNDThreadJoinerState_Idle);
+		break;
+
+	case SPINEL_MESHCOP_JOINER_STATE_DISCOVER:
+		value = std::string(kWPANTUNDThreadJoinerState_Discover);
+		break;
+
+	case SPINEL_MESHCOP_JOINER_STATE_CONNECTING:
+		value = std::string(kWPANTUNDThreadJoinerState_Connecting);
+		break;
+
+	case SPINEL_MESHCOP_JOINER_STATE_CONNECTED:
+		value = std::string(kWPANTUNDThreadJoinerState_Connected);
+		break;
+
+	case SPINEL_MESHCOP_JOINER_STATE_ENTRUST:
+		value = std::string(kWPANTUNDThreadJoinerState_Entrust);
+		break;
+
+	case SPINEL_MESHCOP_JOINER_STATE_JOINED:
+		value = std::string(kWPANTUNDThreadJoinerState_Joined);
+		break;
+
+	default:
+		value = std::string("unknown");
+		break;
+	}
+
+bail:
+	return ret;
+}
+
+static int
 unpack_thread_network_time_spinel(const uint8_t *data_in, spinel_size_t data_len, uint64_t &time, int8_t &time_sync_status)
 {
 	return spinel_datatype_unpack(
@@ -1724,10 +1774,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_ROLE_SLEEPY,
 		SPINEL_PROP_MAC_DATA_POLL_PERIOD, SPINEL_DATATYPE_UINT32_S);
 	register_get_handler_capability_spinel_simple(
-		kWPANTUNDProperty_ThreadJoinerState,
-		SPINEL_CAP_THREAD_JOINER,
-		SPINEL_PROP_MESHCOP_JOINER_STATE, SPINEL_DATATYPE_UINT8_S);
-	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_CommissionerProvisioningUrl,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_PROVISIONING_URL, SPINEL_DATATYPE_UTF8_S);
@@ -2050,6 +2096,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPMCUPowerState,
 		SPINEL_CAP_MCU_POWER_STATE,
 		SPINEL_PROP_MCU_POWER_STATE, unpack_mcu_power_state);
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadJoinerState,
+		SPINEL_CAP_THREAD_JOINER,
+		SPINEL_PROP_MESHCOP_JOINER_STATE, unpack_meshcop_joiner_state);
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_CommissionerState,
 		SPINEL_CAP_THREAD_COMMISSIONER,
@@ -4828,6 +4878,13 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		if (len > 0) {
 			syslog(LOG_NOTICE, "[-NCP-]: SLAAC %sabled", enabled ? "en" : "dis");
 			mNCPHandlesSLAAC = enabled;
+		}
+
+	} else if (key == SPINEL_PROP_MESHCOP_JOINER_STATE) {
+		boost::any value;
+
+		if (unpack_meshcop_joiner_state(value_data_ptr, value_data_len, value) == kWPANTUNDStatus_Ok) {
+			syslog(LOG_NOTICE, "[-NCP-]: Joiner state \"%s\"", any_to_string(value).c_str());
 		}
 
 	} else if (key == SPINEL_PROP_THREAD_NETWORK_TIME) {

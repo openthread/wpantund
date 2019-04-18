@@ -364,6 +364,18 @@
 #define kWPANTUNDNCPMCUPowerState_LowPower                      "low-power"
 #define kWPANTUNDNCPMCUPowerState_Off                           "off"
 
+
+// ----------------------------------------------------------------------------
+
+// Values of the property kWPANTUNDProperty_ThreadJoinerState
+
+#define kWPANTUNDThreadJoinerState_Idle                         "idle"
+#define kWPANTUNDThreadJoinerState_Discover                     "discover"
+#define kWPANTUNDThreadJoinerState_Connecting                   "connecting"
+#define kWPANTUNDThreadJoinerState_Connected                    "connected"
+#define kWPANTUNDThreadJoinerState_Entrust                      "entrust"
+#define kWPANTUNDThreadJoinerState_Joined                       "joined"
+
 // ----------------------------------------------------------------------------
 
 // Values of  the property kWPANTUNDProperty_StatAutoLogState
