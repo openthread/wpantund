@@ -361,6 +361,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mThreadMode = 0;
 	mXPANIDWasExplicitlySet = false;
 	mChannelManagerNewChannel = 0;
+	mMacFilterFixedRssi = -100;
 	mSupportedChannelMask = 0;
 	mPreferredChannelMask = 0;
 	mCommissionerEnergyScanResult.clear();
@@ -709,11 +710,7 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 			&rssi
 		);
 
-		if (len <= 0)
-		{
-			ret = kWPANTUNDStatus_Failure;
-			break;
-		}
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 
 		if (as_val_map) {
 			entry.clear();
@@ -746,15 +743,13 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 		data_in += len;
 	}
 
-	if (ret == kWPANTUNDStatus_Ok) {
-
-		if (as_val_map) {
-			value = result_as_val_map;
-		} else {
-			value = result_as_string;
-		}
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
 	}
 
+bail:
 	return ret;
 }
 
@@ -2076,6 +2071,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_MAC_WHITELIST,
 		SPINEL_PROP_MAC_BLACKLIST, boost::bind(unpack_mac_blacklist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_MACFilterEntries,
+		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_MACFilterEntriesAsValMap,
+		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ChannelMonitorChannelQuality,
 		SPINEL_CAP_CHANNEL_MONITOR,
 		SPINEL_PROP_CHANNEL_MONITOR_CHANNEL_OCCUPANCY, boost::bind(unpack_channel_occupancy, _1, _2, _3, false));
@@ -2262,6 +2265,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_POSIXAppRCPVersionCached,
 		SPINEL_CAP_POSIX_APP,
 		boost::bind(&SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDProperty_MACFilterFixedRssi,
+		SPINEL_CAP_MAC_WHITELIST,
+		boost::bind(&SpinelNCPInstance::get_prop_MACFilterFixedRssi, this, _1));
 }
 
 void
@@ -2694,6 +2701,12 @@ SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached(CallbackWithStatusArg1 cb)
 }
 
 void
+SpinelNCPInstance::get_prop_MACFilterFixedRssi(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mMacFilterFixedRssi));
+}
+
+void
 SpinelNCPInstance::property_get_value(
 	const std::string& key,
 	CallbackWithStatusArg1 cb
@@ -3090,6 +3103,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler(
 		kWPANTUNDProperty_DaemonTickleOnHostDidWake,
 		boost::bind(&SpinelNCPInstance::set_prop_DaemonTickleOnHostDidWake, this, _1, _2));
+	register_set_handler(
+		kWPANTUNDProperty_MACFilterFixedRssi,
+		boost::bind(&SpinelNCPInstance::set_prop_MACFilterFixedRssi, this, _1, _2));
 }
 
 int
@@ -3494,6 +3510,17 @@ SpinelNCPInstance::set_prop_DaemonTickleOnHostDidWake(const boost::any &value, C
 }
 
 void
+SpinelNCPInstance::set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb)
+{
+	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+		mMacFilterFixedRssi = static_cast<int8_t>(any_to_int(value));
+		cb(kWPANTUNDStatus_Ok);
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
 SpinelNCPInstance::property_set_value(
 	const std::string& key,
 	const boost::any& value,
@@ -3569,6 +3596,10 @@ SpinelNCPInstance::regsiter_all_insert_handlers(void)
 		kWPANTUNDProperty_MACBlacklistEntries,
 		SPINEL_CAP_MAC_WHITELIST,
 		boost::bind(&SpinelNCPInstance::insert_prop_MACBlacklistEntries, this, _1, _2));
+	register_insert_handler_capability(
+		kWPANTUNDProperty_MACFilterEntries,
+		SPINEL_CAP_MAC_WHITELIST,
+		boost::bind(&SpinelNCPInstance::insert_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
@@ -3610,6 +3641,29 @@ SpinelNCPInstance::insert_prop_MACBlacklistEntries(const boost::any &value, Call
 					SPINEL_PROP_MAC_BLACKLIST,
 					ext_address.data(),
 					rssi
+				)
+			)
+			.finish()
+		);
+	} else {
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
+}
+
+void
+SpinelNCPInstance::insert_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb)
+{
+	Data ext_address = any_to_data(value);
+
+	if (ext_address.size() == sizeof(spinel_eui64_t)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
+					SPINEL_PROP_MAC_FIXED_RSS,
+					ext_address.data(),
+					mMacFilterFixedRssi
 				)
 			)
 			.finish()
@@ -3678,6 +3732,10 @@ SpinelNCPInstance::regsiter_all_remove_handlers(void)
 		kWPANTUNDProperty_MACBlacklistEntries,
 		SPINEL_CAP_MAC_WHITELIST,
 		boost::bind(&SpinelNCPInstance::remove_prop_MACBlacklistEntries, this, _1, _2));
+	register_remove_handler_capability(
+		kWPANTUNDProperty_MACFilterEntries,
+		SPINEL_CAP_MAC_WHITELIST,
+		boost::bind(&SpinelNCPInstance::remove_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
@@ -3714,6 +3772,28 @@ SpinelNCPInstance::remove_prop_MACBlacklistEntries(const boost::any &value, Call
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
 					SPINEL_PROP_MAC_BLACKLIST,
+					ext_address.data()
+				)
+			)
+			.finish()
+		);
+	} else {
+		cb(kWPANTUNDStatus_InvalidArgument);
+	}
+}
+
+void
+SpinelNCPInstance::remove_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb)
+{
+	Data ext_address = any_to_data(value);
+
+	if (ext_address.size() == sizeof(spinel_eui64_t)) {
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(
+				SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
+					SPINEL_PROP_MAC_FIXED_RSS,
 					ext_address.data()
 				)
 			)
