@@ -267,6 +267,7 @@ private:
 	void get_prop_DatasetCommand(CallbackWithStatusArg1 cb);
 	void get_prop_DaemonTickleOnHostDidWake(CallbackWithStatusArg1 cb);
 	void get_prop_POSIXAppRCPVersionCached(CallbackWithStatusArg1 cb);
+	void get_prop_MACFilterFixedRssi(CallbackWithStatusArg1 cb);
 
 private:
 	typedef boost::function<int(const boost::any&, boost::any&)> ValueConverter;
@@ -321,6 +322,7 @@ private:
 	void set_prop_DatasetDestIpAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DatasetCommand(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonTickleOnHostDidWake(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb);
 
 private:
 	void check_capability_prop_update(const boost::any &value, CallbackWithStatus cb, const std::string &prop_name,
@@ -333,6 +335,7 @@ private:
 
 	void insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
 	void insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 private:
 	void register_remove_handler(const char *prop_name, PropUpdateHandler handler);
@@ -342,6 +345,7 @@ private:
 
 	void remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
 	void remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 public:
 
@@ -456,6 +460,7 @@ private:
 	uint32_t mPreferredChannelMask;
 	bool mXPANIDWasExplicitlySet;
 	uint8_t mChannelManagerNewChannel;
+	int8_t mMacFilterFixedRssi;
 
 	std::list<ValueMap> mCommissionerEnergyScanResult;
 	std::list<ValueMap> mCommissionerPanIdConflictResult;
