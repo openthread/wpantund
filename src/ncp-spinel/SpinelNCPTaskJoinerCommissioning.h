@@ -36,17 +36,15 @@ public:
 		SpinelNCPInstance* instance,
 		CallbackWithStatusArg1 cb,
 		bool action,
-		const char *psk,
-		const char *provisioning_url
+		const ValueMap &options
 	);
 	virtual int vprocess_event(int event, va_list args);
 	virtual void finish(int status, const boost::any& value = boost::any());
 
 private:
-	bool 		mAction;
-	std::string	mPsk;
-	std::string	mProvisioningUrl;
-	NCPState	mLastState;
+	bool      mAction;
+	ValueMap  mOptions;
+	NCPState  mLastState;
 };
 
 }; // namespace wpantund

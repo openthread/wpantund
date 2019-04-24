@@ -169,8 +169,7 @@ public:
 
 	virtual void joiner_commissioning(
 		bool action,
-		const char *psk,
-		const char *provisioning_url,
+		const ValueMap &options,
 		CallbackWithStatus cb = NilReturn()
 	);
 

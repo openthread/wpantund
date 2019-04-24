@@ -34,7 +34,7 @@
 #include "commissioner-utils.h"
 //#include "spinel.h"
 
-const char joiner_cmd_syntax[] = "[args] <psk> [provisioning_url]";
+const char joiner_cmd_syntax[] = "[args] <psk> [provisioning_url] [vendor_name] [vendor_model] [vendor_sw_version] [vendor_data]";
 
 static const arg_list_item_t joiner_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
@@ -55,12 +55,16 @@ int tool_cmd_joiner(int argc, char* argv[])
 	DBusMessage *message = NULL;
 	DBusMessage *reply = NULL;
 	DBusMessageIter iter;
+	DBusMessageIter dict_iter;
 	DBusError error;
-	const char* psk = NULL;
-	const char* provisioning_url = NULL;
-	int psk_len = 0;
-	int provisioning_url_len = 0;
-	const char* property_joiner_state = kWPANTUNDProperty_ThreadJoinerState;
+	const char *empty_string = "";
+	const char *psk = NULL;
+	const char *provisioning_url = NULL;
+	const char *vendor_name = NULL;
+	const char *vendor_model = NULL;
+	const char *vendor_sw_version = NULL;
+	const char *vendor_data = NULL;
+	const char *property_joiner_state = kWPANTUNDProperty_ThreadJoinerState;
 	dbus_bool_t action = false;
 
 	dbus_error_init(&error);
@@ -201,11 +205,9 @@ int tool_cmd_joiner(int argc, char* argv[])
 
 		case 'e':
 			// start commissioning
-			action = true;
 
 			if (optind < argc) {
 				psk = argv[optind];
-				psk_len = strnlen(psk, COMMR_PSK_MAX_LENGTH+1);
 				optind++;
 			}
 
@@ -214,35 +216,45 @@ int tool_cmd_joiner(int argc, char* argv[])
 				ret = ERRORCODE_BADARG;
 				goto bail;
 			}
-			else
-			{
-				ret = check_psk_format(psk);
-				if (ret != 0) {
-					fprintf(stderr, "%s: error: Invalid PSKd %d\n", argv[0], ret);
+
+			ret = check_psk_format(psk);
+			if (ret != 0) {
+				fprintf(stderr, "%s: error: Invalid PSKd %d\n", argv[0], ret);
+				goto bail;
+			}
+
+			if (optind < argc) {
+				size_t len;
+
+				provisioning_url = argv[optind++];
+				len = strnlen(provisioning_url, (COMMR_PROVIISIONING_URL_MAX_LENGTH + 1));
+
+				if (len > COMMR_PROVIISIONING_URL_MAX_LENGTH) {
+					fprintf(stderr, "%s: error: Provisioning URL is too long, must be maximum %d characters\n",
+						argv[0], COMMR_PROVIISIONING_URL_MAX_LENGTH);
+					ret = ERRORCODE_BADARG;
 					goto bail;
 				}
 			}
 
 			if (optind < argc) {
-				provisioning_url = argv[optind];
-				provisioning_url_len = strnlen(provisioning_url, (COMMR_PROVIISIONING_URL_MAX_LENGTH + 1));
-				optind++;
+				vendor_name = argv[optind++];
 			}
-
-			if (!provisioning_url && provisioning_url_len > COMMR_PROVIISIONING_URL_MAX_LENGTH) {
-				fprintf(stderr, "%s: error: Invalid privisioning_url length.\n", argv[0]);
-				ret = ERRORCODE_BADARG;
-				goto bail;
-			}
-			// intentionally pass through
-
-		case 'd':
-			// stop commissioning
 
 			if (optind < argc) {
-				fprintf(stderr,
-						"%s: error: Unexpected extra argument: \"%s\"\n",
-						argv[0], argv[optind]);
+				vendor_model = argv[optind++];
+			}
+
+			if (optind < argc) {
+				vendor_sw_version = argv[optind++];
+			}
+
+			if (optind < argc) {
+				vendor_data = argv[optind++];
+			}
+
+			if (optind < argc) {
+				fprintf(stderr,	"%s: error: Unexpected extra argument: \"%s\"\n", argv[0], argv[optind]);
 				ret = ERRORCODE_BADARG;
 				goto bail;
 			}
@@ -251,54 +263,75 @@ int tool_cmd_joiner(int argc, char* argv[])
 
 			require_string(connection != NULL, bail, error.message);
 
-			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_COMMISSIONING);
+			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_START);
 			require_action(ret == 0, bail, print_error_diagnosis(ret));
 
-			dbus_message_append_args(
-				message,
-				DBUS_TYPE_BOOLEAN, &action,
-				DBUS_TYPE_INVALID
+			dbus_message_iter_init_append(message, &iter);
+
+			// Open a container as "Array of Dictionary entries from String to Variants" (dbus type "a{sv}")
+			dbus_message_iter_open_container(
+				&iter,
+				DBUS_TYPE_ARRAY,
+				DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+					DBUS_TYPE_STRING_AS_STRING
+					DBUS_TYPE_VARIANT_AS_STRING
+				DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+				&dict_iter
 			);
 
-			{
-				uint8_t psk_bytes[psk_len + 1];
-				memset(psk_bytes, '\0', psk_len+1);
+			// Append dictionary entries
 
-				if (psk) {
-					memcpy(psk_bytes, psk, psk_len);
-				}
-				char *psk = psk_bytes;
+			append_dbus_dict_entry_basic(
+				&dict_iter,
+				kWPANTUNDValueMapKey_Joiner_PSKd,
+				DBUS_TYPE_STRING, &psk
+			);
 
-				dbus_message_append_args(
-						message,
-						DBUS_TYPE_STRING, &psk,
-						DBUS_TYPE_INVALID
-						);
+			if (provisioning_url) {
+				append_dbus_dict_entry_basic(
+					&dict_iter,
+					kWPANTUNDValueMapKey_Joiner_ProvisioningUrl,
+					DBUS_TYPE_STRING, &provisioning_url
+				);
 			}
 
-			{
-				uint8_t provisioning_url_bytes[provisioning_url_len];
-				memset(provisioning_url_bytes, '\0', provisioning_url_len+1);
-
-				if (provisioning_url) {
-					memcpy(provisioning_url_bytes, provisioning_url, provisioning_url_len);
-				}
-
-				char *provisioning_url = provisioning_url_bytes;
-
-				dbus_message_append_args(
-						message,
-						DBUS_TYPE_STRING, &provisioning_url,
-						DBUS_TYPE_INVALID
-						);
+			if (vendor_name) {
+				append_dbus_dict_entry_basic(
+					&dict_iter,
+					kWPANTUNDValueMapKey_Joiner_VendorName,
+					DBUS_TYPE_STRING, &vendor_name
+				);
 			}
 
-			reply = dbus_connection_send_with_reply_and_block(
-					connection,
-					message,
-					timeout,
-					&error
-					);
+			if (vendor_model) {
+				append_dbus_dict_entry_basic(
+					&dict_iter,
+					kWPANTUNDValueMapKey_Joiner_VendorModel,
+					DBUS_TYPE_STRING, &vendor_model
+				);
+			}
+
+			if (vendor_sw_version) {
+				append_dbus_dict_entry_basic(
+					&dict_iter,
+					kWPANTUNDValueMapKey_Joiner_VendorSwVersion,
+					DBUS_TYPE_STRING, &vendor_sw_version
+				);
+			}
+
+			if (vendor_data) {
+				append_dbus_dict_entry_basic(
+					&dict_iter,
+					kWPANTUNDValueMapKey_Joiner_VendorData,
+					DBUS_TYPE_STRING, &vendor_data
+				);
+			}
+
+			dbus_message_iter_close_container(&iter, &dict_iter);
+
+			// Send DBus message and parse the DBus reply
+
+			reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
 
 			if (!reply) {
 				fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
@@ -306,18 +339,74 @@ int tool_cmd_joiner(int argc, char* argv[])
 				goto bail;
 			}
 
-			dbus_message_get_args(reply, &error,
-					DBUS_TYPE_INT32, &ret,
-					DBUS_TYPE_INVALID
-					);
+			dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 
-			if (!ret) {
-				fprintf(stderr, "%s joiner commissioning successfully.\n", action ? "start" : "stop");
-			} else {
-				fprintf(stderr, "%s %s joiner commissioning failed with error %d. %s\n", argv[0],
-						action ? "start" : "stop", ret, wpantund_status_to_cstr(ret));
+			if (ret) {
+				fprintf(stderr, "Failed to start Joiner Commissioning - error %d. %s\n", ret, wpantund_status_to_cstr(ret));
 				print_error_diagnosis(ret);
+				goto bail;
 			}
+
+			fprintf(stdout, "Started joiner commissioning, PSKd:\"%s\"", psk);
+
+			if (provisioning_url) {
+				fprintf(stdout, ", ProvisioningURL:\"%s\"", provisioning_url);
+			}
+
+			if (vendor_name) {
+				fprintf(stdout, ", VendorName:\"%s\"", vendor_name);
+			}
+
+			if (vendor_model) {
+				fprintf(stdout, ", VendorModel:\"%s\"", vendor_model);
+			}
+
+			if (vendor_sw_version) {
+				fprintf(stdout, ", VendorSwVersion:\"%s\"", vendor_sw_version);
+			}
+
+			if (vendor_data) {
+				fprintf(stdout, ", VendorData:\"%s\"", vendor_data);
+			}
+
+			fprintf(stdout, "\n", psk);
+
+			goto bail;
+
+		case 'd':
+			// stop commissioning
+
+			if (optind < argc) {
+				fprintf(stderr,	"%s: error: Unexpected extra argument: \"%s\"\n", argv[0], argv[optind]);
+				ret = ERRORCODE_BADARG;
+				goto bail;
+			}
+
+			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
+
+			require_string(connection != NULL, bail, error.message);
+
+			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_STOP);
+			require_action(ret == 0, bail, print_error_diagnosis(ret));
+
+			reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
+
+			if (!reply) {
+				fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
+				ret = ERRORCODE_TIMEOUT;
+				goto bail;
+			}
+
+			dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
+
+			if (ret) {
+				fprintf(stderr, "Failed to stop joiner commissioning - error %d. %s\n", ret, wpantund_status_to_cstr(ret));
+				print_error_diagnosis(ret);
+				goto bail;
+			}
+
+			fprintf(stdout, "Stopped joiner commissioning\n");
+			goto bail;
 		}
 	}
 

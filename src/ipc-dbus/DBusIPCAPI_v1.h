@@ -221,6 +221,16 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_joiner_start_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
+	DBusHandlerResult interface_joiner_stop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_joiner_commissioning_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message
