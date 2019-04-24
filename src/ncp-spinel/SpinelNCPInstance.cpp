@@ -5420,6 +5420,9 @@ SpinelNCPInstance::log_spinel_frame(SpinelFrameOrigin origin, const uint8_t *fra
 				case SPINEL_PROP_NET_MASTER_KEY:
 				case SPINEL_PROP_THREAD_ACTIVE_DATASET:
 				case SPINEL_PROP_THREAD_PENDING_DATASET:
+				case SPINEL_PROP_MESHCOP_JOINER_COMMISSIONING:
+				case SPINEL_PROP_NET_PSKC:
+				case SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS:
 					// Hide the value by skipping value dump
 					skip_value_dump = true;
 					break;
