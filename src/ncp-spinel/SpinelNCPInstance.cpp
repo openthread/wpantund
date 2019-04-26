@@ -546,20 +546,17 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
-	{
+	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_TIME_SYNC))
-	{
+	if (mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
 		properties.insert(kWPANTUNDProperty_TimeSync_NetworkTime);
 		properties.insert(kWPANTUNDProperty_TimeSync_Period);
 		properties.insert(kWPANTUNDProperty_TimeSync_XtalThreshold);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE))
-	{
+	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE)) {
 		properties.insert(kWPANTUNDProperty_ThreadServices);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
 	}
