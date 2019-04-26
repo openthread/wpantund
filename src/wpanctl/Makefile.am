@@ -105,6 +105,10 @@ wpanctl_SOURCES = \
 	tool-cmd-joiner.c \
 	tool-cmd-dataset.h \
 	tool-cmd-dataset.c \
+	tool-cmd-add-service.h \
+	tool-cmd-add-service.c \
+	tool-cmd-remove-service.h \
+	tool-cmd-remove-service.c \
 	tool-updateprop.h \
 	$(NULL)
 

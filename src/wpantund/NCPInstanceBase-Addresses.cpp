@@ -346,6 +346,35 @@ NCPInstanceBase::OffMeshRouteEntry::get_description(const IPv6Prefix &route, boo
 	return std::string(c_string);
 }
 
+bool
+NCPInstanceBase::ServiceEntryBase::operator==(const ServiceEntryBase &entry) const 
+{
+	return (mEnterpriseNumber == entry.mEnterpriseNumber && 
+		mServiceData == entry.mServiceData);
+		
+}
+
+std::string
+NCPInstanceBase::ServiceEntryBase::get_description(void) const
+{
+	char c_string[100];
+
+	snprintf(c_string, sizeof(c_string), "EnterpriseNumber:%u", mEnterpriseNumber);
+
+	return std::string(c_string);
+}
+
+std::string
+NCPInstanceBase::ServiceEntry::get_description(void) const
+{
+	char c_string[100];
+	const std::string base_string = ServiceEntryBase::get_description();
+
+	snprintf(c_string, sizeof(c_string), "%s, Stable:%d", base_string.c_str(), mStable);
+
+	return std::string(c_string);
+}
+
 std::string
 NCPInstanceBase::InterfaceRouteEntry::get_description(const IPv6Prefix &route, bool align) const
 {
@@ -412,6 +441,7 @@ NCPInstanceBase::remove_all_address_prefix_route_entries(void)
 	mOnMeshPrefixes.clear();
 	mOffMeshRoutes.clear();
 	mInterfaceRoutes.clear();
+	mServiceEntries.clear();
 }
 
 void
@@ -498,6 +528,24 @@ NCPInstanceBase::remove_ncp_originated_address_prefix_route_entries(void)
 			break;
 		}
 	} while (did_remove);
+
+	// Services
+	do {
+		std::vector<ServiceEntry>::iterator iter;
+
+		did_remove = false;
+
+		for (iter = mServiceEntries.begin(); iter != mServiceEntries.end(); ++iter) {
+			if (!iter->is_from_ncp()) {
+				continue;
+			}
+
+			syslog(LOG_INFO, "Services: Removing %s", iter->get_description().c_str());
+			mServiceEntries.erase(iter);
+			did_remove = true;
+			break;
+		}
+	} while (did_remove);
 }
 
 void
@@ -550,6 +598,18 @@ NCPInstanceBase::restore_address_prefix_route_entries_on_ncp(void)
 		if (iter->second.is_from_interface() || iter->second.is_from_user()) {
 			add_route_on_ncp(iter->first.get_prefix(), iter->first.get_length(), iter->second.get_preference(), iter->second.is_stable(),
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "restoring off-mesh route", NilReturn()));
+		}
+	}
+
+	// Services
+	for (
+		std::vector<ServiceEntry>::iterator iter = mServiceEntries.begin(); 
+		iter != mServiceEntries.end(); 
+		++iter
+	) {
+		if (iter->is_from_interface() || iter->is_from_user()) {
+			add_service_on_ncp(iter->get_enterprise_number(), iter->get_service_data(), iter->is_stable(), iter->get_server_data(), 
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "restoring service", NilReturn()));
 		}
 	}
 }
@@ -1149,4 +1209,53 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 
 bail:
 	return;
+}
+
+// ========================================================================
+// MARK: Service management
+
+void 
+NCPInstanceBase::service_was_added(Origin origin, uint32_t enterprise_number, const Data &service_data, bool stable, 
+					const Data &server_data, CallbackWithStatus cb)
+{
+	ServiceEntry entry(origin, enterprise_number, service_data, stable, server_data);
+
+	if (std::find(mServiceEntries.begin(), mServiceEntries.end(), entry) == mServiceEntries.end()) {
+		mServiceEntries.push_back(entry);
+		syslog(LOG_INFO, "Services: Adding %s", entry.get_description().c_str());
+
+		if (origin != kOriginThreadNCP) {
+			add_service_on_ncp(enterprise_number, service_data, stable, server_data, 
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding service", cb));
+
+		} else {
+			cb(kWPANTUNDStatus_Ok);
+		}
+	} else {
+		syslog(LOG_DEBUG, "Services: Adding %s, already present", entry.get_description().c_str());
+		cb(kWPANTUNDStatus_Ok);
+	}
+}
+
+void 
+NCPInstanceBase::service_was_removed(Origin origin, uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb)
+{
+	ServiceEntryBase entry(origin, enterprise_number, service_data);
+
+	const std::vector<ServiceEntry>::iterator iter = std::find(mServiceEntries.begin(), mServiceEntries.end(), entry);
+
+	if (iter != mServiceEntries.end()) {
+		syslog(LOG_INFO, "Services: Removing %s", iter->get_description().c_str());
+		mServiceEntries.erase(iter);
+
+		if (origin != kOriginThreadNCP) {
+			remove_service_on_ncp(enterprise_number, service_data, 
+				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing service", cb));
+		} else {
+			cb(kWPANTUNDStatus_Ok);
+		}
+	} else {
+		syslog(LOG_DEBUG, "Services: Removing %s, already removed", entry.get_description().c_str());
+		cb(kWPANTUNDStatus_Ok);
+	}
 }

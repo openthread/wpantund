@@ -163,6 +163,20 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void add_service(
+		uint32_t enterprise_number, 
+		const Data &service_data, 
+		bool stable, 
+		const Data &server_data, 
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void remove_service(
+		uint32_t enterprise_number, 
+		const Data &service_data,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void joiner_attach(
 		CallbackWithStatus cb = NilReturn()
 	);

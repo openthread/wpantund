@@ -230,6 +230,19 @@ NCPInstanceBase::process_event_helper(int event)
 // ----------------------------------------------------------------------------
 // MARK: -
 
+void NCPInstanceBase::add_service(uint32_t enterprise_number, 
+	const Data &service_data, bool stable, const Data &server_data, 
+	CallbackWithStatus cb)
+{
+	add_service_on_ncp(enterprise_number, service_data, stable, server_data, cb);
+}
+
+void NCPInstanceBase::remove_service(uint32_t enterprise_number, 
+	const Data &service_data, CallbackWithStatus cb)
+{
+	remove_service_on_ncp(enterprise_number, service_data, cb);
+}
+
 wpantund_status_t
 NCPInstanceBase::set_ncp_version_string(const std::string& version_string)
 {
@@ -385,6 +398,8 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(NetworkNodeType);
 	REGISTER_GET_HANDLER(ThreadOnMeshPrefixes);
 	REGISTER_GET_HANDLER(ThreadOffMeshRoutes);
+	REGISTER_GET_HANDLER(ThreadServices);
+	REGISTER_GET_HANDLER(ThreadServicesAsValMap);
 	REGISTER_GET_HANDLER(IPv6AllAddresses);
 	REGISTER_GET_HANDLER(IPv6MulticastAddresses);
 	REGISTER_GET_HANDLER(IPv6InterfaceRoutes);
@@ -688,6 +703,35 @@ NCPInstanceBase::get_prop_ThreadOffMeshRoutes(CallbackWithStatusArg1 cb)
 	std::multimap<IPv6Prefix, OffMeshRouteEntry>::const_iterator iter;
 	for (iter = mOffMeshRoutes.begin(); iter != mOffMeshRoutes.end(); iter++ ) {
 		result.push_back(iter->second.get_description(iter->first, true));
+	}
+	cb(kWPANTUNDStatus_Ok, boost::any(result));
+}
+
+void 
+NCPInstanceBase::get_prop_ThreadServices(CallbackWithStatusArg1 cb)
+{
+	std::list<std::string> result;
+	std::vector<ServiceEntry>::const_iterator iter;
+
+	for (iter = mServiceEntries.begin(); iter != mServiceEntries.end(); ++iter) {
+		result.push_back(iter->get_description());
+	}
+	cb(kWPANTUNDStatus_Ok, boost::any(result));
+}
+
+void
+NCPInstanceBase::get_prop_ThreadServicesAsValMap(CallbackWithStatusArg1 cb)
+{
+	std::list<ValueMap> result;
+	std::vector<ServiceEntry>::const_iterator iter;
+	ValueMap val_map;
+
+	for (iter = mServiceEntries.begin(); iter != mServiceEntries.end(); ++iter) {
+		val_map[kWPANTUNDValueMapKey_Service_EnterpriseNumber] = iter->get_enterprise_number();
+		val_map[kWPANTUNDValueMapKey_Service_ServiceData] = iter->get_service_data();
+		val_map[kWPANTUNDValueMapKey_Service_Stable] = iter->is_stable();
+		val_map[kWPANTUNDValueMapKey_Service_ServerData] = iter->get_server_data();
+		result.push_back(val_map);
 	}
 	cb(kWPANTUNDStatus_Ok, boost::any(result));
 }

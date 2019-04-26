@@ -151,6 +151,7 @@ protected:
 	void handle_ncp_log_stream(const uint8_t* data_ptr, int data_len);
 	void handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t* value_data_ptr, spinel_size_t value_data_len);
 	void handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* value_data_ptr, spinel_size_t value_data_len);
+	void handle_ncp_spinel_value_is_SERVICES(const uint8_t* data_ptr, spinel_size_t value_data_len);
 
 	bool should_filter_address(const struct in6_addr &address, uint8_t prefix_len);
 	void filter_addresses(void);
@@ -162,6 +163,11 @@ protected:
 
 	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
+
+	virtual void add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable, 
+					const Data& server_data, CallbackWithStatus cb);
+
+	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data& service_data, CallbackWithStatus cb);
 
 	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
 					CallbackWithStatus cb);

@@ -177,6 +177,12 @@ public:
 			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
 			uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
+	void service_was_added(Origin origin, uint32_t enterprise_number, const Data &service_data, 
+					bool stable, const Data &server_data, CallbackWithStatus cb = NilReturn());
+
+	void service_was_removed(Origin origin, uint32_t enterprise_number, const Data &service_data, 
+					CallbackWithStatus cb = NilReturn());
+
 	static std::string on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed = false);
 
 protected:
@@ -200,6 +206,11 @@ protected:
 	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb) = 0;
 
 	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb) = 0;
+
+	virtual void add_service_on_ncp(uint32_t enterprise_number, const Data &service_data, bool stable, 
+					const Data &server_data, CallbackWithStatus cb) = 0;
+
+	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb) = 0;
 
 	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
 					CallbackWithStatus cb) = 0;
@@ -279,6 +290,11 @@ public:
 
 	wpantund_status_t set_ncp_version_string(const std::string& version_string);
 
+	virtual void add_service(uint32_t enterprise_number, const Data &service_data, bool stable, 
+					const Data &server_data, CallbackWithStatus cb = NilReturn());
+
+	virtual void remove_service(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb = NilReturn());
+
 protected:
 
 	// `PropGetHanlder` is used for "get" operation. `PropUpdateHandler` is used
@@ -341,6 +357,8 @@ private:
 	void get_prop_NetworkNodeType(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadOnMeshPrefixes(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadOffMeshRoutes(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadServices(CallbackWithStatusArg1 cb);
+	void get_prop_ThreadServicesAsValMap(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6AllAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MulticastAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6InterfaceRoutes(CallbackWithStatusArg1 cb);
@@ -556,6 +574,37 @@ protected:
 		bool mNextHopIsHost;
 	};
 
+	class ServiceEntryBase : public EntryBase {
+	public:
+		ServiceEntryBase(Origin origin, uint32_t enterprise_number, const Data &service_data) 
+			: EntryBase(origin), mEnterpriseNumber(enterprise_number), mServiceData(service_data) {}
+
+		uint32_t get_enterprise_number(void) const { return mEnterpriseNumber; }
+		const Data &get_service_data(void) const { return mServiceData; }
+
+		bool operator==(const ServiceEntryBase &entry) const;
+
+		virtual std::string get_description() const;
+	private:
+		uint32_t mEnterpriseNumber;
+		Data mServiceData;
+	};
+
+	class ServiceEntry : public ServiceEntryBase {
+	public:
+		ServiceEntry(Origin origin, uint32_t enterprise_number, const Data &service_data, bool stable,
+			const Data &server_data) 
+			: ServiceEntryBase(origin, enterprise_number, service_data), mStable(stable), mServerData(server_data) {}
+
+		bool is_stable(void) const { return mStable; }
+		const Data &get_server_data(void) const { return mServerData; }
+
+		virtual std::string get_description() const;
+	private:
+		bool mStable;
+		Data mServerData;
+	};
+
 	class InterfaceRouteEntry
 	{
 	public:
@@ -603,6 +652,7 @@ protected:
 
 	std::multimap<IPv6Prefix, OffMeshRouteEntry> mOffMeshRoutes;
 	std::map<IPv6Prefix, InterfaceRouteEntry> mInterfaceRoutes;
+	std::vector<ServiceEntry> mServiceEntries;
 
 protected:
 

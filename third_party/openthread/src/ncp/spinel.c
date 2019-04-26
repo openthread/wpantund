@@ -1163,7 +1163,7 @@ const char *spinel_command_to_cstr(unsigned int command)
 
 const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 {
-    const char *ret = "UNKNOWN";
+        const char *ret = "UNKNOWN";
 
     switch (prop_key)
     {

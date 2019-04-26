@@ -471,6 +471,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				{ SPINEL_PROP_NET_ROLE, 0 },
 				{ SPINEL_PROP_SLAAC_ENABLED, SPINEL_CAP_SLAAC },
 				{ SPINEL_PROP_RCP_VERSION , SPINEL_CAP_POSIX_APP },
+				{ SPINEL_PROP_SERVER_SERVICES, SPINEL_CAP_THREAD_SERVICE },
 			};
 
 			for (mSubPTIndex = 0; mSubPTIndex < sizeof(props_to_fetch) / sizeof(props_to_fetch[0]); mSubPTIndex++) {

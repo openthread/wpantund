@@ -21,6 +21,7 @@
 #include <config.h>
 #endif
 
+#include <algorithm>
 #include <inttypes.h>
 #include "SpinelNCPInstance.h"
 #include "time-utils.h"
@@ -548,16 +549,19 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_TmfProxyEnabled);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE))
-	{
+	if (mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 		properties.insert(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_TIME_SYNC))
-	{
+	if (mCapabilities.count(SPINEL_CAP_TIME_SYNC)) {
 		properties.insert(kWPANTUNDProperty_TimeSync_NetworkTime);
 		properties.insert(kWPANTUNDProperty_TimeSync_Period);
 		properties.insert(kWPANTUNDProperty_TimeSync_XtalThreshold);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE)) {
+		properties.insert(kWPANTUNDProperty_ThreadServices);
+		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
 	}
 
 	{
@@ -1278,6 +1282,80 @@ unpack_dataset(const uint8_t *data_in, spinel_size_t data_len, boost::any &value
 	}
 
 bail:
+	return ret;
+}
+
+static int
+unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+	uint8_t service_id;
+	uint32_t enterprise_number;
+	const uint8_t *service_data;
+	spinel_size_t service_data_len;
+	bool stable;
+	const uint8_t *server_data;
+	spinel_size_t server_data_len;
+	uint16_t rloc16;
+	int num_service = 0;
+	char c_string[500];
+	
+	std::list<ValueMap> result_as_val_map_list;
+	std::list<std::string> result_as_string_list;
+
+	while (data_len > 0) {
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT8_S		// Service ID
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+				SPINEL_DATATYPE_UINT16_S    // RLOC
+			),
+			&service_id,
+			&enterprise_number,
+			&service_data,
+			&service_data_len,
+			&stable,
+			&server_data,
+			&server_data_len,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		if (as_val_map) {
+			ValueMap result_as_val_map;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_ServiceId] = service_id;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_EnterpriseNumber] = enterprise_number;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_ServiceData] = Data(service_data, service_data_len);
+			result_as_val_map[kWPANTUNDValueMapKey_Service_Stable] = stable;
+			result_as_val_map[kWPANTUNDValueMapKey_Service_ServerData] = Data(server_data, server_data_len);
+			result_as_val_map[kWPANTUNDValueMapKey_Service_RLOC16] = rloc16;
+			result_as_val_map_list.push_back(result_as_val_map);
+		} else {
+			snprintf(c_string, sizeof(c_string), "ServiceId:%01x, EnterpriseNumber:%u, Stable:%d, RLOC16:%04x", service_id, enterprise_number, stable, rloc16);
+			result_as_string_list.push_back(std::string(c_string));
+		}
+
+		num_service++;
+
+		data_in += len;
+		data_len -= len;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map_list;
+	} else {
+		value = result_as_string_list;
+	}
+
 	return ret;
 }
 
@@ -2168,6 +2246,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_TimeSync_NetworkTimeAsValMap,
 		SPINEL_CAP_TIME_SYNC,
 		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time_as_any, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadLeaderServices,
+		SPINEL_CAP_THREAD_SERVICE,
+		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_leader_services_as_any, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadLeaderServicesAsValMap,
+		SPINEL_CAP_THREAD_SERVICE,
+		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_leader_services_as_any, _1, _2, _3, true));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -4080,6 +4166,73 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_OFF_MESH_ROUTES(const uint8_t* val
 }
 
 void
+SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
+{
+	uint32_t enterprise_number;
+	const uint8_t *service_data_ptr;
+	spinel_size_t service_data_len;
+	bool stable;
+	const uint8_t *server_data_ptr;
+	spinel_size_t server_data_len;
+	uint16_t rloc16;
+	int num_services = 0;
+	spinel_ssize_t len;
+
+	std::vector<ServiceEntry> entries(mServiceEntries);
+	std::vector<ServiceEntry>::iterator iter;
+
+	while (value_data_len > 0) {
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+				SPINEL_DATATYPE_UINT16_S    // RLOC
+			),
+			&enterprise_number,
+			&service_data_ptr,
+			&service_data_len,
+			&stable,
+			&server_data_ptr,
+			&server_data_len,
+			&rloc16
+		);
+
+		if (len <= 0) {
+			break;
+		}
+
+		syslog(LOG_INFO, "[-NCP-]: Service [%d] enterprise_number:%u stable:%d RLOC16:%04x",
+			num_services, enterprise_number, stable, rloc16);
+		
+		Data service_data(service_data_ptr, service_data_len);
+		Data server_data(server_data_ptr, server_data_len);
+
+		ServiceEntry entry(kOriginThreadNCP, enterprise_number, service_data, stable, server_data);
+
+		iter = std::find(entries.begin(), entries.end(), entry);
+		if (iter != entries.end()) {
+			entries.erase(iter);
+		}
+
+		service_was_added(kOriginThreadNCP, enterprise_number, service_data, stable, server_data);
+	
+		value_data_ptr += len;
+		value_data_len -= len;
+		num_services += 1;
+	}
+
+	for (iter = entries.begin(); iter != entries.end(); ++iter) {
+		if (iter->is_from_ncp()) {
+			service_was_removed(kOriginThreadNCP, iter->get_enterprise_number(), iter->get_service_data());
+		}
+	}
+}
+
+void
 SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	const uint8_t *original_value_data_ptr = value_data_ptr;
@@ -4571,6 +4724,9 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
 		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
+	
+	} else if (key == SPINEL_PROP_SERVER_SERVICES) {
+		handle_ncp_spinel_value_is_SERVICES(value_data_ptr, value_data_len);
 
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
@@ -5108,6 +5264,8 @@ SpinelNCPInstance::handle_ncp_spinel_callback(unsigned int command, const uint8_
 bool
 SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t prefix_len)
 {
+	static const uint8_t service_aloc_start = 0x10;
+	static const uint8_t service_aloc_end = 0x2F;
 	static const uint8_t rloc_bytes[] = {0x00,0x00,0x00,0xFF,0xFE,0x00};
 	bool should_filter = false;
 
@@ -5116,7 +5274,10 @@ SpinelNCPInstance::should_filter_address(const struct in6_addr &addr, uint8_t pr
 
 		if (0 == memcmp(rloc_bytes, addr.s6_addr + 8, sizeof(rloc_bytes))) {
 			if( addr.s6_addr[ 14 ] == 0xFC ) {
-				should_filter = mFilterALOCAddresses;
+				if (addr.s6_addr[15] < service_aloc_start || addr.s6_addr[15] > service_aloc_end)
+				{
+					should_filter = mFilterALOCAddresses;
+				}
 			} else {
 				if (IN6_IS_ADDR_LINKLOCAL(&addr)) {
 					should_filter = true;
@@ -5249,6 +5410,70 @@ SpinelNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, 
 	);
 
 	start_new_task(factory.finish());
+}
+
+void
+SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable, 
+	const Data& server_data, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Adding service with enterprise number:%u to NCP", enterprise_number);
+
+	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE) > 0) {
+		factory.set_lock_property(SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE);
+		factory.set_callback(cb);
+
+		factory.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+				SPINEL_DATATYPE_BOOL_S      // stable
+				SPINEL_DATATYPE_DATA_WLEN_S // Server Data
+			),
+			SPINEL_PROP_SERVER_SERVICES,
+			enterprise_number,
+			service_data.data(),
+			service_data.size(),
+			stable,
+			server_data.data(),
+			server_data.size()
+		));
+
+		start_new_task(factory.finish());
+	} else {
+		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(SPINEL_CAP_THREAD_SERVICE));
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
+SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data& service_data, CallbackWithStatus cb)
+{
+	SpinelNCPTaskSendCommand::Factory factory(this);
+
+	syslog(LOG_NOTICE, "Removing service with enterprise number:%u from NCP", enterprise_number);
+
+	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE) > 0) {
+		factory.set_lock_property(SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE);
+		factory.set_callback(cb);
+
+		factory.add_command(SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+				SPINEL_DATATYPE_UINT32_S    // Enterprise Number
+				SPINEL_DATATYPE_DATA_WLEN_S // Service Data
+			),
+			SPINEL_PROP_SERVER_SERVICES,
+			enterprise_number,
+			service_data.data(),
+			service_data.size()
+		));
+
+		start_new_task(factory.finish());
+	} else {
+		syslog(LOG_ERR, "%s capability not supported", spinel_capability_to_cstr(SPINEL_CAP_THREAD_SERVICE));
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
 }
 
 void

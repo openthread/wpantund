@@ -189,6 +189,20 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+	virtual void add_service(
+		uint32_t enterprise_number, 
+		const Data &service_data, 
+		bool stable, 
+		const Data &server_data,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void remove_service(
+		uint32_t enterprise_number, 
+		const Data &service_data,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 public:
 	// ========================================================================
 	// Thread Mesh Commissioning Protocol (MeshCoP) Member Functions
