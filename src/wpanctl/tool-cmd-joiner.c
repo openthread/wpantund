@@ -40,6 +40,7 @@ static const arg_list_item_t joiner_option_list[] = {
 	{'h', "help", NULL, "Print Help"},
 	{'t', "timeout", "ms", "Set timeout period"},
 	{'e', "start", NULL, "Bring up the interface and start joiner's commissioning process"},
+	{'j', "join", NULL, "Same as start but waits till end of commissioning process"},
 	{'d', "stop", NULL, "Stop joiner's commissioning process"},
 	{'a', "attach", NULL, "Attach to the commissioned thread network"},
 	{'s', "state", NULL, "Joiner state"},
@@ -65,7 +66,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 	const char *vendor_sw_version = NULL;
 	const char *vendor_data = NULL;
 	const char *property_joiner_state = kWPANTUNDProperty_ThreadJoinerState;
-	dbus_bool_t action = false;
+	dbus_bool_t returnOnStart = true;
 
 	dbus_error_init(&error);
 
@@ -81,6 +82,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 			{"help", no_argument, 0, 'h'},
 			{"timeout", required_argument, 0, 't'},
 			{"start", no_argument, 0, 'e'},
+			{"join", no_argument, 0, 'j'},
 			{"stop", no_argument, 0, 'd'},
 			{"attach", no_argument, 0, 'a'},
 			{"state", no_argument, 0, 's'},
@@ -88,7 +90,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hst:eda", long_options,
+		c = getopt_long(argc, argv, "hst:ejda", long_options,
 						&option_index);
 		if (c == -1) {
 			break;
@@ -203,6 +205,10 @@ int tool_cmd_joiner(int argc, char* argv[])
 			}
 			goto bail;
 
+		case 'j':
+			returnOnStart = false;
+			// Fall through
+
 		case 'e':
 			// start commissioning
 
@@ -287,6 +293,12 @@ int tool_cmd_joiner(int argc, char* argv[])
 				DBUS_TYPE_STRING, &psk
 			);
 
+			append_dbus_dict_entry_basic(
+				&dict_iter,
+				kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart,
+				DBUS_TYPE_BOOLEAN, &returnOnStart
+			);
+
 			if (provisioning_url) {
 				append_dbus_dict_entry_basic(
 					&dict_iter,
@@ -329,25 +341,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 
 			dbus_message_iter_close_container(&iter, &dict_iter);
 
-			// Send DBus message and parse the DBus reply
-
-			reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
-
-			if (!reply) {
-				fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
-				ret = ERRORCODE_TIMEOUT;
-				goto bail;
-			}
-
-			dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
-
-			if (ret) {
-				fprintf(stderr, "Failed to start Joiner Commissioning - error %d. %s\n", ret, wpantund_status_to_cstr(ret));
-				print_error_diagnosis(ret);
-				goto bail;
-			}
-
-			fprintf(stdout, "Started joiner commissioning, PSKd:\"%s\"", psk);
+			fprintf(stdout, "Starting joiner commissioning, PSKd:\"%s\"", psk);
 
 			if (provisioning_url) {
 				fprintf(stdout, ", ProvisioningURL:\"%s\"", provisioning_url);
@@ -369,7 +363,36 @@ int tool_cmd_joiner(int argc, char* argv[])
 				fprintf(stdout, ", VendorData:\"%s\"", vendor_data);
 			}
 
-			fprintf(stdout, "\n", psk);
+			fprintf(stdout, " ...\n", psk);
+
+
+			// Send DBus message and parse the DBus reply
+
+			reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
+
+			if (!reply) {
+				fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
+				ret = ERRORCODE_TIMEOUT;
+				goto bail;
+			}
+
+			dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
+
+			if (ret) {
+				if (returnOnStart) {
+					fprintf(stderr, "Failed to start Joiner Commissioning - error %d. %s\n", ret, wpantund_status_to_cstr(ret));
+				} else {
+					fprintf(stderr, "Joiner commissioning failed - error %d. %s\n", ret, wpantund_status_to_cstr(ret));
+				}
+				print_error_diagnosis(ret);
+				goto bail;
+			}
+
+			if (returnOnStart) {
+				fprintf(stdout, "Successfully started!\n");
+			} else {
+				fprintf(stdout, "Successfully joined!\n");
+			}
 
 			goto bail;
 

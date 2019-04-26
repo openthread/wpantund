@@ -42,6 +42,8 @@ public:
 	virtual void finish(int status, const boost::any& value = boost::any());
 
 private:
+	int convert_joiner_status_to_wpan_error(int last_status);
+
 	bool      mAction;
 	ValueMap  mOptions;
 	NCPState  mLastState;
