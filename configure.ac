@@ -148,7 +148,7 @@ AC_ARG_WITH(
 AC_MSG_CHECKING([Service group])
 AC_MSG_RESULT(${WPANTUND_SERVICE_GROUP})
 AC_SUBST(WPANTUND_SERVICE_GROUP)
-AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_GROUP],[${WPANTUND_SERVICE_GROUP}],[Define the group allowed to send d-bus messages to wpantund service])
+AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_GROUP],["${WPANTUND_SERVICE_GROUP}"],[Define the group allowed to send d-bus messages to wpantund service])
 
 #
 # Service user
@@ -167,7 +167,7 @@ AC_ARG_WITH(
 AC_MSG_CHECKING([Service user])
 AC_MSG_RESULT(${WPANTUND_SERVICE_USER})
 AC_SUBST(WPANTUND_SERVICE_USER)
-AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_USER],[${WPANTUND_SERVICE_USER}],[Define the user to run wpantund service])
+AC_DEFINE_UNQUOTED([WPANTUND_SERVICE_USER],["${WPANTUND_SERVICE_USER}"],[Define the user to run wpantund service])
 
 #
 # NCP Spinel Encrypter
