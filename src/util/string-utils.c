@@ -42,7 +42,7 @@ memcpyrev(void *dest_, const void *src_, size_t len)
 {
 	uint8_t* const dest = dest_;
 	const uint8_t* const src = src_;
-	int i;
+	size_t i;
 
 	for (i = 0; i < len; i++) {
 		dest[i] = src[len - 1 - i];
@@ -55,7 +55,7 @@ memcmprev(const void *dest_, const void *src_, size_t len)
 	const uint8_t* const dest = dest_;
 	const uint8_t* const src = src_;
 	int ret = 0;
-	int i;
+	size_t i;
 
 	for (i = 0; i < len && !ret; i++) {
 		ret = dest[i] - src[len - 1 - i];
@@ -66,7 +66,7 @@ memcmprev(const void *dest_, const void *src_, size_t len)
 void
 reverse_bytes(uint8_t *bytes, size_t count)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < count / 2; i++) {
 		uint8_t x = bytes[i];

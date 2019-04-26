@@ -105,6 +105,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ATTACH, interface_joiner_attach_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_START, interface_joiner_start_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_STOP, interface_joiner_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_COMMISSIONING, interface_joiner_commissioning_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
@@ -1596,10 +1598,55 @@ DBusIPCAPI_v1::interface_joiner_attach_handler(
 }
 
 DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_start_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	ValueMap options;
+	DBusMessageIter iter;
+
+	dbus_message_iter_init(message, &iter);
+
+	options = value_map_from_dbus_iter(&iter);
+
+	dbus_message_ref(message);
+
+	interface->joiner_commissioning(
+		true, // start
+		options,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_stop_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	ValueMap options;
+
+	dbus_message_ref(message);
+
+	interface->joiner_commissioning(
+		false, // stop
+		options,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+DBusHandlerResult
 DBusIPCAPI_v1::interface_joiner_commissioning_handler(
    NCPControlInterface* interface,
    DBusMessage *        message
 ) {
+	// The "JoinerCommissioning" DBus command is being deprecated.
+	// Please use the "JoinerStart" and "JoinerStop" DBus commands
+	// instead
+
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_bool_t action = FALSE;
 	const char* psk = NULL;
@@ -1607,6 +1654,7 @@ DBusIPCAPI_v1::interface_joiner_commissioning_handler(
 	int psk_len = 0;
 	int provisioning_url_len = 0;
 	bool did_succeed = false;
+	ValueMap options;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
@@ -1621,11 +1669,18 @@ DBusIPCAPI_v1::interface_joiner_commissioning_handler(
 	// psk must be specified if joiner starts commissioning
 	require(action == FALSE || psk != NULL, bail);
 
+	if (psk) {
+		options[kWPANTUNDValueMapKey_Joiner_PSKd] = std::string(psk);
+	}
+
+	if (provisioning_url) {
+		options[kWPANTUNDValueMapKey_Joiner_ProvisioningUrl] = std::string(provisioning_url);
+	}
+
 	dbus_message_ref(message);
 	interface->joiner_commissioning(
 		action,
-		psk,
-		provisioning_url,
+		options,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 

@@ -450,6 +450,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				{ SPINEL_PROP_HWADDR, 0 },
 				{ SPINEL_PROP_PHY_CHAN, 0 },
 				{ SPINEL_PROP_PHY_CHAN_SUPPORTED, 0 },
+				{ SPINEL_PROP_PHY_CHAN_PREFERRED, 0 },
 				{ SPINEL_PROP_MAC_15_4_PANID, 0 },
 				{ SPINEL_PROP_MAC_15_4_LADDR, 0 },
 				{ SPINEL_PROP_NET_MASTER_KEY, 0 },

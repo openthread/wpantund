@@ -32,20 +32,26 @@
 using namespace nl;
 using namespace nl::wpantund;
 
+static const char *kOptionalParamsValueMapKeys[] = {
+	kWPANTUNDValueMapKey_Joiner_ProvisioningUrl,
+	kWPANTUNDValueMapKey_Joiner_VendorName,
+	kWPANTUNDValueMapKey_Joiner_VendorModel,
+	kWPANTUNDValueMapKey_Joiner_VendorSwVersion,
+	kWPANTUNDValueMapKey_Joiner_VendorData,
+	NULL
+};
+
 nl::wpantund::SpinelNCPTaskJoinerCommissioning::SpinelNCPTaskJoinerCommissioning(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	bool action,
-	const char *psk,
-	const char *provisioning_url
-	): SpinelNCPTask(instance, cb), mAction(action),
-	mPsk(psk), mProvisioningUrl(provisioning_url),
-	mLastState(instance->get_ncp_state())
+	const ValueMap& options
+): SpinelNCPTask(instance, cb), mAction(action), mOptions(options), mLastState(instance->get_ncp_state())
 {
 }
 
 void
-nl::wpantund::SpinelNCPTaskJoinerCommissioning::finish(int status, const boost::any& value)
+nl::wpantund::SpinelNCPTaskJoinerCommissioning::finish(int status, const boost::any &value)
 {
 	if (mAction && status != kWPANTUNDStatus_Ok) {
 		mInstance->change_ncp_state(mLastState);
@@ -58,7 +64,6 @@ int
 nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_list args)
 {
 	int ret = kWPANTUNDStatus_Failure;
-	Data frame;
 
 	EH_BEGIN();
 
@@ -95,51 +100,105 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
-	if (mAction) {
+	if (!mAction) {
+		syslog(LOG_INFO, "Stopping Joiner Commissioning");
+
+		// First bringing down the interface to cover for case
+		// where it was brought up when Joiner starts.
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_MESHCOP_JOINER_COMMISSIONING,
+			false
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+	} else { // starting joiner commissioning
+
 		mLastState = mInstance->get_ncp_state();
+
+		// Ensure PSKd is provided.
+		if (!mOptions.count(kWPANTUNDValueMapKey_Joiner_PSKd)) {
+
+			syslog(LOG_ERR, "Starting Joiner Commissioning failed. Missing PSKd");
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
+		// Use empty string for any unspecified optional parameter
+		for (const char **key = &kOptionalParamsValueMapKeys[0]; *key != NULL; key++) {
+			if (!mOptions.count(*key)) {
+				mOptions[*key] = std::string("");
+			}
+		}
 
 		mInstance->change_ncp_state(ASSOCIATING);
 
 		// Turn off promiscuous mode, if it happens to be on
 		mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-				SPINEL_PROP_MAC_PROMISCUOUS_MODE,
-				SPINEL_MAC_PROMISCUOUS_MODE_OFF
-				);
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_MAC_PROMISCUOUS_MODE,
+			SPINEL_MAC_PROMISCUOUS_MODE_OFF
+		);
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 		ret = mNextCommandRet;
 		check_noerr(ret);
 
 		// Now bring up the network by bringing up the interface
 		mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
-				SPINEL_PROP_NET_IF_UP,
-				true
-				);
-
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			true
+		);
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 		ret = mNextCommandRet;
 		require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
-	}
 
-	syslog(LOG_INFO, "Joiner commissioning %s (psk: %s) (provisioning_url %s)",
-			mAction ? "start" : "stop", mPsk.c_str(), mProvisioningUrl.c_str());
+		syslog(LOG_INFO,
+			"Starting Joiner Commissioning, PSKd(hidden), ProvisioningURL:\"%s\", "
+			"VendorInfo [Name:\"%s\", Model:\"%s\", SwVer:\"%s\", Data:\"%s\"]",
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_ProvisioningUrl]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorName]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorModel]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorSwVersion]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorData]).c_str()
+		);
 
-	mNextCommand = SpinelPackData(
+		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
 				SPINEL_DATATYPE_BOOL_S
 				SPINEL_DATATYPE_UTF8_S
 				SPINEL_DATATYPE_UTF8_S
-				),
+				SPINEL_DATATYPE_UTF8_S
+				SPINEL_DATATYPE_UTF8_S
+				SPINEL_DATATYPE_UTF8_S
+				SPINEL_DATATYPE_UTF8_S
+			),
 			SPINEL_PROP_MESHCOP_JOINER_COMMISSIONING,
 			mAction,
-			mPsk.c_str(),
-			mProvisioningUrl.c_str()
-			);
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_PSKd]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_ProvisioningUrl]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorName]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorModel]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorSwVersion]).c_str(),
+			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorData]).c_str()
+		);
 
-	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-	ret = mNextCommandRet;
-	require_noerr(ret, on_error);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+	}
 
 	finish(ret);
 
@@ -151,7 +210,11 @@ on_error:
 		ret = kWPANTUNDStatus_Failure;
 	}
 
-	syslog(LOG_ERR, "Joiner commission %s failed: %d", mAction ? "start" : "stop", ret);
+	syslog(LOG_ERR,
+		"%s Joiner Commissioning failed: %d (%s)",
+		mAction ? "Starting" : "Stopping",
+		ret, wpantund_status_to_cstr(ret)
+	);
 
 	finish(ret);
 

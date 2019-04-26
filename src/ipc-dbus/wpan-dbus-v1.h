@@ -83,7 +83,9 @@
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
 
 #define WPANTUND_IF_CMD_JOINER_ATTACH         "JoinerAttach"
-#define WPANTUND_IF_CMD_JOINER_COMMISSIONING  "JoinerCommissioning"
+#define WPANTUND_IF_CMD_JOINER_COMMISSIONING  "JoinerCommissioning" // Deprecated, please use JOINER_START and STOP
+#define WPANTUND_IF_CMD_JOINER_START          "JoinerStart"
+#define WPANTUND_IF_CMD_JOINER_STOP           "JoinerStop"
 
 #define WPANTUND_IF_CMD_JOINER_ADD            "JoinerAdd"
 #define WPANTUND_IF_CMD_JOINER_REMOVE         "JoinerRemove"

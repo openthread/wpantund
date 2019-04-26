@@ -205,6 +205,11 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 			mask &= mInstance->mSupportedChannelMask;
 
+			// Choose preferred channel mask if it has.
+			if ((mask & mInstance->mPreferredChannelMask) != 0) {
+				mask &= mInstance->mPreferredChannelMask;
+			}
+
 			// Randomly pick a channel from the given channel mask for now.
 			do {
 				sec_random_fill(&channel, 1);
