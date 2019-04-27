@@ -44,6 +44,10 @@
 #include <libgen.h>
 #include <time.h>
 
+#if HAVE_PWD_H
+#include <pwd.h>
+#endif
+
 #include <dbus/dbus.h>
 
 #if HAVE_LIBREADLINE
@@ -519,6 +523,39 @@ int main(int argc, char * argv[])
 	if (gDebugMode >= 1) {
 		fprintf(stderr, "DEBUG: Will use interface '%s'.\n", gInterfaceName);
 	}
+
+#if HAVE_PWD_H
+	if (getuid() == 0 && strcmp(WPANTUND_SERVICE_USER, "root")) {
+		uid_t target_uid = 0;
+		gid_t target_gid = 0;
+		struct passwd *passwd = getpwnam(WPANTUND_SERVICE_USER);
+
+		if (passwd == NULL) {
+			fprintf(stderr, "getpwnam: Unable to lookup user \"%s\".", WPANTUND_SERVICE_USER);
+			gRet = ERRORCODE_ERRNO;
+			goto bail;
+		}
+
+		target_uid = passwd->pw_uid;
+		target_gid = passwd->pw_gid;
+
+		if (target_gid != 0) {
+			if (setgid(target_gid) != 0) {
+				perror("setgid");
+				gRet = ERRORCODE_ERRNO;
+				goto bail;
+			}
+		}
+
+		if (target_uid != 0) {
+			if (setuid(target_uid) != 0) {
+				perror("setuid");
+				gRet = ERRORCODE_ERRNO;
+				goto bail;
+			}
+		}
+	}
+#endif // HAVE_PWD_H
 
 	if (getenv("WPANCTL_DBUS_NAME") && gDebugMode>=1)
 		fprintf(stderr, "DEBUG: Using dbus \"%s\"\n", getenv("WPANCTL_DBUS_NAME"));
