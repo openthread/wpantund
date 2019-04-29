@@ -68,6 +68,10 @@ const char* wpantund_status_to_cstr(int status)
 	case kWPANTUNDStatus_NCP_InvalidRange: return "NCPInvalidRange";
 	case kWPANTUNDStatus_NCP_Reset: return "NCPReset";
 	case kWPANTUNDStatus_MissingXPANID: return "MissingXPANID";
+	case kWPANTUNDStatus_JoinerFailed_Security: return "JoinerFailed_Security";
+	case kWPANTUNDStatus_JoinerFailed_NoPeers: return "JoinerFailed_NoPeers";
+	case kWPANTUNDStatus_JoinerFailed_ResponseTimeout: return "JoinerFailed_ResponseTimeout";
+	case kWPANTUNDStatus_JoinerFailed_Unknown: return "JoinerFailed_Unknown";
 	default: break;
 	}
 	return "";

@@ -433,6 +433,7 @@
 #define kWPANTUNDValueMapKey_Scan_EnableFiltering               "Scan:EnableFiltering"
 #define kWPANTUNDValueMapKey_Scan_PANIDFilter                   "Scan:PANID"
 
+#define kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart    "Joiner:ReturnImmediatelyOnStart"
 #define kWPANTUNDValueMapKey_Joiner_ProvisioningUrl             "Joiner:ProvisioningUrl"
 #define kWPANTUNDValueMapKey_Joiner_PSKd                        "Joiner:PSKd"
 #define kWPANTUNDValueMapKey_Joiner_VendorName                  "Joiner:Vendor:Name"

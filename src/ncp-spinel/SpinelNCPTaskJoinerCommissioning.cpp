@@ -61,9 +61,37 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::finish(int status, const boost::
 }
 
 int
+nl::wpantund::SpinelNCPTaskJoinerCommissioning::convert_joiner_status_to_wpan_error(int last_status)
+{
+	int ret = kWPANTUNDStatus_JoinerFailed_Unknown;
+
+	switch (last_status) {
+	case SPINEL_STATUS_JOIN_SUCCESS:
+		ret = kWPANTUNDStatus_Ok;
+		break;
+	case SPINEL_STATUS_JOIN_SECURITY:
+		ret = kWPANTUNDStatus_JoinerFailed_Security;
+		break;
+	case SPINEL_STATUS_JOIN_NO_PEERS:
+		ret = kWPANTUNDStatus_JoinerFailed_NoPeers;
+		break;
+	case SPINEL_STATUS_JOIN_RSP_TIMEOUT:
+		ret = kWPANTUNDStatus_JoinerFailed_ResponseTimeout;
+		break;
+	case SPINEL_STATUS_JOIN_FAILURE:
+	default:
+		ret = kWPANTUNDStatus_JoinerFailed_Unknown;
+		break;
+	}
+
+	return ret;
+}
+
+int
 nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_list args)
 {
 	int ret = kWPANTUNDStatus_Failure;
+	int last_status = peek_ncp_callback_status(event, args);
 
 	EH_BEGIN();
 
@@ -143,6 +171,10 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 			}
 		}
 
+		if (!mOptions.count(kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart)) {
+			mOptions[kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart] = boost::any(false);
+		}
+
 		mInstance->change_ncp_state(ASSOCIATING);
 
 		// Turn off promiscuous mode, if it happens to be on
@@ -198,6 +230,18 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 		ret = mNextCommandRet;
 		require_noerr(ret, on_error);
+
+		if (!any_to_bool(mOptions[kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart])) {
+
+			// Wait for LAST_STATUS JOIN response from NCP to indicate the Joiner operation status
+			EH_REQUIRE_WITHIN(
+				NCP_JOINER_TIMEOUT,
+				((last_status >= SPINEL_STATUS_JOIN__BEGIN) && (last_status < SPINEL_STATUS_JOIN__END)),
+				on_error
+			);
+
+			ret = convert_joiner_status_to_wpan_error(last_status);
+		}
 	}
 
 	finish(ret);
