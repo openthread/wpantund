@@ -1300,7 +1300,7 @@ unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_
 	uint16_t rloc16;
 	int num_service = 0;
 	char c_string[500];
-	
+
 	std::list<ValueMap> result_as_val_map_list;
 	std::list<std::string> result_as_string_list;
 
@@ -4169,11 +4169,11 @@ void
 SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data_ptr, spinel_size_t value_data_len)
 {
 	uint32_t enterprise_number;
-	const uint8_t *service_data_ptr;
-	spinel_size_t service_data_len;
+	const uint8_t *service_data_ptr = NULL;
+	spinel_size_t service_data_len = 0;
 	bool stable;
-	const uint8_t *server_data_ptr;
-	spinel_size_t server_data_len;
+	const uint8_t *server_data_ptr = NULL;
+	spinel_size_t server_data_len = 0;
 	uint16_t rloc16;
 	int num_services = 0;
 	spinel_ssize_t len;
@@ -4207,7 +4207,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data
 
 		syslog(LOG_INFO, "[-NCP-]: Service [%d] enterprise_number:%u stable:%d RLOC16:%04x",
 			num_services, enterprise_number, stable, rloc16);
-		
+
 		Data service_data(service_data_ptr, service_data_len);
 		Data server_data(server_data_ptr, server_data_len);
 
@@ -4219,7 +4219,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data
 		}
 
 		service_was_added(kOriginThreadNCP, enterprise_number, service_data, stable, server_data);
-	
+
 		value_data_ptr += len;
 		value_data_len -= len;
 		num_services += 1;
@@ -4724,7 +4724,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 	} else if (key == SPINEL_PROP_THREAD_OFF_MESH_ROUTES) {
 		handle_ncp_spinel_value_is_OFF_MESH_ROUTES(value_data_ptr, value_data_len);
-	
+
 	} else if (key == SPINEL_PROP_SERVER_SERVICES) {
 		handle_ncp_spinel_value_is_SERVICES(value_data_ptr, value_data_len);
 
@@ -5413,7 +5413,7 @@ SpinelNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, 
 }
 
 void
-SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable, 
+SpinelNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data& service_data, bool stable,
 	const Data& server_data, CallbackWithStatus cb)
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
