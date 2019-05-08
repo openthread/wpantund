@@ -195,6 +195,7 @@ DummyNCPControlInterface::remove_service(
 
 void
 DummyNCPControlInterface::joiner_attach(
+	const ValueMap &options,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);

@@ -178,6 +178,7 @@ public:
 	);
 
 	virtual void joiner_attach(
+		const ValueMap &options,
 		CallbackWithStatus cb = NilReturn()
 	);
 

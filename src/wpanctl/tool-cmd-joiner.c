@@ -42,7 +42,8 @@ static const arg_list_item_t joiner_option_list[] = {
 	{'e', "start", NULL, "Bring up the interface and start joiner's commissioning process"},
 	{'j', "join", NULL, "Same as start but waits till end of commissioning process"},
 	{'d', "stop", NULL, "Stop joiner's commissioning process"},
-	{'a', "attach", NULL, "Attach to the commissioned thread network"},
+	{'a', "attach", NULL, "Attach to the commissioned thread network (nonblocking)"},
+	{'b', "attach-blocking", NULL, "Same as attach but blocks till device is associated"},
 	{'s', "state", NULL, "Joiner state"},
 	{0}
 };
@@ -85,12 +86,13 @@ int tool_cmd_joiner(int argc, char* argv[])
 			{"join", no_argument, 0, 'j'},
 			{"stop", no_argument, 0, 'd'},
 			{"attach", no_argument, 0, 'a'},
+			{"attach-blocking", no_argument, 0, 'b'},
 			{"state", no_argument, 0, 's'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "hst:ejda", long_options,
+		c = getopt_long(argc, argv, "hst:ejdab", long_options,
 						&option_index);
 		if (c == -1) {
 			break;
@@ -172,6 +174,10 @@ int tool_cmd_joiner(int argc, char* argv[])
 			fprintf(stdout, "%d (%s)\n", state, joiner_state_int2str(state));
 			goto bail;
 
+		case 'b':
+			returnOnStart = false;
+			// Fall through
+
 		case 'a':
 			// joiner attaches to commissioned thread network
 			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
@@ -179,12 +185,32 @@ int tool_cmd_joiner(int argc, char* argv[])
 			ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_ATTACH);
 			require_action(ret == 0, bail, print_error_diagnosis(ret));
 
-			reply = dbus_connection_send_with_reply_and_block(
-				connection,
-				message,
-				timeout,
-				&error
+			dbus_message_iter_init_append(message, &iter);
+
+			// Open a container as "Array of Dictionary entries from String to Variants" (dbus type "a{sv}")
+			dbus_message_iter_open_container(
+				&iter,
+				DBUS_TYPE_ARRAY,
+				DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+					DBUS_TYPE_STRING_AS_STRING
+					DBUS_TYPE_VARIANT_AS_STRING
+				DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+				&dict_iter
 			);
+
+			// Append dictionary entries
+
+			append_dbus_dict_entry_basic(
+				&dict_iter,
+				kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart,
+				DBUS_TYPE_BOOLEAN, &returnOnStart
+			);
+
+			dbus_message_iter_close_container(&iter, &dict_iter);
+
+			// Send DBus message and parse the DBus reply
+
+			reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
 
 			if (!reply) {
 				fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
@@ -195,10 +221,10 @@ int tool_cmd_joiner(int argc, char* argv[])
 			dbus_message_get_args(reply, &error,
 					DBUS_TYPE_INT32, &ret,
 					DBUS_TYPE_INVALID
-					);
+				);
 
 			if (!ret) {
-				fprintf(stderr, "Successfully Attached!\n");
+				fprintf(stdout, returnOnStart ? "Successfully started attaching...\n" : "Successfully attached!\n");
 			} else {
 				fprintf(stderr, "%s failed with error %d. %s\n", argv[0], ret, wpantund_status_to_cstr(ret));
 				print_error_diagnosis(ret);
@@ -363,8 +389,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 				fprintf(stdout, ", VendorData:\"%s\"", vendor_data);
 			}
 
-			fprintf(stdout, " ...\n", psk);
-
+			fprintf(stdout, " ...\n");
 
 			// Send DBus message and parse the DBus reply
 

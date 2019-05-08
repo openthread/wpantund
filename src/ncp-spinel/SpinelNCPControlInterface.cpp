@@ -322,17 +322,16 @@ bail:
 }
 
 void
-SpinelNCPControlInterface::joiner_attach(CallbackWithStatus cb)
-{
-	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
-			.set_callback(cb)
-			.add_command(SpinelPackData(
-					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
-					SPINEL_PROP_NET_STACK_UP,
-					true
-					))
-			.finish()
-			);
+SpinelNCPControlInterface::joiner_attach(
+	const ValueMap &options,
+	CallbackWithStatus cb
+) {
+	mNCPInstance->start_new_task(boost::shared_ptr<SpinelNCPTask>(
+		new SpinelNCPTaskJoinerAttach(
+				mNCPInstance,
+				boost::bind(cb, _1),
+				options
+	)));
 }
 
 void

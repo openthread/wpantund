@@ -208,6 +208,7 @@ public:
 	// Thread Mesh Commissioning Protocol (MeshCoP) Member Functions
 
 	virtual void joiner_attach(
+		const ValueMap &options,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
