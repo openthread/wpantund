@@ -347,11 +347,11 @@ NCPInstanceBase::OffMeshRouteEntry::get_description(const IPv6Prefix &route, boo
 }
 
 bool
-NCPInstanceBase::ServiceEntryBase::operator==(const ServiceEntryBase &entry) const 
+NCPInstanceBase::ServiceEntryBase::operator==(const ServiceEntryBase &entry) const
 {
-	return (mEnterpriseNumber == entry.mEnterpriseNumber && 
+	return (mEnterpriseNumber == entry.mEnterpriseNumber &&
 		mServiceData == entry.mServiceData);
-		
+
 }
 
 std::string
@@ -603,12 +603,12 @@ NCPInstanceBase::restore_address_prefix_route_entries_on_ncp(void)
 
 	// Services
 	for (
-		std::vector<ServiceEntry>::iterator iter = mServiceEntries.begin(); 
-		iter != mServiceEntries.end(); 
+		std::vector<ServiceEntry>::iterator iter = mServiceEntries.begin();
+		iter != mServiceEntries.end();
 		++iter
 	) {
 		if (iter->is_from_interface() || iter->is_from_user()) {
-			add_service_on_ncp(iter->get_enterprise_number(), iter->get_service_data(), iter->is_stable(), iter->get_server_data(), 
+			add_service_on_ncp(iter->get_enterprise_number(), iter->get_service_data(), iter->is_stable(), iter->get_server_data(),
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "restoring service", NilReturn()));
 		}
 	}
@@ -1214,8 +1214,8 @@ bail:
 // ========================================================================
 // MARK: Service management
 
-void 
-NCPInstanceBase::service_was_added(Origin origin, uint32_t enterprise_number, const Data &service_data, bool stable, 
+void
+NCPInstanceBase::service_was_added(Origin origin, uint32_t enterprise_number, const Data &service_data, bool stable,
 					const Data &server_data, CallbackWithStatus cb)
 {
 	ServiceEntry entry(origin, enterprise_number, service_data, stable, server_data);
@@ -1225,7 +1225,7 @@ NCPInstanceBase::service_was_added(Origin origin, uint32_t enterprise_number, co
 		syslog(LOG_INFO, "Services: Adding %s", entry.get_description().c_str());
 
 		if (origin != kOriginThreadNCP) {
-			add_service_on_ncp(enterprise_number, service_data, stable, server_data, 
+			add_service_on_ncp(enterprise_number, service_data, stable, server_data,
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding service", cb));
 
 		} else {
@@ -1237,7 +1237,7 @@ NCPInstanceBase::service_was_added(Origin origin, uint32_t enterprise_number, co
 	}
 }
 
-void 
+void
 NCPInstanceBase::service_was_removed(Origin origin, uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb)
 {
 	ServiceEntryBase entry(origin, enterprise_number, service_data);
@@ -1249,7 +1249,7 @@ NCPInstanceBase::service_was_removed(Origin origin, uint32_t enterprise_number, 
 		mServiceEntries.erase(iter);
 
 		if (origin != kOriginThreadNCP) {
-			remove_service_on_ncp(enterprise_number, service_data, 
+			remove_service_on_ncp(enterprise_number, service_data,
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing service", cb));
 		} else {
 			cb(kWPANTUNDStatus_Ok);

@@ -61,7 +61,7 @@ protected:
 	virtual void add_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 	virtual void remove_multicast_address_on_ncp(const struct in6_addr &addr, CallbackWithStatus cb);
 
-	virtual void add_service_on_ncp(uint32_t enterprise_number, const Data &service_data, bool stable, 
+	virtual void add_service_on_ncp(uint32_t enterprise_number, const Data &service_data, bool stable,
 					const Data &server_data, CallbackWithStatus cb);
 
 	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb);
