@@ -1403,7 +1403,7 @@ DBusIPCAPI_v1::service_add_handler(
 	interface->add_service(
 		enterprise_number,
 		Data(service_data, service_data_len),
-		stable, 
+		stable,
 		Data(server_data, server_data_len),
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
 
@@ -1423,7 +1423,7 @@ DBusIPCAPI_v1::service_remove_handler(
 	uint32_t enterprise_number;
 	uint8_t *service_data;
 	int service_data_len;
-	
+
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_UINT32, &enterprise_number,
@@ -1436,7 +1436,7 @@ DBusIPCAPI_v1::service_remove_handler(
 	dbus_message_ref(message);
 
 	interface->remove_service(
-		enterprise_number, 
+		enterprise_number,
 		Data(service_data, service_data_len),
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message));
 

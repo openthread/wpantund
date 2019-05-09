@@ -230,14 +230,14 @@ NCPInstanceBase::process_event_helper(int event)
 // ----------------------------------------------------------------------------
 // MARK: -
 
-void NCPInstanceBase::add_service(uint32_t enterprise_number, 
-	const Data &service_data, bool stable, const Data &server_data, 
+void NCPInstanceBase::add_service(uint32_t enterprise_number,
+	const Data &service_data, bool stable, const Data &server_data,
 	CallbackWithStatus cb)
 {
 	add_service_on_ncp(enterprise_number, service_data, stable, server_data, cb);
 }
 
-void NCPInstanceBase::remove_service(uint32_t enterprise_number, 
+void NCPInstanceBase::remove_service(uint32_t enterprise_number,
 	const Data &service_data, CallbackWithStatus cb)
 {
 	remove_service_on_ncp(enterprise_number, service_data, cb);
@@ -707,7 +707,7 @@ NCPInstanceBase::get_prop_ThreadOffMeshRoutes(CallbackWithStatusArg1 cb)
 	cb(kWPANTUNDStatus_Ok, boost::any(result));
 }
 
-void 
+void
 NCPInstanceBase::get_prop_ThreadServices(CallbackWithStatusArg1 cb)
 {
 	std::list<std::string> result;

@@ -56,7 +56,7 @@ int tool_cmd_add_service(int argc, char* argv[])
 	int service_data_len;
 	char* server_data;
 	int server_data_len;
-	
+
 	enum {
 		kDataType_String,
 		kDataType_Data,
@@ -124,7 +124,7 @@ int tool_cmd_add_service(int argc, char* argv[])
 		ret = ERRORCODE_BADARG;
 		goto bail;
 	}
- 
+
 	if (optind < argc) {
 		server_data = argv[optind];
 		optind++;
@@ -194,7 +194,7 @@ int tool_cmd_add_service(int argc, char* argv[])
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &server_data, server_data_len,
 			DBUS_TYPE_INVALID
 		);
-		
+
 		reply = dbus_connection_send_with_reply_and_block(
 		    connection,
 		    message,

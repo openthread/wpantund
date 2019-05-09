@@ -115,14 +115,14 @@ DummyNCPInstance::remove_multicast_address_on_ncp(const struct in6_addr &addr, C
 	return;
 }
 
-void 
-DummyNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data &service_data, bool stable, 
+void
+DummyNCPInstance::add_service_on_ncp(uint32_t enterprise_number, const Data &service_data, bool stable,
 	const Data &server_data, CallbackWithStatus cb)
 {
 	return;
 }
 
-void 
+void
 DummyNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb)
 {
 	return;

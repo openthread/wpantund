@@ -52,7 +52,7 @@ int tool_cmd_remove_service(int argc, char* argv[])
 	uint32_t enterprise_number;
 	char* service_data;
 	int service_data_len;
-	
+
 	enum {
 		kDataType_String,
 		kDataType_Data,
@@ -170,7 +170,7 @@ int tool_cmd_remove_service(int argc, char* argv[])
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &service_data, service_data_len,
 			DBUS_TYPE_INVALID
 		);
-		
+
 		reply = dbus_connection_send_with_reply_and_block(
 		    connection,
 		    message,
