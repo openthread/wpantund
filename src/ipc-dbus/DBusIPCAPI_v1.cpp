@@ -1585,16 +1585,21 @@ DBusIPCAPI_v1::interface_joiner_attach_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
 ) {
-	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	ValueMap options;
+	DBusMessageIter iter;
+
+	dbus_message_iter_init(message, &iter);
+
+	options = value_map_from_dbus_iter(&iter);
 
 	dbus_message_ref(message);
 
-	interface->joiner_attach(boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,
-								  this, _1, message));
+	interface->joiner_attach(
+		options,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
 
-	ret = DBUS_HANDLER_RESULT_HANDLED;
-
-	return ret;
+	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
 DBusHandlerResult

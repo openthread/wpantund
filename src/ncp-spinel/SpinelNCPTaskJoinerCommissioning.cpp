@@ -264,3 +264,102 @@ on_error:
 
 	EH_END();
 }
+
+nl::wpantund::SpinelNCPTaskJoinerAttach::SpinelNCPTaskJoinerAttach(
+	SpinelNCPInstance* instance,
+	CallbackWithStatusArg1 cb,
+	const ValueMap& options
+): SpinelNCPTask(instance, cb), mOptions(options)
+{
+}
+
+int
+nl::wpantund::SpinelNCPTaskJoinerAttach::vprocess_event(int event, va_list args)
+{
+	int ret = kWPANTUNDStatus_Failure;
+
+	EH_BEGIN();
+
+	if (!mInstance->mEnabled) {
+		ret = kWPANTUNDStatus_InvalidWhenDisabled;
+		finish(ret);
+		EH_EXIT();
+	}
+
+	if (mInstance->get_ncp_state() == UPGRADING) {
+		ret = kWPANTUNDStatus_InvalidForCurrentState;
+		finish(ret);
+		EH_EXIT();
+	}
+
+	// Wait for a bit to see if the NCP will enter the right state.
+	EH_REQUIRE_WITHIN(
+		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+		!ncp_state_is_initializing(mInstance->get_ncp_state()),
+		on_error
+	);
+
+	if (ncp_state_is_associated(mInstance->get_ncp_state())) {
+		ret = kWPANTUNDStatus_Already;
+		finish(ret);
+		EH_EXIT();
+	}
+
+	// The first event to a task is EVENT_STARTING_TASK. The following
+	// line makes sure that we don't start processing this task
+	// until it is properly scheduled. All tasks immediately receive
+	// the initial `EVENT_STARTING_TASK` event, but further events
+	// will only be received by that task once it is that task's turn
+	// to execute.
+	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
+
+	syslog(LOG_INFO, "Joiner Attach");
+
+	// If the "ReturnImmediatelyOnStart" is not given, assume `false`
+	// (i.e. default behavior will block and wait till device becomes
+	// associated).
+
+	if (!mOptions.count(kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart)) {
+		mOptions[kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart] = boost::any(false);
+	}
+
+	mNextCommand = SpinelPackData(
+		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+		SPINEL_PROP_NET_STACK_UP,
+		true
+	);
+
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+	ret = mNextCommandRet;
+
+	require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
+
+	if (!any_to_bool(mOptions[kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart])) {
+
+		// Wait for device to be associated
+		EH_REQUIRE_WITHIN(
+			NCP_JOIN_TIMEOUT,
+			ncp_state_is_associated(mInstance->get_ncp_state()),
+			on_error
+		);
+	}
+
+	ret = kWPANTUNDStatus_Ok;
+
+	finish(ret);
+
+	EH_EXIT();
+
+on_error:
+
+	if (ret == kWPANTUNDStatus_Ok) {
+		ret = kWPANTUNDStatus_Failure;
+	}
+
+	syslog(LOG_ERR, "Joiner Attach failed: %d (%s)", ret, wpantund_status_to_cstr(ret));
+
+	finish(ret);
+
+	EH_END();
+}

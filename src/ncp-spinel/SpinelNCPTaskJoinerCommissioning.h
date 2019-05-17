@@ -49,6 +49,20 @@ private:
 	NCPState  mLastState;
 };
 
+class SpinelNCPTaskJoinerAttach : public SpinelNCPTask
+{
+public:
+	SpinelNCPTaskJoinerAttach(
+		SpinelNCPInstance* instance,
+		CallbackWithStatusArg1 cb,
+		const ValueMap &options
+	);
+	virtual int vprocess_event(int event, va_list args);
+
+private:
+	ValueMap  mOptions;
+};
+
 }; // namespace wpantund
 }; // namespace nl
 
