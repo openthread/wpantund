@@ -10,8 +10,16 @@ Makefile.in
 /src/Makefile
 /src/connman-plugin/Makefile
 /src/ipc-dbus/Makefile
+/src/ipc-dbus/wpantund.conf
+/src/missing/Makefile
+/src/missing/strlcat/Makefile
+/src/missing/strlcpy/Makefile
 /src/ncp-spinel/Makefile
+/src/ncp-dummy/.libs/
 /src/ncp-dummy/Makefile
+/src/ncp-spinel/.libs/
+/src/ncp-spinel/spi-hdlc-adapter
+/src/scripts/Makefile
 /src/util/Makefile
 /src/wpanctl/Makefile
 /src/wpantund/Makefile
