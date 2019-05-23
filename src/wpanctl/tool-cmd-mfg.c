@@ -28,7 +28,7 @@
 #include "wpan-dbus-v1.h"
 #include "args.h"
 
-#define MFG_MAX_COMMAND_SIZE        256
+#define MFG_MAX_COMMAND_SIZE        1300
 #define MFG_TIMEOUT_IN_SECONDS      10
 
 int tool_cmd_mfg(int argc, char *argv[])
