@@ -5100,6 +5100,16 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 			syslog(LOG_INFO, "[-NCP-]: ChildTable entry added: %s", child_entry.get_as_string().c_str());
 		}
 
+	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::TableEntry neighbor_entry;
+		int status;
+
+		status = SpinelNCPTaskGetNetworkTopology::parse_neighbor_entry(value_data_ptr, value_data_len, neighbor_entry);
+
+		if (status == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: Neighbor(Router) entry added: %s", neighbor_entry.get_as_string().c_str());
+		}
+
 	} else if (key == SPINEL_PROP_MESHCOP_COMMISSIONER_ENERGY_SCAN_RESULT) {
 		spinel_ssize_t len;
 		uint32_t channel_mask;
@@ -5173,6 +5183,16 @@ SpinelNCPInstance::handle_ncp_spinel_value_removed(spinel_prop_key_t key, const 
 
 		if (status == kWPANTUNDStatus_Ok) {
 			syslog(LOG_INFO, "[-NCP-]: ChildTable entry removed: %s", child_entry.get_as_string().c_str());
+		}
+
+	} else if (key == SPINEL_PROP_THREAD_NEIGHBOR_TABLE) {
+		SpinelNCPTaskGetNetworkTopology::TableEntry neighbor_entry;
+		int status;
+
+		status = SpinelNCPTaskGetNetworkTopology::parse_neighbor_entry(value_data_ptr, value_data_len, neighbor_entry);
+
+		if (status == kWPANTUNDStatus_Ok) {
+			syslog(LOG_INFO, "[-NCP-]: Neighbor(Router) entry removed: %s", neighbor_entry.get_as_string().c_str());
 		}
 
 	}
