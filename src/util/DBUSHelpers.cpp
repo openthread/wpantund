@@ -44,8 +44,17 @@ DBUSHelpers::value_map_from_dbus_iter(DBusMessageIter *iter)
 	nl::ValueMap ret;
 	DBusMessageIter sub_iter, dict_iter;
 
-	if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_ARRAY) {
+	switch (dbus_message_iter_get_arg_type(iter)) {
+	case DBUS_TYPE_INVALID:
+		// Treat no arguments in message as an empty dictionary.
+		goto bail;
+
+	case DBUS_TYPE_ARRAY:
+		break;
+
+	default:
 		throw std::invalid_argument("Wrong type for value map");
+		break;
 	}
 
 	dbus_message_iter_recurse(iter, &sub_iter);
@@ -68,6 +77,7 @@ DBUSHelpers::value_map_from_dbus_iter(DBusMessageIter *iter)
 		ret[key_cstr] = any_from_dbus_iter(&dict_iter);
 	} while (dbus_message_iter_next(&sub_iter));
 
+bail:
 	return ret;
 }
 
