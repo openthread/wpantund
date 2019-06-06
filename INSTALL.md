@@ -54,7 +54,7 @@ following:
 
 #### 2.3. Running the configure script  ####
 
-If the `configure` script is present, run it and them start the make
+If the `configure` script is present, run it and then start the make
 process:
 
     ./configure --sysconfdir=/etc
