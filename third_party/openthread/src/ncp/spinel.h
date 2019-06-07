@@ -399,7 +399,8 @@ enum
     SPINEL_MD_FLAG_TX       = 0x0001, //!< Packet was transmitted, not received.
     SPINEL_MD_FLAG_BAD_FCS  = 0x0004, //!< Packet was received with bad FCS
     SPINEL_MD_FLAG_DUPE     = 0x0008, //!< Packet seems to be a duplicate
-    SPINEL_MD_FLAG_RESERVED = 0xFFF2, //!< Flags reserved for future use.
+    SPINEL_MD_FLAG_ACKED_FP = 0x0010, //!< Packet was acknowledged with frame pending set
+    SPINEL_MD_FLAG_RESERVED = 0xFFE2, //!< Flags reserved for future use.
 };
 
 enum
@@ -2382,6 +2383,34 @@ typedef enum
      */
     SPINEL_PROP_DATASET_DEST_ADDRESS = SPINEL_PROP_THREAD_EXT__BEGIN + 39,
 
+    /// Thread New Operational Dataset
+    /** Format: `A(t(iD))` - Read only - FTD build only
+     *
+     * This property allows host to request NCP to create and return a new Operation Dataset to use when forming a new
+     * network.
+     *
+     * Operational Dataset consists of a set of supported properties (e.g., channel, master key, network name, PAN id,
+     * etc). Note that not all supported properties may be present (have a value) in a Dataset.
+     *
+     * The Dataset value is encoded as an array of structs containing pairs of property key (as `i`) followed by the
+     * property value (as `D`). The property value must follow the format associated with the corresponding property.
+     *
+     * The following properties can be included in a Dataset list:
+     *
+     *   SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP
+     *   SPINEL_PROP_PHY_CHAN
+     *   SPINEL_PROP_PHY_CHAN_SUPPORTED (Channel Mask Page 0)
+     *   SPINEL_PROP_NET_MASTER_KEY
+     *   SPINEL_PROP_NET_NETWORK_NAME
+     *   SPINEL_PROP_NET_XPANID
+     *   SPINEL_PROP_MAC_15_4_PANID
+     *   SPINEL_PROP_IPV6_ML_PREFIX
+     *   SPINEL_PROP_NET_PSKC
+     *   SPINEL_PROP_DATASET_SECURITY_POLICY
+     *
+     */
+    SPINEL_PROP_THREAD_NEW_DATASET = SPINEL_PROP_THREAD_EXT__BEGIN + 40,
+
     SPINEL_PROP_THREAD_EXT__END = 0x1600,
 
     SPINEL_PROP_IPV6__BEGIN = 0x60,
@@ -3026,7 +3055,7 @@ typedef enum
      * Required capability: SPINEL_CAP_POSIX_APP
      *
      * This property gives the version string of RCP (NCP in radio mode) which is being controlled by the POSIX
-     * application. It is available only in "POSIX Application" configuration (i.e., `OPENTHREAD_ENABLE_POSIX_APP` is
+     * application. It is available only in "POSIX Application" configuration (i.e., `OPENTHREAD_PLATFORM_POSIX_APP` is
      * enabled).
      *
      */
