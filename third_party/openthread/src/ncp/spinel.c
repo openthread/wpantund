@@ -84,12 +84,6 @@
 #define ENOMEM 1
 #endif
 
-#ifdef _KERNEL_MODE
-#define va_copy(destination, source) ((destination) = (source))
-#undef errno
-#define assert_printf(fmt, ...)
-#endif
-
 #if defined(errno) && SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR
 #error "SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR is set but errno is already defined."
 #endif
@@ -1163,7 +1157,7 @@ const char *spinel_command_to_cstr(unsigned int command)
 
 const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 {
-        const char *ret = "UNKNOWN";
+    const char *ret = "UNKNOWN";
 
     switch (prop_key)
     {
@@ -1693,6 +1687,10 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_DATASET_DEST_ADDRESS:
         ret = "DATASET_DEST_ADDRESS";
+        break;
+
+    case SPINEL_PROP_THREAD_NEW_DATASET:
+        ret = "THREAD_NEW_DATASET";
         break;
 
     case SPINEL_PROP_MESHCOP_JOINER_STATE:
