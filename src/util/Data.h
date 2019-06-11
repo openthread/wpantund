@@ -24,6 +24,7 @@
 #define __wpantund__Data__
 
 #include <vector>
+#include <string>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -65,6 +66,8 @@ public:
 	const uint8_t* data() const {
 		return &*begin();
 	}
+
+	std::string to_string() const;
 };
 };
 

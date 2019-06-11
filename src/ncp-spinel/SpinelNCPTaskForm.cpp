@@ -29,6 +29,7 @@
 #include "SpinelNCPTaskScan.h"
 #include "any-to.h"
 #include "spinel-extra.h"
+#include "IPv6Helpers.h"
 #include "sec-random.h"
 
 using namespace nl;
@@ -38,63 +39,34 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 	SpinelNCPInstance* instance,
 	CallbackWithStatusArg1 cb,
 	const ValueMap& options
-):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state())
+):	SpinelNCPTask(instance, cb), mOptions(options), mLastState(instance->get_ncp_state()), mDataset()
 {
+	// The parameters in `mOption` value-map dictionary are used first, but
+	// if PAN-Id, extended PAN-Id, or network key are not provided in the
+	// `mOptions`, we check if there is a previously set value and use it instead.
+
 	if (!mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
 		uint16_t panid = instance->mCurrentNetworkInstance.panid;
 
-		if (panid == 0xffff) {
-			sec_random_fill(reinterpret_cast<uint8_t*>(&panid), sizeof(panid));
+		if (panid != 0xffff) {
+			mOptions[kWPANTUNDProperty_NetworkPANID] = panid;
+			syslog(LOG_INFO, "Form: No PAN-ID specified, using previously set value 0x%04X", panid);
 		}
-
-		mOptions[kWPANTUNDProperty_NetworkPANID] = panid;
 	}
 
-	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		uint64_t xpanid = 0;
+	if (!mOptions.count(kWPANTUNDProperty_NetworkXPANID) && instance->mXPANIDWasExplicitlySet) {
+		char xpanid_str[100];
 
-		if (instance->mXPANIDWasExplicitlySet) {
-			xpanid = instance->mCurrentNetworkInstance.get_xpanid_as_uint64();
-		}
-
-		if (xpanid == 0) {
-			sec_random_fill(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
-		}
-
-		mOptions[kWPANTUNDProperty_NetworkXPANID] = xpanid;
+		mOptions[kWPANTUNDProperty_NetworkXPANID] = instance->mCurrentNetworkInstance.get_xpanid_as_uint64();
+		encode_data_into_string(
+			instance->mCurrentNetworkInstance.xpanid, sizeof(instance->mCurrentNetworkInstance.xpanid),
+			xpanid_str, sizeof(xpanid_str), 0);
+		syslog(LOG_INFO, "Form: No Extended PAN-ID specified, using previously set value 0x%s", xpanid_str);
 	}
 
-
-	if (!mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
-		union {
-			uint64_t xpanid;
-			uint8_t bytes[1];
-		} x = { any_to_uint64((mOptions[kWPANTUNDProperty_NetworkXPANID])) };
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		reverse_bytes(x.bytes, sizeof(x.xpanid));
-#endif
-
-		// Default ML Prefix to be derived from XPANID.
-		struct in6_addr mesh_local_prefix = {{{
-			0xfd, x.bytes[0], x.bytes[1], x.bytes[2], x.bytes[3], x.bytes[4], 0, 0
-		}}};
-
-		mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress] = mesh_local_prefix;
-	}
-
-	if (instance->mNetworkKey.empty()) {
-		if (!mOptions.count(kWPANTUNDProperty_NetworkKey)) {
-			uint8_t net_key[NCP_NETWORK_KEY_SIZE];
-
-			sec_random_fill(net_key, sizeof(net_key));
-
-			mOptions[kWPANTUNDProperty_NetworkKey] = Data(net_key, sizeof(net_key));
-		}
-
-		if (!mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
-			mOptions[kWPANTUNDProperty_NetworkKeyIndex] = 1;
-		}
+	if (!mOptions.count(kWPANTUNDProperty_NetworkKey) && !instance->mNetworkKey.empty()) {
+		mOptions[kWPANTUNDProperty_NetworkKey] = instance->mNetworkKey;
+		syslog(LOG_INFO, "Form: No network key specified, using previously set value [value hidden]");
 	}
 }
 
@@ -104,6 +76,7 @@ nl::wpantund::SpinelNCPTaskForm::finish(int status, const boost::any& value)
 	if (!ncp_state_is_associated(mInstance->get_ncp_state())) {
 		mInstance->change_ncp_state(mLastState);
 	}
+
 	SpinelNCPTask::finish(status, value);
 }
 
@@ -113,7 +86,6 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	int ret = kWPANTUNDStatus_Failure;
 
 	EH_BEGIN();
-
 
 	if (!mInstance->mEnabled) {
 		ret = kWPANTUNDStatus_InvalidWhenDisabled;
@@ -165,71 +137,6 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 	check_noerr(ret);
 
-	// TODO: We should do a scan to make sure we pick a good channel
-	//       and don't have a panid collision.
-
-	// Set the channel
-	{
-		uint8_t channel;
-
-		if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
-			channel = any_to_int(mOptions[kWPANTUNDProperty_NCPChannel]);
-
-			// Make sure the channel is the supported channel set.
-			if ((mInstance->mSupportedChannelMask & (1U << channel)) == 0) {
-				syslog(LOG_ERR, "Channel %d is not supported by NCP. Supported channels mask is %08x",
-					channel,
-					mInstance->mSupportedChannelMask
-				);
-				ret = kWPANTUNDStatus_InvalidArgument;
-				goto on_error;
-			}
-
-		} else {
-			uint32_t mask;
-
-			if (mOptions.count(kWPANTUNDProperty_NCPChannelMask)) {
-				mask = any_to_int(mOptions[kWPANTUNDProperty_NCPChannelMask]);
-			} else {
-				mask = mInstance->mSupportedChannelMask;
-			}
-
-			if ((mask & mInstance->mSupportedChannelMask) == 0) {
-				syslog(LOG_ERR, "Invalid channel mask 0x%08x. Supported channels mask is 0x%08x",
-					mask,
-					mInstance->mSupportedChannelMask
-				);
-				ret = kWPANTUNDStatus_InvalidArgument;
-				goto on_error;
-			}
-
-			mask &= mInstance->mSupportedChannelMask;
-
-			// Choose preferred channel mask if it has.
-			if ((mask & mInstance->mPreferredChannelMask) != 0) {
-				mask &= mInstance->mPreferredChannelMask;
-			}
-
-			// Randomly pick a channel from the given channel mask for now.
-			do {
-				sec_random_fill(&channel, 1);
-				channel = (channel % 32);
-			} while (0 == ((1 << channel) & mask));
-		}
-
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-			SPINEL_PROP_PHY_CHAN,
-			channel
-		);
-	}
-
-	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-	ret = mNextCommandRet;
-
-	require_noerr(ret, on_error);
-
 	// Turn off promiscuous mode, if it happens to be on
 	mNextCommand = SpinelPackData(
 		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
@@ -241,127 +148,10 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 	ret = mNextCommandRet;
 	check_noerr(ret);
 
-	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
-			SPINEL_PROP_MAC_15_4_PANID,
-			any_to_int(mOptions[kWPANTUNDProperty_NetworkPANID])
-		);
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
-	if (mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
-		{
-			uint64_t xpanid(any_to_uint64((mOptions[kWPANTUNDProperty_NetworkXPANID])));
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			reverse_bytes(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
-#endif
-
-			mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
-				SPINEL_PROP_NET_XPANID,
-				&xpanid,
-				sizeof(xpanid)
-			);
-		}
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
-	if (mOptions.count(kWPANTUNDProperty_NetworkName)) {
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UTF8_S),
-			SPINEL_PROP_NET_NETWORK_NAME,
-			any_to_string(mOptions[kWPANTUNDProperty_NetworkName]).c_str()
-		);
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
-	if (mOptions.count(kWPANTUNDProperty_NetworkKey)) {
-		{
-			nl::Data data(any_to_data(mOptions[kWPANTUNDProperty_NetworkKey]));
-			mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
-				SPINEL_PROP_NET_MASTER_KEY,
-				data.data(),
-				data.size()
-			);
-		}
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
-	if (mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
-		mNextCommand = SpinelPackData(
-			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
-			SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER,
-			any_to_int(mOptions[kWPANTUNDProperty_NetworkKeyIndex])
-		);
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
-	if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
-		{
-			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalPrefix]);
-			mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_IPv6ADDR_S SPINEL_DATATYPE_UINT8_S),
-				SPINEL_PROP_IPV6_ML_PREFIX,
-				&addr,
-				64
-			);
-		}
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	} else if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
-		{
-			struct in6_addr addr = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress]);
-			mNextCommand = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_IPv6ADDR_S SPINEL_DATATYPE_UINT8_S),
-				SPINEL_PROP_IPV6_ML_PREFIX,
-				&addr,
-				64
-			);
-		}
-
-		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-
-		ret = mNextCommandRet;
-
-		require_noerr(ret, on_error);
-	}
-
 	if (mOptions.count(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix)) {
 		if (mInstance->mCapabilities.count(SPINEL_CAP_NEST_LEGACY_INTERFACE)) {
 			{
-				nl::Data data(any_to_data(mOptions[kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix]));
+				Data data = any_to_data(mOptions[kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix]);
 				mNextCommand = SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
 					SPINEL_PROP_NEST_LEGACY_ULA_PREFIX,
@@ -376,6 +166,179 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 			require_noerr(ret, on_error);
 		}
+	}
+
+	// Get a new Operational DataSet from NCP.
+	{
+		unsigned int prop_key;
+		const uint8_t *data_in;
+		spinel_size_t data_len;
+
+		mNextCommand = SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_GET, SPINEL_PROP_THREAD_NEW_DATASET);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
+		require(EVENT_NCP_PROP_VALUE_IS == event, on_error);
+
+		prop_key = va_arg(args, unsigned int);
+		data_in = va_arg(args, const uint8_t*);
+		data_len = va_arg_small(args, spinel_size_t);
+
+		require(prop_key == SPINEL_PROP_THREAD_NEW_DATASET, on_error);
+
+		mDataset.set_from_spinel_frame(data_in, data_len);
+	}
+
+	// Ensure generated mDataset contains all the required fields.
+
+	require(mDataset.mActiveTimestamp.has_value(), on_error);
+	require(mDataset.mChannel.has_value(), on_error);
+	require(mDataset.mChannelMaskPage0.has_value(), on_error);
+	require(mDataset.mPanId.has_value(), on_error);
+	require(mDataset.mExtendedPanId.has_value(), on_error);
+	require(mDataset.mMeshLocalPrefix.has_value(), on_error);
+
+	// Channel
+
+	if (mOptions.count(kWPANTUNDProperty_NCPChannel)) {
+		uint8_t channel = any_to_int(mOptions[kWPANTUNDProperty_NCPChannel]);
+
+		// Make sure the channel is in the supported channel mask
+		if ((mDataset.mChannelMaskPage0.get() & (1U << channel)) == 0) {
+			syslog(LOG_ERR, "Form: Channel %d is not supported by NCP. Supported channels mask is %08x",
+				channel, mDataset.mChannelMaskPage0.get());
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
+		mDataset.mChannel = channel;
+
+		syslog(LOG_NOTICE, "Form: Channel %d (user-specified)", channel);
+
+	} else if (mOptions.count(kWPANTUNDProperty_NCPChannelMask)) {
+		uint32_t mask = any_to_int(mOptions[kWPANTUNDProperty_NCPChannelMask]);
+		uint8_t channel;
+
+		// Make sure the mask is in the supported channel mask.
+		if ((mDataset.mChannelMaskPage0.get() & mask) == 0) {
+			syslog(LOG_ERR, "Invalid mask 0x%08x. Supported channels mask is 0x%08x", mask,
+				mDataset.mChannelMaskPage0.get());
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
+		mask &= mDataset.mChannelMaskPage0.get();
+
+		if ((mask & mInstance->mPreferredChannelMask) != 0) {
+			mask &= mInstance->mPreferredChannelMask;
+			syslog(LOG_INFO, "Form: Picking channel from user-specified mask combined with preferred mask 0x%08x", mask);
+		} else {
+			syslog(LOG_INFO, "Form: Picking channel from user-specified mask: 0x%08x", mask);
+		}
+
+		// Randomly pick a channel from the mask.
+		do {
+			sec_random_fill(&channel, 1);
+			channel = (channel % 32);
+		} while (0 == ((1 << channel) & mask));
+
+		mDataset.mChannel = channel;
+		syslog(LOG_NOTICE, "Form: Channel %d (randomly selected from mask)", channel);
+	} else {
+		syslog(LOG_NOTICE, "Form: Channel %d (chosen by NCP)", mDataset.mChannel.get());
+	}
+
+	// PAN-Id
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkPANID)) {
+		mDataset.mPanId = any_to_int(mOptions[kWPANTUNDProperty_NetworkPANID]);
+		syslog(LOG_NOTICE, "Form: PAN-ID 0x%04X (user-specified)", mDataset.mPanId.get());
+	} else {
+		syslog(LOG_NOTICE, "Form: PAN-ID 0x%04X (chosen by NCP)", mDataset.mPanId.get());
+	}
+
+	// Extended PAN-Id
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
+		uint64_t xpanid = any_to_uint64(mOptions[kWPANTUNDProperty_NetworkXPANID]);
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		reverse_bytes(reinterpret_cast<uint8_t *>(&xpanid), sizeof(xpanid));
+#endif
+		mDataset.mExtendedPanId = Data(reinterpret_cast<uint8_t *>(&xpanid), sizeof(xpanid));
+
+		syslog(LOG_NOTICE, "Form: XPAN-ID %s (user-specified)", mDataset.mExtendedPanId.get().to_string().c_str());
+	} else {
+		syslog(LOG_NOTICE, "Form: XPAN-ID %s (chosen by NCP)", mDataset.mExtendedPanId.get().to_string().c_str());
+	}
+
+	// Network Name
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkName)) {
+		mDataset.mNetworkName = any_to_string(mOptions[kWPANTUNDProperty_NetworkName]);
+		syslog(LOG_NOTICE, "Form: NetworkName \"%s\" (user-specified)", mDataset.mNetworkName.get().c_str());
+	} else {
+		syslog(LOG_NOTICE, "Form: NetworkName \"%s\" (chosen by NCP)", mDataset.mNetworkName.get().c_str());
+	}
+
+	// Master Key
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkKey)) {
+		mDataset.mMasterKey = any_to_data(mOptions[kWPANTUNDProperty_NetworkKey]);
+		syslog(LOG_NOTICE, "Form: Master Key (user-specified)");
+	} else {
+		syslog(LOG_NOTICE, "Form: Master Key (chosen by NCP)");
+	}
+
+	// Mesh-local Prefix
+
+	if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalPrefix)) {
+		mDataset.mMeshLocalPrefix = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalPrefix]);
+		syslog(LOG_NOTICE, "Form: MeshLocal Prefix %s (user-specified)",
+			in6_addr_to_string(mDataset.mMeshLocalPrefix.get()).c_str());
+	} else if (mOptions.count(kWPANTUNDProperty_IPv6MeshLocalAddress)) {
+		mDataset.mMeshLocalPrefix = any_to_ipv6(mOptions[kWPANTUNDProperty_IPv6MeshLocalAddress]);
+		syslog(LOG_NOTICE, "Form: MeshLocal Prefix %s (user-specified)",
+			in6_addr_to_string(mDataset.mMeshLocalPrefix.get()).c_str());
+	} else {
+		syslog(LOG_NOTICE, "Form: MeshLocal Prefix %s (chosen by NCP)",
+			in6_addr_to_string(mDataset.mMeshLocalPrefix.get()).c_str());
+	}
+
+	// Push the new dataset as the active dataset.
+	{
+		Data spinel_encoded_dataset;
+
+		mDataset.convert_to_spinel_frame(spinel_encoded_dataset);
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_DATA_S),
+			SPINEL_PROP_THREAD_ACTIVE_DATASET,
+			spinel_encoded_dataset.data(),
+			spinel_encoded_dataset.size()
+		);
+	}
+
+	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+	ret = mNextCommandRet;
+
+	require_noerr(ret, on_error);
+
+	if (mOptions.count(kWPANTUNDProperty_NetworkKeyIndex)) {
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT32_S),
+			SPINEL_PROP_NET_KEY_SEQUENCE_COUNTER,
+			any_to_int(mOptions[kWPANTUNDProperty_NetworkKeyIndex])
+		);
+
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+
+		ret = mNextCommandRet;
+
+		require_noerr(ret, on_error);
 	}
 
 	// Now bring up the network by bringing up the interface and the stack.
