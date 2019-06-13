@@ -910,6 +910,8 @@ open_super_socket(const char* socket_name)
 				const int baud_opt = baud_rate_to_termios_constant(baud);
 				if(baud_opt <= 0) {
 					syslog(LOG_ERR, "Unsupported baud rate %d", baud);
+					fd = -1;
+					goto bail;
 				} else {
 					syslog(LOG_DEBUG, "Setting baud rate to %d", baud);
 				}
@@ -930,6 +932,8 @@ open_super_socket(const char* socket_name)
 				const int baud_opt = baud_rate_to_termios_constant(gSocketWrapperBaud);
 				if(baud_opt <= 0) {
 					syslog(LOG_ERR, "Unsupported baud rate %d", gSocketWrapperBaud);
+					fd = -1;
+					goto bail;
 				} else {
 					syslog(LOG_DEBUG, "Setting baud rate to %d", gSocketWrapperBaud);
 				}
