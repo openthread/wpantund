@@ -134,7 +134,6 @@ restore_network_info_on_wpantund ()
 	$wpanctl_command set $WPANTUND_PROP_PANID $cur_panid
 	$wpanctl_command set $WPANTUND_PROP_XPANID -d $cur_xpanid
 	$wpanctl_command set $WPANTUND_PROP_CHANNEL $cur_channel
-	$wpanctl_command set $WPANTUND_PROP_NODE_TYPE $cur_type
 	$wpanctl_command set $WPANTUND_PROP_KEY_INDEX $cur_keyindex
 
 	$wpanctl_command attach
