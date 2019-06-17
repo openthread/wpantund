@@ -355,7 +355,11 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mOutboundBufferLen = 0;
 	mOutboundBufferSent = 0;
 	mOutboundBufferType = 0;
+#if WPANTUND_NCP_RESET_EXPECTED_ON_START
+	mResetIsExpected = true;
+#else
 	mResetIsExpected = false;
+#endif
 	mSetSteeringDataWhenJoinable = false;
 	mSubPTIndex = 0;
 	mTXPower = 0;
