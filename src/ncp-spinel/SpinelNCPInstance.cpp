@@ -4175,7 +4175,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data
 	uint32_t enterprise_number;
 	const uint8_t *service_data_ptr = NULL;
 	spinel_size_t service_data_len = 0;
-	bool stable;
+	bool stable = false;
 	const uint8_t *server_data_ptr = NULL;
 	spinel_size_t server_data_len = 0;
 	uint16_t rloc16;
@@ -4209,8 +4209,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_SERVICES(const uint8_t* value_data
 			break;
 		}
 
-		syslog(LOG_INFO, "[-NCP-]: Service [%d] enterprise_number:%u stable:%d RLOC16:%04x",
-			num_services, enterprise_number, stable, rloc16);
+		syslog(LOG_INFO, "[-NCP-]: Service [%d] enterprise_number:%u stable:%s RLOC16:%04x",
+			num_services, enterprise_number, stable ? "yes" : "no", rloc16);
 
 		Data service_data(service_data_ptr, service_data_len);
 		Data server_data(server_data_ptr, server_data_len);
