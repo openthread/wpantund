@@ -2979,6 +2979,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_NetworkPSKc,
 		SPINEL_PROP_NET_PSKC, SPINEL_DATATYPE_DATA_C);
 	register_set_handler_spinel(
+		kWPANTUNDProperty_NetworkPartitionId,
+		SPINEL_PROP_NET_PARTITION_ID, SPINEL_DATATYPE_UINT32_C);
+	register_set_handler_spinel(
 		kWPANTUNDProperty_NCPMACAddress,
 		SPINEL_PROP_MAC_15_4_LADDR, SPINEL_DATATYPE_EUI64_C);
 	register_set_handler_spinel(
