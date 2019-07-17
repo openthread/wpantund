@@ -62,7 +62,7 @@ nl::wpantund::SpinelNCPTaskPeek::vprocess_event(int event, va_list args)
 	// Wait for a bit to see if the NCP will enter the right state.
 	EH_REQUIRE_WITHIN(
 		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		!ncp_state_is_initializing(mInstance->get_ncp_state()),
+		!ncp_state_is_initializing(mInstance->get_ncp_state()) && !mInstance->is_initializing_ncp(),
 		on_error
 	);
 

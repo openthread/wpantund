@@ -83,7 +83,8 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 		!ncp_state_is_initializing(mInstance->get_ncp_state())
 		&& (mInstance->get_ncp_state() != ASSOCIATING)
-		&& (mInstance->get_ncp_state() != CREDENTIALS_NEEDED),
+		&& (mInstance->get_ncp_state() != CREDENTIALS_NEEDED)
+		&& !mInstance->is_initializing_ncp(),
 		on_error
 	);
 

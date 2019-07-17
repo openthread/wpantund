@@ -340,7 +340,7 @@ nl::wpantund::SpinelNCPTaskJoinerAttach::vprocess_event(int event, va_list args)
 		// Wait for device to be associated
 		EH_REQUIRE_WITHIN(
 			NCP_JOIN_TIMEOUT,
-			ncp_state_is_associated(mInstance->get_ncp_state()),
+			ncp_state_is_associated(mInstance->get_ncp_state()) && !mInstance->is_initializing_ncp(),
 			on_error
 		);
 	}
