@@ -56,3 +56,4 @@ matrix:
           compiler: gcc
         - env: BUILD_TARGET="android-build" VERBOSE=1
           os: linux
+          dist: trusty
