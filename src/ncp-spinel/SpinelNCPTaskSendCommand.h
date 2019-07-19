@@ -34,6 +34,7 @@ class SpinelNCPTaskSendCommand : public SpinelNCPTask
 {
 public:
 	typedef boost::function<int (const uint8_t*, spinel_size_t, boost::any&)> ReplyUnpacker;
+	typedef boost::function<bool ()> CheckHandler;
 
 	class Factory {
 	public:
@@ -59,6 +60,13 @@ public:
 
 		Factory& set_lock_property(int lock_property);
 
+		/* The caller can optionally set a final check handler.
+		 * If provided, the task will wait for the given amount
+		 * of timeout for the check handler call returning `true`.
+		 *
+		 */
+		Factory& set_final_check(const CheckHandler &handler, int timeout = NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT);
+
 		boost::shared_ptr<SpinelNCPTask> finish(void);
 
 	private:
@@ -68,6 +76,8 @@ public:
 		int mTimeout;
 		ReplyUnpacker mReplyUnpacker;
 		int mLockProperty;
+		CheckHandler mCheckHandler;
+		int mCheckTimeout;
 	};
 
 	SpinelNCPTaskSendCommand(const Factory& factory);
@@ -80,6 +90,8 @@ private:
 	std::list<Data>::const_iterator mCommandIter;
 	int mLockProperty;
 	ReplyUnpacker mReplyUnpacker;
+	CheckHandler mCheckHandler;
+	int mCheckTimeout;
 	int mRetVal;
 	boost::any mReturnValue;
 };

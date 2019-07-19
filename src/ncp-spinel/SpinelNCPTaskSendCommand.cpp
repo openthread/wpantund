@@ -38,7 +38,8 @@ SpinelNCPTaskSendCommand::Factory::Factory(SpinelNCPInstance* instance):
 	mInstance(instance),
 	mCb(NilReturn()),
 	mTimeout(NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT),
-	mLockProperty(0)
+	mLockProperty(0),
+	mCheckTimeout(0)
 {
 }
 
@@ -91,6 +92,14 @@ SpinelNCPTaskSendCommand::Factory::set_lock_property(int lock_property)
 	return *this;
 }
 
+SpinelNCPTaskSendCommand::Factory&
+SpinelNCPTaskSendCommand::Factory::set_final_check(const CheckHandler &handler, int timeout)
+{
+	mCheckHandler = handler;
+	mCheckTimeout = timeout;
+	return *this;
+}
+
 boost::shared_ptr<SpinelNCPTask>
 SpinelNCPTaskSendCommand::Factory::finish(void)
 {
@@ -103,6 +112,8 @@ nl::wpantund::SpinelNCPTaskSendCommand::SpinelNCPTaskSendCommand(
 	mCommandList(factory.mCommandList),
 	mLockProperty(factory.mLockProperty),
 	mReplyUnpacker(factory.mReplyUnpacker),
+	mCheckHandler(factory.mCheckHandler),
+	mCheckTimeout(factory.mCheckTimeout),
 	mRetVal(kWPANTUNDStatus_Failure)
 {
 	mNextCommandTimeout = factory.mTimeout;
@@ -351,6 +362,17 @@ nl::wpantund::SpinelNCPTaskSendCommand::vprocess_event(int event, va_list args)
 		(void) key; // Ignored
 
 		mRetVal = mReplyUnpacker(data_in, data_len, mReturnValue);
+	}
+
+	if (mCheckTimeout != 0) {
+		// We need to yield to allow other protothreads
+		// to handle the event before starting to wait for
+		// the check handler to become `true`.
+		EH_YIELD();
+
+		mRetVal = kWPANTUNDStatus_Timeout;
+		EH_REQUIRE_WITHIN(mCheckTimeout, mCheckHandler() == true, on_error);
+		mRetVal = kWPANTUNDStatus_Ok;
 	}
 
 on_error:

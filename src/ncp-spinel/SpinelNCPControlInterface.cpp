@@ -129,6 +129,11 @@ SpinelNCPControlInterface::attach(CallbackWithStatus cb)
 	);
 }
 
+static bool check_ncp_finished_initalization(SpinelNCPInstance *instance)
+{
+	return !ncp_state_is_initializing(instance->get_ncp_state()) && !instance->is_initializing_ncp();
+}
+
 void
 SpinelNCPControlInterface::reset(CallbackWithStatus cb)
 {
@@ -139,6 +144,7 @@ SpinelNCPControlInterface::reset(CallbackWithStatus cb)
 	mNCPInstance->start_new_task(SpinelNCPTaskSendCommand::Factory(mNCPInstance)
 		.set_callback(CallbackWithStatus(boost::bind(cb,kWPANTUNDStatus_Ok)))
 		.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_RESET))
+		.set_final_check(boost::bind(check_ncp_finished_initalization, mNCPInstance))
 		.finish()
 	);
 }
