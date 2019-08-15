@@ -452,6 +452,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 	properties.insert(kWPANTUNDProperty_NCPCCAFailureRate);
 	properties.insert(kWPANTUNDProperty_NCPCapabilities);
+	properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -1041,6 +1042,123 @@ unpack_ncp_counters_mle(const uint8_t *data_in, spinel_size_t data_len, boost::a
 bail:
 	return ret;
 }
+
+static int
+unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+	bool stopped;
+	uint32_t numGrantGlitch;
+
+	const char *tx_coex_metrics_names[] = {
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxRequest,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantImmediate,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWait,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWaitActivated,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWaitTimeout,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantDeactivatedDuringRequest,
+		kWPANTUNDValueMapKey_CoexMetrics_NumTxDelayedGrant,
+		kWPANTUNDValueMapKey_CoexMetrics_AvgTxRequestToGrantTime,
+		NULL
+	};
+
+	const char *rx_coex_metrics_names[] = {
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxRequest,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantImmediate,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWait,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWaitActivated,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWaitTimeout,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantDeactivatedDuringRequest,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxDelayedGrant,
+		kWPANTUNDValueMapKey_CoexMetrics_AvgRxRequestToGrantTime,
+		kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantNone,
+		NULL
+	};
+
+	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_BOOL_S, &stopped);
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+	data_in += len;
+	data_len -= len;
+
+	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_UINT32_S, &numGrantGlitch);
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+	data_in += len;
+	data_len -= len;
+
+	if (!as_val_map) {
+		char c_string[200];
+		snprintf(c_string, sizeof(c_string), "%-20s = %d", kWPANTUNDValueMapKey_CoexMetrics_Stopped, stopped);
+		result_as_string.push_back(std::string(c_string));
+
+		snprintf(c_string, sizeof(c_string), "%-20s = %d", kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch, numGrantGlitch);
+		result_as_string.push_back(std::string(c_string));
+	} else {
+		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_Stopped] = stopped;
+		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch] = numGrantGlitch;
+	}
+
+	for (int index = 0; index < 2; index++)
+	{
+		const char **counter_names;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+		spinel_size_t len;
+
+		counter_names = (index == 0) ? tx_coex_metrics_names : rx_coex_metrics_names;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_in,
+			&struct_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		while (*counter_names != NULL) {
+			uint32_t counter_value;
+
+			len = spinel_datatype_unpack(
+				struct_in,
+				struct_len,
+				SPINEL_DATATYPE_UINT32_S,
+				&counter_value
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			struct_in  += len;
+			struct_len -= len;
+
+			if (!as_val_map) {
+				char c_string[200];
+				snprintf(c_string, sizeof(c_string), "%-20s = %d", *counter_names, counter_value);
+				result_as_string.push_back(std::string(c_string));
+			} else {
+				result_as_val_map[*counter_names] = counter_value;
+			}
+
+			counter_names++;
+		}
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
+	return ret;
+}
+
 
 static int
 unpack_mcu_power_state(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
@@ -2141,6 +2259,12 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_NCPPreferredChannelMask,
 		SPINEL_PROP_PHY_CHAN_PREFERRED, unpack_channel_mask);
+	register_get_handler_spinel_unpacker(
+		kWPANTUNDProperty_NCPCoexMetrics,
+		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, /* as_val_map */ false));
+	register_get_handler_spinel_unpacker(
+		kWPANTUNDProperty_NCPCoexMetricsAsValMap,
+		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, /* as_val_map */ true));
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_ThreadActiveDataset,
 		SPINEL_PROP_THREAD_ACTIVE_DATASET, boost::bind(unpack_dataset, _1, _2, _3, /* as_val_map */ false));
