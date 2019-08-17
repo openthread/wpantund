@@ -52,13 +52,13 @@ int tool_cmd_mfg(int argc, char *argv[])
 		int index;
 		int len;
 
-		for (index = 0; index < argc; index++) {
+		for (index = 1; index < argc; index++) {
 
 			len = snprintf(
 				buf_ptr,
 				buf_len,
 				"%s%s",
-				(index == 0) ? "" : " ",
+				(index == 1) ? "" : " ",
 				argv[index]
 			);
 
