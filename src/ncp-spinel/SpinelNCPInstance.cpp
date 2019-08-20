@@ -1051,7 +1051,7 @@ unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 	int ret = kWPANTUNDStatus_Ok;
 	spinel_ssize_t len;
 	bool stopped;
-	uint32_t numGrantGlitch;
+	uint32_t num_grant_glitch;
 
 	const char *tx_coex_metrics_names[] = {
 		kWPANTUNDValueMapKey_CoexMetrics_NumTxRequest,
@@ -1083,21 +1083,21 @@ unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 	data_in += len;
 	data_len -= len;
 
-	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_UINT32_S, &numGrantGlitch);
+	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_UINT32_S, &num_grant_glitch);
 	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 	data_in += len;
 	data_len -= len;
 
 	if (!as_val_map) {
 		char c_string[200];
-		snprintf(c_string, sizeof(c_string), "%-20s = %d", kWPANTUNDValueMapKey_CoexMetrics_Stopped, stopped);
+		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_Stopped, stopped);
 		result_as_string.push_back(std::string(c_string));
 
-		snprintf(c_string, sizeof(c_string), "%-20s = %d", kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch, numGrantGlitch);
+		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch, num_grant_glitch);
 		result_as_string.push_back(std::string(c_string));
 	} else {
 		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_Stopped] = stopped;
-		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch] = numGrantGlitch;
+		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch] = num_grant_glitch;
 	}
 
 	for (int index = 0; index < 2; index++)
@@ -1139,7 +1139,7 @@ unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 
 			if (!as_val_map) {
 				char c_string[200];
-				snprintf(c_string, sizeof(c_string), "%-20s = %d", *counter_names, counter_value);
+				snprintf(c_string, sizeof(c_string), "%-20s = %u", *counter_names, counter_value);
 				result_as_string.push_back(std::string(c_string));
 			} else {
 				result_as_val_map[*counter_names] = counter_value;

@@ -1628,7 +1628,7 @@ typedef enum
     SPINEL_PROP_RADIO_CAPS = SPINEL_PROP_PHY_EXT__BEGIN + 11,
 
     /// All coex metrics related counters.
-    /** Format: Lbt(LLLLLLLL)t(LLLLLLLLL)  (Read-only)
+    /** Format: bLt(LLLLLLLL)t(LLLLLLLLL)  (Read-only)
      *
      * The contents include two variables and two structs, first one corresponds to
      * all transmit related coex counters, second one provides the receive related counters.
