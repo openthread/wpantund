@@ -1078,28 +1078,6 @@ unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 		NULL
 	};
 
-	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_BOOL_S, &stopped);
-	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
-	data_in += len;
-	data_len -= len;
-
-	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_UINT32_S, &num_grant_glitch);
-	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
-	data_in += len;
-	data_len -= len;
-
-	if (!as_val_map) {
-		char c_string[200];
-		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_Stopped, stopped);
-		result_as_string.push_back(std::string(c_string));
-
-		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch, num_grant_glitch);
-		result_as_string.push_back(std::string(c_string));
-	} else {
-		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_Stopped] = stopped;
-		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch] = num_grant_glitch;
-	}
-
 	for (int index = 0; index < 2; index++)
 	{
 		const char **counter_names;
@@ -1147,6 +1125,28 @@ unpack_coex_metrics(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 
 			counter_names++;
 		}
+	}
+
+	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_BOOL_S, &stopped);
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+	data_in += len;
+	data_len -= len;
+
+	len = spinel_datatype_unpack(data_in, data_len, SPINEL_DATATYPE_UINT32_S, &num_grant_glitch);
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+	data_in += len;
+	data_len -= len;
+
+	if (!as_val_map) {
+		char c_string[200];
+		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_Stopped, stopped);
+		result_as_string.push_back(std::string(c_string));
+
+		snprintf(c_string, sizeof(c_string), "%-20s = %u", kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch, num_grant_glitch);
+		result_as_string.push_back(std::string(c_string));
+	} else {
+		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_Stopped] = stopped;
+		result_as_val_map[kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch] = num_grant_glitch;
 	}
 
 	if (as_val_map) {
