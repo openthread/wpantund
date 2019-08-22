@@ -238,6 +238,9 @@
 
 #define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
 
+#define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
+#define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
+
 #define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
 #define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"
 #define kWPANTUNDProperty_NCPCounterThreadMle                   "NCP:Counter:Thread:Mle"
@@ -494,5 +497,25 @@
 #define kWPANTUNDValueMapKey_Service_Stable                     "Stable"
 #define kWPANTUNDValueMapKey_Service_ServerData                 "ServerData"
 #define kWPANTUNDValueMapKey_Service_RLOC16                     "RLOC16"
+
+#define kWPANTUNDValueMapKey_CoexMetrics_Stopped                            "Stopped"                            // Stats collection stopped due to saturation.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumGrantGlitch                     "NumGrantGlitch"                     // The number of of grant glitches.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxRequest                       "NumTxRequest"                       // The number of tx requests.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantImmediate                "NumTxGrantImmediate"                // The number of tx requests while grant was active.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWait                     "NumTxGrantWait"                     // The number of tx requests while grant was inactive.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWaitActivated            "NumTxGrantWaitActivated"            // The number of tx requests while grant was inactive that were ultimately granted.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantWaitTimeout              "NumTxGrantWaitTimeout"              // The number of tx requests while grant was inactive that timed out.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxGrantDeactivatedDuringRequest "NumTxGrantDeactivatedDuringRequest" // The number of tx requests that were in progress when grant was deactivated.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumTxDelayedGrant                  "NumTxDelayedGrant"                  // The number of tx requests that were not granted within 50us.
+#define kWPANTUNDValueMapKey_CoexMetrics_AvgTxRequestToGrantTime            "AvgTxRequestToGrantTime"            // The average time in usec from tx request to grant.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxRequest                       "NumRxRequest"                       // The number of rx requests.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantImmediate                "NumRxGrantImmediate"                // The number of rx requests while grant was active.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWait                     "NumRxGrantWait"                     // The number of rx requests while grant was inactive.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWaitActivated            "NumRxGrantWaitActivated"            // The number of rx requests while grant was inactive that were ultimately granted.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantWaitTimeout              "NumRxGrantWaitTimeout"              // The number of rx requests while grant was inactive that timed out.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantDeactivatedDuringRequest "NumRxGrantDeactivatedDuringRequest" // The number of rx requests that were in progress when grant was deactivated.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxDelayedGrant                  "NumRxDelayedGrant"                  // The number of rx requests that were not granted within 50us.
+#define kWPANTUNDValueMapKey_CoexMetrics_AvgRxRequestToGrantTime            "AvgRxRequestToGrantTime"            // The average time in usec from rx request to grant.
+#define kWPANTUNDValueMapKey_CoexMetrics_NumRxGrantNone                     "NumRxGrantNone"                     // The number of rx requests that completed without receiving grant.
 
 #endif
