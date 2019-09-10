@@ -240,6 +240,7 @@
 
 #define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
+#define kWPANTUNDProperty_NCPCoexEnable                         "NCP:Coex:Enable"
 
 #define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
 #define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"

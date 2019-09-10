@@ -1964,6 +1964,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogLevel,
 		SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
+	register_get_handler_spinel_simple(
+		kWPANTUNDProperty_NCPCoexEnable,
+		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -3138,6 +3141,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler_spinel(
 		kWPANTUNDProperty_ThreadRouterDowngradeThreshold,
 		SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD, SPINEL_DATATYPE_UINT8_C);
+	register_set_handler_spinel(
+		kWPANTUNDProperty_NCPCoexEnable,
+		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_C);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring persistence (saving in settings) and associated with a
