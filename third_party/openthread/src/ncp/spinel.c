@@ -1403,6 +1403,10 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "RADIO_COEX_METRICS";
         break;
 
+    case SPINEL_PROP_RADIO_COEX_ENABLE:
+        ret = "RADIO_COEX_ENABLE";
+        break;
+
     case SPINEL_PROP_MAC_SCAN_STATE:
         ret = "MAC_SCAN_STATE";
         break;
@@ -2566,6 +2570,10 @@ const char *spinel_capability_to_cstr(unsigned int capability)
 
     case SPINEL_CAP_SLAAC:
         ret = "SLAAC";
+        break;
+
+    case SPINEL_CAP_RADIO_COEX:
+        ret = "RADIO_COEX";
         break;
 
     case SPINEL_CAP_ERROR_RATE_TRACKING:
