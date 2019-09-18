@@ -452,7 +452,6 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 	properties.insert(kWPANTUNDProperty_NCPCCAFailureRate);
 	properties.insert(kWPANTUNDProperty_NCPCapabilities);
-	properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -567,6 +566,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE)) {
 		properties.insert(kWPANTUNDProperty_ThreadServices);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_RADIO_COEX)) {
+		properties.insert(kWPANTUNDProperty_NCPCoexEnable);
+		properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
 	}
 
 	{
