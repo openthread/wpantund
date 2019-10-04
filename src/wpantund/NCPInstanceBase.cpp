@@ -43,7 +43,8 @@ using namespace wpantund;
 
 NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mCommissioningRule(),
-	mCommissioningExpiration(0)
+	mCommissioningExpiration(0),
+	mICMP6RouterAdvertiser(this)
 {
 	std::string wpan_interface_name = "wpan0";
 
@@ -330,6 +331,12 @@ NCPInstanceBase::get_supported_property_keys(void) const
 
 	properties.insert(kWPANTUNDProperty_NestLabs_NetworkPassthruPort);
 
+	properties.insert(kWPANTUNDProperty_RouterAdvertEnable);
+	properties.insert(kWPANTUNDProperty_RouterAdvertNetifs);
+	properties.insert(kWPANTUNDProperty_RouterAdvertTxPeriod);
+	properties.insert(kWPANTUNDProperty_RouterAdvertDefaultRoutePreference);
+	properties.insert(kWPANTUNDProperty_RouterAdvertDefaultRouteLifetime);
+
 	return properties;
 }
 
@@ -406,6 +413,11 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(IPv6MulticastAddresses);
 	REGISTER_GET_HANDLER(IPv6InterfaceRoutes);
 	REGISTER_GET_HANDLER(DaemonSyslogMask);
+	REGISTER_GET_HANDLER(RouterAdvertEnable);
+	REGISTER_GET_HANDLER(RouterAdvertNetifs);
+	REGISTER_GET_HANDLER(RouterAdvertTxPeriod);
+	REGISTER_GET_HANDLER(RouterAdvertDefaultRoutePreference);
+	REGISTER_GET_HANDLER(RouterAdvertDefaultRouteLifetime);
 
 #undef REGISTER_GET_HANDLER
 }
@@ -819,6 +831,36 @@ NCPInstanceBase::get_prop_DaemonSyslogMask(CallbackWithStatusArg1 cb)
 	cb(kWPANTUNDStatus_Ok, mask_string);
 }
 
+void
+NCPInstanceBase::get_prop_RouterAdvertEnable(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.is_enabled()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertNetifs(CallbackWithStatusArg1 cb)
+{
+   cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_netifs()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertTxPeriod(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_tx_period()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertDefaultRoutePreference(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_default_route_preference()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertDefaultRouteLifetime(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_default_route_lifetime()));
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Set Handlers
@@ -854,6 +896,11 @@ NCPInstanceBase::regsiter_all_set_handlers(void)
 	REGISTER_SET_HANDLER(IPv6MeshLocalAddress);
 	REGISTER_SET_HANDLER(DaemonAutoDeepSleep);
 	REGISTER_SET_HANDLER(DaemonSyslogMask);
+	REGISTER_SET_HANDLER(RouterAdvertEnable);
+	REGISTER_SET_HANDLER(RouterAdvertNetifs);
+	REGISTER_SET_HANDLER(RouterAdvertTxPeriod);
+	REGISTER_SET_HANDLER(RouterAdvertDefaultRoutePreference);
+	REGISTER_SET_HANDLER(RouterAdvertDefaultRouteLifetime);
 
 #undef REGISTER_SET_HANDLER
 }
@@ -1091,6 +1138,78 @@ NCPInstanceBase::set_prop_DaemonSyslogMask(const boost::any &value, CallbackWith
 
 }
 
+void
+NCPInstanceBase::set_prop_RouterAdvertEnable(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.set_enabled(any_to_bool(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb)
+{
+	std::string names_str = any_to_string(value);
+	char names[500];
+	char *p, *start;
+	bool did_end = false;
+
+	mICMP6RouterAdvertiser.clear_netifs();
+
+	if (names_str.size() < sizeof(names) - 1) {
+		memcpy(names, names_str.c_str(), names_str.size());
+		names[names_str.size()] = '\0';
+	} else {
+		memcpy(names, names_str.c_str(), sizeof(names) - 1);
+		names[sizeof(names) - 1] = '\0';
+	}
+
+	p = names;
+
+	do {
+		while ((*p != '\0') && (*p == ' ')) {
+			p++;
+		}
+
+		start = p;
+
+		while ((*p != '\0') && (*p != ' ')) {
+			p++;
+		}
+
+		did_end = (*p == '\0');
+
+		if (start != p) {
+			*p = '\0';
+			mICMP6RouterAdvertiser.add_netif(std::string(start));
+			p++;
+		}
+	} while (!did_end);
+
+bail:
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertTxPeriod(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.set_tx_period(any_to_int(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertDefaultRoutePreference(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.set_default_route_preference(any_to_int(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertDefaultRouteLifetime(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.set_default_route_lifetime(any_to_int(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Insert Handlers
@@ -1111,6 +1230,7 @@ NCPInstanceBase::regsiter_all_insert_handlers(void)
 		boost::bind(&NCPInstanceBase::insert_prop_##name, this, _1, _2))
 
 	REGISTER_INSERT_HANDLER(IPv6MulticastAddresses);
+	REGISTER_INSERT_HANDLER(RouterAdvertNetifs);
 
 #undef REGISTER_INSERT_HANDLER
 }
@@ -1151,6 +1271,13 @@ NCPInstanceBase::insert_prop_IPv6MulticastAddresses(const boost::any &value, Cal
 	multicast_address_was_joined(kOriginUser, address, cb);
 }
 
+void
+NCPInstanceBase::insert_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.add_netif(any_to_string(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Remove Handlers
@@ -1171,6 +1298,7 @@ NCPInstanceBase::regsiter_all_remove_handlers(void)
 		boost::bind(&NCPInstanceBase::remove_prop_##name, this, _1, _2))
 
 	REGISTER_REMOVE_HANDLER(IPv6MulticastAddresses);
+	REGISTER_REMOVE_HANDLER(RouterAdvertNetifs);
 
 #undef REGISTER_REMOVE_HANDLER
 }
@@ -1208,6 +1336,13 @@ NCPInstanceBase::remove_prop_IPv6MulticastAddresses(const boost::any &value, Cal
 {
 	struct in6_addr address = any_to_ipv6(value);
 	multicast_address_was_left(kOriginUser, address, cb);
+}
+
+void
+NCPInstanceBase::remove_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.remove_netif(any_to_string(value));
+	cb(kWPANTUNDStatus_Ok);
 }
 
 void

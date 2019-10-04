@@ -136,7 +136,8 @@ NCPInstanceBase::set_socket_adapter(const boost::shared_ptr<SocketAdapter> &adap
 cms_t
 NCPInstanceBase::get_ms_to_next_event(void)
 {
-	cms_t ret(EventHandler::get_ms_to_next_event());
+	cms_t ret = EventHandler::get_ms_to_next_event();
+	cms_t router_adv_cms = mICMP6RouterAdvertiser.get_ms_to_next_event();
 
 	mSerialAdapter->update_fd_set(NULL, NULL, NULL, NULL, &ret);
 	mPrimaryInterface->update_fd_set(NULL, NULL, NULL, NULL, &ret);
@@ -151,6 +152,10 @@ NCPInstanceBase::get_ms_to_next_event(void)
 		if (ret > BUSY_DEBOUNCE_TIME_IN_MS && !is_busy()) {
 			ret = BUSY_DEBOUNCE_TIME_IN_MS;
 		}
+	}
+
+	if (ret > router_adv_cms) {
+		ret = router_adv_cms;
 	}
 
 	if (mRequestRouteRefresh) {
@@ -257,4 +262,15 @@ NCPInstanceBase::process(void)
 socket_failure:
 	signal_fatal_error(ret);
 	return;
+}
+
+int
+NCPInstanceBase::vprocess_event(int event, va_list args)
+{
+	va_list tmp;
+	va_copy(tmp, args);
+	mICMP6RouterAdvertiser.vprocess_event(event, tmp);
+	va_end(tmp);
+
+	return 0;
 }

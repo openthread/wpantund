@@ -532,3 +532,24 @@ netif_mgmt_leave_ipv6_multicast_address(int reqfd, const char* if_name, const ui
 bail:
 	return ret;
 }
+
+int
+netif_mgmt_get_hw_address(int fd, const char* if_name, uint8_t addr[6])
+{
+	int ret = -1;
+
+#ifdef SIOCGIFHWADDR
+	struct ifreq ifr;
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+
+	ret = ioctl(fd, SIOCGIFHWADDR, &ifr);
+
+	if (ret >= 0) {
+		memcpy(addr, ifr.ifr_hwaddr.sa_data, 6);
+	}
+#endif
+
+	return ret;
+}

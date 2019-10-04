@@ -339,6 +339,12 @@
 #define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
 #define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
 
+#define kWPANTUNDProperty_RouterAdvertEnable                    "RouterAdvert:Enable"
+#define kWPANTUNDProperty_RouterAdvertNetifs                    "RouterAdvert:Netifs"
+#define kWPANTUNDProperty_RouterAdvertTxPeriod                  "RouterAdvert:TxPeriod"
+#define kWPANTUNDProperty_RouterAdvertDefaultRoutePreference    "RouterAdvert:DefaultRoute:Preference"
+#define kWPANTUNDProperty_RouterAdvertDefaultRouteLifetime      "RouterAdvert:DefaultRoute:Lifetime"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
