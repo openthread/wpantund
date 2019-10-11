@@ -85,7 +85,7 @@ parse_string_into_data(uint8_t* buffer, size_t len, const char* c_str)
 	}
 
 	while ((*c_str != 0) && (len > 0)) {
-		char c = tolower(*c_str++);
+		int c = tolower(*c_str++);
 		if (!(isdigit(c) || (c >= 'a' && c <= 'f'))) {
 			continue;
 		}
@@ -169,8 +169,8 @@ strtomask_uint32(const char* in_string)
 	char *tmp_string = strdup(in_string);
 	char *chan_ranges;      // points to a channel num or a range of channels
 	char *dash_location;    // points to location of the dash in a range of channels
-	uint8_t channel_start = 0;
-	uint8_t channel_stop = 0;
+	int channel_start = 0;
+	int channel_stop = 0;
 	uint32_t mask = 0;
 
 	chan_ranges = strtok(tmp_string, ",");
