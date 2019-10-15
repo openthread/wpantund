@@ -45,7 +45,7 @@ Output of `tcpdump` on the interface shows the RA message:
 
 	sudo tcpdump -n -i wpan1 icmp6 -vv -X
 
-	11:01:58.991522 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 40) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 40
+	11:01:58.991522 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 40) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 40
 		hop limit 255, Flags [none], pref medium, router lifetime 0s, reachable time 3600s, retrans time 0s
 		  source link-address option (1), length 8 (1): 00:00:00:00:00:00
 		    0x0000:  0000 0000 0000
@@ -70,7 +70,7 @@ We can add or remove interface names to `RouterAdvert:Netifs` property. The RA m
 
 	sudo tcpdump -n -i eno1 icmp6 -vv -X
 
-	11:22:23.785865 IP6 (flowlabel 0xbcd66, hlim 1, next-header ICMPv6 (58) payload length: 40) fe80::6d87:d70b:c949:762a > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 40
+	11:22:23.785865 IP6 (flowlabel 0xbcd66, hlim 255, next-header ICMPv6 (58) payload length: 40) fe80::6d87:d70b:c949:762a > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 40
 		hop limit 255, Flags [none], pref medium, router lifetime 0s, reachable time 3600s, retrans time 0s
 		  source link-address option (1), length 8 (1): ec:b1:d7:2f:7c:b9
 		    0x0000:  ecb1 d72f 7cb9
@@ -114,7 +114,7 @@ When a route is added/removed (state changes), a new RA is sent immediately.
 
 `tcpdump` output now contains two route info options and is sent every 4 seconds:
 
-	11:07:04.441659 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
+	11:07:04.441659 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
 		hop limit 255, Flags [none], pref medium, router lifetime 0s, reachable time 3600s, retrans time 0s
 		  source link-address option (1), length 8 (1): 00:00:00:00:00:00
 		    0x0000:  0000 0000 0000
@@ -129,7 +129,7 @@ When a route is added/removed (state changes), a new RA is sent immediately.
 		0x0040:  1802 3000 0000 0e10 fd00 baba cafe 0000  ..0.............
 		0x0050:  1802 4000 0000 0e10 fd00 1234 0000 0000  ..@........4....
 
-	11:07:08.445622 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
+	11:07:08.445622 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
 		hop limit 255, Flags [none], pref medium, router lifetime 0s, reachable time 3600s, retrans time 0s
 		  source link-address option (1), length 8 (1): 00:00:00:00:00:00
 		    0x0000:  0000 0000 0000
@@ -149,7 +149,7 @@ The property `RouterAdvert:DefaultRoute:Lifetime` specifies the lifetime value i
 
 	wpanctl:wpan1> set RouterAdvert:DefaultRoute:Lifetime 1000
 
-	11:10:05.929627 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
+	11:10:05.929627 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
 		hop limit 255, Flags [none], pref medium, router lifetime 1000s, reachable time 3600s, retrans time 0s
 		  source link-address option (1), length 8 (1): 00:00:00:00:00:00
 		    0x0000:  0000 0000 0000
@@ -158,12 +158,12 @@ The property `RouterAdvert:DefaultRoute:Preference` determines default route pre
 
 	wpanctl:wpan1> set RouterAdvert:DefaultRoute:Preference 1
 
-	11:12:19.989599 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
+	11:12:19.989599 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
 		hop limit 255, Flags [none], pref high, router lifetime 1000s, reachable time 3600s, retrans time 0s
 
 	wpanctl:wpan1> set RouterAdvert:DefaultRoute:Preference -v -1
 
-	11:13:08.078489 IP6 (flowlabel 0xba663, hlim 1, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
+	11:13:08.078489 IP6 (flowlabel 0xba663, hlim 255, next-header ICMPv6 (58) payload length: 56) fe80::4801:7e22:7895:a656 > ff02::1: [icmp6 sum ok] ICMP6, router advertisement, length 56
 		hop limit 255, Flags [none], pref low, router lifetime 1000s, reachable time 3600s, retrans time 0s
 
 Limitations:

@@ -54,6 +54,14 @@ nl::wpantund::ICMP6RouterAdvertiser::ICMP6RouterAdvertiser(NCPInstanceBase* inst
 	, mStateChanged(false)
 {
 	mSocket = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+
+	if (mSocket >= 0) {
+		int hop_limit = 255;
+
+		if (setsockopt(mSocket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hop_limit, sizeof(hop_limit)) < 0) {
+			syslog(LOG_WARNING, "Failed to set multicast hops on socket");
+		}
+	}
 }
 
 nl::wpantund::ICMP6RouterAdvertiser::~ICMP6RouterAdvertiser(void)
