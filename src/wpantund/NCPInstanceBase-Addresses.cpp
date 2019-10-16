@@ -442,6 +442,7 @@ NCPInstanceBase::remove_all_address_prefix_route_entries(void)
 	mOffMeshRoutes.clear();
 	mInterfaceRoutes.clear();
 	mServiceEntries.clear();
+	mICMP6RouterAdvertiser.clear();
 }
 
 void

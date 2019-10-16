@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <syslog.h>
 
-#include <netinet/in.h>
 #include <netinet/icmp6.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -51,6 +50,7 @@ nl::wpantund::ICMP6RouterAdvertiser::ICMP6RouterAdvertiser(NCPInstanceBase* inst
 	, mTxPeriod(DEFAULT_ROUTER_ADV_TX_PERIOD)
 	, mDefaultRoutePreference(0)
 	, mDefaultRouteLifetime(0)
+	, mShouldAddRouteInfoOption(true)
 	, mStateChanged(false)
 {
 	mSocket = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
@@ -71,6 +71,13 @@ nl::wpantund::ICMP6RouterAdvertiser::~ICMP6RouterAdvertiser(void)
 }
 
 void
+nl::wpantund::ICMP6RouterAdvertiser::clear(void)
+{
+	clear_netifs();
+	clear_prefixes();
+}
+
+void
 nl::wpantund::ICMP6RouterAdvertiser::set_tx_period(uint32_t period)
 {
 	if (period > MAX_ROUTER_ADV_TX_PERIOD) {
@@ -82,6 +89,77 @@ nl::wpantund::ICMP6RouterAdvertiser::set_tx_period(uint32_t period)
 	}
 
 	mStateChanged = true;
+}
+
+std::list<std::string>
+nl::wpantund::ICMP6RouterAdvertiser::get_prefix_list(void) const
+{
+	std::list<std::string> prefix_list;
+	char c_string[300];
+
+	for (std::list<Prefix>::const_iterator it = mPrefixes.begin(); it != mPrefixes.end(); it++) {
+		snprintf(c_string, sizeof(c_string), "prefix: %s/%d, flags:[ %s%s], valid lifetime:%u, preferred lifetime:%u",
+				in6_addr_to_string(it->mPrefix).c_str(), it->mPrefixLength,
+				it->mFlagOnLink ? "on-link " : "", it->mFlagAutoAddressConfig ? "auto ": "",
+				it->mValidLifetime, it->mPreferredLifetime);
+		prefix_list.push_back(std::string(c_string));
+	}
+
+	return prefix_list;
+}
+
+void
+nl::wpantund::ICMP6RouterAdvertiser::add_prefix(
+	const struct in6_addr &prefix,
+	uint8_t prefix_len,
+	uint32_t valid_lifetime,
+	uint32_t preferred_lifetime,
+	bool flag_on_link,
+	bool flag_auto_config
+) {
+	Prefix entry;
+
+	remove_prefix(prefix, prefix_len);
+
+	entry.mPrefix = prefix;
+	entry.mPrefixLength = prefix_len;
+	entry.mValidLifetime = valid_lifetime;
+	entry.mPreferredLifetime = preferred_lifetime;
+	entry.mFlagOnLink = flag_on_link;
+	entry.mFlagAutoAddressConfig = flag_auto_config;
+
+	in6_addr_apply_mask(entry.mPrefix, entry.mPrefixLength);
+
+	remove_prefix(entry.mPrefix, entry.mPrefixLength);
+	mPrefixes.push_back(entry);
+
+	mStateChanged = true;
+}
+
+
+void
+nl::wpantund::ICMP6RouterAdvertiser::remove_prefix(const struct in6_addr &prefix, uint8_t prefix_len)
+{
+	struct in6_addr masked_prefix = prefix;
+
+	in6_addr_apply_mask(masked_prefix, prefix_len);
+
+	for (std::list<Prefix>::iterator iter = mPrefixes.begin(); iter != mPrefixes.end(); iter++) {
+		if ((iter->mPrefixLength == prefix_len) && (iter->mPrefix == masked_prefix)) {
+			mPrefixes.erase(iter);
+			mStateChanged = true;
+			break;
+		}
+	}
+}
+
+void
+nl::wpantund::ICMP6RouterAdvertiser::clear_prefixes(void)
+{
+	if (!mPrefixes.empty()) {
+		mPrefixes.clear();
+		mStateChanged = true;
+	}
 }
 
 void
@@ -114,8 +192,11 @@ nl::wpantund::ICMP6RouterAdvertiser::send_router_advert(const char *netif_name)
 	} opt_route_info;
 	std::map<NCPInstanceBase::IPv6Prefix, NCPInstanceBase::InterfaceRouteEntry>::iterator iter;
 	int num_route_info_opt = 0;
+	int num_prefix_info_opt = 0;
 
-	if (mInstance->mInterfaceRoutes.empty() && (mDefaultRouteLifetime == 0)) {
+	if ((mDefaultRouteLifetime == 0) && mPrefixes.empty() &&
+		(!mShouldAddRouteInfoOption || mInstance->mInterfaceRoutes.empty())
+	) {
 		goto bail;
 	}
 
@@ -165,43 +246,73 @@ nl::wpantund::ICMP6RouterAdvertiser::send_router_advert(const char *netif_name)
 	msg.append(reinterpret_cast<uint8_t *>(&opt_hdr), sizeof(opt_hdr));
 	msg.append(hw_addr, sizeof(hw_addr));
 
+	// Prepare `Prefix Info` options
+	for (std::list<Prefix>::iterator it = mPrefixes.begin(); it != mPrefixes.end(); ++it) {
+		struct nd_opt_prefix_info opt_pi;
+
+		memset(&opt_pi, 0, sizeof(opt_pi));
+
+		opt_pi.nd_opt_pi_type = ND_OPT_PREFIX_INFORMATION;
+		opt_pi.nd_opt_pi_len = 4; // in units of 8 octets
+
+		opt_pi.nd_opt_pi_prefix_len = it->mPrefixLength;
+
+		if (it->mFlagOnLink) {
+			opt_pi.nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_ONLINK;
+		}
+
+		if (it->mFlagAutoAddressConfig) {
+			opt_pi.nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_AUTO;
+		}
+
+		opt_pi.nd_opt_pi_valid_time = htonl(it->mValidLifetime);
+		opt_pi.nd_opt_pi_preferred_time = htonl(it->mPreferredLifetime);
+		memcpy(&opt_pi.nd_opt_pi_prefix, &it->mPrefix, sizeof(struct in6_addr));
+
+		msg.append(reinterpret_cast<uint8_t *>(&opt_pi), sizeof(opt_pi));
+
+		num_prefix_info_opt++;
+	}
+
 	// Prepare `Route Info` option for each interface route
-	for (iter = mInstance->mInterfaceRoutes.begin(); iter != mInstance->mInterfaceRoutes.end(); ++iter) {
-		uint8_t prefix_len = iter->first.get_length();
-		uint32_t metric = iter->second.get_metric();
+	if (mShouldAddRouteInfoOption) {
+		for (iter = mInstance->mInterfaceRoutes.begin(); iter != mInstance->mInterfaceRoutes.end(); ++iter) {
+			uint8_t prefix_len = iter->first.get_length();
+			uint32_t metric = iter->second.get_metric();
 
-		opt_route_info.mType = ROUTE_INFO_OPTION_TYPE;
+			opt_route_info.mType = ROUTE_INFO_OPTION_TYPE;
 
-		if (prefix_len > 64) {
-			opt_route_info.mLength = 3;
-		} else if (prefix_len > 0) {
-			opt_route_info.mLength = 2;
-		} else {
-			opt_route_info.mLength = 1;
+			if (prefix_len > 64) {
+				opt_route_info.mLength = 3;
+			} else if (prefix_len > 0) {
+				opt_route_info.mLength = 2;
+			} else {
+				opt_route_info.mLength = 1;
+			}
+
+			opt_route_info.mPrefixLength = prefix_len;
+
+			// Note that smaller metric is higher preference.
+			if (metric < NCPInstanceBase::InterfaceRouteEntry::kRouteMetricMedium) {
+				opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_HIGH;
+			} else if (metric < NCPInstanceBase::InterfaceRouteEntry::kRouteMetricLow) {
+				opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_MEDIUM;
+			} else {
+				opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_LOW;
+			}
+
+			opt_route_info.mLifetime = htonl(ROUTE_INFO_OPTION_LIFETIME);
+
+			msg.append(reinterpret_cast<uint8_t *>(&opt_route_info), sizeof(opt_route_info));
+
+			if (prefix_len > 64) {
+				msg.append(iter->first.get_prefix().s6_addr, 16);
+			} else if (prefix_len > 0) {
+				msg.append(iter->first.get_prefix().s6_addr, 8);
+			}
+
+			num_route_info_opt++;
 		}
-
-		opt_route_info.mPrefixLength = prefix_len;
-
-		// Note that smaller metric is higher preference.
-		if (metric < NCPInstanceBase::InterfaceRouteEntry::kRouteMetricMedium) {
-			opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_HIGH;
-		} else if (metric < NCPInstanceBase::InterfaceRouteEntry::kRouteMetricLow) {
-			opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_MEDIUM;
-		} else {
-			opt_route_info.mPreferenceFlags = ROUTE_INFO_OPTION_PRF_LOW;
-		}
-
-		opt_route_info.mLifetime = htonl(ROUTE_INFO_OPTION_LIFETIME);
-
-		msg.append(reinterpret_cast<uint8_t *>(&opt_route_info), sizeof(opt_route_info));
-
-		if (prefix_len > 64) {
-			msg.append(iter->first.get_prefix().s6_addr, 16);
-		} else if (prefix_len > 0) {
-			msg.append(iter->first.get_prefix().s6_addr, 8);
-		}
-
-		num_route_info_opt++;
 	}
 
 	if (sendto(mSocket, msg.data(), msg.size(), 0, reinterpret_cast<struct sockaddr *>(&saddr), sizeof(saddr)) < 0) {
@@ -209,7 +320,8 @@ nl::wpantund::ICMP6RouterAdvertiser::send_router_advert(const char *netif_name)
 		goto bail;
 	}
 
-	syslog(LOG_INFO, "Sent ICMP6 RouterAdvert on \"%s\" (%d route info options)", netif_name, num_route_info_opt);
+	syslog(LOG_INFO, "Sent ICMP6 RouterAdvert on \"%s\" (options: %d prefix info, %d route info)", netif_name,
+		num_prefix_info_opt, num_route_info_opt);
 
 bail:
 	return;

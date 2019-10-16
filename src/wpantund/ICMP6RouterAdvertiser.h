@@ -23,8 +23,11 @@
 #ifndef __wpantund__ICMP6RouterAdvetiser__
 #define __wpantund__ICMP6RouterAdvetiser__
 
+#include <list>
 #include <set>
 #include <string>
+
+#include <netinet/in.h>
 
 #include "EventHandler.h"
 
@@ -45,6 +48,8 @@ public:
 	ICMP6RouterAdvertiser(NCPInstanceBase* instance);
 	~ICMP6RouterAdvertiser(void);
 
+	void clear(void);
+
 	void set_enabled(bool enabled) { mEnabled = enabled; mStateChanged = true; }
 	bool is_enabled(void) const { return mEnabled; }
 
@@ -63,10 +68,30 @@ public:
 	void set_default_route_lifetime(uint16_t lifetime) { mDefaultRouteLifetime = lifetime; mStateChanged = true; }
 	uint16_t get_default_route_lifetime(void) const { return mDefaultRouteLifetime; }
 
+	void set_should_add_route_info_option(bool enable) { mShouldAddRouteInfoOption = enable; mStateChanged = true; }
+	bool get_should_add_route_info_option(void) const { return mShouldAddRouteInfoOption; }
+
+	std::list<std::string> get_prefix_list(void) const;
+
+	void add_prefix(const struct in6_addr &prefix, uint8_t prefix_len, uint32_t valid_lifetime,
+		uint32_t preferred_lifetime, bool flag_on_link, bool flag_auto_config);
+	void remove_prefix(const struct in6_addr &prefix, uint8_t prefix_len);
+	void clear_prefixes(void);
+
 	void signal_routes_changed(void) { mStateChanged = true; }
 
 	virtual int vprocess_event(int event, va_list args);
+
 private:
+	struct Prefix {
+		struct in6_addr mPrefix;
+		uint8_t mPrefixLength;
+		uint32_t mValidLifetime;
+		uint32_t mPreferredLifetime;
+		bool mFlagOnLink;
+		bool mFlagAutoAddressConfig;
+	};
+
 	void send_router_advert(const char *netif_name);
 
 	NCPInstanceBase *mInstance;
@@ -77,7 +102,9 @@ private:
 	uint32_t mTxPeriod;
 	int mDefaultRoutePreference;
 	uint16_t mDefaultRouteLifetime;
+	bool mShouldAddRouteInfoOption;
 	bool mStateChanged;
+	std::list<Prefix> mPrefixes;
 };
 
 }; // namespace wpantund

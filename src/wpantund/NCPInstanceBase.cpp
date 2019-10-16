@@ -87,6 +87,12 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mWasBusy = false;
 	mNCPIsMisbehaving = false;
 
+	mRouterAdvertPrefixValidLifetime = 3600;
+	mRouterAdvertPrefixPreferredLifetime = 3600;
+	mRouterAdvertPrefixLength = 64;
+	mRouterAdvertPrefixFlagOnLink = true;
+	mRouterAdvertPrefixFlagAutoConfig = true;
+
 	regsiter_all_get_handlers();
 	regsiter_all_set_handlers();
 	regsiter_all_insert_handlers();
@@ -336,6 +342,13 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_RouterAdvertTxPeriod);
 	properties.insert(kWPANTUNDProperty_RouterAdvertDefaultRoutePreference);
 	properties.insert(kWPANTUNDProperty_RouterAdvertDefaultRouteLifetime);
+	properties.insert(kWPANTUNDProperty_RouterAdvertAddRouteInfoOption);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixes);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixValidLifetime);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixPreferredLifetime);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixPrefixLength);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixFlagOnLink);
+	properties.insert(kWPANTUNDProperty_RouterAdvertPrefixFlagAutoConfig);
 
 	return properties;
 }
@@ -418,6 +431,13 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(RouterAdvertTxPeriod);
 	REGISTER_GET_HANDLER(RouterAdvertDefaultRoutePreference);
 	REGISTER_GET_HANDLER(RouterAdvertDefaultRouteLifetime);
+	REGISTER_GET_HANDLER(RouterAdvertAddRouteInfoOption);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixes);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixValidLifetime);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixPreferredLifetime);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixPrefixLength);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixFlagOnLink);
+	REGISTER_GET_HANDLER(RouterAdvertPrefixFlagAutoConfig);
 
 #undef REGISTER_GET_HANDLER
 }
@@ -861,6 +881,49 @@ NCPInstanceBase::get_prop_RouterAdvertDefaultRouteLifetime(CallbackWithStatusArg
 	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_default_route_lifetime()));
 }
 
+void
+NCPInstanceBase::get_prop_RouterAdvertAddRouteInfoOption(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_should_add_route_info_option()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixes(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mICMP6RouterAdvertiser.get_prefix_list()));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixValidLifetime(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mRouterAdvertPrefixValidLifetime));
+
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixPreferredLifetime(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mRouterAdvertPrefixPreferredLifetime));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixPrefixLength(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(static_cast<int>(mRouterAdvertPrefixLength)));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixFlagOnLink(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mRouterAdvertPrefixFlagOnLink));
+}
+
+void
+NCPInstanceBase::get_prop_RouterAdvertPrefixFlagAutoConfig(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mRouterAdvertPrefixFlagAutoConfig));
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Set Handlers
@@ -901,6 +964,13 @@ NCPInstanceBase::regsiter_all_set_handlers(void)
 	REGISTER_SET_HANDLER(RouterAdvertTxPeriod);
 	REGISTER_SET_HANDLER(RouterAdvertDefaultRoutePreference);
 	REGISTER_SET_HANDLER(RouterAdvertDefaultRouteLifetime);
+	REGISTER_SET_HANDLER(RouterAdvertAddRouteInfoOption);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixValidLifetime);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixPreferredLifetime);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixPrefixLength);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixFlagOnLink);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixFlagAutoConfig);
+	REGISTER_SET_HANDLER(RouterAdvertPrefixes);
 
 #undef REGISTER_SET_HANDLER
 }
@@ -1210,6 +1280,77 @@ NCPInstanceBase::set_prop_RouterAdvertDefaultRouteLifetime(const boost::any &val
 	cb(kWPANTUNDStatus_Ok);
 }
 
+void
+NCPInstanceBase::set_prop_RouterAdvertAddRouteInfoOption(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.set_should_add_route_info_option(any_to_bool(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixValidLifetime(const boost::any &value, CallbackWithStatus cb)
+{
+	int lifetime = any_to_int(value);
+
+	if (lifetime < 0) {
+		lifetime = 0;
+	}
+
+	mRouterAdvertPrefixValidLifetime = static_cast<uint32_t>(lifetime);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixPreferredLifetime(const boost::any &value, CallbackWithStatus cb)
+{
+	int lifetime = any_to_int(value);
+
+	if (lifetime < 0) {
+		lifetime = 0;
+	}
+
+	mRouterAdvertPrefixPreferredLifetime = static_cast<uint32_t>(lifetime);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixPrefixLength(const boost::any &value, CallbackWithStatus cb)
+{
+	int plen = any_to_int(value);
+
+	if (plen < 0) {
+		plen = 0;
+	}
+
+	if (plen > 128) {
+		plen = 128;
+	}
+
+	mRouterAdvertPrefixLength = static_cast<uint8_t>(plen);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixFlagOnLink(const boost::any &value, CallbackWithStatus cb)
+{
+	mRouterAdvertPrefixFlagOnLink = any_to_bool(value);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixFlagAutoConfig(const boost::any &value, CallbackWithStatus cb)
+{
+	mRouterAdvertPrefixFlagAutoConfig = any_to_bool(value);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.clear_prefixes();
+	insert_prop_RouterAdvertPrefixes(value, cb);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Insert Handlers
@@ -1231,6 +1372,7 @@ NCPInstanceBase::regsiter_all_insert_handlers(void)
 
 	REGISTER_INSERT_HANDLER(IPv6MulticastAddresses);
 	REGISTER_INSERT_HANDLER(RouterAdvertNetifs);
+	REGISTER_INSERT_HANDLER(RouterAdvertPrefixes);
 
 #undef REGISTER_INSERT_HANDLER
 }
@@ -1278,6 +1420,15 @@ NCPInstanceBase::insert_prop_RouterAdvertNetifs(const boost::any &value, Callbac
 	cb(kWPANTUNDStatus_Ok);
 }
 
+void
+NCPInstanceBase::insert_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.add_prefix(any_to_ipv6(value), mRouterAdvertPrefixLength, mRouterAdvertPrefixValidLifetime,
+		mRouterAdvertPrefixPreferredLifetime, mRouterAdvertPrefixFlagOnLink, mRouterAdvertPrefixFlagAutoConfig);
+
+	cb(kWPANTUNDStatus_Ok);
+}
+
 // ----------------------------------------------------------------------------
 // MARK: -
 // MARK: Property Remove Handlers
@@ -1299,6 +1450,7 @@ NCPInstanceBase::regsiter_all_remove_handlers(void)
 
 	REGISTER_REMOVE_HANDLER(IPv6MulticastAddresses);
 	REGISTER_REMOVE_HANDLER(RouterAdvertNetifs);
+	REGISTER_REMOVE_HANDLER(RouterAdvertPrefixes);
 
 #undef REGISTER_REMOVE_HANDLER
 }
@@ -1342,6 +1494,13 @@ void
 NCPInstanceBase::remove_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb)
 {
 	mICMP6RouterAdvertiser.remove_netif(any_to_string(value));
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::remove_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb)
+{
+	mICMP6RouterAdvertiser.remove_prefix(any_to_ipv6(value), mRouterAdvertPrefixLength);
 	cb(kWPANTUNDStatus_Ok);
 }
 
