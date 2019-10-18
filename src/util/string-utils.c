@@ -37,6 +37,9 @@
 
 #include <string.h>
 
+// Declare function to avoid compile warning: comparison between pointer and integer.
+extern char *strcasestr(const char *, const char *);
+
 void
 memcpyrev(void *dest_, const void *src_, size_t len)
 {
