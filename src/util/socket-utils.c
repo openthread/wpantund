@@ -353,7 +353,7 @@ bail:
 
 #if HAVE_FORKPTY
 
-// Decalre function to avoid compile warning: implicit declaration of function ‘posix_openpt’
+// Declare function to avoid compile warning: implicit declaration of function ‘posix_openpt’
 extern int posix_openpt(int flags);
 
 static int
