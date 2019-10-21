@@ -55,6 +55,7 @@
 #define kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix   "Daemon:SetDefaultRouteForAutoAddedPrefix"
 #define kWPANTUNDProperty_DaemonOffMeshRouteAutoAddOnInterface  "Daemon:OffMeshRoute:AutoAddOnInterface"
 #define kWPANTUNDProperty_DaemonOffMeshRouteFilterSelfAutoAdded "Daemon:OffMeshRoute:FilterSelfAutoAdded"
+#define kWPANTUNDProperty_DaemonOnMeshPrefixAutoAddAsIfaceRoute "Daemon:OnMeshPrefix:AutoAddAsInterfaceRoute"
 
 #define kWPANTUNDProperty_NCPVersion                            "NCP:Version"
 #define kWPANTUNDProperty_NCPState                              "NCP:State"
@@ -240,6 +241,7 @@
 
 #define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
+#define kWPANTUNDProperty_NCPCoexEnable                         "NCP:Coex:Enable"
 
 #define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
 #define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"

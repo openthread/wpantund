@@ -81,6 +81,7 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSetSLAACForAutoAddedPrefix = false;
 	mAutoAddOffMeshRoutesOnInterface = true;
 	mFilterSelfAutoAddedOffMeshRoutes = true;
+	mAutoAddOnMeshPrefixesAsInterfaceRoutes = true;
 	mTerminateOnFault = false;
 	mWasBusy = false;
 	mNCPIsMisbehaving = false;
@@ -389,6 +390,7 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(IPv6SetSLAACForAutoAddedPrefix);
 	REGISTER_GET_HANDLER(DaemonOffMeshRouteAutoAddOnInterface);
 	REGISTER_GET_HANDLER(DaemonOffMeshRouteFilterSelfAutoAdded);
+	REGISTER_GET_HANDLER(DaemonOnMeshPrefixAutoAddAsIfaceRoute);
 	REGISTER_GET_HANDLER(IPv6MeshLocalPrefix);
 	REGISTER_GET_HANDLER(IPv6MeshLocalAddress);
 	REGISTER_GET_HANDLER(IPv6LinkLocalAddress);
@@ -606,6 +608,12 @@ void
 NCPInstanceBase::get_prop_DaemonOffMeshRouteFilterSelfAutoAdded(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mFilterSelfAutoAddedOffMeshRoutes));
+}
+
+void
+NCPInstanceBase::get_prop_DaemonOnMeshPrefixAutoAddAsIfaceRoute(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mAutoAddOnMeshPrefixesAsInterfaceRoutes));
 }
 
 void
@@ -841,6 +849,7 @@ NCPInstanceBase::regsiter_all_set_handlers(void)
 	REGISTER_SET_HANDLER(IPv6SetSLAACForAutoAddedPrefix);
 	REGISTER_SET_HANDLER(DaemonOffMeshRouteAutoAddOnInterface);
 	REGISTER_SET_HANDLER(DaemonOffMeshRouteFilterSelfAutoAdded);
+	REGISTER_SET_HANDLER(DaemonOnMeshPrefixAutoAddAsIfaceRoute);
 	REGISTER_SET_HANDLER(IPv6MeshLocalPrefix);
 	REGISTER_SET_HANDLER(IPv6MeshLocalAddress);
 	REGISTER_SET_HANDLER(DaemonAutoDeepSleep);
@@ -1006,6 +1015,13 @@ void
 NCPInstanceBase::set_prop_DaemonOffMeshRouteFilterSelfAutoAdded(const boost::any &value, CallbackWithStatus cb)
 {
 	mFilterSelfAutoAddedOffMeshRoutes = any_to_bool(value);
+	cb(kWPANTUNDStatus_Ok);
+}
+
+void
+NCPInstanceBase::set_prop_DaemonOnMeshPrefixAutoAddAsIfaceRoute(const boost::any &value, CallbackWithStatus cb)
+{
+	mAutoAddOnMeshPrefixesAsInterfaceRoutes = any_to_bool(value);
 	cb(kWPANTUNDStatus_Ok);
 }
 

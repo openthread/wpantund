@@ -452,7 +452,6 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_NCPExtendedAddress);
 	properties.insert(kWPANTUNDProperty_NCPCCAFailureRate);
 	properties.insert(kWPANTUNDProperty_NCPCapabilities);
-	properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
 
 	if (mCapabilities.count(SPINEL_CAP_ROLE_SLEEPY)) {
 		properties.insert(kWPANTUNDProperty_NCPSleepyPollInterval);
@@ -567,6 +566,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE)) {
 		properties.insert(kWPANTUNDProperty_ThreadServices);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_RADIO_COEX)) {
+		properties.insert(kWPANTUNDProperty_NCPCoexEnable);
+		properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
 	}
 
 	{
@@ -2249,6 +2253,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_OpenThreadSLAACEnabled,
 		SPINEL_CAP_SLAAC,
 		SPINEL_PROP_SLAAC_ENABLED, SPINEL_DATATYPE_BOOL_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_NCPCoexEnable,
+		SPINEL_CAP_RADIO_COEX,
+		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
@@ -2259,12 +2267,6 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_NCPPreferredChannelMask,
 		SPINEL_PROP_PHY_CHAN_PREFERRED, unpack_channel_mask);
-	register_get_handler_spinel_unpacker(
-		kWPANTUNDProperty_NCPCoexMetrics,
-		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, /* as_val_map */ false));
-	register_get_handler_spinel_unpacker(
-		kWPANTUNDProperty_NCPCoexMetricsAsValMap,
-		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, /* as_val_map */ true));
 	register_get_handler_spinel_unpacker(
 		kWPANTUNDProperty_ThreadActiveDataset,
 		SPINEL_PROP_THREAD_ACTIVE_DATASET, boost::bind(unpack_dataset, _1, _2, _3, /* as_val_map */ false));
@@ -2382,6 +2384,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadLeaderServicesAsValMap,
 		SPINEL_CAP_THREAD_SERVICE,
 		SPINEL_PROP_SERVER_LEADER_SERVICES, boost::bind(unpack_server_leader_services_as_any, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCoexMetrics,
+		SPINEL_CAP_RADIO_COEX,
+		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCoexMetricsAsValMap,
+		SPINEL_CAP_RADIO_COEX,
+		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, true));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -3268,6 +3278,10 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_OpenThreadSLAACEnabled,
 		SPINEL_CAP_SLAAC,
 		SPINEL_PROP_SLAAC_ENABLED, SPINEL_DATATYPE_BOOL_C);
+	register_set_handler_capability_spinel_persist(
+		kWPANTUNDProperty_NCPCoexEnable,
+		SPINEL_CAP_RADIO_COEX,
+		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_C);
 
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel_persist(

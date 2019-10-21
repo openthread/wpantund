@@ -348,6 +348,7 @@ private:
 	void get_prop_IPv6SetSLAACForAutoAddedPrefix(CallbackWithStatusArg1 cb);
 	void get_prop_DaemonOffMeshRouteAutoAddOnInterface(CallbackWithStatusArg1 cb);
 	void get_prop_DaemonOffMeshRouteFilterSelfAutoAdded(CallbackWithStatusArg1 cb);
+	void get_prop_DaemonOnMeshPrefixAutoAddAsIfaceRoute(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalAddress(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb);
@@ -379,6 +380,7 @@ private:
 	void set_prop_IPv6SetSLAACForAutoAddedPrefix(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonOffMeshRouteAutoAddOnInterface(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonOffMeshRouteFilterSelfAutoAdded(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_DaemonOnMeshPrefixAutoAddAsIfaceRoute(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_IPv6MeshLocalPrefix(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_IPv6MeshLocalAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonAutoDeepSleep(const boost::any &value, CallbackWithStatus cb);
@@ -734,6 +736,18 @@ protected:
 	// By default this is enabled (`true`).
 	//
 	bool mFilterSelfAutoAddedOffMeshRoutes;
+
+	// This boolean flag indicates whether wpantund should add routes corresponding
+	// to on-mesh prefixes on the host interface.
+	//
+	// When enabled, wpantund would add a route on host primary interface for any
+	// prefix from thread network (with on-mesh flag set). This in turn ensures that
+	// traffic destined to an IPv6 address matching the prefix would be correctly
+	// forwarded to the wpan interface.
+	//
+	// By default this is enabled (`true`).
+	//
+	bool mAutoAddOnMeshPrefixesAsInterfaceRoutes;
 
 private:
 	NCPState mNCPState;

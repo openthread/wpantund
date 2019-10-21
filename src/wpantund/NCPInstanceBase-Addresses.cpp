@@ -929,6 +929,11 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 		} else {
 			cb(kWPANTUNDStatus_Ok);
 		}
+
+		if (mAutoAddOnMeshPrefixesAsInterfaceRoutes) {
+			mRequestRouteRefresh = true;
+		}
+
 	} else {
 		cb(kWPANTUNDStatus_Ok);
 	}
@@ -965,6 +970,10 @@ NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "removing on-mesh prefix", cb));
 		} else {
 			cb(kWPANTUNDStatus_Ok);
+		}
+
+		if (mAutoAddOnMeshPrefixesAsInterfaceRoutes) {
+			mRequestRouteRefresh = true;
 		}
 
 		if (entry.is_on_mesh() && entry.is_slaac() && prefix.get_length() == kSLAACPrefixLength
@@ -1076,68 +1085,88 @@ bool
 NCPInstanceBase::should_add_route_on_interface(const IPv6Prefix &route, uint32_t &metric)
 {
 	bool should_add = false;
-	bool route_added_by_device = false;
-	bool route_added_by_others = false;
-	RoutePreference preference_device = NCPControlInterface::ROUTE_LOW_PREFRENCE;
-	RoutePreference preference_others = NCPControlInterface::ROUTE_LOW_PREFRENCE;
 
-	std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter, sub_iter, upper_iter;
+	if (mAutoAddOffMeshRoutesOnInterface) {
+		bool route_added_by_device = false;
+		bool route_added_by_others = false;
+		RoutePreference preference_device = NCPControlInterface::ROUTE_LOW_PREFRENCE;
+		RoutePreference preference_others = NCPControlInterface::ROUTE_LOW_PREFRENCE;
 
-	for (iter = mOffMeshRoutes.begin(); iter != mOffMeshRoutes.end(); iter = upper_iter) {
+		std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter, sub_iter, upper_iter;
 
-		// Get the iterator pointing to the first element that is greater than current key/route.
-		upper_iter = mOffMeshRoutes.upper_bound(iter->first);
+		for (iter = mOffMeshRoutes.begin(); iter != mOffMeshRoutes.end(); iter = upper_iter) {
 
-		// Skip all elements for which the multimap key does not match the route.
-		if (iter->first != route) {
-			continue;
+			// Get the iterator pointing to the first element that is greater than current key/route.
+			upper_iter = mOffMeshRoutes.upper_bound(iter->first);
+
+			// Skip all elements for which the multimap key does not match the route.
+			if (iter->first != route) {
+				continue;
+			}
+
+			// Iterate through all multimap elements with same key (i.e., same route).
+			for (sub_iter = iter; sub_iter != upper_iter; ++sub_iter) {
+
+				if ((sub_iter->second.get_origin() != kOriginThreadNCP) || sub_iter->second.is_next_hop_host()) {
+					route_added_by_device = true;
+					if (preference_device < sub_iter->second.get_preference()) {
+						preference_device = sub_iter->second.get_preference();
+					}
+				} else {
+					route_added_by_others = true;
+					if (preference_others < sub_iter->second.get_preference()) {
+						preference_others = sub_iter->second.get_preference();
+					}
+				}
+			}
 		}
 
-		// Iterate through all multimap elements with same key (i.e., same route).
-		for (sub_iter = iter; sub_iter != upper_iter; ++sub_iter) {
+		// The route should be added on host primary interface, if it
+		// is added by at least one other device within the network and,
+		//  (a) either it is not added by host/this-device, or
+		//  (b) if it is also added by device then
+		//      - filtering of self added routes is not enabled, and
+		//      - it is added at lower preference level.
 
-			if ((sub_iter->second.get_origin() != kOriginThreadNCP) || sub_iter->second.is_next_hop_host()) {
-				route_added_by_device = true;
-				if (preference_device < sub_iter->second.get_preference()) {
-					preference_device = sub_iter->second.get_preference();
-				}
-			} else {
-				route_added_by_others = true;
-				if (preference_others < sub_iter->second.get_preference()) {
-					preference_others = sub_iter->second.get_preference();
-				}
+		if (route_added_by_others) {
+			if (!route_added_by_device || (!mFilterSelfAutoAddedOffMeshRoutes && (preference_others > preference_device))) {
+				should_add = true;
+			}
+		}
+
+		// If the route should be added, map the preference level to route metric.
+
+		if (should_add) {
+			switch (preference_others) {
+			case NCPControlInterface::ROUTE_LOW_PREFRENCE:
+				metric = InterfaceRouteEntry::kRouteMetricLow;
+				break;
+
+			case NCPControlInterface::ROUTE_MEDIUM_PREFERENCE:
+				metric = InterfaceRouteEntry::kRouteMetricMedium;
+				break;
+
+			case NCPControlInterface::ROUTE_HIGH_PREFERENCE:
+				metric = InterfaceRouteEntry::kRouteMetricHigh;
+				break;
 			}
 		}
 	}
 
-	// The route should be added on host primary interface, if it
-	// is added by at least one other device within the network and,
-	//  (a) either it is not added by host/this-device, or
-	//  (b) if it is also added by device then
-	//      - filtering of self added routes is not enabled, and
-	//      - it is added at lower preference level.
+	if (!should_add && mAutoAddOnMeshPrefixesAsInterfaceRoutes) {
 
-	if (route_added_by_others) {
-		if (!route_added_by_device || (!mFilterSelfAutoAddedOffMeshRoutes && (preference_others > preference_device))) {
-			should_add = true;
-		}
-	}
+		// If the "AutoAddOnMeshPrefixesAsInterfaceRoutes" feature is enabled
+		// check whether the route matches any of on-mesh prefixes from NCP
+		// (with on-mesh flag set).
 
-	// If the route should be added, map the preference level to route metric.
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
 
-	if (should_add) {
-		switch (preference_others) {
-		case NCPControlInterface::ROUTE_LOW_PREFRENCE:
-			metric = InterfaceRouteEntry::kRouteMetricLow;
-			break;
-
-		case NCPControlInterface::ROUTE_MEDIUM_PREFERENCE:
-			metric = InterfaceRouteEntry::kRouteMetricMedium;
-			break;
-
-		case NCPControlInterface::ROUTE_HIGH_PREFERENCE:
-			metric = InterfaceRouteEntry::kRouteMetricHigh;
-			break;
+		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++) {
+			if ((iter->first == route) && iter->second.is_from_ncp() && iter->second.is_on_mesh()) {
+				should_add = true;
+				metric = InterfaceRouteEntry::kRouteMetricMedium;
+				break;
+			}
 		}
 	}
 
@@ -1150,11 +1179,9 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 	bool did_remove = false;
 	uint32_t metric;
 
-	if (!mAutoAddOffMeshRoutesOnInterface) {
-		goto bail;
+	if (mAutoAddOffMeshRoutesOnInterface || mAutoAddOnMeshPrefixesAsInterfaceRoutes) {
+		syslog(LOG_INFO, "Refreshing routes on primary interface");
 	}
-
-	syslog(LOG_INFO, "Refreshing routes on primary interface");
 
 	// First, check all currently added routes on primary interface and remove any one that is no longer valid.
 
@@ -1187,9 +1214,9 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 		}
 	} while (did_remove);
 
-	// Iterate through all off-mesh route entries to check if there is a new route that should be added on interface.
+	if (mAutoAddOffMeshRoutesOnInterface) {
+		// Iterate through all off-mesh routes to check whether a new route should be added on interface.
 
-	{
 		std::multimap<IPv6Prefix, OffMeshRouteEntry>::iterator iter, upper_iter;
 
 		for (iter = mOffMeshRoutes.begin(); iter != mOffMeshRoutes.end(); iter = upper_iter) {
@@ -1207,8 +1234,23 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 		}
 	}
 
-bail:
-	return;
+	if (mAutoAddOnMeshPrefixesAsInterfaceRoutes) {
+		// Iterate through all on-mesh prefixes to check whether a new route should be added on interface.
+
+		std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+
+		for (iter = mOnMeshPrefixes.begin(); iter != mOnMeshPrefixes.end(); iter++) {
+
+			if (should_add_route_on_interface(iter->first, metric)
+				&& (mInterfaceRoutes.count(iter->first) == 0)
+			) {
+				syslog(LOG_INFO, "InterfaceRoutes: Adding route for prefix %s",
+					iter->second.get_description(iter->first).c_str());
+				mPrimaryInterface->add_route(&iter->first.get_prefix(), iter->first.get_length(), metric);
+				mInterfaceRoutes[iter->first] = InterfaceRouteEntry(metric);
+			}
+		}
+	}
 }
 
 // ========================================================================
