@@ -352,6 +352,10 @@ bail:
 }
 
 #if HAVE_FORKPTY
+
+// Declare function to avoid compile warning: implicit declaration of function ‘posix_openpt’
+extern int posix_openpt(int flags);
+
 static int
 diagnose_forkpty_problem()
 {

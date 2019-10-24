@@ -28,6 +28,7 @@
 #include "wpan-dbus-v1.h"
 #include "args.h"
 
+#include <ctype.h>
 #include <errno.h>
 
 const char peek_cmd_syntax[] = "[args] <address>";
