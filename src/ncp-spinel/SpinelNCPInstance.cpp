@@ -514,6 +514,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NCPCounter_RX_SPINEL_TOTAL);
 		properties.insert(kWPANTUNDProperty_NCPCounter_RX_SPINEL_ERR);
 		properties.insert(kWPANTUNDProperty_NCPCounterThreadMle);
+		properties.insert(kWPANTUNDProperty_NCPCounterAllIPv6);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
@@ -1035,6 +1036,85 @@ unpack_ncp_counters_mle(const uint8_t *data_in, spinel_size_t data_len, boost::a
 		}
 
 		counter_names++;
+	}
+
+	if (as_val_map) {
+		value = result_as_val_map;
+	} else {
+		value = result_as_string;
+	}
+
+bail:
+	return ret;
+}
+
+static int
+unpack_ncp_counters_ipv6(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+{
+	std::list<std::string> result_as_string;
+	ValueMap result_as_val_map;
+	int ret = kWPANTUNDStatus_Ok;
+	spinel_ssize_t len;
+
+	const char *tx_counter_names[] = {
+		kWPANTUNDValueMapKey_IPv6Counter_TxSuccess,
+		kWPANTUNDValueMapKey_IPv6Counter_TxFailure,
+		NULL
+	};
+
+	const char *rx_counter_names[] = {
+		kWPANTUNDValueMapKey_IPv6Counter_RxSuccess,
+		kWPANTUNDValueMapKey_IPv6Counter_RxFailure,
+		NULL
+	};
+
+	for (int struct_index = 0; struct_index < 2; struct_index++)
+	{
+		const char **counter_names;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+		spinel_size_t len;
+
+		counter_names = (struct_index == 0) ? tx_counter_names : rx_counter_names;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_in,
+			&struct_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		while (*counter_names != NULL) {
+			uint32_t counter_value;
+
+			len = spinel_datatype_unpack(
+				struct_in,
+				struct_len,
+				SPINEL_DATATYPE_UINT32_S,
+				&counter_value
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			struct_in  += len;
+			struct_len -= len;
+
+			if (!as_val_map) {
+				char c_string[200];
+				snprintf(c_string, sizeof(c_string), "%-20s = %d", *counter_names, counter_value);
+				result_as_string.push_back(std::string(c_string));
+			} else {
+				result_as_val_map[*counter_names] = counter_value;
+			}
+
+			counter_names++;
+		}
 	}
 
 	if (as_val_map) {
@@ -2369,6 +2449,14 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_COUNTERS,
 		SPINEL_PROP_CNTR_MLE_COUNTERS, boost::bind(unpack_ncp_counters_mle, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCounterAllIPv6,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_ALL_IP_COUNTERS, boost::bind(unpack_ncp_counters_ipv6, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_NCPCounterAllIPv6AsValMap,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_ALL_IP_COUNTERS, boost::bind(unpack_ncp_counters_ipv6, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_TimeSync_NetworkTime,
 		SPINEL_CAP_TIME_SYNC,
 		SPINEL_PROP_THREAD_NETWORK_TIME, boost::bind(unpack_thread_network_time_as_any, _1, _2, _3, false));
@@ -3217,6 +3305,26 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_STATE, SPINEL_DATATYPE_UINT8_C,
 		&SpinelNCPInstance::convert_value_CommissionerState);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_NCPCounterAllReset,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_RESET, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_counter_reset);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_NCPCounterAllMac,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_ALL_MAC_COUNTERS, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_counter_reset);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_NCPCounterThreadMle,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_MLE_COUNTERS, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_counter_reset);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_NCPCounterAllIPv6,
+		SPINEL_CAP_COUNTERS,
+		SPINEL_PROP_CNTR_ALL_IP_COUNTERS, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_counter_reset);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and persistence (saving in settings),
@@ -3422,6 +3530,18 @@ SpinelNCPInstance::convert_value_channel_mask(const boost::any &value, boost::an
 	}
 
 	value_out = mask_array;
+	return kWPANTUNDStatus_Ok;
+}
+
+int
+SpinelNCPInstance::convert_value_counter_reset(const boost::any &value, boost::any &value_out)
+{
+	// When reseting all/subset of counters, the value written to
+	// related spinel property does not matter, so we just write
+	// value `1`.
+
+	(void)value;
+	value_out = 1;
 	return kWPANTUNDStatus_Ok;
 }
 
