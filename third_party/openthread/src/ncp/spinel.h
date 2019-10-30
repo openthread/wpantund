@@ -1631,7 +1631,7 @@ typedef enum
     /// All coex metrics related counters.
     /** Format: t(LLLLLLLL)t(LLLLLLLLL)bL  (Read-only)
      *
-     * Required capability: `SPINEL_CAP_RADIO_COEX`
+     * Required capability: SPINEL_CAP_RADIO_COEX
      *
      * The contents include two structures and two common variables, first structure corresponds to
      * all transmit related coex counters, second structure provides the receive related counters.
@@ -1670,7 +1670,7 @@ typedef enum
     /// Radio Coex Enable
     /** Format: `b`
      *
-     * Required capability: `SPINEL_CAP_RADIO_COEX`
+     * Required capability: SPINEL_CAP_RADIO_COEX
      *
      * Indicates if radio coex is enabled or disabled. Set to true to enable radio coex.
      */
@@ -1926,6 +1926,23 @@ typedef enum
      *
      */
     SPINEL_PROP_MAC_CCA_FAILURE_RATE = SPINEL_PROP_MAC_EXT__BEGIN + 9,
+
+    /// MAC Max direct retry number
+    /** Format: `C`
+     *
+     * The maximum (user-specified) number of direct frame transmission retries.
+     *
+     */
+    SPINEL_PROP_MAC_MAX_RETRY_NUMBER_DIRECT = SPINEL_PROP_MAC_EXT__BEGIN + 10,
+
+    /// MAC Max indirect retry number
+    /** Format: `C`
+     * Required capability: `SPINEL_CAP_CONFIG_FTD`
+     *
+     * The maximum (user-specified) number of indirect frame transmission retries.
+     *
+     */
+    SPINEL_PROP_MAC_MAX_RETRY_NUMBER_INDIRECT = SPINEL_PROP_MAC_EXT__BEGIN + 11,
 
     SPINEL_PROP_MAC_EXT__END = 0x1400,
 
@@ -3514,10 +3531,12 @@ typedef enum
 
     SPINEL_PROP_CNTR__BEGIN = 0x500,
 
-    /// Counter reset behavior
-    /** Format: `C`
-     *  Writing a '1' to this property will reset
-     *  all of the counters to zero. */
+    /// Counter reset
+    /** Format: Empty (Write only).
+     *
+     * Writing to this property (with any value) will reset all MAC, MLE, IP, and NCP counters to zero.
+     *
+     */
     SPINEL_PROP_CNTR_RESET = SPINEL_PROP_CNTR__BEGIN + 0,
 
     /// The total number of transmissions.
@@ -3722,7 +3741,7 @@ typedef enum
     SPINEL_PROP_MSG_BUFFER_COUNTERS = SPINEL_PROP_CNTR__BEGIN + 400,
 
     /// All MAC related counters.
-    /** Format: t(A(L))t(A(L))  (Read-only)
+    /** Format: t(A(L))t(A(L))
      *
      * The contents include two structs, first one corresponds to
      * all transmit related MAC counters, second one provides the
@@ -3765,11 +3784,14 @@ typedef enum
      *   'L': RxErrSec             (The number of received packets with security error).
      *   'L': RxErrFcs             (The number of received packets with FCS error).
      *   'L': RxErrOther           (The number of received packets with other error).
+     *
+     * Writing to this property with any value would reset all MAC counters to zero.
+     *
      */
     SPINEL_PROP_CNTR_ALL_MAC_COUNTERS = SPINEL_PROP_CNTR__BEGIN + 401,
 
     /// Thread MLE counters.
-    /** Format: `SSSSSSSSS`  (Read-only)
+    /** Format: `SSSSSSSSS`
      *
      *   'S': DisabledRole                  (The number of times device entered OT_DEVICE_ROLE_DISABLED role).
      *   'S': DetachedRole                  (The number of times device entered OT_DEVICE_ROLE_DETACHED role).
@@ -3781,8 +3803,30 @@ typedef enum
      *   'S': BetterPartitionAttachAttempts (The number of attempts to attach to a better partition).
      *   'S': ParentChanges                 (The number of times device changed its parents).
      *
+     * Writing to this property with any value would reset all MLE counters to zero.
+     *
      */
     SPINEL_PROP_CNTR_MLE_COUNTERS = SPINEL_PROP_CNTR__BEGIN + 402,
+
+    /// Thread IPv6 counters.
+    /** Format: `t(LL)t(LL)`
+     *
+     * The contents include two structs, first one corresponds to
+     * all transmit related MAC counters, second one provides the
+     * receive related counters.
+     *
+     * The transmit structure includes:
+     *   'L': TxSuccess (The number of IPv6 packets successfully transmitted).
+     *   'L': TxFailure (The number of IPv6 packets failed to transmit).
+     *
+     * The receive structure includes:
+     *   'L': RxSuccess (The number of IPv6 packets successfully received).
+     *   'L': RxFailure (The number of IPv6 packets failed to receive).
+     *
+     * Writing to this property with any value would reset all IPv6 counters to zero.
+     *
+     */
+    SPINEL_PROP_CNTR_ALL_IP_COUNTERS = SPINEL_PROP_CNTR__BEGIN + 403,
 
     SPINEL_PROP_CNTR__END = 0x800,
 
