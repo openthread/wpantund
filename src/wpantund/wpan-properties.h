@@ -243,10 +243,13 @@
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
 #define kWPANTUNDProperty_NCPCoexEnable                         "NCP:Coex:Enable"
 
+#define kWPANTUNDProperty_NCPCounterAllReset                    "NCP:Counter:All:Reset"
 #define kWPANTUNDProperty_NCPCounterAllMac                      "NCP:Counter:AllMac"
 #define kWPANTUNDProperty_NCPCounterAllMacAsValMap              "NCP:Counter:AllMac:AsValMap"
 #define kWPANTUNDProperty_NCPCounterThreadMle                   "NCP:Counter:Thread:Mle"
 #define kWPANTUNDProperty_NCPCounterThreadMleAsValMap           "NCP:Counter:Thread:Mle:AsValMap"
+#define kWPANTUNDProperty_NCPCounterAllIPv6                     "NCP:Counter:AllIPv6"
+#define kWPANTUNDProperty_NCPCounterAllIPv6AsValMap             "NCP:Counter:AllIPv6:AsValMap"
 
 #define kWPANTUNDProperty_NCPCounter_TX_PKT_TOTAL               "NCP:Counter:TX_PKT_TOTAL"
 #define kWPANTUNDProperty_NCPCounter_TX_PKT_UNICAST             "NCP:Counter:TX_PKT_UNICAST"
@@ -488,6 +491,11 @@
 #define kWPANTUNDValueMapKey_MleCounter_PartitionIdChanges      "PartitionIdChanges"   // The number of changes to partition ID.
 #define kWPANTUNDValueMapKey_MleCounter_BetterPartitionAttaches "BetterPartAttaches"   // The number of attempts to attach to a better partition.
 #define kWPANTUNDValueMapKey_MleCounter_ParentChanges           "ParentChanges"        // The number of times device changed its parents.
+
+#define kWPANTUNDValueMapKey_IPv6Counter_TxSuccess              "TxSuccess"            // The number of IPv6 packets successfully transmitted.
+#define kWPANTUNDValueMapKey_IPv6Counter_TxFailure              "TxFailure"            // The number of IPv6 packets failed to transmit.
+#define kWPANTUNDValueMapKey_IPv6Counter_RxSuccess              "RxSuccess"            // The number of IPv6 packets successfully received.
+#define kWPANTUNDValueMapKey_IPv6Counter_RxFailure              "RxFailure"            // The number of IPv6 packets failed to receive.
 
 #define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
 #define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
