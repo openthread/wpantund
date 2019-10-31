@@ -1631,7 +1631,7 @@ typedef enum
     /// All coex metrics related counters.
     /** Format: t(LLLLLLLL)t(LLLLLLLLL)bL  (Read-only)
      *
-     * Required capability: `SPINEL_CAP_RADIO_COEX`
+     * Required capability: SPINEL_CAP_RADIO_COEX
      *
      * The contents include two structures and two common variables, first structure corresponds to
      * all transmit related coex counters, second structure provides the receive related counters.
@@ -1670,7 +1670,7 @@ typedef enum
     /// Radio Coex Enable
     /** Format: `b`
      *
-     * Required capability: `SPINEL_CAP_RADIO_COEX`
+     * Required capability: SPINEL_CAP_RADIO_COEX
      *
      * Indicates if radio coex is enabled or disabled. Set to true to enable radio coex.
      */
@@ -1926,6 +1926,23 @@ typedef enum
      *
      */
     SPINEL_PROP_MAC_CCA_FAILURE_RATE = SPINEL_PROP_MAC_EXT__BEGIN + 9,
+
+    /// MAC Max direct retry number
+    /** Format: `C`
+     *
+     * The maximum (user-specified) number of direct frame transmission retries.
+     *
+     */
+    SPINEL_PROP_MAC_MAX_RETRY_NUMBER_DIRECT = SPINEL_PROP_MAC_EXT__BEGIN + 10,
+
+    /// MAC Max indirect retry number
+    /** Format: `C`
+     * Required capability: `SPINEL_CAP_CONFIG_FTD`
+     *
+     * The maximum (user-specified) number of indirect frame transmission retries.
+     *
+     */
+    SPINEL_PROP_MAC_MAX_RETRY_NUMBER_INDIRECT = SPINEL_PROP_MAC_EXT__BEGIN + 11,
 
     SPINEL_PROP_MAC_EXT__END = 0x1400,
 
@@ -3190,6 +3207,29 @@ typedef enum
      *
      */
     SPINEL_PROP_MESHCOP_COMMISSIONER_MGMT_SET = SPINEL_PROP_MESHCOP_EXT__BEGIN + 6,
+
+    // Thread Commissioner Generate PSKc
+    /** Format: `UUd` - Write only
+     *
+     * Required capability: SPINEL_CAP_THREAD_COMMISSIONER
+     *
+     * Writing to this property allows user to generate PSKc from a given commissioning pass-phrase, network name,
+     * extended PAN Id.
+     *
+     * Written value format is:
+     *
+     *   `U` : The commissioning pass-phrase.
+     *   `U` : Network Name.
+     *   `d` : Extended PAN ID.
+     *
+     * The response on success would be a `VALUE_IS` command with the PSKc with format below:
+     *
+     *   `D` : The PSKc
+     *
+     * On a failure a `LAST_STATUS` is emitted with the error status.
+     *
+     */
+    SPINEL_PROP_MESHCOP_COMMISSIONER_GENERATE_PSKC = SPINEL_PROP_MESHCOP_EXT__BEGIN + 7,
 
     SPINEL_PROP_MESHCOP_EXT__END = 0x1900,
 

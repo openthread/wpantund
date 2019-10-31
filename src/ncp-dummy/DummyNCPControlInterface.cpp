@@ -263,6 +263,16 @@ DummyNCPControlInterface::commissioner_send_pan_id_query(
 }
 
 void
+DummyNCPControlInterface::commissioner_generate_pskc(
+	const char *pass_phrase,
+	const char *network_name,
+	const XPANId &xpanid,
+	CallbackWithStatusArg1 cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented, std::string("generating PSKc is not supported"));
+}
+
+void
 DummyNCPControlInterface::permit_join(
 	int seconds,
 	uint8_t traffic_type,

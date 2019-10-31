@@ -621,6 +621,36 @@ bail:
 }
 
 void
+SpinelNCPControlInterface::commissioner_generate_pskc(
+	const char *pass_phrase,
+	const char *network_name,
+	const XPANId &xpanid,
+	CallbackWithStatusArg1 cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported, "Commissioner feature is not enabled on NCP");
+	} else {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+						SPINEL_DATATYPE_UTF8_S
+						SPINEL_DATATYPE_UTF8_S
+						SPINEL_DATATYPE_DATA_WLEN_S
+					),
+					SPINEL_PROP_MESHCOP_COMMISSIONER_GENERATE_PSKC,
+					pass_phrase,
+					network_name,
+					xpanid.m8, sizeof(xpanid)
+				))
+				.set_reply_format(SPINEL_DATATYPE_DATA_S)
+				.finish()
+		);
+	}
+}
+
+void
 SpinelNCPControlInterface::handle_permit_join_timeout(Timer *timer, int seconds)
 {
 	syslog(LOG_NOTICE, "PermitJoin: Timeout interval of %d seconds expired", seconds);
