@@ -43,6 +43,7 @@ public:
 private:
 	ValueMap mOptions;
 	NCPState mLastState;
+	ThreadDataset mDataset;
 };
 
 }; // namespace wpantund

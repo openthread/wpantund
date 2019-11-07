@@ -16,8 +16,25 @@
  * limitations under the License.
  *
  *    Description:
- *      Empty.
+ *      This file contains the implementation of `Data` class
  *
  */
 
 #include "Data.h"
+#include "string-utils.h"
+
+namespace nl {
+
+std::string
+Data::to_string(void) const
+{
+	size_t max_size = size() * 2 + 2;   // Every byte is encoded as two hex chars adding 1 for null.
+	std::vector<char> str_buffer(max_size);
+	char *str_buf_ptr = &*str_buffer.begin();
+
+	encode_data_into_string(data(), size(), str_buf_ptr, str_buffer.size(), 0);
+
+	return std::string(str_buf_ptr);
+}
+
+};
