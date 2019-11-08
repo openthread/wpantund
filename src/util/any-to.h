@@ -31,7 +31,7 @@
 
 extern nl::Data any_to_data(const boost::any& value);
 extern int any_to_int(const boost::any& value);
-extern uint64_t any_to_uint64(const boost::any& value);
+extern uint64_t any_to_uint64(const boost::any& value, bool expect_hex_str = false);
 extern struct in6_addr any_to_ipv6(const boost::any& value);
 extern bool any_to_bool(const boost::any& value);
 extern std::string any_to_string(const boost::any& value);
