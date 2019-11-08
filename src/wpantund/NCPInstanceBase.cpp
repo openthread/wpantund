@@ -140,8 +140,11 @@ NCPInstanceBase::NCPInstanceBase(const Settings& settings):
 	mSerialAdapter = mRawSerialAdapter;
 
 	mPrimaryInterface = boost::shared_ptr<TunnelIPv6Interface>(new TunnelIPv6Interface(wpan_interface_name));
-	mPrimaryInterface->mAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
-	mPrimaryInterface->mAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
+	mPrimaryInterface->mUnicastAddressWasAdded.connect(boost::bind(&NCPInstanceBase::unicast_address_was_added, this, kOriginPrimaryInterface, _1, _2, UINT32_MAX, UINT32_MAX));
+	mPrimaryInterface->mUnicastAddressWasRemoved.connect(boost::bind(&NCPInstanceBase::unicast_address_was_removed, this, kOriginPrimaryInterface, _1));
+	mPrimaryInterface->mMulticastAddressWasJoined.connect(boost::bind(&NCPInstanceBase::multicast_address_was_joined, this, kOriginPrimaryInterface, _1, NilReturn()));
+	mPrimaryInterface->mMulticastAddressWasLeft.connect(boost::bind(&NCPInstanceBase::multicast_address_was_left, this, kOriginPrimaryInterface, _1, NilReturn()));
+
 	mPrimaryInterface->mLinkStateChanged.connect(boost::bind(&NCPInstanceBase::link_state_changed, this, _1, _2));
 
 	set_ncp_power(true);

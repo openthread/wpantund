@@ -37,6 +37,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #endif
 
 #include <sys/select.h>
@@ -44,6 +45,43 @@
 #ifndef O_NONBLOCK
 #define O_NONBLOCK          O_NDELAY
 #endif
+
+namespace {
+
+	const char* kMLDv2MulticastAddress= "ff02::16";
+
+	const char *kFilterMulticastAddresses[] = {
+			kMLDv2MulticastAddress,
+			"ff02::01", //Link local all nodes
+			"ff02::02", //Link local all routers
+			"ff03::01", //realm local all nodes
+			"ff03::02", //realm local all routers
+			"ff03::fc", //realm local all mpl
+	};
+
+	struct MLDv2Header {
+		uint8_t mType;
+		uint8_t _rsv0;
+		uint16_t mChecksum;
+		uint16_t _rsv1;
+		uint16_t mNumRecords;
+	} __attribute__((packed));
+
+	struct MLDv2Record {
+		uint8_t mRecordType;
+		uint8_t mAuxDataLen;
+		uint16_t mNumSources;
+		struct in6_addr mMulticastAddress;
+		struct in6_addr mSourceAddresses[];
+	} __attribute__((packed));
+
+} // namespace
+
+static bool
+is_addr_multicast(const struct in6_addr &address)
+{
+	return (address.s6_addr[0] == 0xff);
+}
 
 TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int mtu):
 #if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
@@ -59,6 +97,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 #else
 	mNetifMgmtFD(netif_mgmt_open()),
 #endif
+	mMLDMonitorFD(-1),
 	mIsRunning(false),
 	mIsUp(false)
 {
@@ -88,12 +127,16 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 	netif_mgmt_set_mtu(mNetifMgmtFD, mInterfaceName.c_str(), mtu);
 
 	setup_signals();
+	setup_mld_listener();
 #endif
 }
 
 TunnelIPv6Interface::~TunnelIPv6Interface()
 {
 	close(mNetlinkFD);
+	if (mMLDMonitorFD >= 0) {
+		close(mMLDMonitorFD);
+	}
 	netif_mgmt_close(mNetifMgmtFD);
 }
 
@@ -119,7 +162,7 @@ TunnelIPv6Interface::on_link_state_changed(bool isUp, bool isRunning)
 				iter->second.mState = Entry::kWaitingForAddConfirm;
 			}
 
-			for (iter = mMulticastAddresses.begin(); iter != mMulticastAddresses.end();	++iter) {
+			for (iter = mPendingMulticastAddresses.begin(); iter != mPendingMulticastAddresses.end();	++iter) {
 				if (iter->second.mState != Entry::kWaitingToAdd) {
 					continue;
 				}
@@ -130,7 +173,7 @@ TunnelIPv6Interface::on_link_state_changed(bool isUp, bool isRunning)
 				IGNORE_RETURN_VALUE(netif_mgmt_join_ipv6_multicast_address(mNetifMgmtFD, mInterfaceName.c_str(),
 				                    iter->first.s6_addr));
 			}
-			mMulticastAddresses.clear();
+			mPendingMulticastAddresses.clear();
 		}
 		mIsUp = isUp;
 		mIsRunning = isRunning;
@@ -148,7 +191,20 @@ TunnelIPv6Interface::on_address_added(const struct in6_addr &address, uint8_t pr
 	syslog(LOG_INFO, "TunnelIPv6Interface: \"%s/%d\" was added to \"%s\"", in6_addr_to_string(address).c_str(), prefix_len,
 	       get_interface_name().c_str());
 
-	mAddressWasAdded(address, prefix_len);
+	mUnicastAddressWasAdded(address, prefix_len);
+}
+
+void
+TunnelIPv6Interface::on_multicast_address_joined(const struct in6_addr &address)
+{
+	if (mPendingMulticastAddresses.count(address)) {
+		mPendingMulticastAddresses.erase(address);
+	}
+
+	syslog(LOG_INFO, "TunnelIPv6Interface: \"%s\" was added to \"%s\"", in6_addr_to_string(address).c_str(),
+	       get_interface_name().c_str());
+
+	mMulticastAddressWasJoined(address);
 }
 
 void
@@ -164,11 +220,27 @@ TunnelIPv6Interface::on_address_removed(const struct in6_addr &address, uint8_t 
 		syslog(LOG_INFO, "TunnelIPv6Interface: \"%s/%d\" was removed from \"%s\"", in6_addr_to_string(address).c_str(), prefix_len,
 		       get_interface_name().c_str());
 
-		mAddressWasRemoved(address, prefix_len);
+		mUnicastAddressWasRemoved(address, prefix_len);
 	}
 
 }
 
+void
+TunnelIPv6Interface::on_multicast_address_left(const struct in6_addr &address)
+{
+	// Ignore "removed" signal if address is the list
+	// meaning it was added earlier and we are still
+	// waiting to confirm that it is added.
+	// This is to address the case where before adding an
+	// address on interface it may be first removed.
+
+	if (!mPendingMulticastAddresses.count(address)) {
+		syslog(LOG_INFO, "TunnelIPv6Interface: \"%s\" was removed from \"%s\"", in6_addr_to_string(address).c_str(),
+		       get_interface_name().c_str());
+
+		mMulticastAddressWasLeft(address);
+	}
+}
 
 #if __linux__ // --------------------------------------------------------------
 
@@ -214,8 +286,43 @@ bail:
 	return;
 }
 
+void
+TunnelIPv6Interface::setup_mld_listener(void)
+{
+	unsigned interfaceIndex = netif_mgmt_get_ifindex(mNetifMgmtFD, mInterfaceName.c_str());
+	bool success = false;
+	struct ipv6_mreq mreq6;
+
+	mMLDMonitorFD = socket(AF_INET6, SOCK_RAW | SOCK_NONBLOCK, IPPROTO_ICMPV6);
+	mreq6.ipv6mr_interface = interfaceIndex;
+	inet_pton(AF_INET6, kMLDv2MulticastAddress, &mreq6.ipv6mr_multiaddr);
+
+	require(setsockopt(mMLDMonitorFD, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq6, sizeof(mreq6)) == 0, bail);
+	require(setsockopt(mMLDMonitorFD, SOL_SOCKET, SO_BINDTODEVICE, mInterfaceName.c_str(), mInterfaceName.size()) == 0, bail);
+
+	success = true;
+
+bail:
+	if (!success) {
+		if (mMLDMonitorFD >= 0) {
+			close(mMLDMonitorFD);
+		}
+		syslog(LOG_ERR, "listen to MLD messages on interface failed\n");
+	}
+	return;
+}
+
 int
 TunnelIPv6Interface::process(void)
+{
+	processNetlinkFD();
+	processMLDMonitorFD();
+
+	return nl::UnixSocket::process();
+}
+
+void
+TunnelIPv6Interface::processNetlinkFD(void)
 {
 	uint8_t buffer[4096];
 	ssize_t buffer_len(-1);
@@ -284,8 +391,88 @@ TunnelIPv6Interface::process(void)
 			}
 		}
 	}
+}
 
-	return nl::UnixSocket::process();
+static bool IsMulticastAddressFiltered(const struct in6_addr& addr_to_check) 
+{
+	bool found = false;
+
+  for (size_t i = 0; i < sizeof(kFilterMulticastAddresses) /
+                             sizeof(kFilterMulticastAddresses[0]);
+       i++) {
+			struct in6_addr addr;	
+
+			inet_pton(AF_INET6, kFilterMulticastAddresses[i], &addr);
+			if (memcmp(&addr, &addr_to_check, sizeof(addr)) == 0) {
+				found = true;
+				break;
+			}
+  }
+
+	return found;
+}
+
+void
+TunnelIPv6Interface::processMLDMonitorFD(void)
+{
+	uint8_t buffer[4096];
+	ssize_t bufferLen(-1);
+	struct sockaddr_in6 srcAddr;
+	socklen_t addrLen;
+	bool fromSelf = false;
+	MLDv2Header* hdr = reinterpret_cast<MLDv2Header *>(buffer);
+	ssize_t offset;
+	uint8_t type;
+	struct ifaddrs *ifAddrs = NULL;
+
+	if (mNetlinkFD >= 0) {
+		bufferLen = recvfrom(mMLDMonitorFD, buffer, sizeof(buffer), 0, reinterpret_cast<sockaddr *>(&srcAddr), &addrLen);
+	}
+	require_quiet(bufferLen > 0, bail);
+
+	type = buffer[0];
+	require_quiet(type == kICMPv6MLDv2Type && bufferLen >= sizeof(MLDv2Header), bail);
+
+	// Check whether it is sent by self
+	require(getifaddrs(&ifAddrs) == 0, bail);
+	for (struct ifaddrs* ifAddr = ifAddrs; ifAddr != NULL; ifAddr = ifAddr->ifa_next) {
+		if (ifAddr->ifa_addr != NULL && ifAddr->ifa_addr->sa_family == AF_INET6 &&
+				mInterfaceName == std::string(ifAddr->ifa_name)) {
+			struct sockaddr_in6 *addr6 = reinterpret_cast<struct sockaddr_in6 *>(ifAddr->ifa_addr);
+
+			if (memcmp(&addr6->sin6_addr, &srcAddr.sin6_addr, sizeof(in6_addr)) == 0) {
+				fromSelf = true;
+				break;
+			}
+		}
+	}
+	require_quiet(fromSelf, bail);
+
+	hdr = reinterpret_cast<MLDv2Header *>(buffer);
+	offset = sizeof(MLDv2Header);
+
+	for (size_t i = 0; i < hdr->mNumRecords && offset < bufferLen; i++) {
+		if (bufferLen - offset >= sizeof(MLDv2Record)) {
+			MLDv2Record *record = reinterpret_cast<MLDv2Record *>(&buffer[offset]);
+
+			if (!IsMulticastAddressFiltered(record->mMulticastAddress)) {
+				if (record->mRecordType == kICMPv6MLDv2RecordChangeToIncludeType) {
+					on_multicast_address_joined(record->mMulticastAddress);
+				} else if (record->mRecordType == kICMPv6MLDv2RecordChangeToExcludeType) {
+					on_multicast_address_left(record->mMulticastAddress);
+				}
+			}
+
+			offset += sizeof(MLDv2Record) + sizeof(in6_addr) * record->mNumSources;
+		}
+	}
+
+bail:
+	if (ifAddrs) {
+		freeifaddrs(ifAddrs);
+	}
+
+	return;
 }
 
 #else // ----------------------------------------------------------------------
@@ -302,16 +489,33 @@ TunnelIPv6Interface::process(void)
 	return nl::UnixSocket::process();
 }
 
+void
+TunnelIPv6Interface::processNetlinkFD(void)
+{
+}
+
+void
+TunnelIPv6Interface::processMLDMonitorFD(void)
+{
+}
+
 #endif // ---------------------------------------------------------------------
 
 int
 TunnelIPv6Interface::update_fd_set(fd_set *read_fd_set, fd_set *write_fd_set, fd_set *error_fd_set, int *max_fd, cms_t *timeout)
 {
-	if (read_fd_set && (mNetlinkFD >= 0)) {
-		FD_SET(mNetlinkFD, read_fd_set);
+	if (read_fd_set) {
+		if (mNetlinkFD >= 0)  {
+			FD_SET(mNetlinkFD, read_fd_set);
+		}
+
+		if (mMLDMonitorFD >= 0) {
+			FD_SET(mMLDMonitorFD, read_fd_set);
+		}
 
 		if ((max_fd != NULL)) {
 			*max_fd = std::max(*max_fd, mNetlinkFD);
+			*max_fd = std::max(*max_fd, mMLDMonitorFD);
 		}
 	}
 
@@ -483,7 +687,7 @@ TunnelIPv6Interface::join_multicast_address(const struct in6_addr *addr)
 		syslog(LOG_INFO, "Joining multicast address \"%s\" on interface \"%s\".",
 		       in6_addr_to_string(*addr).c_str(), mInterfaceName.c_str());
 	} else {
-		mMulticastAddresses[*addr] = Entry(Entry::kWaitingToAdd);
+		mPendingMulticastAddresses[*addr] = Entry(Entry::kWaitingToAdd);
 	}
 
 	ret = true;
@@ -499,8 +703,8 @@ TunnelIPv6Interface::leave_multicast_address(const struct in6_addr *addr)
 
 	require_action(!IN6_IS_ADDR_UNSPECIFIED(addr), bail, mLastError = EINVAL);
 
-	if (mMulticastAddresses.count(*addr)) {
-		mMulticastAddresses.erase(*addr);
+	if (mPendingMulticastAddresses.count(*addr)) {
+		mPendingMulticastAddresses.erase(*addr);
 	}
 
 	if (netif_mgmt_leave_ipv6_multicast_address(mNetifMgmtFD, mInterfaceName.c_str(), addr->s6_addr) != 0) {

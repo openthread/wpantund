@@ -775,7 +775,6 @@ NCPInstanceBase::multicast_address_was_joined(Origin origin, const struct in6_ad
 		if ((origin == kOriginThreadNCP) || (origin == kOriginUser)) {
 			mPrimaryInterface->join_multicast_address(&address);
 		}
-
 		if (origin == kOriginPrimaryInterface) {
 			add_multicast_address_on_ncp(address,
 				boost::bind(&NCPInstanceBase::check_ncp_entry_update_status, this, _1, "adding multicast address", cb));
