@@ -79,18 +79,26 @@ public:
 
 public: // Signals
 
-	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasAdded;
-	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mAddressWasRemoved;
+	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mUnicastAddressWasAdded;
+	boost::signals2::signal<void(const struct in6_addr&, uint8_t)> mUnicastAddressWasRemoved;
+	boost::signals2::signal<void(const struct in6_addr&)> mMulticastAddressWasJoined;
+	boost::signals2::signal<void(const struct in6_addr&)> mMulticastAddressWasLeft;
 
 	// void linkStateChanged(isUp, isRunning);
 	boost::signals2::signal<void(bool, bool)> mLinkStateChanged;
 
 private:
 	void setup_signals(void);
+	void setup_mld_listener(void);
+
+	void processNetlinkFD(void);
+	void processMLDMonitorFD(void);
 
 	void on_link_state_changed(bool isUp, bool isRunning);
 	void on_address_added(const struct in6_addr &address, uint8_t prefix_len);
+	void on_multicast_address_joined(const struct in6_addr &address);
 	void on_address_removed(const struct in6_addr &address, uint8_t prefix_len);
+	void on_multicast_address_left(const struct in6_addr &address);
 
 private:
 	std::string mInterfaceName;
@@ -98,6 +106,7 @@ private:
 
 	int mNetlinkFD;
 	int mNetifMgmtFD;
+	int mMLDMonitorFD;
 
 	bool mIsRunning;
 	bool mIsUp;
@@ -115,6 +124,12 @@ private:
 	};
 
 	std::map<struct in6_addr, Entry> mUnicastAddresses;
-	std::map<struct in6_addr, Entry> mMulticastAddresses;
+	std::map<struct in6_addr, Entry> mPendingMulticastAddresses;
+
+	enum {
+		kICMPv6MLDv2Type = 143,
+		kICMPv6MLDv2RecordChangeToExcludeType = 3,
+		kICMPv6MLDv2RecordChangeToIncludeType = 4,
+	};
 };
 #endif /* defined(__wpantund__TunnelInterface__) */
