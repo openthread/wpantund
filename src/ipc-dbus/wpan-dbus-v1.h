@@ -92,6 +92,7 @@
 #define WPANTUND_IF_CMD_ANNOUNCE_BEGIN        "AnnounceBegin"
 #define WPANTUND_IF_CMD_ENERGY_SCAN_QUERY     "EnergyScanQuery"
 #define WPANTUND_IF_CMD_PAN_ID_QUERY          "PanIdQuery"
+#define WPANTUND_IF_CMD_GENERATE_PSKC         "GeneratePSKc"
 
 #define WPANTUND_IF_CMD_PEEK                  "Peek"
 #define WPANTUND_IF_CMD_POKE                  "Poke"

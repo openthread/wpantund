@@ -27,6 +27,7 @@
 
 #define COMMR_EUI64_SIZE                    8
 #define COMMR_IPv6_ADDRESS_SIZE             16
+#define COMMR_XPANID_SIZE                   8
 #define COMMR_TLVS_MAX_LEN                  255
 #define COMMR_PSK_MIN_LENGTH                6
 #define COMMR_PSK_MAX_LENGTH                32

@@ -223,6 +223,13 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void commissioner_generate_pskc(
+		const char *pass_phrase,
+		const char *network_name,
+		const XPANId &xpanid,
+		CallbackWithStatusArg1 cb = NilReturn()
+	);
+
 	virtual void data_poll(
 		CallbackWithStatus cb = NilReturn()
 	);

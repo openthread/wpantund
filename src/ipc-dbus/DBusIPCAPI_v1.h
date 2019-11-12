@@ -266,6 +266,11 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_generate_pskc(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 	DBusHandlerResult interface_peek_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message

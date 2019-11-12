@@ -44,6 +44,7 @@ enum {
 	COMMR_CMD_PAN_ID_QUERY,
 	COMMR_CMD_MGMT_GET,
 	COMMR_CMD_MGMT_SET,
+	COMMR_CMD_GENERATE_PSKC,
 };
 
 static const struct commr_command_entry_t
@@ -115,6 +116,11 @@ static const struct commr_command_entry_t
 		COMMR_CMD_MGMT_SET, "mgmt-set", NULL,
 		1, 1, " <tlvs>",
 		"Send MGMT_COMMISSIONER_SET, <tlvs> as hex byte array"
+	},
+	{
+		COMMR_CMD_GENERATE_PSKC, "gen-pskc", "pskc",
+		3, 3, " <pass-phrase> <net-name> <xpanid>",
+		"Generate PSKc for a given pass-phrase, network name, and XPANID (as hex string)"
 	},
 	{
 		-1
@@ -618,6 +624,46 @@ tool_cmd_commr(int argc, char* argv[])
 		break;
 	}
 
+	case COMMR_CMD_GENERATE_PSKC:
+	{
+		// gen-pskc <pass-phrase> <network-name> <xpanid as hex string>
+
+		const char *pass_phrase = argv[optind];
+		const char *network_name = argv[optind + 1];
+		uint8_t xpanid[COMMR_XPANID_SIZE];
+		uint8_t *xpanid_ptr = xpanid;
+		int len = 0;
+
+		len = parse_string_into_data(xpanid, sizeof(xpanid), argv[optind + 2]);
+
+		if (len != COMMR_XPANID_SIZE) {
+			fprintf(stderr, "%s %s: error: Bad XPANId \"%s\" - should be %d bytes as hex string.\n",
+				argv[0], cmd_str, argv[optind + 2], COMMR_XPANID_SIZE);
+			ret = ERRORCODE_BADARG;
+			goto bail;
+		}
+
+		ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_GENERATE_PSKC);
+		require_action(ret == 0, bail, print_error_diagnosis(ret));
+
+		dbus_message_append_args(
+			message,
+			DBUS_TYPE_STRING, &pass_phrase,
+			DBUS_TYPE_STRING, &network_name,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &xpanid_ptr, sizeof(xpanid),
+			DBUS_TYPE_INVALID
+		);
+
+		fprintf(
+			stdout,
+			"Generating PSKc from pass-phrase:\"%s\", network-name:\"%s\", XPANId:[%02X%02X%02X%02X%02X%02X%02X%02X]\n",
+			pass_phrase, network_name,
+			xpanid[0], xpanid[1], xpanid[2], xpanid[3], xpanid[4], xpanid[5], xpanid[6], xpanid[7]
+		);
+
+		break;
+	}
+
 	default:
 		fprintf(stderr, "%s: Unknown command \"%s\".\n", argv[0], cmd_str);
 		ret = ERRORCODE_BADARG;
@@ -642,7 +688,18 @@ tool_cmd_commr(int argc, char* argv[])
 		goto bail;
 	}
 
-	printf("%s\n", outcome_str);
+	if (cmd_entry->id == COMMR_CMD_GENERATE_PSKC) {
+		DBusMessageIter iter;
+
+		dbus_message_iter_init(reply, &iter);
+		dbus_message_iter_next(&iter); // skip over ret val which is already checked.
+
+		fprintf(stdout, "Generated PSKc is ");
+		dump_info_from_iter(stdout, &iter, 0, false, false);
+
+	} else {
+		printf("%s\n", outcome_str);
+	}
 
 bail:
 	if (connection) {

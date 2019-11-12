@@ -114,6 +114,7 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ANNOUNCE_BEGIN, interface_announce_begin_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_QUERY, interface_energy_scan_query_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PAN_ID_QUERY, interface_pan_id_query_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_GENERATE_PSKC, interface_generate_pskc);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
@@ -1918,6 +1919,47 @@ DBusIPCAPI_v1::interface_pan_id_query_handler(
 		channel_mask,
 		dest,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_generate_pskc(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const char *pass_phrase = "";
+	const char *network_name = "";
+	const uint8_t *xpan_id_ptr = NULL;
+	int xpan_id_len;
+	NCPControlInterface::XPANId xpan_id;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_STRING, &pass_phrase,
+		DBUS_TYPE_STRING, &network_name,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &xpan_id_ptr, &xpan_id_len,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(xpan_id_len == sizeof(xpan_id), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(xpan_id.m8, xpan_id_ptr, sizeof(xpan_id));
+
+	interface->commissioner_generate_pskc(
+		pass_phrase,
+		network_name,
+		xpan_id,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatusArg1_Helper, this, _1, _2, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;

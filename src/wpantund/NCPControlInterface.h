@@ -66,6 +66,11 @@ class NCPInstance;
 class NCPControlInterface {
 public:
 
+	struct XPANId
+	{
+		uint8_t m8[NCP_XPANID_SIZE];
+	};
+
 	typedef uint32_t ChannelMask;
 
 	enum ExternalRoutePriority {
@@ -253,6 +258,13 @@ public:
 		uint32_t channel_mask,
 		const struct in6_addr& dest,
 		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void commissioner_generate_pskc(
+		const char *pass_phrase,
+		const char *network_name,
+		const XPANId &xpanid,
+		CallbackWithStatusArg1 cb = NilReturn()
 	) = 0;
 
 public:
