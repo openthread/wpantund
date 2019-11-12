@@ -134,18 +134,19 @@ any_to_ipv6(const boost::any& value)
 }
 
 uint64_t
-any_to_uint64(const boost::any& value)
+any_to_uint64(const boost::any& value, bool expect_hex_str)
 {
 	uint64_t ret(0);
 
 	if (value.type() == typeid(std::string)) {
 		const std::string& key_string = boost::any_cast<std::string>(value);
 
-		if (key_string.size() != 16) {
+		if (expect_hex_str && key_string.size() != 16) {
 			throw std::invalid_argument("String not 16 characters long");
 		}
 
-		ret = static_cast<uint64_t>(strtoull(key_string.c_str(), NULL, 16));
+		// If `expect_hex_str` is set, we expect the string to be 16 hex chars.
+		ret = static_cast<uint64_t>(strtoull(key_string.c_str(), NULL, expect_hex_str ? 16 : 0));
 
 	} else if (value.type() == typeid(nl::Data)) {
 		const nl::Data& data = boost::any_cast<nl::Data>(value);

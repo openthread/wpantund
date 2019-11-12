@@ -69,7 +69,7 @@ nl::wpantund::SpinelNCPTaskForm::SpinelNCPTaskForm(
 		union {
 			uint64_t xpanid;
 			uint8_t bytes[1];
-		} x = { any_to_uint64((mOptions[kWPANTUNDProperty_NetworkXPANID])) };
+		} x = { any_to_uint64(mOptions[kWPANTUNDProperty_NetworkXPANID], /* expect_hex_str */ true) };
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		reverse_bytes(x.bytes, sizeof(x.xpanid));
@@ -257,7 +257,7 @@ nl::wpantund::SpinelNCPTaskForm::vprocess_event(int event, va_list args)
 
 	if (mOptions.count(kWPANTUNDProperty_NetworkXPANID)) {
 		{
-			uint64_t xpanid(any_to_uint64((mOptions[kWPANTUNDProperty_NetworkXPANID])));
+			uint64_t xpanid(any_to_uint64(mOptions[kWPANTUNDProperty_NetworkXPANID], /* expect_hex_str */ true));
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			reverse_bytes(reinterpret_cast<uint8_t*>(&xpanid), sizeof(xpanid));
