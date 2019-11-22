@@ -628,7 +628,7 @@ SpinelNCPControlInterface::commissioner_generate_pskc(
 	CallbackWithStatusArg1 cb
 ) {
 	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
-		cb(kWPANTUNDStatus_FeatureNotSupported, "Commissioner feature is not enabled on NCP");
+		cb(kWPANTUNDStatus_FeatureNotSupported, std::string("Commissioner feature is not enabled on NCP"));
 	} else {
 		mNCPInstance->start_new_task(
 			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
