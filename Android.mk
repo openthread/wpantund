@@ -38,6 +38,7 @@ LOCAL_C_INCLUDES                                         := \
 LOCAL_DEFAULT_VERSION := $(shell cat $(LOCAL_PATH)/.default-version)
 LOCAL_PRIVATE_SOURCE_VERSION := $(shell git -C $(LOCAL_PATH) describe --always --match "[0-9].*" 2> /dev/null)
 LOCAL_CFLAGS := \
+	-DTUNNEL_TUNTAP_DEVICE=\"/dev/tun\" \
 	-D_GNU_SOURCE \
 	-D_XOPEN_SOURCE \
 	-D_POSIX_C_SOURCE \
