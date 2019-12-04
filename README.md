@@ -27,7 +27,7 @@ The architecture and design of `wpantund` has been motivated by the
 following design goals (in no specific order):
 
  *  Portability across Unix-like operating systems (currently supports
-    Linux and OS X. BSD support should be fairly trivial to add)
+    Linux. BSD support should be fairly trivial to add)
  *  Require few runtime dependencies (DBus, with boost needed when
     building)
  *  Single-threaded architecture, with heavy use of asynchronous I/O
@@ -90,9 +90,8 @@ Applications that need to directly configure the network interface can
 also communicate directly with `wpantund` using its DBus API.
 
 To expose a native IPv6 network interface to the host operating
-system, `wpantund` uses the `tun` driver on Linux and the `utun`
-driver on OS X. On Linux, the default name for the interface is
-`wpan0`. On OS X, the default name is `utun0`.
+system, `wpantund` uses the `tun` driver on Linux. On Linux, the
+default name for the interface is `wpan0`.
 
 ## Usage Overview ##
 
@@ -172,7 +171,7 @@ convenient interactive console. All commands support online help: type
 `help` to get a list of supported commands, or add `-h` to a command to get
 help with that specific command.
 
-For more information, see the wiki: <https://github.com/openthread/wpantund/wiki>
+For simulation example Codelab please see: <https://openthread.io/guides#try_openthread>
 
 [5]: ./src/wpantund/wpantund.conf
 
