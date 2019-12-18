@@ -142,7 +142,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 		require_noerr(ret, on_error);
 
 		// For discovery scan, interface should be up
-		if (mInstance->get_ncp_state() == OFFLINE) {
+		if (!ncp_state_is_interface_up(mInstance->get_ncp_state())) {
 			mNextCommand = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
 				SPINEL_PROP_NET_IF_UP,
