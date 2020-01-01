@@ -251,12 +251,12 @@ SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
 			);
 		} else {
 			snprintf(
-			prefix_string,
-			sizeof(prefix_string),
-			"[%s]%s: ",
-			ot_log_level_to_string(log_level),
-			ot_log_region_to_string(log_region)
-		);
+				prefix_string,
+				sizeof(prefix_string),
+				"[%s]%s: ",
+				ot_log_level_to_string(log_level),
+				ot_log_region_to_string(log_region)
+			);
 		}
 	}
 
