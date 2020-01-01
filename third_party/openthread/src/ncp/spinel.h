@@ -3896,6 +3896,14 @@ typedef enum
      */
     SPINEL_PROP_DEBUG_TEST_WATCHDOG = SPINEL_PROP_DEBUG__BEGIN + 2,
 
+    /// The NCP timestamp base
+    /** Format: X (write-only) 
+     * 
+     * This property controls the time base value that is used for log timestamp field calulation.
+     * 
+    */
+    SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE = SPINEL_PROP_DEBUG__BEGIN + 3,
+
     SPINEL_PROP_DEBUG__END = 0x4400,
 
     SPINEL_PROP_EXPERIMENTAL__BEGIN = 2000000,
