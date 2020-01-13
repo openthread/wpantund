@@ -232,7 +232,7 @@ SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
 		data_in += len;
 		data_len -= len;
 
-		if(data_len >= sizeof(log_timestamp)) {
+		if (data_len >= sizeof(log_timestamp)) {
 			len = spinel_datatype_unpack(
 				data_in,
 				data_len,
@@ -2077,6 +2077,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogLevel,
 		SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
+	register_get_handler_spinel_simple(
+		kWPANTUNDProperty_OpenThreadLogTimestampBase,
+		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property

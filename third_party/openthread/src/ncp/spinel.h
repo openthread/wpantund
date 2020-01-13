@@ -3899,7 +3899,7 @@ typedef enum
     /// The NCP timestamp base
     /** Format: X (write-only) 
      * 
-     * This property controls the time base value that is used for log timestamp field calulation.
+     * This property controls the time base value that is used for log timestamp field calculation.
      * 
     */
     SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE = SPINEL_PROP_DEBUG__BEGIN + 3,
