@@ -2210,7 +2210,11 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
     case SPINEL_PROP_DEBUG_TEST_WATCHDOG:
         ret = "DEBUG_TEST_WATCHDOG";
         break;
-
+    
+    case SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE:
+        ret = "DEBUG_LOG_TIMESTAMP_BASE";
+        break;
+        
     default:
         break;
     }

@@ -215,24 +215,49 @@ SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
 	if ((data_len > 0) && mCapabilities.count(SPINEL_CAP_OPENTHREAD_LOG_METADATA)) {
 		uint8_t log_level;
 		unsigned int log_region;
+		uint64_t log_timestamp;
 
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			SPINEL_DATATYPE_UINT8_S SPINEL_DATATYPE_UINT_PACKED_S,
+			( 
+				SPINEL_DATATYPE_UINT8_S 
+				SPINEL_DATATYPE_UINT_PACKED_S
+			),
 			&log_level,
 			&log_region
 		);
-
 		require(len >= 0, bail);
 
-		snprintf(
-			prefix_string,
-			sizeof(prefix_string),
-			"[%s]%s: ",
-			ot_log_level_to_string(log_level),
-			ot_log_region_to_string(log_region)
-		);
+		data_in += len;
+		data_len -= len;
+
+		if (data_len >= sizeof(log_timestamp)) {
+			len = spinel_datatype_unpack(
+				data_in,
+				data_len,
+				SPINEL_DATATYPE_UINT64_S,
+				&log_timestamp
+			);
+			require(len >= 0, bail);
+		
+			snprintf(
+				prefix_string,
+				sizeof(prefix_string),
+				"[%013llu][%s]%s: ",
+				static_cast<unsigned long long>(log_timestamp),
+				ot_log_level_to_string(log_level),
+				ot_log_region_to_string(log_region)
+			);
+		} else {
+			snprintf(
+				prefix_string,
+				sizeof(prefix_string),
+				"[%s]%s: ",
+				ot_log_level_to_string(log_level),
+				ot_log_region_to_string(log_region)
+			);
+		}
 	}
 
 	syslog(LOG_WARNING, "NCP => %s%s\n", prefix_string, log_string);
@@ -572,6 +597,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_RADIO_COEX)) {
 		properties.insert(kWPANTUNDProperty_NCPCoexEnable);
 		properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_OPENTHREAD_LOG_METADATA)) {
+		properties.insert(kWPANTUNDProperty_OpenThreadLogTimestampBase);
 	}
 
 	{
@@ -2048,6 +2077,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogLevel,
 		SPINEL_PROP_DEBUG_NCP_LOG_LEVEL, SPINEL_DATATYPE_UINT8_S);
+	register_get_handler_spinel_simple(
+		kWPANTUNDProperty_OpenThreadLogTimestampBase,
+		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -3298,7 +3330,11 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_TimeSync_XtalThreshold,
 		SPINEL_CAP_TIME_SYNC,
 		SPINEL_PROP_TIME_SYNC_XTAL_THRESHOLD, SPINEL_DATATYPE_UINT16_C);
-
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_OpenThreadLogTimestampBase,
+		SPINEL_CAP_OPENTHREAD_LOG_METADATA,
+		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_C);
+	
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel(
 		kWPANTUNDProperty_CommissionerState,
