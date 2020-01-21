@@ -73,6 +73,23 @@
 #define SIOCSIFLLADDR SIOCSIFHWADDR
 #endif
 
+// incase strlcpy is not found in libc
+size_t _my_strlcpy(char *aDst, const char *aSrc, size_t aSize) 
+{
+	size_t i, copied;
+
+	for (i = 0, copied = 0; i + 1 < aSize && aSrc[i] != '\0'; i++) 
+	{
+		aDst[i] = aSrc[i];
+	}
+	for (; i < aSize; i++) 
+	{
+		aDst[i] = '\0';
+	}
+
+	return copied;
+}
+
 int
 netif_mgmt_open(void)
 {
@@ -91,7 +108,7 @@ int netif_mgmt_get_flags(int fd, const char* if_name)
 	int status = 0;
 	struct ifreq ifr = { };
 
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	status = ioctl(fd, SIOCGIFFLAGS, &ifr);
 
@@ -108,7 +125,7 @@ int netif_mgmt_set_flags(int fd, const char* if_name, int flags)
 	int ret = -1;
 	struct ifreq ifr = { };
 
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	ret = ioctl(fd, SIOCGIFFLAGS, &ifr);
 	require_string(ret == 0, bail, strerror(errno));
@@ -127,7 +144,7 @@ int netif_mgmt_clear_flags(int fd, const char* if_name, int flags)
 	int ret = -1;
 	struct ifreq ifr = { };
 
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	ret = ioctl(fd, SIOCGIFFLAGS, &ifr);
 	require_string(ret == 0, bail, strerror(errno));
@@ -179,7 +196,7 @@ netif_mgmt_set_mtu(int fd, const char* if_name, uint16_t mtu)
 	int ret = -1;
 	struct ifreq ifr = { };
 
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	ifr.ifr_mtu = mtu;
 
@@ -199,7 +216,7 @@ netif_mgmt_get_ifindex(int reqfd, const char* if_name) {
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	ret = ioctl(reqfd, SIOGIFINDEX, &ifr);
 
@@ -247,7 +264,7 @@ netif_mgmt_add_ipv6_address(int reqfd, const char* if_name, const uint8_t addr[1
 
 	struct in6_aliasreq addreq6 = { };
 
-	strlcpy(addreq6.ifra_name, if_name, sizeof(addreq6.ifra_name));
+	_my_strlcpy(addreq6.ifra_name, if_name, sizeof(addreq6.ifra_name));
 
 	addreq6.ifra_addr.sin6_family = AF_INET6;
 	addreq6.ifra_addr.sin6_len = sizeof(addreq6.ifra_addr);
@@ -333,7 +350,7 @@ netif_mgmt_remove_ipv6_address(int reqfd, const char* if_name, const uint8_t add
 	sai.sin6_len = sizeof(sai);
 
 	struct in6_ifreq ifreq6 = { };
-	strlcpy(ifreq6.ifr_name, if_name, sizeof(ifreq6.ifr_name));
+	_my_strlcpy(ifreq6.ifr_name, if_name, sizeof(ifreq6.ifr_name));
 
 	ifreq6.ifr_addr = sai;
 
@@ -381,7 +398,7 @@ netif_mgmt_add_ipv6_route(int reqfd, const char* if_name, const uint8_t route[16
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 
-	strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	_my_strlcpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
 	memset(&rt, 0, sizeof(struct in6_rtmsg));
 	memcpy(rt.rtmsg_dst.s6_addr, route, sizeof(struct in6_addr));
