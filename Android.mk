@@ -119,6 +119,7 @@ LOCAL_SRC_FILES := \
 	src/util/ValueMap.cpp \
 	src/util/Timer.cpp \
 	src/util/sec-random.c \
+	src/missing/strlcpy/strlcpy.c \
 	$(NCP_SPINEL_SRC_FILES:$(LOCAL_PATH)/%=%) \
 	third_party/openthread/src/ncp/spinel.c \
 	$(NULL)
