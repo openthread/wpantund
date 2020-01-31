@@ -26,7 +26,7 @@ AM_CPPFLAGS = \
 	$(MISSING_CPPFLAGS) \
 	$(NULL)
 
-@CODE_COVERAGE_RULES@
+include $(top_srcdir)/pre.am
 
 DISTCLEANFILES = \
 	.deps \

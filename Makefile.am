@@ -21,7 +21,7 @@ DIST_TARGETS = dist-gzip dist-bzip2
 DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.bz2
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-all-restricted-plugins
 
-@CODE_COVERAGE_RULES@
+include $(top_srcdir)/pre.am
 
 SUBDIRS =                              \
 	src                                \

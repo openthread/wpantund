@@ -90,15 +90,6 @@ then
 		echo "Debian/Ubuntu ........ apt-get install pkg-config"
 		exit 1
 	}
-
-	grep -q AX_CHECK_ configure && {
-		echo " *** error: The 'autoconf-archive' package is not installed."
-		echo "Use the appropriate command for your platform to install the package:"
-		echo ""
-		echo "Homebrew(OS X) ....... brew install autoconf-archive"
-		echo "Debian/Ubuntu ........ apt-get install autoconf-archive"
-		exit 1
-	}
 fi
 
 if test "$BOOTSTRAP_ANDROID" = 1
