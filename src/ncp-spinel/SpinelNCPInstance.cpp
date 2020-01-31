@@ -415,8 +415,8 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 				status = static_cast<NCPControlInterface&>(get_control_interface())
 					.property_set_value(iter->first, iter->second);
 
-				if (status != 0) {
-					syslog(LOG_WARNING, "Attempt to set property \"%s\" failed with err %d", iter->first.c_str(), status);
+				if (status != 0 && status != kWPANTUNDStatus_InProgress) {
+					syslog(LOG_WARNING, "Attempt to set property \"%s\" failed with err %s", iter->first.c_str(), wpantund_status_to_cstr(status));
 				}
 			}
 		}
