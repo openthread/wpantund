@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-if AUTOCONF_NO_COVERAGE_RULES
+if AUTOCONF_HAVE_AM_INCLUDE_STATIC
 include $(top_srcdir)/aminclude_static.am
 clean-local: code-coverage-clean
 dist-clean-local: code-coverage-dist-clean
