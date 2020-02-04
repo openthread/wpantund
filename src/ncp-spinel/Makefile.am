@@ -25,7 +25,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/openthread/src/ncp \
 	$(NULL)
 
-@CODE_COVERAGE_RULES@
+include $(top_srcdir)/pre.am
 
 DISTCLEANFILES = \
 	.deps \

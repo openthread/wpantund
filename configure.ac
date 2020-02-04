@@ -340,6 +340,10 @@ m4_foreach_w(THIS_PLUGIN,RESTRICTED_USE_NCP_PLUGINS,[
 
 AC_SUBST(default_ncp_plugin)
 
+AC_CHECK_FILE([${srcdir}/aminclude_static.am],
+		 [AM_CONDITIONAL(AUTOCONF_HAVE_AM_INCLUDE_STATIC, [true])],
+		 [AM_CONDITIONAL(AUTOCONF_HAVE_AM_INCLUDE_STATIC, [false])])
+
 AC_OUTPUT
 
 echo ""

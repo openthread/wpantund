@@ -23,7 +23,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/assert-macros \
 	$(NULL)
 
-@CODE_COVERAGE_RULES@
+include $(top_srcdir)/pre.am
 
 EXTRA_DIST = wpantund.conf
 

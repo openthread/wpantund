@@ -21,7 +21,7 @@ DIST_TARGETS = dist-gzip dist-bzip2
 DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.bz2
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-all-restricted-plugins
 
-@CODE_COVERAGE_RULES@
+include $(top_srcdir)/pre.am
 
 SUBDIRS =                              \
 	src                                \
@@ -61,6 +61,11 @@ EXTRA_DIST =                           \
 	$(NULL)
 
 
+if AUTOCONF_HAVE_AM_INCLUDE_STATIC
+EXTRA_DIST +=                          \
+	aminclude_static.am                \
+	$(NULL)
+endif
 
 HASH_VERSION = $(shell                                                   \
 	git describe --dirty --match __poison__ --always 2> /dev/null        \
