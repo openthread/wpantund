@@ -43,6 +43,7 @@ EXTRA_DIST =                           \
 	.gitignore                         \
 	.gitattributes                     \
 	.uncrustify.cfg                    \
+	aminclude_static.am                \
 	bootstrap.sh                       \
 	README.md                          \
 	TODO.md                            \
@@ -60,12 +61,6 @@ EXTRA_DIST =                           \
 	m4/nl.m4                           \
 	$(NULL)
 
-
-if AUTOCONF_HAVE_AM_INCLUDE_STATIC
-EXTRA_DIST +=                          \
-	aminclude_static.am                \
-	$(NULL)
-endif
 
 HASH_VERSION = $(shell                                                   \
 	git describe --dirty --match __poison__ --always 2> /dev/null        \
