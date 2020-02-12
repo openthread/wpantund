@@ -509,9 +509,14 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
 	properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
 	properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
+	properties.insert(kWPANTUNDProperty_OpenThreadSupportedRadioLinks);
 
 	if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_MULTI_RADIO)) {
+		properties.insert(kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
@@ -1668,6 +1673,150 @@ bail:
 }
 
 static int
+unpack_supported_radio_links(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	std::list<std::string> result;
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0) {
+		spinel_ssize_t len;
+		unsigned int value;
+
+		len = spinel_packed_uint_decode(data_in, data_len, &value);
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		result.push_back(std::string(spinel_radio_link_to_cstr(value)));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+static int
+unpack_neighbor_table_multi_radio_info(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	std::list<std::string> result;
+	char c_string[200];
+	int  index;
+
+	while (data_len > 0) {
+		spinel_ssize_t len = 0;
+		const uint8_t *entry_data;
+		spinel_size_t entry_len;
+		const spinel_eui64_t *eui64 = NULL;
+		uint16_t rloc16;
+		bool first_radio;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&entry_data,
+			&entry_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		// Parse the entry_data (which contains info about a neighbor)
+
+		len = spinel_datatype_unpack(
+			entry_data,
+			entry_len,
+			(
+				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+				SPINEL_DATATYPE_UINT16_S        // Rloc16
+			),
+			&eui64,
+			&rloc16
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		index = 0;
+
+		index += snprintf(c_string + index, sizeof(c_string) - index,
+			"%02X%02X%02X%02X%02X%02X%02X%02X, RLOC16:%04x, Radios:[",
+			eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
+			eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7],
+			rloc16
+		);
+
+		require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+
+		entry_data += len;
+		entry_len -= len;
+
+		first_radio = true;
+
+		while (entry_len > 0) {
+			const uint8_t *struct_data;
+			spinel_size_t struct_len;
+			unsigned int radio;
+			uint8_t preference;
+
+			len = spinel_datatype_unpack(
+				entry_data,
+				entry_len,
+				SPINEL_DATATYPE_DATA_WLEN_S,
+				&struct_data,
+				&struct_len
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			entry_data += len;
+			entry_len -= len;
+
+			// Parse struct_data (contains info about a supported radio link type)
+
+			len = spinel_datatype_unpack(
+				struct_data,
+				struct_len,
+				(
+					SPINEL_DATATYPE_UINT_PACKED_S   // Radio link
+					SPINEL_DATATYPE_UINT8_S         // Preference
+				),
+				&radio,
+				&preference
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			struct_data += len;
+			struct_len -= len;
+
+			index += snprintf(c_string + index, sizeof(c_string) - index,
+				"%s%s(%d)",
+				first_radio ? "" : ", ",
+				spinel_radio_link_to_cstr(radio),
+				preference
+			);
+
+			require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+			first_radio = false;
+		}
+
+		index += snprintf(c_string + index, sizeof(c_string) - index, "]");
+		require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+
+		result.push_back(std::string(c_string));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+
+static int
 unpack_mesh_local_prefix(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
 {
 	spinel_ssize_t len;
@@ -2316,6 +2465,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_S);
+	register_get_handler_spinel_simple(
+		kWPANTUNDProperty_OpenThreadTrelTestModeEnable,
+		SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE, SPINEL_DATATYPE_BOOL_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -2643,6 +2795,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadAddressCacheTableAsValMap,
 		SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE,
 		boost::bind(unpack_address_cache_table, _1, _2, _3, /* as_val_map */ true));
+	register_get_handler_spinel_unpacker(
+		kWPANTUNDProperty_OpenThreadSupportedRadioLinks,
+		SPINEL_PROP_SUPPORTED_RADIO_LINKS,
+		unpack_supported_radio_links);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -2756,6 +2912,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCoexMetricsAsValMap,
 		SPINEL_CAP_RADIO_COEX,
 		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo,
+		SPINEL_CAP_MULTI_RADIO,
+		SPINEL_PROP_NEIGHBOR_TABLE_MULTI_RADIO_INFO, boost::bind(unpack_neighbor_table_multi_radio_info, _1, _2, _3));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -3522,6 +3682,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler_spinel(
 		kWPANTUNDProperty_ThreadRouterDowngradeThreshold,
 		SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD, SPINEL_DATATYPE_UINT8_C);
+	register_set_handler_spinel(
+		kWPANTUNDProperty_OpenThreadTrelTestModeEnable,
+		SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE, SPINEL_DATATYPE_BOOL_C);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring persistence (saving in settings) and associated with a
