@@ -59,11 +59,11 @@ public:
 	}
 
 	uint8_t* data() {
-		return &*begin();
+		return empty() ? NULL : &*begin();
 	}
 
 	const uint8_t* data() const {
-		return &*begin();
+		return empty() ? NULL : &*begin();
 	}
 };
 };
