@@ -220,8 +220,8 @@ SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
-			( 
-				SPINEL_DATATYPE_UINT8_S 
+			(
+				SPINEL_DATATYPE_UINT8_S
 				SPINEL_DATATYPE_UINT_PACKED_S
 			),
 			&log_level,
@@ -240,7 +240,7 @@ SpinelNCPInstance::handle_ncp_log_stream(const uint8_t *data_in, int data_len)
 				&log_timestamp
 			);
 			require(len >= 0, bail);
-		
+
 			snprintf(
 				prefix_string,
 				sizeof(prefix_string),
@@ -1400,6 +1400,33 @@ bail:
 	return ret;
 }
 
+static const char *
+cache_table_entry_state_to_string(uint8_t state)
+{
+	const char *str;
+
+	switch (state)
+	{
+	case SPINEL_ADDRESS_CACHE_ENTRY_STATE_CACHED:
+		str = kWPANTUNDCacheTableEntryState_Cached;
+		break;
+	case SPINEL_ADDRESS_CACHE_ENTRY_STATE_SNOOPED:
+		str = kWPANTUNDCacheTableEntryState_Snooped;
+		break;
+	case SPINEL_ADDRESS_CACHE_ENTRY_STATE_QUERY:
+		str = kWPANTUNDCacheTableEntryState_Query;
+		break;
+	case SPINEL_ADDRESS_CACHE_ENTRY_STATE_RETRY_QUERY:
+		str = kWPANTUNDCacheTableEntryState_RetryQuery;
+		break;
+	default:
+		str = "unknown";
+		break;
+	}
+
+	return str;
+}
+
 static int
 unpack_address_cache_table(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
@@ -1413,47 +1440,132 @@ unpack_address_cache_table(const uint8_t *data_in, spinel_size_t data_len, boost
 		struct in6_addr *target_address = NULL;
 		uint16_t target_rloc16;
 		uint8_t age;
+		uint8_t state;
+		bool valid_last_trans;
+		uint32_t last_trans_time;
+		struct in6_addr *ml_eid = NULL;
+		bool can_evict;
+		uint16_t timeout;
+		uint16_t retry_delay;
+		const uint8_t *cached_struct_in = NULL;
+		unsigned int cached_struct_len = 0;
+		const uint8_t *other_struct_in = NULL;
+		unsigned int other_struct_len = 0;
 
 		len = spinel_datatype_unpack(
 			data_in,
 			data_len,
 			SPINEL_DATATYPE_STRUCT_S(
-				SPINEL_DATATYPE_IPv6ADDR_S
-				SPINEL_DATATYPE_UINT16_S
-				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_IPv6ADDR_S    // Target address
+				SPINEL_DATATYPE_UINT16_S      // RLOC16
+				SPINEL_DATATYPE_UINT8_S       // Age
+				SPINEL_DATATYPE_UINT8_S       // State
+				SPINEL_DATATYPE_DATA_WLEN_S   // Cached struct info
+				SPINEL_DATATYPE_DATA_WLEN_S   // Other struct info
 			),
 			&target_address,
 			&target_rloc16,
-			&age
+			&age,
+			&state,
+			&cached_struct_in, &cached_struct_len,
+			&other_struct_in, &other_struct_len
 		);
 
 		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
 
-		if (!as_val_map) {
-			char c_string[100];
+		data_in += len;
+		data_len -= len;
 
-			snprintf(
-				c_string,
-				sizeof(c_string),
-				"%s -> 0x%04x, age:%d",
-				in6_addr_to_string(*target_address).c_str(),
-				target_rloc16,
-				age
+		if (state == SPINEL_ADDRESS_CACHE_ENTRY_STATE_CACHED) {
+
+			len = spinel_datatype_unpack(
+				cached_struct_in,
+				cached_struct_len,
+				(
+					SPINEL_DATATYPE_BOOL_S      // Is Last Transaction Time valid?
+					SPINEL_DATATYPE_UINT32_S    // Last Transaction Time
+					SPINEL_DATATYPE_IPv6ADDR_S  // Mesh-local EID
+				),
+				&valid_last_trans,
+				&last_trans_time,
+				&ml_eid
 			);
 
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		} else {
+
+			len = spinel_datatype_unpack(
+				other_struct_in,
+				other_struct_len,
+				(
+					SPINEL_DATATYPE_BOOL_S      // Can evict?
+					SPINEL_DATATYPE_UINT16_S    // Timeout
+					SPINEL_DATATYPE_UINT16_S    // Retry delay
+				),
+				&can_evict,
+				&timeout,
+				&retry_delay
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+		}
+
+		if (!as_val_map) {
+			char c_string[500];
+			int index = 0;
+
+			index += snprintf(
+				c_string + index, sizeof(c_string) - index,
+				"%s -> 0x%04x, Age:%d, State:%s",
+				in6_addr_to_string(*target_address).c_str(),
+				target_rloc16,
+				age,
+				cache_table_entry_state_to_string(state)
+			);
+
+			if (state == SPINEL_ADDRESS_CACHE_ENTRY_STATE_CACHED) {
+				if (valid_last_trans) {
+					index += snprintf(
+						c_string + index, sizeof(c_string) - index,
+						", LastTrans:%u, ML-EID:%s",
+						last_trans_time,
+						in6_addr_to_string(*ml_eid).c_str()
+					);
+				}
+			} else {
+				index += snprintf(
+					c_string + index, sizeof(c_string) - index,
+					", CanEvict:%s, Timeout:%d, RetryDelay:%d",
+					can_evict ? "yes" : "no",
+					timeout,
+					retry_delay
+				);
+			}
+
 			result_as_string.push_back(std::string(c_string));
+
 		} else {
 			ValueMap entry;
 
 			entry[kWPANTUNDValueMapKey_AddressCacheTable_Address] = boost::any(in6_addr_to_string(*target_address));
 			entry[kWPANTUNDValueMapKey_AddressCacheTable_RLOC16]  = boost::any(target_rloc16);
 			entry[kWPANTUNDValueMapKey_AddressCacheTable_Age]     = boost::any(age);
+			entry[kWPANTUNDValueMapKey_AddressCacheTable_State]   = boost::any(std::string(cache_table_entry_state_to_string(state)));
+
+			if (state == SPINEL_ADDRESS_CACHE_ENTRY_STATE_CACHED) {
+				if (valid_last_trans) {
+					entry[kWPANTUNDValueMapKey_AddressCacheTable_LastTrans]    = boost::any(last_trans_time);
+					entry[kWPANTUNDValueMapKey_AddressCacheTable_MeshLocalEID] = boost::any(in6_addr_to_string(*ml_eid));
+				}
+			} else {
+				entry[kWPANTUNDValueMapKey_AddressCacheTable_CanEvict]   = boost::any(can_evict);
+				entry[kWPANTUNDValueMapKey_AddressCacheTable_Timeout]    = boost::any(timeout);
+				entry[kWPANTUNDValueMapKey_AddressCacheTable_RetryDelay] = boost::any(retry_delay);
+			}
 
 			result_as_val_map.push_back(entry);
 		}
-
-		data_in += len;
-		data_len -= len;
 	}
 
 	if (as_val_map) {
@@ -3334,7 +3446,7 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_CAP_OPENTHREAD_LOG_METADATA,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_C);
-	
+
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel(
 		kWPANTUNDProperty_CommissionerState,
