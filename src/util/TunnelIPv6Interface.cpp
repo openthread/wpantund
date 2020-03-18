@@ -451,7 +451,7 @@ TunnelIPv6Interface::processMLDMonitorFD(void)
 	hdr = reinterpret_cast<MLDv2Header *>(buffer);
 	offset = sizeof(MLDv2Header);
 
-	for (size_t i = 0; i < hdr->mNumRecords && offset < bufferLen; i++) {
+	for (size_t i = 0; i < ntohs(hdr->mNumRecords) && offset < bufferLen; i++) {
 		if (bufferLen - offset >= sizeof(MLDv2Record)) {
 			MLDv2Record *record = reinterpret_cast<MLDv2Record *>(&buffer[offset]);
 
@@ -463,7 +463,7 @@ TunnelIPv6Interface::processMLDMonitorFD(void)
 				}
 			}
 
-			offset += sizeof(MLDv2Record) + sizeof(in6_addr) * record->mNumSources;
+			offset += sizeof(MLDv2Record) + sizeof(in6_addr) * ntohs(record->mNumSources);
 		}
 	}
 
