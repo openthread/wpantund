@@ -392,6 +392,15 @@
 
 // ----------------------------------------------------------------------------
 
+// Address cache table entry states from kWPANTUNDProperty_ThreadAddressCacheTable
+
+#define kWPANTUNDCacheTableEntryState_Cached                    "cached"
+#define kWPANTUNDCacheTableEntryState_Snooped                   "snooped"
+#define kWPANTUNDCacheTableEntryState_Query                     "query"
+#define kWPANTUNDCacheTableEntryState_RetryQuery                "retry-query"
+
+// ----------------------------------------------------------------------------
+
 // Values of  the property kWPANTUNDProperty_StatAutoLogState
 #define kWPANTUNDStatAutoLogState_Disabled                      "disabled"
 #define kWPANTUNDStatAutoLogState_Long                          "long"
@@ -410,6 +419,12 @@
 #define kWPANTUNDValueMapKey_AddressCacheTable_Address          "Address"
 #define kWPANTUNDValueMapKey_AddressCacheTable_RLOC16           "RLOC16"
 #define kWPANTUNDValueMapKey_AddressCacheTable_Age              "Age"
+#define kWPANTUNDValueMapKey_AddressCacheTable_State            "State"
+#define kWPANTUNDValueMapKey_AddressCacheTable_LastTrans        "LastTrans"
+#define kWPANTUNDValueMapKey_AddressCacheTable_MeshLocalEID     "MeshLocal-EID"
+#define kWPANTUNDValueMapKey_AddressCacheTable_CanEvict         "CanEvict"
+#define kWPANTUNDValueMapKey_AddressCacheTable_Timeout          "Timeout"
+#define kWPANTUNDValueMapKey_AddressCacheTable_RetryDelay       "RetryDelay"
 
 #define kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask  "ChannelMask"
 #define kWPANTUNDValueMapKey_CommrEnergyScanResult_Data         "Data"

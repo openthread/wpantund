@@ -84,6 +84,22 @@
 #define ENOMEM 1
 #endif
 
+#ifndef SPINEL_PLATFORM_SHOULD_LOG_ASSERTS
+#define SPINEL_PLATFORM_SHOULD_LOG_ASSERTS 0
+#endif
+
+#ifndef SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR
+#define SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR 0
+#endif
+
+#ifndef SPINEL_PLATFORM_DOESNT_IMPLEMENT_FPRINTF
+#define SPINEL_PLATFORM_DOESNT_IMPLEMENT_FPRINTF 0
+#endif
+
+#ifndef SPINEL_SELF_TEST
+#define SPINEL_SELF_TEST 0
+#endif
+
 #if defined(errno) && SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR
 #error "SPINEL_PLATFORM_DOESNT_IMPLEMENT_ERRNO_VAR is set but errno is already defined."
 #endif
@@ -129,6 +145,22 @@ static int spinel_errno_workaround_;
 
 #ifndef require
 #define require(c, l) require_action(c, l, {})
+#endif
+
+#ifndef strnlen
+static size_t spinel_strnlen(const char *s, size_t maxlen)
+{
+    size_t ret;
+
+    for (ret = 0; (ret < maxlen) && (s[ret] != 0); ret++)
+    {
+        // Empty loop.
+    }
+
+    return ret;
+}
+#else
+#define spinel_strnlen strnlen
 #endif
 
 typedef struct
@@ -522,7 +554,7 @@ static spinel_ssize_t spinel_datatype_vunpack_(bool           in_place,
             // Add 1 for zero termination. If not zero terminated,
             // len will then be data_len+1, which we will detect
             // in the next check.
-            len = strnlen((const char *)data_in, data_len) + 1;
+            len = spinel_strnlen((const char *)data_in, data_len) + 1;
 
             // Verify that the string is zero terminated.
             require_action(len <= data_len, bail, (ret = -1, errno = EOVERFLOW));
@@ -2210,11 +2242,7 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
     case SPINEL_PROP_DEBUG_TEST_WATCHDOG:
         ret = "DEBUG_TEST_WATCHDOG";
         break;
-    
-    case SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE:
-        ret = "DEBUG_LOG_TIMESTAMP_BASE";
-        break;
-        
+
     default:
         break;
     }
