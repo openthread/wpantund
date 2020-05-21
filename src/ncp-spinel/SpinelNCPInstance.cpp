@@ -5527,7 +5527,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_inserted(spinel_prop_key_t key, const
 		spinel_ssize_t len;
 		uint32_t channel_mask;
 		const uint8_t *energy_data = NULL;
-		uint16_t energy_data_len = 0;
+		unsigned int energy_data_len = 0;
 		ValueMap entry;
 
 		len = spinel_datatype_unpack(
