@@ -30,9 +30,9 @@ install_packages_apt()
     sudo apt-get -y install dbus || die
     sudo apt-get -y install gcc g++ libdbus-1-dev || die
     sudo apt-get -y install autoconf-archive || die
-    sudo apt-get -y install bsdtar || die
     sudo apt-get -y install libtool || die
     sudo apt-get -y install libglib2.0-dev || die
+    sudo apt-get -y install libarchive-tools || sudo apt-get -y install bsdtar || die
 }
 
 install_packages_opkg()
