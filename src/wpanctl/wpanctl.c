@@ -435,7 +435,7 @@ int main(int argc, char * argv[])
 	int c;
 	bool ignore_driver_version_mismatch = false;
 	DBusError error;
-	DBusConnection* connection;
+	DBusConnection* connection = NULL;
 
 	dbus_error_init(&error);
 
@@ -714,6 +714,12 @@ bail:
 #endif  // HAVE_LIBREADLINE
 	if (gRet == ERRORCODE_QUIT)
 		gRet = 0;
+
+	if (connection) {
+		dbus_connection_unref(connection);
+	}
+
+	dbus_error_free(&error);
 
 	return gRet;
 }
