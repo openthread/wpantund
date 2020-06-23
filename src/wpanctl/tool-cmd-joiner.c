@@ -66,7 +66,7 @@ int tool_cmd_joiner(int argc, char* argv[])
 	const char *vendor_model = NULL;
 	const char *vendor_sw_version = NULL;
 	const char *vendor_data = NULL;
-	const char *property_joiner_state = kWPANTUNDProperty_ThreadJoinerState;
+	const char *property_joiner_state = kWPANTUNDProperty_JoinerState;
 	dbus_bool_t returnOnStart = true;
 
 	dbus_error_init(&error);

@@ -30,6 +30,7 @@
 
 #define NCP_NETWORK_KEY_SIZE                    16
 #define NCP_XPANID_SIZE                         8
+#define NCP_EUI64_SIZE                          8
 
 #define BUSY_DEBOUNCE_TIME_IN_MS                200
 #define MAX_INSOMNIA_TIME_IN_MS                 (MSEC_PER_SEC * 60 * 3)

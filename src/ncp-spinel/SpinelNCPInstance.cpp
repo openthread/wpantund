@@ -394,6 +394,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mMacFilterFixedRssi = -100;
 	mSupportedChannelMask = 0;
 	mPreferredChannelMask = 0;
+	mJoinerDiscernerBitLength = 0;
 	mCommissionerEnergyScanResult.clear();
 	mCommissionerPanIdConflictResult.clear();
 
@@ -517,10 +518,13 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_CommissionerState);
 		properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
 		properties.insert(kWPANTUNDProperty_CommissionerSessionId);
+		properties.insert(kWPANTUNDProperty_CommissionerJoiners);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
-		properties.insert(kWPANTUNDProperty_ThreadJoinerState);
+		properties.insert(kWPANTUNDProperty_JoinerState);
+		properties.insert(kWPANTUNDProperty_JoinerDiscernerValue);
+		properties.insert(kWPANTUNDProperty_JoinerDiscernerBitLength);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_POSIX)) {
@@ -692,6 +696,91 @@ unpack_commissioner_state(const uint8_t *data_in, spinel_size_t data_len, boost:
 
 	return ret;
 }
+
+static int
+unpack_commissioner_joiners(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	spinel_ssize_t len;
+	std::list<std::string> result;
+	char c_string[300];
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0) {
+		const uint8_t *joiner_info_in;
+		spinel_size_t joiner_info_len;
+		uint32_t joiner_timeout;
+		const char *joiner_pskd;
+		const spinel_eui64_t *joiner_eui64 = NULL;
+		uint8_t discerner_bit_len;
+		uint64_t discerner_value;
+		bool any_joiner = false;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_DATA_WLEN_S // Joiner Info struct (empty or EUI64 or Discerner)
+				SPINEL_DATATYPE_UINT32_S
+				SPINEL_DATATYPE_UTF8_S
+			),
+			&joiner_info_in, &joiner_info_len,
+			&joiner_timeout,
+			&joiner_pskd
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		switch (joiner_info_len)
+		{
+		case 0:
+			any_joiner = true;
+			break;
+
+		case sizeof(spinel_eui64_t):
+			joiner_eui64 = (const spinel_eui64_t *)joiner_info_in;
+			break;
+
+		default:
+			len = spinel_datatype_unpack(
+				joiner_info_in,
+				joiner_info_len,
+				(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT64_S
+				),
+				&discerner_bit_len,
+				&discerner_value
+			);
+			joiner_eui64 = NULL;
+			break;
+		}
+
+		if (any_joiner) {
+			 snprintf(c_string, sizeof(c_string), "any joiner, psk:%s, timeout:%.2f", joiner_pskd, joiner_timeout/1000.0);
+
+		} else if (joiner_eui64 != NULL) {
+			snprintf(c_string, sizeof(c_string), "eui64:%02X%02X%02X%02X%02X%02X%02X%02X, psk:%s, timeout:%.2f",
+				joiner_eui64->bytes[0], joiner_eui64->bytes[1], joiner_eui64->bytes[2], joiner_eui64->bytes[3],
+				joiner_eui64->bytes[4], joiner_eui64->bytes[5], joiner_eui64->bytes[6], joiner_eui64->bytes[7],
+				joiner_pskd, joiner_timeout/1000.0);
+
+		} else {
+			snprintf(c_string, sizeof(c_string), "discerner:%" PRIu64 ", bit-len:%d, psk:%s, timeout:%.2f",
+					 discerner_value, discerner_bit_len, joiner_pskd, joiner_timeout/1000.0);
+		}
+
+		result.push_back(std::string(c_string));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+
 
 static int
 unpack_channel_mask(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
@@ -1757,6 +1846,41 @@ bail:
 }
 
 static int
+unpack_meshcop_joiner_discerner_value(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	spinel_ssize_t len;
+	uint8_t discerner_len;
+	uint64_t discerner_value = 0;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&discerner_len
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	if (discerner_len != 0) {
+		data_in += len;
+		data_len -= len;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_UINT64_S,
+			&discerner_value
+		);
+	}
+
+	value = discerner_value;
+
+bail:
+	return ret;
+}
+
+static int
 unpack_thread_network_time_spinel(const uint8_t *data_in, spinel_size_t data_len, uint64_t &time, int8_t &time_sync_status)
 {
 	return spinel_datatype_unpack(
@@ -2529,13 +2653,21 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_MCU_POWER_STATE,
 		SPINEL_PROP_MCU_POWER_STATE, unpack_mcu_power_state);
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_ThreadJoinerState,
+		kWPANTUNDProperty_JoinerState,
 		SPINEL_CAP_THREAD_JOINER,
 		SPINEL_PROP_MESHCOP_JOINER_STATE, unpack_meshcop_joiner_state);
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_JoinerDiscernerValue,
+		SPINEL_CAP_THREAD_JOINER,
+		SPINEL_PROP_MESHCOP_JOINER_DISCERNER, unpack_meshcop_joiner_discerner_value);
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_CommissionerState,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_STATE, unpack_commissioner_state);
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_CommissionerJoiners,
+		SPINEL_CAP_THREAD_COMMISSIONER,
+		SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS, unpack_commissioner_joiners);
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_MACWhitelistEntries,
 		SPINEL_CAP_MAC_WHITELIST,
@@ -2752,6 +2884,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	// Properties requiring capability check with a dedicated handler method
 
 	register_get_handler_capability(
+		kWPANTUNDProperty_JoinerDiscernerBitLength,
+		SPINEL_CAP_THREAD_JOINER,
+		boost::bind(&SpinelNCPInstance::get_prop_JoinerDiscernerBitLength, this, _1));
+	register_get_handler_capability(
 		kWPANTUNDProperty_CommissionerEnergyScanResult,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		boost::bind(&SpinelNCPInstance::get_prop_CommissionerEnergyScanResult, this, _1));
@@ -2821,6 +2957,12 @@ void
 SpinelNCPInstance::get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mFilterALOCAddresses));
+}
+
+void
+SpinelNCPInstance::get_prop_JoinerDiscernerBitLength(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mJoinerDiscernerBitLength));
 }
 
 void
@@ -3643,6 +3785,12 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler(
 		kWPANTUNDProperty_MACFilterFixedRssi,
 		boost::bind(&SpinelNCPInstance::set_prop_MACFilterFixedRssi, this, _1, _2));
+	register_set_handler(
+		kWPANTUNDProperty_JoinerDiscernerBitLength,
+		boost::bind(&SpinelNCPInstance::set_prop_JoinerDiscernerBitLength, this, _1, _2));
+	register_set_handler(
+		kWPANTUNDProperty_JoinerDiscernerValue,
+		boost::bind(&SpinelNCPInstance::set_prop_JoinerDiscernerValue, this, _1, _2));
 }
 
 int
@@ -4064,6 +4212,59 @@ SpinelNCPInstance::set_prop_MACFilterFixedRssi(const boost::any &value, Callback
 	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
 		mMacFilterFixedRssi = static_cast<int8_t>(any_to_int(value));
 		cb(kWPANTUNDStatus_Ok);
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
+SpinelNCPInstance::set_prop_JoinerDiscernerBitLength(const boost::any &value, CallbackWithStatus cb)
+{
+	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+		mJoinerDiscernerBitLength = static_cast<uint8_t>(any_to_int(value));
+
+		// Setting Discerner length to zero is to clear any previous set Discerner value
+		if (mJoinerDiscernerBitLength == 0) {
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+					SPINEL_PROP_MESHCOP_JOINER_DISCERNER,
+					mJoinerDiscernerBitLength
+				))
+				.finish()
+			);
+
+		} else {
+			cb(kWPANTUNDStatus_Ok);
+		}
+
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
+SpinelNCPInstance::set_prop_JoinerDiscernerValue(const boost::any &value, CallbackWithStatus cb)
+{
+	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+		uint64_t discerner_value = any_to_uint64(value);
+
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT64_S
+				),
+				SPINEL_PROP_MESHCOP_JOINER_DISCERNER,
+				mJoinerDiscernerBitLength,
+				discerner_value
+			))
+			.finish()
+		);
+
 	} else {
 		cb(kWPANTUNDStatus_FeatureNotSupported);
 	}

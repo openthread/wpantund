@@ -187,14 +187,14 @@ public:
 	);
 
 	virtual void commissioner_add_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		const char *psk,
 		CallbackWithStatus cb = NilReturn()
 	);
 
 	virtual void commissioner_remove_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		CallbackWithStatus cb = NilReturn()
 	);
