@@ -345,7 +345,29 @@
 #define SPINEL_PROTOCOL_VERSION_THREAD_MAJOR 4
 #define SPINEL_PROTOCOL_VERSION_THREAD_MINOR 3
 
+/**
+ * @def SPINEL_FRAME_MAX_SIZE
+ *
+ *  The maximum size of SPINEL frame.
+ *
+ */
 #define SPINEL_FRAME_MAX_SIZE 1300
+
+/**
+ * @def SPINEL_FRAME_MAX_COMMAND_HEADER_SIZE
+ *
+ *  The maximum size of SPINEL command header.
+ *
+ */
+#define SPINEL_FRAME_MAX_COMMAND_HEADER_SIZE 4
+
+/**
+ * @def SPINEL_FRAME_MAX_PAYLOAD_SIZE
+ *
+ *  The maximum size of SPINEL command payload.
+ *
+ */
+#define SPINEL_FRAME_MAX_COMMAND_PAYLOAD_SIZE (SPINEL_FRAME_MAX_SIZE - SPINEL_FRAME_MAX_COMMAND_HEADER_SIZE)
 
 /**
  * @def SPINEL_ENCRYPTER_EXTRA_DATA_SIZE
@@ -383,9 +405,9 @@ enum
     SPINEL_STATUS_INVALID_STATE            = 4,  ///< This operation is invalid for the current device state.
     SPINEL_STATUS_INVALID_COMMAND          = 5,  ///< This command is not recognized.
     SPINEL_STATUS_INVALID_INTERFACE        = 6,  ///< This interface is not supported.
-    SPINEL_STATUS_INTERNAL_ERROR           = 7,  ///< An internal runtime error has occured.
-    SPINEL_STATUS_SECURITY_ERROR           = 8,  ///< A security/authentication error has occured.
-    SPINEL_STATUS_PARSE_ERROR              = 9,  ///< A error has occured while parsing the command.
+    SPINEL_STATUS_INTERNAL_ERROR           = 7,  ///< An internal runtime error has occurred.
+    SPINEL_STATUS_SECURITY_ERROR           = 8,  ///< A security/authentication error has occurred.
+    SPINEL_STATUS_PARSE_ERROR              = 9,  ///< A error has occurred while parsing the command.
     SPINEL_STATUS_IN_PROGRESS              = 10, ///< This operation is in progress.
     SPINEL_STATUS_NOMEM                    = 11, ///< Operation prevented due to memory pressure.
     SPINEL_STATUS_BUSY                     = 12, ///< The device is currently performing a mutually exclusive operation
@@ -621,6 +643,7 @@ enum
     SPINEL_NCP_LOG_REGION_OT_CLI      = 14,
     SPINEL_NCP_LOG_REGION_OT_CORE     = 15,
     SPINEL_NCP_LOG_REGION_OT_UTIL     = 16,
+    SPINEL_NCP_LOG_REGION_OT_BBR      = 17,
 };
 
 enum
@@ -633,7 +656,7 @@ enum
 enum
 {
     SPINEL_ADDRESS_CACHE_ENTRY_STATE_CACHED      = 0, // Entry is cached and in-use.
-    SPINEL_ADDRESS_CACHE_ENTRY_STATE_SNOOPED     = 1, // Entry is created by snoop optimization
+    SPINEL_ADDRESS_CACHE_ENTRY_STATE_SNOOPED     = 1, // Entry is created by snoop optimization.
     SPINEL_ADDRESS_CACHE_ENTRY_STATE_QUERY       = 2, // Entry represents an ongoing query for the EID.
     SPINEL_ADDRESS_CACHE_ENTRY_STATE_RETRY_QUERY = 3, // Entry is in retry mode (a prior query did not  a response).
 };
@@ -669,11 +692,12 @@ typedef uint8_t      spinel_tid_t;
 
 enum
 {
-    SPINEL_MD_FLAG_TX       = 0x0001, //!< Packet was transmitted, not received.
-    SPINEL_MD_FLAG_BAD_FCS  = 0x0004, //!< Packet was received with bad FCS
-    SPINEL_MD_FLAG_DUPE     = 0x0008, //!< Packet seems to be a duplicate
-    SPINEL_MD_FLAG_ACKED_FP = 0x0010, //!< Packet was acknowledged with frame pending set
-    SPINEL_MD_FLAG_RESERVED = 0xFFE2, //!< Flags reserved for future use.
+    SPINEL_MD_FLAG_TX        = 0x0001, //!< Packet was transmitted, not received.
+    SPINEL_MD_FLAG_BAD_FCS   = 0x0004, //!< Packet was received with bad FCS
+    SPINEL_MD_FLAG_DUPE      = 0x0008, //!< Packet seems to be a duplicate
+    SPINEL_MD_FLAG_ACKED_FP  = 0x0010, //!< Packet was acknowledged with frame pending set
+    SPINEL_MD_FLAG_ACKED_SEC = 0x0020, //!< Packet was acknowledged with secure enhance ACK
+    SPINEL_MD_FLAG_RESERVED  = 0xFFC2, //!< Flags reserved for future use.
 };
 
 enum
@@ -1063,7 +1087,7 @@ enum
     SPINEL_CAP_OPENTHREAD_LOG_METADATA = (SPINEL_CAP_OPENTHREAD__BEGIN + 6),
     SPINEL_CAP_TIME_SYNC               = (SPINEL_CAP_OPENTHREAD__BEGIN + 7),
     SPINEL_CAP_CHILD_SUPERVISION       = (SPINEL_CAP_OPENTHREAD__BEGIN + 8),
-    SPINEL_CAP_POSIX_APP               = (SPINEL_CAP_OPENTHREAD__BEGIN + 9),
+    SPINEL_CAP_POSIX                   = (SPINEL_CAP_OPENTHREAD__BEGIN + 9),
     SPINEL_CAP_SLAAC                   = (SPINEL_CAP_OPENTHREAD__BEGIN + 10),
     SPINEL_CAP_RADIO_COEX              = (SPINEL_CAP_OPENTHREAD__BEGIN + 11),
     SPINEL_CAP_MAC_RETRY_HISTOGRAM     = (SPINEL_CAP_OPENTHREAD__BEGIN + 12),
@@ -1114,6 +1138,7 @@ typedef uint32_t spinel_capability_t;
  *    Interface    | 0x100 - 0x1FF                  | Interface (e.g., UART)
  *    PIB          | 0x400 - 0x4FF                  | 802.15.4 PIB
  *    Counter      | 0x500 - 0x7FF                  | Counters (MAC, IP, etc).
+ *    RCP          | 0x800 - 0x8FF                  | RCP specific property
  *    Nest         |                0x3BC0 - 0x3BFF | Nest (legacy)
  *    Vendor       |                0x3C00 - 0x3FFF | Vendor specific
  *    Debug        |                0x4000 - 0x43FF | Debug related
@@ -2801,7 +2826,7 @@ enum
      * Array of structures containing:
      *
      *  `6`: IPv6 Address
-     *  `C`: Network Prefix Length
+     *  `C`: Network Prefix Length (in bits)
      *  `L`: Valid Lifetime
      *  `L`: Preferred Lifetime
      *
@@ -2930,6 +2955,10 @@ enum
      *        (use Thread stack default if not specified)
      *  `b` : Set to true to enable CSMA-CA for this packet, false otherwise.
      *        (default true).
+     *  `b` : Set to true to indicate it is a retransmission packet, false otherwise.
+     *        (default false).
+     *  `b` : Set to true to indicate that SubMac should skip AES processing, false otherwise.
+     *        (default false).
      *
      */
     SPINEL_PROP_STREAM_RAW = SPINEL_PROP_STREAM__BEGIN + 1,
@@ -3077,7 +3106,7 @@ enum
      *
      * Required capability: SPINEL_CAP_THREAD_COMMISSIONER
      *
-     * The valid values are specified by SPINEL_MESHCOP_COMMISIONER_STATE_<state> enumeration.
+     * The valid values are specified by SPINEL_MESHCOP_COMMISSIONER_STATE_<state> enumeration.
      *
      */
     SPINEL_PROP_MESHCOP_COMMISSIONER_STATE = SPINEL_PROP_MESHCOP__BEGIN + 2,
@@ -3431,11 +3460,10 @@ enum
     // RCP (NCP in radio only mode) version
     /** Format `U` - Read only
      *
-     * Required capability: SPINEL_CAP_POSIX_APP
+     * Required capability: SPINEL_CAP_POSIX
      *
-     * This property gives the version string of RCP (NCP in radio mode) which is being controlled by the POSIX
-     * application. It is available only in "POSIX Application" configuration (i.e., `OPENTHREAD_PLATFORM_POSIX_APP` is
-     * enabled).
+     * This property gives the version string of RCP (NCP in radio mode) which is being controlled by a POSIX
+     * application. It is available only in "POSIX" platform (i.e., `OPENTHREAD_PLATFORM_POSIX` is enabled).
      *
      */
     SPINEL_PROP_RCP_VERSION = SPINEL_PROP_OPENTHREAD__BEGIN + 12,
@@ -3909,6 +3937,44 @@ enum
 
     SPINEL_PROP_CNTR__END = 0x800,
 
+    SPINEL_PROP_RCP__BEGIN = 0x800,
+
+    /// MAC Key
+    /** Format: `CCddd`.
+     *
+     *  `C`: MAC key ID mode
+     *  `C`: MAC key ID
+     *  `d`: previous MAC key material data
+     *  `d`: current MAC key material data
+     *  `d`: next MAC key material data
+     *
+     * The Spinel property is used to set/get MAC key materials to and from RCP.
+     *
+     */
+    SPINEL_PROP_RCP_MAC_KEY = SPINEL_PROP_RCP__BEGIN + 0,
+
+    /// MAC Frame Counter
+    /** Format: `L`.
+     *
+     *  `L`: MAC frame counter
+     *
+     * The Spinel property is used to set MAC frame counter to RCP.
+     *
+     */
+    SPINEL_PROP_RCP_MAC_FRAME_COUNTER = SPINEL_PROP_RCP__BEGIN + 1,
+
+    /// Timestamps when Spinel frame is received and transmitted
+    /** Format: `X`.
+     *
+     *  `X`: Spinel frame transmit timestamp
+     *
+     * The Spinel property is used to get timestamp from RCP to calculate host and RCP timer difference.
+     *
+     */
+    SPINEL_PROP_RCP_TIMESTAMP = SPINEL_PROP_RCP__BEGIN + 2,
+
+    SPINEL_PROP_RCP__END = 0x900,
+
     SPINEL_PROP_NEST__BEGIN = 0x3BC0,
 
     SPINEL_PROP_NEST_STREAM_MFG = SPINEL_PROP_NEST__BEGIN + 0,
@@ -3955,7 +4021,7 @@ enum
     /// The NCP timestamp base
     /** Format: X (write-only)
      *
-     * This property controls the time base value that is used for logs timestamp field calulation.
+     * This property controls the time base value that is used for logs timestamp field calculation.
      *
      */
     SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE = SPINEL_PROP_DEBUG__BEGIN + 3,

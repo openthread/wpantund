@@ -523,7 +523,7 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadJoinerState);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_POSIX_APP)) {
+	if (mCapabilities.count(SPINEL_CAP_POSIX)) {
 		properties.insert(kWPANTUNDProperty_POSIXAppRCPVersion);
 	}
 
@@ -2471,7 +2471,7 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_PROP_CNTR_IP_RX_FAILURE, SPINEL_DATATYPE_UINT32_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_POSIXAppRCPVersion,
-		SPINEL_CAP_POSIX_APP,
+		SPINEL_CAP_POSIX,
 		SPINEL_PROP_RCP_VERSION, SPINEL_DATATYPE_UTF8_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_OpenThreadSLAACEnabled,
@@ -2769,7 +2769,7 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRatesAsValMap, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_POSIXAppRCPVersionCached,
-		SPINEL_CAP_POSIX_APP,
+		SPINEL_CAP_POSIX,
 		boost::bind(&SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_MACFilterFixedRssi,

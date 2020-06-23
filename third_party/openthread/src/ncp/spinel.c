@@ -2252,7 +2252,7 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
 const char *spinel_net_role_to_cstr(uint8_t net_role)
 {
-    const char *ret = "NET_ROLE_UNKNONW";
+    const char *ret = "NET_ROLE_UNKNOWN";
 
     switch (net_role)
     {
@@ -2631,8 +2631,8 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "CHILD_SUPERVISION";
         break;
 
-    case SPINEL_CAP_POSIX_APP:
-        ret = "POSIX_APP";
+    case SPINEL_CAP_POSIX:
+        ret = "POSIX";
         break;
 
     case SPINEL_CAP_SLAAC:
