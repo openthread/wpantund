@@ -1702,20 +1702,43 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	NCPControlInterface::JoinerInfo joiner;
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	const char* psk = NULL;
 	uint32_t timeout = 0;
+	uint8_t discerner_len = 0;
+	uint64_t discerner_value = 0;
 	bool did_succeed = false;
-	const int ext_addr_size = 8;
+
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_STRING, &psk,
 		DBUS_TYPE_UINT32, &timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_BYTE, &joiner.mDiscerner.mBitLength,
+		DBUS_TYPE_UINT64, &joiner.mDiscerner.mValue,
 		DBUS_TYPE_INVALID
 	);
+
+	joiner.mType = NCPControlInterface::JoinerInfo::kDiscerner;
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_UINT32, &timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+			DBUS_TYPE_INVALID
+		);
+
+		if (did_succeed) {
+			joiner.mType = NCPControlInterface::JoinerInfo::kEui64;
+			require(ext_addr_len == NCP_EUI64_SIZE, bail);
+			memcpy(&joiner.mEui64, ext_addr, NCP_EUI64_SIZE);
+		}
+	}
 
 	if (!did_succeed) {
 		// No extended address specified
@@ -1726,17 +1749,16 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 			DBUS_TYPE_INVALID
 		);
 
-		ext_addr = NULL;
+		joiner.mType = NCPControlInterface::JoinerInfo::kAny;
 	}
 
 	require(did_succeed, bail);
 	require(psk != NULL, bail);
-	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
 
 	dbus_message_ref(message);
 
 	interface->commissioner_add_joiner(
-		ext_addr,
+		joiner,
 		timeout,
 		psk,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
@@ -1754,18 +1776,37 @@ DBusIPCAPI_v1::interface_joiner_remove_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	NCPControlInterface::JoinerInfo joiner;
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	uint32_t joiner_timeout = 0;
 	bool did_succeed = false;
-	const int ext_addr_size = 8;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_UINT32, &joiner_timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_BYTE, &joiner.mDiscerner.mBitLength,
+		DBUS_TYPE_UINT64, &joiner.mDiscerner.mValue,
 		DBUS_TYPE_INVALID
 	);
+
+	joiner.mType = NCPControlInterface::JoinerInfo::kDiscerner;
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+			DBUS_TYPE_INVALID
+		);
+
+		if (did_succeed) {
+			joiner.mType = NCPControlInterface::JoinerInfo::kEui64;
+			require(ext_addr_len == NCP_EUI64_SIZE, bail);
+			memcpy(&joiner.mEui64, ext_addr, NCP_EUI64_SIZE);
+		}
+	}
 
 	if (!did_succeed) {
 		// No extended address specified
@@ -1775,16 +1816,15 @@ DBusIPCAPI_v1::interface_joiner_remove_handler(
 			DBUS_TYPE_INVALID
 		);
 
-		ext_addr = NULL;
+		joiner.mType = NCPControlInterface::JoinerInfo::kAny;
 	}
 
 	require(did_succeed, bail);
-	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
 
 	dbus_message_ref(message);
 
 	interface->commissioner_remove_joiner(
-		ext_addr,
+		joiner,
 		joiner_timeout,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);

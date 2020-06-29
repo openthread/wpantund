@@ -226,7 +226,12 @@
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 #define kWPANTUNDProperty_UdpForwardStream                      "UdpForward:Stream"
 
+#define kWPANTUNDProperty_JoinerState                           "Joiner:State"
+#define kWPANTUNDProperty_JoinerDiscernerValue                  "Joiner:Discerner:Value"
+#define kWPANTUNDProperty_JoinerDiscernerBitLength              "Joiner:Discerner:BitLength"
+
 #define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
+#define kWPANTUNDProperty_CommissionerJoiners                   "Commissioner:Joiners"
 #define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
 #define kWPANTUNDProperty_CommissionerSessionId                 "Commissioner:SessionId"
 #define kWPANTUNDProperty_CommissionerEnergyScanResult          "Commissioner:EnergyScanResult"
@@ -237,8 +242,6 @@
 #define kWPANTUNDCommissionerState_Disabled                     "disabled"
 #define kWPANTUNDCommissionerState_Petition                     "petition"
 #define kWPANTUNDCommissionerState_Active                       "active"
-
-#define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
 
 #define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
@@ -381,7 +384,7 @@
 
 // ----------------------------------------------------------------------------
 
-// Values of the property kWPANTUNDProperty_ThreadJoinerState
+// Values of the property kWPANTUNDProperty_JoinerState
 
 #define kWPANTUNDThreadJoinerState_Idle                         "idle"
 #define kWPANTUNDThreadJoinerState_Discover                     "discover"
@@ -464,6 +467,8 @@
 #define kWPANTUNDValueMapKey_Joiner_VendorModel                 "Joiner:Vendor:Model"
 #define kWPANTUNDValueMapKey_Joiner_VendorSwVersion             "Joiner:Vendor:SwVersion"
 #define kWPANTUNDValueMapKey_Joiner_VendorData                  "Joiner:Vendor:Data"
+#define kWPANTUNDValueMapKey_Joiner_DiscernerValue              "Joiner:Discerner:Value"
+#define kWPANTUNDValueMapKey_Joiner_DiscernerBitLength          "Joiner:Discerner:BitLength"
 
 #define kWPANTUNDValueMapKey_Counter_TxTotal                    "TxTotal"              // Number of transmissions
 #define kWPANTUNDValueMapKey_Counter_TxUnicast                  "TxUnicast"            // Number of unicast transmissions

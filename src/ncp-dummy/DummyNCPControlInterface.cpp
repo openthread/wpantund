@@ -212,7 +212,7 @@ DummyNCPControlInterface::joiner_commissioning(
 
 void
 DummyNCPControlInterface::commissioner_add_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	const char *psk,
 	CallbackWithStatus cb
@@ -222,7 +222,7 @@ DummyNCPControlInterface::commissioner_add_joiner(
 
 void
 DummyNCPControlInterface::commissioner_remove_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	CallbackWithStatus cb
 ) {

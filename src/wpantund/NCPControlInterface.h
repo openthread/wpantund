@@ -96,6 +96,25 @@ public:
 
 	typedef std::set<PrefixFlag> OnMeshPrefixFlags;
 
+	struct JoinerInfo
+	{
+		enum Type
+		{
+			kAny,
+			kEui64,
+			kDiscerner,
+		};
+
+
+		Type    mType;
+		uint8_t mEui64[NCP_EUI64_SIZE];
+		struct Discerner
+		{
+			uint64_t mValue;
+			uint8_t  mBitLength;
+		}            mDiscerner;
+	};
+
 public:
 	// ========================================================================
 	// Static Functions
@@ -224,14 +243,14 @@ public:
 	) = 0;
 
 	virtual void commissioner_add_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		const char *psk,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
 	virtual void commissioner_remove_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		CallbackWithStatus cb = NilReturn()
 	) = 0;

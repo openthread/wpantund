@@ -22,6 +22,7 @@
 #endif
 
 #include <getopt.h>
+#include <inttypes.h>
 #include "wpanctl-utils.h"
 #include "tool-cmd-commr.h"
 #include "args.h"
@@ -38,7 +39,9 @@ enum {
 	COMMR_CMD_START,
 	COMMR_CMD_STOP,
 	COMMR_CMD_JOINER_ADD,
+	COMMR_CMD_JOINER_ADD_WITH_DISCERNER,
 	COMMR_CMD_JOINER_REMOVE,
+	COMMR_CMD_JOINER_REMOVE_WITH_DISCERNER,
 	COMMR_CMD_ANNOUNCE_BEGIN,
 	COMMR_CMD_ENERGY_SCAN,
 	COMMR_CMD_PAN_ID_QUERY,
@@ -83,10 +86,22 @@ static const struct commr_command_entry_t
 		"Add joiner, use * as <eui64> for any, <timeout> in sec"
 	},
 	{
+		COMMR_CMD_JOINER_ADD_WITH_DISCERNER,
+		"joiner-add-discerner", "add-discerner",
+		4, 4, " <value> <bit-len> <timeout> <psk>",
+		"Add joiner with a given discerner value/bit-len, <timeout> in sec"
+	},
+	{
 		COMMR_CMD_JOINER_REMOVE,
 		"joiner-remove", "remove",
 		1, 2, " <eui64> [<timeout>=0]",
 		"Remove joiner, use * as <eui64> for any, <timeout> in sec"
+	},
+	{
+		COMMR_CMD_JOINER_REMOVE_WITH_DISCERNER,
+		"joiner-remove-discerner", "remove-discerner",
+		2, 3, " <value> <bit-len> [<timeout>=0]",
+		"Remove joiner with a given discerner value/bit-len, <timeout> in sec"
 	},
 	{
 		COMMR_CMD_ANNOUNCE_BEGIN,
@@ -361,6 +376,52 @@ tool_cmd_commr(int argc, char* argv[])
 		break;
 	}
 
+	case COMMR_CMD_JOINER_ADD_WITH_DISCERNER:
+	{
+		uint8_t eui64[COMMR_EUI64_SIZE];
+		uint8_t *eui64_ptr = eui64;
+		uint64_t discerner_value = 0;
+		uint8_t discerner_bit_len = 0;
+		uint32_t joiner_timeout;
+		const char *psk;
+
+		// joiner-add-discerner <discerner value> <discerner bit length> <timeout> <psk>
+
+		memset(&eui64, 0, sizeof(eui64));
+
+		discerner_value = (uint64_t)strtoll(argv[optind], NULL, 0);
+		discerner_bit_len = (uint8_t)strtol(argv[optind + 1], NULL, 0);
+		joiner_timeout = (uint32_t)strtol(argv[optind + 2], NULL, 0);
+		psk = argv[optind + 3];
+
+		if (check_psk_arg) {
+			ret = check_psk_format(psk);
+			if (ret != 0) {
+				fprintf(stderr, "%s %s: error: Invalid PSKd\n", argv[0], cmd_str);
+				goto bail;
+			}
+		}
+
+		ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_ADD);
+		require_action(ret == 0, bail, print_error_diagnosis(ret));
+
+		dbus_message_append_args(
+			message,
+			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &eui64_ptr, sizeof(eui64),
+			DBUS_TYPE_BYTE, &discerner_bit_len,
+			DBUS_TYPE_UINT64, &discerner_value,
+			DBUS_TYPE_INVALID
+		);
+
+		snprintf(outcome_str, sizeof(outcome_str),
+			"Added Joiner with Discerner %" PRIu64 ", bit-len:%d, timeout:%d, PSKd:\"%s\"",
+			discerner_value, discerner_bit_len,joiner_timeout, psk);
+
+		break;
+	}
+
 	case COMMR_CMD_JOINER_REMOVE:
 	{
 		uint8_t eui64[COMMR_EUI64_SIZE];
@@ -411,6 +472,43 @@ tool_cmd_commr(int argc, char* argv[])
 				joiner_timeout
 			);
 		}
+
+		break;
+	}
+
+	case COMMR_CMD_JOINER_REMOVE_WITH_DISCERNER:
+	{
+		uint8_t eui64[COMMR_EUI64_SIZE];
+		uint8_t *eui64_ptr = eui64;
+		uint64_t discerner_value = 0;
+		uint8_t discerner_bit_len = 0;
+		uint32_t joiner_timeout = 0;
+
+		// joiner-remove-discerner <discerner value> <discerner bit length> [<timeout>=0]
+
+		memset(&eui64, 0, sizeof(eui64));
+
+		discerner_value = (uint64_t)strtoll(argv[optind], NULL, 0);
+		discerner_bit_len = (uint8_t)strtol(argv[optind + 1], NULL, 0);
+
+		if (optind + 2 < argc) {
+			joiner_timeout = (uint32_t)strtol(argv[optind + 2], NULL, 0);
+		}
+
+		ret = create_new_wpan_dbus_message(&message, WPANTUND_IF_CMD_JOINER_REMOVE);
+		require_action(ret == 0, bail, print_error_diagnosis(ret));
+
+		dbus_message_append_args(
+			message,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &eui64_ptr, sizeof(eui64),
+			DBUS_TYPE_BYTE, &discerner_bit_len,
+			DBUS_TYPE_UINT64, &discerner_value,
+			DBUS_TYPE_INVALID
+		);
+		snprintf(outcome_str, sizeof(outcome_str),
+			"Removed Joiner with Discerner %" PRIu64 " bit-len:%d, timeout:%d",
+			discerner_value, discerner_bit_len, joiner_timeout);
 
 		break;
 	}

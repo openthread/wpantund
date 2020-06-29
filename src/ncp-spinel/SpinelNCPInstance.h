@@ -236,6 +236,7 @@ private:
 	void get_prop_ThreadRouterID(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadConfigFilterRLOCAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_JoinerDiscernerBitLength(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerEnergyScanResult(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerPanIdConflictResult(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
@@ -331,6 +332,8 @@ private:
 	void set_prop_DatasetCommand(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonTickleOnHostDidWake(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_JoinerDiscernerBitLength(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_JoinerDiscernerValue(const boost::any &value, CallbackWithStatus cb);
 
 private:
 	void check_capability_prop_update(const boost::any &value, CallbackWithStatus cb, const std::string &prop_name,
@@ -470,6 +473,7 @@ private:
 	uint8_t mChannelManagerNewChannel;
 	int8_t mMacFilterFixedRssi;
 
+	uint8_t mJoinerDiscernerBitLength;
 	std::list<ValueMap> mCommissionerEnergyScanResult;
 	std::list<ValueMap> mCommissionerPanIdConflictResult;
 

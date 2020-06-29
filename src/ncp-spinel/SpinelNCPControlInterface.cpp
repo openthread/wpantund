@@ -407,7 +407,7 @@ bail:
 
 void
 SpinelNCPControlInterface::commissioner_add_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	const char *psk,
 	CallbackWithStatus cb
@@ -420,19 +420,9 @@ SpinelNCPControlInterface::commissioner_add_joiner(
 	} else {
 		Data command;
 
-		if (eui64 != NULL) {
-			command = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
-					SPINEL_DATATYPE_UINT32_S
-					SPINEL_DATATYPE_UTF8_S
-				),
-				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
-				eui64,
-				timeout,
-				psk
-			);
-		} else {
+		switch (joiner.mType)
+		{
+		case JoinerInfo::kAny:
 			command = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_NULL_S)
@@ -443,6 +433,39 @@ SpinelNCPControlInterface::commissioner_add_joiner(
 				timeout,
 				psk
 			);
+			break;
+
+		case JoinerInfo::kEui64:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UTF8_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				&joiner.mEui64,
+				timeout,
+				psk
+			);
+			break;
+
+		case JoinerInfo::kDiscerner:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_STRUCT_S(
+						SPINEL_DATATYPE_UINT8_S
+						SPINEL_DATATYPE_UINT64_S
+					)
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UTF8_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				joiner.mDiscerner.mBitLength,
+				joiner.mDiscerner.mValue,
+				timeout,
+				psk
+			);
+			break;
 		}
 
 		mNCPInstance->start_new_task(
@@ -459,7 +482,7 @@ bail:
 
 void
 SpinelNCPControlInterface::commissioner_remove_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	CallbackWithStatus cb
 ) {
@@ -470,17 +493,9 @@ SpinelNCPControlInterface::commissioner_remove_joiner(
 	} else {
 		Data command;
 
-		if (eui64 != NULL) {
-			command = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
-					SPINEL_DATATYPE_UINT32_S
-				),
-				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
-				eui64,
-				timeout
-			);
-		} else {
+		switch (joiner.mType)
+		{
+		case JoinerInfo::kAny:
 			command = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
 					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_NULL_S)
@@ -489,6 +504,35 @@ SpinelNCPControlInterface::commissioner_remove_joiner(
 				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
 				timeout
 			);
+			break;
+
+		case JoinerInfo::kEui64:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
+					SPINEL_DATATYPE_UINT32_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				&joiner.mEui64,
+				timeout
+			);
+			break;
+
+		case JoinerInfo::kDiscerner:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+					SPINEL_DATATYPE_STRUCT_S(
+						SPINEL_DATATYPE_UINT8_S
+						SPINEL_DATATYPE_UINT64_S
+					)
+					SPINEL_DATATYPE_UINT32_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				joiner.mDiscerner.mBitLength,
+				joiner.mDiscerner.mValue,
+				timeout
+			);
+			break;
 		}
 
 		mNCPInstance->start_new_task(
