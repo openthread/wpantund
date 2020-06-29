@@ -484,7 +484,7 @@ tool_cmd_commr(int argc, char* argv[])
 		uint8_t discerner_bit_len = 0;
 		uint32_t joiner_timeout = 0;
 
-		// joiner-remove-with-discerner <discerner value> <discerner bit length> [<timeout>=0]
+		// joiner-remove-discerner <discerner value> <discerner bit length> [<timeout>=0]
 
 		memset(&eui64, 0, sizeof(eui64));
 
