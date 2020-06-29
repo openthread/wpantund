@@ -385,7 +385,7 @@ tool_cmd_commr(int argc, char* argv[])
 		uint32_t joiner_timeout;
 		const char *psk;
 
-		// joiner-add-with-discerner <discerner value> <discerner bit length> <timeout> <psk>
+		// joiner-add-discerner <discerner value> <discerner bit length> <timeout> <psk>
 
 		memset(&eui64, 0, sizeof(eui64));
 
