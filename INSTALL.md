@@ -77,8 +77,10 @@ Once the build above is complete, execute the following command:
 
 This will install `wpantund` onto your computer.
 
-Installing `wpantund` on OS X
+Installing `wpantund` on OS X 
 -----------------------------
+
+**`wpantund` support on OS X is experimenatl.**
 
 Installing `wpantund` on OS X is largely similar to the process above,
 except things are complicated by the fact that we depend on D-Bus—and
