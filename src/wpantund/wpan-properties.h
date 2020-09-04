@@ -185,13 +185,13 @@
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList          "Debug:IPv6:GlobalIPAddressList"
 
-#define kWPANTUNDProperty_MACWhitelistEnabled                   "MAC:Whitelist:Enabled"
-#define kWPANTUNDProperty_MACWhitelistEntries                   "MAC:Whitelist:Entries"
-#define kWPANTUNDProperty_MACWhitelistEntriesAsValMap           "MAC:Whitelist:Entries:AsValMap"
+#define kWPANTUNDProperty_MACAllowlistEnabled                   "MAC:Allowlist:Enabled"
+#define kWPANTUNDProperty_MACAllowlistEntries                   "MAC:Allowlist:Entries"
+#define kWPANTUNDProperty_MACAllowlistEntriesAsValMap           "MAC:Allowlist:Entries:AsValMap"
 
-#define kWPANTUNDProperty_MACBlacklistEnabled                   "MAC:Blacklist:Enabled"
-#define kWPANTUNDProperty_MACBlacklistEntries                   "MAC:Blacklist:Entries"
-#define kWPANTUNDProperty_MACBlacklistEntriesAsValMap           "MAC:Blacklist:Entries:AsValMap"
+#define kWPANTUNDProperty_MACDenylistEnabled                   "MAC:Denylist:Enabled"
+#define kWPANTUNDProperty_MACDenylistEntries                   "MAC:Denylist:Entries"
+#define kWPANTUNDProperty_MACDenylistEntriesAsValMap           "MAC:Denylist:Entries:AsValMap"
 
 #define kWPANTUNDProperty_MACFilterFixedRssi                    "MAC:Filter:FixedRssi"
 #define kWPANTUNDProperty_MACFilterEntries                      "MAC:Filter:Entries"
@@ -308,7 +308,7 @@
 #define kWPANTUNDProperty_NestLabs_LegacyEnabled                "com.nestlabs.internal:Legacy:Enabled"
 #define kWPANTUNDProperty_NestLabs_NetworkWakeData              "com.nestlabs.internal:NetworkWake:Data"
 #define kWPANTUNDProperty_NestLabs_NetworkWakeRemaining         "com.nestlabs.internal:NetworkWake:Remaining"
-#define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist         "com.nestlabs.internal:NetworkWake:Blacklist"
+#define kWPANTUNDProperty_NestLabs_NetworkWakeDenylist         "com.nestlabs.internal:NetworkWake:Denylist"
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower   "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake        "com.nestlabs.internal:Hack:AlwaysResetToWake"
 
@@ -413,8 +413,8 @@
 
 // Values for value map keys
 
-#define kWPANTUNDValueMapKey_Whitelist_ExtAddress               "ExtAddress"
-#define kWPANTUNDValueMapKey_Whitelist_Rssi                     "FixedRssi"
+#define kWPANTUNDValueMapKey_Allowlist_ExtAddress               "ExtAddress"
+#define kWPANTUNDValueMapKey_Allowlist_Rssi                     "FixedRssi"
 
 #define kWPANTUNDValueMapKey_ChannelMonitor_Channel             "Channel"
 #define kWPANTUNDValueMapKey_ChannelMonitor_Quality             "Quality"
@@ -493,7 +493,7 @@
 #define kWPANTUNDValueMapKey_Counter_RxBeacon                   "RxBeacon"             // Number of received beacon
 #define kWPANTUNDValueMapKey_Counter_RxBeaconRequest            "RxBeaconRequest"      // Number of received beacon request
 #define kWPANTUNDValueMapKey_Counter_RxOther                    "RxOther"              // Number of received other types of frames
-#define kWPANTUNDValueMapKey_Counter_RxAddressFiltered          "RxAddressFiltered"    // Number of received packets filtered by address filter (whitelist or blacklist)
+#define kWPANTUNDValueMapKey_Counter_RxAddressFiltered          "RxAddressFiltered"    // Number of received packets filtered by address filter (allowlist or denylist)
 #define kWPANTUNDValueMapKey_Counter_RxDestAddrFiltered         "RxDestAddrFiltered"   // Number of received packets filtered by destination check
 #define kWPANTUNDValueMapKey_Counter_RxDuplicated               "RxDuplicated"         // Number of received duplicated packets
 #define kWPANTUNDValueMapKey_Counter_RxErrNoFrame               "RxErrNoFrame"         // Number of received packets that do not contain contents

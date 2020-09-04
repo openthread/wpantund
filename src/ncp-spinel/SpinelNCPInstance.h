@@ -344,8 +344,8 @@ private:
 
 	void regsiter_all_insert_handlers(void);
 
-	void insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
-	void insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb);
 	void insert_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 private:
@@ -354,8 +354,8 @@ private:
 
 	void regsiter_all_remove_handlers(void);
 
-	void remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
-	void remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb);
 	void remove_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 public:

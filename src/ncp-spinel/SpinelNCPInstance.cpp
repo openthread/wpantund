@@ -43,7 +43,7 @@
 #include "spinel-extra.h"
 #include "IPv6Helpers.h"
 
-#define kWPANTUND_Whitelist_RssiOverrideDisabled    127
+#define kWPANTUND_Allowlist_RssiOverrideDisabled    127
 #define kWPANTUND_SpinelPropValueDumpLen            8
 
 using namespace nl;
@@ -546,11 +546,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NCPCounterAllIPv6);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
-		properties.insert(kWPANTUNDProperty_MACWhitelistEnabled);
-		properties.insert(kWPANTUNDProperty_MACWhitelistEntries);
-		properties.insert(kWPANTUNDProperty_MACBlacklistEnabled);
-		properties.insert(kWPANTUNDProperty_MACBlacklistEntries);
+	if (mCapabilities.count(SPINEL_CAP_MAC_ALLOWLIST)) {
+		properties.insert(kWPANTUNDProperty_MACAllowlistEnabled);
+		properties.insert(kWPANTUNDProperty_MACAllowlistEntries);
+		properties.insert(kWPANTUNDProperty_MACDenylistEnabled);
+		properties.insert(kWPANTUNDProperty_MACDenylistEntries);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -818,7 +818,7 @@ unpack_channel_mask(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 }
 
 static int
-unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+unpack_mac_allowlist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
 	spinel_ssize_t len;
 	ValueMap entry;
@@ -846,10 +846,10 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 
 		if (as_val_map) {
 			entry.clear();
-			entry[kWPANTUNDValueMapKey_Whitelist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
+			entry[kWPANTUNDValueMapKey_Allowlist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
 
-			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
-				entry[kWPANTUNDValueMapKey_Whitelist_Rssi] = rssi;
+			if (rssi != kWPANTUND_Allowlist_RssiOverrideDisabled) {
+				entry[kWPANTUNDValueMapKey_Allowlist_Rssi] = rssi;
 			}
 
 			result_as_val_map.push_back(entry);
@@ -862,7 +862,7 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 							 eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
 							 eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7]);
 
-			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
+			if (rssi != kWPANTUND_Allowlist_RssiOverrideDisabled) {
 				if (index >= 0 && index < sizeof(c_string)) {
 					snprintf(c_string + index, sizeof(c_string) - index, "   fixed-rssi:%d", rssi);
 				}
@@ -886,7 +886,7 @@ bail:
 }
 
 static int
-unpack_mac_blacklist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+unpack_mac_denylist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
 	spinel_ssize_t len;
 	ValueMap entry;
@@ -915,7 +915,7 @@ unpack_mac_blacklist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 
 		if (as_val_map) {
 			entry.clear();
-			entry[kWPANTUNDValueMapKey_Whitelist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
+			entry[kWPANTUNDValueMapKey_Allowlist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
 			result_as_val_map.push_back(entry);
 
 		} else {
@@ -2334,13 +2334,13 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_SESSION_ID, SPINEL_DATATYPE_UINT16_S);
 	register_get_handler_capability_spinel_simple(
-		kWPANTUNDProperty_MACWhitelistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		kWPANTUNDProperty_MACAllowlistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
 	register_get_handler_capability_spinel_simple(
-		kWPANTUNDProperty_MACBlacklistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		kWPANTUNDProperty_MACDenylistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_JamDetectionStatus,
 		SPINEL_CAP_JAM_DETECT,
@@ -2669,29 +2669,29 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS, unpack_commissioner_joiners);
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACWhitelistEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true));
+		kWPANTUNDProperty_MACAllowlistEntriesAsValMap,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST, boost::bind(unpack_mac_blacklist_entries, _1, _2, _3, false));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST, boost::bind(unpack_mac_denylist_entries, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACBlacklistEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST, boost::bind(unpack_mac_blacklist_entries, _1, _2, _3, true));
+		kWPANTUNDProperty_MACDenylistEntriesAsValMap,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST, boost::bind(unpack_mac_denylist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false));
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_MACFilterEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true));
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ChannelMonitorChannelQuality,
 		SPINEL_CAP_CHANNEL_MONITOR,
@@ -2909,7 +2909,7 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		boost::bind(&SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_MACFilterFixedRssi,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::get_prop_MACFilterFixedRssi, this, _1));
 }
 
@@ -3553,13 +3553,13 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	// Properties requiring capability check and associated with a spinel property
 
 	register_set_handler_capability_spinel(
-		kWPANTUNDProperty_MACWhitelistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
+		kWPANTUNDProperty_MACAllowlistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
 	register_set_handler_capability_spinel(
-		kWPANTUNDProperty_MACBlacklistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
+		kWPANTUNDProperty_MACDenylistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
 	register_set_handler_capability_spinel(
 		kWPANTUNDProperty_CommissionerProvisioningUrl,
 		SPINEL_CAP_THREAD_COMMISSIONER,
@@ -4209,7 +4209,7 @@ SpinelNCPInstance::set_prop_DaemonTickleOnHostDidWake(const boost::any &value, C
 void
 SpinelNCPInstance::set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb)
 {
-	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+	if (mCapabilities.count(SPINEL_CAP_MAC_ALLOWLIST)) {
 		mMacFilterFixedRssi = static_cast<int8_t>(any_to_int(value));
 		cb(kWPANTUNDStatus_Ok);
 	} else {
@@ -4339,24 +4339,24 @@ void
 SpinelNCPInstance::regsiter_all_insert_handlers(void)
 {
 	register_insert_handler_capability(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::insert_prop_MACWhitelistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::insert_prop_MACAllowlistEntries, this, _1, _2));
 	register_insert_handler_capability(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::insert_prop_MACBlacklistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::insert_prop_MACDenylistEntries, this, _1, _2));
 	register_insert_handler_capability(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::insert_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
-SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::insert_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
-	int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
+	int8_t rssi = kWPANTUND_Allowlist_RssiOverrideDisabled;
 
 	if (ext_address.size() == sizeof(spinel_eui64_t)) {
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -4364,7 +4364,7 @@ SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
-					SPINEL_PROP_MAC_WHITELIST,
+					SPINEL_PROP_MAC_ALLOWLIST,
 					ext_address.data(),
 					rssi
 				)
@@ -4377,10 +4377,10 @@ SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, Call
 }
 
 void
-SpinelNCPInstance::insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::insert_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
-	int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
+	int8_t rssi = kWPANTUND_Allowlist_RssiOverrideDisabled;
 
 	if (ext_address.size() == sizeof(spinel_eui64_t)) {
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -4388,7 +4388,7 @@ SpinelNCPInstance::insert_prop_MACBlacklistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
-					SPINEL_PROP_MAC_BLACKLIST,
+					SPINEL_PROP_MAC_DENYLIST,
 					ext_address.data(),
 					rssi
 				)
@@ -4475,21 +4475,21 @@ void
 SpinelNCPInstance::regsiter_all_remove_handlers(void)
 {
 	register_remove_handler_capability(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::remove_prop_MACWhitelistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::remove_prop_MACAllowlistEntries, this, _1, _2));
 	register_remove_handler_capability(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::remove_prop_MACBlacklistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::remove_prop_MACDenylistEntries, this, _1, _2));
 	register_remove_handler_capability(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::remove_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
-SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::remove_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
 
@@ -4499,7 +4499,7 @@ SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
-					SPINEL_PROP_MAC_WHITELIST,
+					SPINEL_PROP_MAC_ALLOWLIST,
 					ext_address.data()
 				)
 			)
@@ -4511,7 +4511,7 @@ SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, Call
 }
 
 void
-SpinelNCPInstance::remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::remove_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
 
@@ -4521,7 +4521,7 @@ SpinelNCPInstance::remove_prop_MACBlacklistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
-					SPINEL_PROP_MAC_BLACKLIST,
+					SPINEL_PROP_MAC_DENYLIST,
 					ext_address.data()
 				)
 			)
