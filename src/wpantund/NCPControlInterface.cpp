@@ -207,7 +207,7 @@ struct SetPropertyHelper {
 #define kWPANTUNDPropertyLegacyPrefix              "LegacyPrefix"
 #define kWPANTUNDPropertyNetWakeData               "NetWakeData"
 #define kWPANTUNDPropertyNetWakeRemaining          "NetWakeRemaining"
-#define kWPANTUNDPropertyActiveWakeupBlacklist     "ActiveWakeupBlacklist"
+#define kWPANTUNDPropertyActiveWakeupDenylist     "ActiveWakeupDenylist"
 #define kWPANTUNDPropertyActiveWakeupMask          "ActiveWakeupMask"
 #define kWPANTUNDPropertyLegacyInterfaceEnabled    "LegacyInterfaceEnabled"
 #define kWPANTUNDPropertyPrefix                    "Prefix"
@@ -314,8 +314,8 @@ NCPControlInterface::translate_deprecated_property(std::string& key, boost::any&
 		prop_map[to_upper(kWPANTUNDPropertyLegacyPrefix)]           = kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix;
 		prop_map[to_upper(kWPANTUNDPropertyNetWakeData)]            = kWPANTUNDProperty_NestLabs_NetworkWakeData;
 		prop_map[to_upper(kWPANTUNDPropertyNetWakeRemaining)]       = kWPANTUNDProperty_NestLabs_NetworkWakeRemaining;
-		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupBlacklist)]  = kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist;
-		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupMask)]       = kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist;
+		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupDenylist)]  = kWPANTUNDProperty_NestLabs_NetworkWakeDenylist;
+		prop_map[to_upper(kWPANTUNDPropertyActiveWakeupMask)]       = kWPANTUNDProperty_NestLabs_NetworkWakeDenylist;
 		prop_map[to_upper(kWPANTUNDPropertyLegacyInterfaceEnabled)] = kWPANTUNDProperty_NestLabs_LegacyEnabled;
 		prop_map[to_upper(kWPANTUNDPropertyUseLegacyChannel)]       = kWPANTUNDProperty_NestLabs_LegacyPreferInterface;
 		prop_map[to_upper(kWPANTUNDPropertyGlobalIPAddresses)]      = kWPANTUNDProperty_IPv6AllAddresses;
