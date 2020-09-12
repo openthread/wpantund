@@ -1987,6 +1987,14 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "SLAAC_ENABLED";
         break;
 
+    case SPINEL_PROP_SUPPORTED_RADIO_LINKS:
+        ret = "SUPPORTED_RADIO_LINKS";
+        break;
+
+    case SPINEL_PROP_NEIGHBOR_TABLE_MULTI_RADIO_INFO:
+        ret = "NEIGHBOR_TABLE_MULTI_RADIO_INFO";
+        break;
+
     case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
         ret = "SERVER_ALLOW_LOCAL_DATA_CHANGE";
         break;
@@ -2245,6 +2253,14 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_DEBUG_TEST_WATCHDOG:
         ret = "DEBUG_TEST_WATCHDOG";
+        break;
+
+    case SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE:
+        ret = "DEBUG_LOG_TIMESTAMP_BASE";
+        break;
+
+    case SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE:
+        ret = "DEBUG_TREL_TEST_MODE_ENABLE";
         break;
 
     default:
@@ -2651,6 +2667,10 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "MAC_RETRY_HISTOGRAM";
         break;
 
+    case SPINEL_CAP_MULTI_RADIO:
+        ret = "MULTI_RADIO";
+        break;
+
     case SPINEL_CAP_ERROR_RATE_TRACKING:
         ret = "ERROR_RATE_TRACKING";
         break;
@@ -2689,6 +2709,31 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
 
     case SPINEL_CAP_NEST_TRANSMIT_HOOK:
         ret = "NEST_TRANSMIT_HOOK";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
+
+const char *spinel_radio_link_to_cstr(uint32_t radio)
+{
+    const char *ret = "UNKNOWN";
+
+    switch (radio)
+    {
+    case SPINEL_RADIO_LINK_IEEE_802_15_4:
+        ret = "IEEE_802_15_4";
+        break;
+
+    case SPINEL_RADIO_LINK_TOBLE:
+        ret = "TOBLE";
+        break;
+
+    case SPINEL_RADIO_LINK_TREL_UDP6:
+        ret = "TREL_UDP6";
         break;
 
     default:

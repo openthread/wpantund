@@ -173,6 +173,8 @@
 #define kWPANTUNDProperty_POSIXAppRCPVersion                    "POSIXApp:RCPVersion"
 #define kWPANTUNDProperty_POSIXAppRCPVersionCached              "POSIXApp:RCPVersion:Cached"
 
+#define kWPANTUNDProperty_OpenThreadSupportedRadioLinks         "OpenThread:SupportedRadioLinks"
+#define kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo "OpenThread:NeighborTable::MultiRadioInfo"
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadLogTimestampBase            "OpenThread:LogTimestampBase"
 #define kWPANTUNDProperty_OpenThreadSLAACEnabled                "OpenThread:SLAAC:Enabled"
@@ -182,6 +184,7 @@
 #define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString   "OpenThread:MsgBufferCounters:AsString"
 #define kWPANTUNDProperty_OpenThreadDebugTestAssert             "OpenThread:Debug:TestAssert"
 #define kWPANTUNDProperty_OpenThreadDebugTestWatchdog           "OpenThread:Debug:TestWatchdog"
+#define kWPANTUNDProperty_OpenThreadTrelTestModeEnable          "OpenThread:Trel:TestMode:Enable"
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList          "Debug:IPv6:GlobalIPAddressList"
 
