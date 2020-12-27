@@ -64,6 +64,8 @@ SOURCES = \
 	NCPConstants.h \
 	FirmwareUpgrade.h \
 	FirmwareUpgrade.cpp \
+	ICMP6RouterAdvertiser.h \
+	ICMP6RouterAdvertiser.cpp \
 	StatCollector.h \
 	StatCollector.cpp \
 	RunawayResetBackoffManager.cpp \

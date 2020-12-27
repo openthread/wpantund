@@ -30,12 +30,14 @@
 #include "StatCollector.h"
 #include "NetworkRetain.h"
 #include "RunawayResetBackoffManager.h"
+#include "ICMP6RouterAdvertiser.h"
 #include "Pcap.h"
 
 namespace nl {
 namespace wpantund {
 
 class NCPInstanceBase : public NCPInstance, public EventHandler {
+	friend class ICMP6RouterAdvertiser;
 public:
 
 	enum {
@@ -66,6 +68,7 @@ public:
 	// MARK: ASync I/O
 
 	virtual cms_t get_ms_to_next_event(void);
+	virtual int vprocess_event(int event, va_list args);
 
 	virtual int update_fd_set(
 		fd_set *read_fd_set,
@@ -364,6 +367,18 @@ private:
 	void get_prop_IPv6MulticastAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6InterfaceRoutes(CallbackWithStatusArg1 cb);
 	void get_prop_DaemonSyslogMask(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertEnable(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertNetifs(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertTxPeriod(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertDefaultRoutePreference(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertDefaultRouteLifetime(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertAddRouteInfoOption(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixes(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixValidLifetime(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixPreferredLifetime(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixPrefixLength(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixFlagOnLink(CallbackWithStatusArg1 cb);
+	void get_prop_RouterAdvertPrefixFlagAutoConfig(CallbackWithStatusArg1 cb);
 
 	void regsiter_all_set_handlers(void);
 
@@ -385,14 +400,30 @@ private:
 	void set_prop_IPv6MeshLocalAddress(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonAutoDeepSleep(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonSyslogMask(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertEnable(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertTxPeriod(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertDefaultRoutePreference(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertDefaultRouteLifetime(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertAddRouteInfoOption(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixValidLifetime(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixPreferredLifetime(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixPrefixLength(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixFlagOnLink(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixFlagAutoConfig(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb);
 
 	void regsiter_all_insert_handlers(void);
 
 	void insert_prop_IPv6MulticastAddresses(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb);
 
 	void regsiter_all_remove_handlers(void);
 
 	void remove_prop_IPv6MulticastAddresses(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_RouterAdvertNetifs(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_RouterAdvertPrefixes(const boost::any &value, CallbackWithStatus cb);
 
 private:
 
@@ -775,6 +806,13 @@ protected:
 	int mFailureThreshold;
 
 	RunawayResetBackoffManager mRunawayResetBackoffManager;
+
+	ICMP6RouterAdvertiser mICMP6RouterAdvertiser;
+	uint32_t mRouterAdvertPrefixValidLifetime;
+	uint32_t mRouterAdvertPrefixPreferredLifetime;
+	uint8_t  mRouterAdvertPrefixLength;
+	bool     mRouterAdvertPrefixFlagOnLink;
+	bool     mRouterAdvertPrefixFlagAutoConfig;
 
 protected:
 	// ========================================================================

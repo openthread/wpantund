@@ -349,6 +349,20 @@
 #define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
 #define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
 
+#define kWPANTUNDProperty_RouterAdvertEnable                    "RouterAdvert:Enable"
+#define kWPANTUNDProperty_RouterAdvertNetifs                    "RouterAdvert:Netifs"
+#define kWPANTUNDProperty_RouterAdvertTxPeriod                  "RouterAdvert:TxPeriod"
+#define kWPANTUNDProperty_RouterAdvertDefaultRoutePreference    "RouterAdvert:DefaultRoute:Preference"
+#define kWPANTUNDProperty_RouterAdvertDefaultRouteLifetime      "RouterAdvert:DefaultRoute:Lifetime"
+#define kWPANTUNDProperty_RouterAdvertAddRouteInfoOption        "RouterAdvert:AddRouteInfoOption"
+#define kWPANTUNDProperty_RouterAdvertPrefixes                  "RouterAdvert:Prefixes"
+// Properties to configure parameters associated with any next added prefix
+#define kWPANTUNDProperty_RouterAdvertPrefixValidLifetime       "RouterAdvert:Prefix:ValidLifetime"
+#define kWPANTUNDProperty_RouterAdvertPrefixPreferredLifetime   "RouterAdvert:Prefix:PreferredLifetime"
+#define kWPANTUNDProperty_RouterAdvertPrefixPrefixLength        "RouterAdvert:Prefix:PrefixLength"
+#define kWPANTUNDProperty_RouterAdvertPrefixFlagOnLink          "RouterAdvert:Prefix:Flag:OnLink"
+#define kWPANTUNDProperty_RouterAdvertPrefixFlagAutoConfig      "RouterAdvert:Prefix:Flag:AutoConfig"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"

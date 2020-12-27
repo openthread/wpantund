@@ -560,11 +560,17 @@ on_error:
 int
 SpinelNCPInstance::vprocess_event(int event, va_list args)
 {
+	va_list args_tmp;
+
 	if (get_ncp_state() == FAULT) {
 		// We perform no processing in the fault state.
 		PT_INIT(&mControlPT);
 		return 0;
 	}
+
+	va_copy(args_tmp, args);
+	NCPInstanceBase::vprocess_event(event, args_tmp);
+	va_end(args_tmp);
 
 	while (!mTaskQueue.empty()) {
 		va_list tmp;

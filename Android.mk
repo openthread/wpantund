@@ -90,6 +90,7 @@ LOCAL_SRC_FILES := \
 	src/wpantund/NCPInstance.cpp \
 	src/wpantund/NCPInstanceBase.cpp \
 	src/wpantund/FirmwareUpgrade.cpp \
+	src/wpantund/ICMP6RouterAdvertiser.cpp \
 	src/wpantund/StatCollector.cpp \
 	src/wpantund/RunawayResetBackoffManager.cpp \
 	src/wpantund/NCPInstanceBase-NetInterface.cpp \

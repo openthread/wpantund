@@ -442,6 +442,7 @@ NCPInstanceBase::remove_all_address_prefix_route_entries(void)
 	mOffMeshRoutes.clear();
 	mInterfaceRoutes.clear();
 	mServiceEntries.clear();
+	mICMP6RouterAdvertiser.clear();
 }
 
 void
@@ -1208,6 +1209,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 				// new updated `mInterfaceRoutes` list.
 
 				did_remove = true;
+				mICMP6RouterAdvertiser.signal_routes_changed();
 				break;
 			}
 		}
@@ -1229,6 +1231,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 				syslog(LOG_INFO, "InterfaceRoutes: Adding %s", iter->second.get_description(iter->first).c_str());
 				mPrimaryInterface->add_route(&iter->first.get_prefix(), iter->first.get_length(), metric);
 				mInterfaceRoutes[iter->first] = InterfaceRouteEntry(metric);
+				mICMP6RouterAdvertiser.signal_routes_changed();
 			}
 		}
 	}
@@ -1247,6 +1250,7 @@ NCPInstanceBase::refresh_routes_on_interface(void)
 					iter->second.get_description(iter->first).c_str());
 				mPrimaryInterface->add_route(&iter->first.get_prefix(), iter->first.get_length(), metric);
 				mInterfaceRoutes[iter->first] = InterfaceRouteEntry(metric);
+				mICMP6RouterAdvertiser.signal_routes_changed();
 			}
 		}
 	}
