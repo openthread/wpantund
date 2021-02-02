@@ -603,6 +603,12 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_THREAD_CSL_RECEIVER)) {
+		properties.insert(kWPANTUNDProperty_ThreadCslPeriod);
+		properties.insert(kWPANTUNDProperty_ThreadCslTimeout);
+		properties.insert(kWPANTUNDProperty_ThreadCslChannel);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_RADIO_COEX)) {
 		properties.insert(kWPANTUNDProperty_NCPCoexEnable);
 		properties.insert(kWPANTUNDProperty_NCPCoexMetrics);
@@ -2758,6 +2764,20 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_RADIO_COEX,
 		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_S);
 
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslPeriod,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_PERIOD, SPINEL_DATATYPE_UINT16_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslTimeout,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_TIMEOUT, SPINEL_DATATYPE_UINT32_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslChannel,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_CHANNEL, SPINEL_DATATYPE_UINT8_S);
+
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
 
@@ -3751,6 +3771,19 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_CAP_OPENTHREAD_LOG_METADATA,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_C);
+
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslPeriod,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_PERIOD, SPINEL_DATATYPE_UINT16_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslTimeout,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_TIMEOUT, SPINEL_DATATYPE_UINT32_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslChannel,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_CHANNEL, SPINEL_DATATYPE_UINT8_C);
 
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel(

@@ -349,6 +349,10 @@
 #define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
 #define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
 
+#define kWPANTUNDProperty_ThreadCslPeriod                       "Thread:Csl:Period"
+#define kWPANTUNDProperty_ThreadCslTimeout                      "Thread:Csl:Timeout"
+#define kWPANTUNDProperty_ThreadCslChannel                      "Thread:Csl:Channel"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
