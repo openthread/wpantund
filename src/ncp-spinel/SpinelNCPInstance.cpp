@@ -511,6 +511,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
 	properties.insert(kWPANTUNDProperty_OpenThreadSupportedRadioLinks);
 
+	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_2)) {
+		properties.insert(kWPANTUNDProperty_ThreadDomainName);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
 	}
@@ -2763,6 +2767,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCoexEnable,
 		SPINEL_CAP_RADIO_COEX,
 		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadDomainName,
+		SPINEL_CAP_NET_THREAD_1_2,
+		SPINEL_PROP_THREAD_DOMAIN_NAME, SPINEL_DATATYPE_UTF8_S);
 
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_ThreadCslPeriod,
@@ -3771,6 +3779,11 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_CAP_OPENTHREAD_LOG_METADATA,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadDomainName,
+		SPINEL_CAP_NET_THREAD_1_2,
+		SPINEL_PROP_THREAD_DOMAIN_NAME,
+		SPINEL_DATATYPE_UTF8_C);
 
 	register_set_handler_capability_spinel(
 		kWPANTUNDProperty_ThreadCslPeriod,
