@@ -1081,6 +1081,7 @@ enum
     SPINEL_CAP_NET__BEGIN     = 52,
     SPINEL_CAP_NET_THREAD_1_0 = (SPINEL_CAP_NET__BEGIN + 0),
     SPINEL_CAP_NET_THREAD_1_1 = (SPINEL_CAP_NET__BEGIN + 1),
+    SPINEL_CAP_NET_THREAD_1_2 = (SPINEL_CAP_NET__BEGIN + 2),
     SPINEL_CAP_NET__END       = 64,
 
     SPINEL_CAP_OPENTHREAD__BEGIN       = 512,
@@ -2824,6 +2825,16 @@ enum
      * Value from range [11,26] is an alternative channel on which a CSL reception occurs.
      */
     SPINEL_PROP_THREAD_CSL_CHANNEL = SPINEL_PROP_THREAD_EXT__BEGIN + 43,
+
+    /// Thread Domain Name
+    /** Format `U` - Read-write
+     * Required capability: `SPINEL_CAP_NET_THREAD_1_2`
+     *
+     * This property is available since Thread 1.2.0.
+     * Write to this property succeeds only when Thread protocols are disabled.
+     *
+     */
+    SPINEL_PROP_THREAD_DOMAIN_NAME = SPINEL_PROP_THREAD_EXT__BEGIN + 44,
 
     SPINEL_PROP_THREAD_EXT__END = 0x1600,
 
