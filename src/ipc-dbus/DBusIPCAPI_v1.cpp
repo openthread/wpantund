@@ -1241,6 +1241,8 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	dbus_bool_t dhcp = FALSE;
 	dbus_bool_t configure = FALSE;
 	dbus_bool_t stable = TRUE;
+	dbus_bool_t nd_dns = FALSE;
+	dbus_bool_t domain_prefix = FALSE;
 	uint32_t preferred_lifetime = 0;
 	uint32_t valid_lifetime = 0;
 	uint8_t *prefix(NULL);
@@ -1267,8 +1269,29 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		DBUS_TYPE_BOOLEAN, &configure,
 		DBUS_TYPE_BOOLEAN, &stable,
 		DBUS_TYPE_UINT16, &prefix_len_in_bits,
+		DBUS_TYPE_BOOLEAN, &nd_dns,
+		DBUS_TYPE_BOOLEAN, &domain_prefix,
 		DBUS_TYPE_INVALID
 	);
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_BOOLEAN, &default_route,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT32, &preferred_lifetime,
+			DBUS_TYPE_UINT32, &valid_lifetime,
+			DBUS_TYPE_BOOLEAN, &preferred,
+			DBUS_TYPE_BOOLEAN, &slaac,
+			DBUS_TYPE_BOOLEAN, &on_mesh,
+			DBUS_TYPE_INT16, &priority_raw,
+			DBUS_TYPE_BOOLEAN, &dhcp,
+			DBUS_TYPE_BOOLEAN, &configure,
+			DBUS_TYPE_BOOLEAN, &stable,
+			DBUS_TYPE_UINT16, &prefix_len_in_bits,
+			DBUS_TYPE_INVALID
+		);
+	}
 
 	if (!did_succeed) {
 		did_succeed = dbus_message_get_args(
@@ -1346,6 +1369,14 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 
 	if (configure) {
 		flags.insert(NCPControlInterface::PREFIX_FLAG_CONFIGURE);
+	}
+
+	if (nd_dns) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_ND_DNS);
+	}
+
+	if (domain_prefix) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_DOMAIN_PREFIX);
 	}
 
 	dbus_message_ref(message);

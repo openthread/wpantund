@@ -2195,7 +2195,7 @@ enum
     SPINEL_PROP_THREAD_STABLE_NETWORK_DATA_VERSION = SPINEL_PROP_THREAD__BEGIN + 9,
 
     /// On-Mesh Prefixes
-    /** Format: `A(t(6CbCbS))`
+    /** Format: `A(t(6CbCbSC))`
      *
      * Data per item is:
      *
@@ -2206,8 +2206,11 @@ enum
      *  `b`: "Is defined locally" flag. Set if this network was locally
      *       defined. Assumed to be true for set, insert and replace. Clear if
      *       the on mesh network was defined by another node.
+     *       This field is ignored for INSERT and REMOVE commands.
      *  `S`: The RLOC16 of the device that registered this on-mesh prefix entry.
      *       This value is not used and ignored when adding an on-mesh prefix.
+     *       This field is ignored for INSERT and REMOVE commands.
+     *  `C`: TLV flags extended (additional field for Thread 1.2 features).
      *
      */
     SPINEL_PROP_THREAD_ON_MESH_NETS = SPINEL_PROP_THREAD__BEGIN + 10,
