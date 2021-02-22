@@ -242,6 +242,7 @@ private:
 	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalAddress(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_MulticastListenerRegistrationResponse(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTable(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTableAsValMap(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTableAddresses(CallbackWithStatusArg1 cb);
@@ -477,6 +478,8 @@ private:
 	uint8_t mJoinerDiscernerBitLength;
 	std::list<ValueMap> mCommissionerEnergyScanResult;
 	std::list<ValueMap> mCommissionerPanIdConflictResult;
+
+	ValueMap mMulticastListenerRegistrationResponse;
 
 	bool mResetIsExpected;
 

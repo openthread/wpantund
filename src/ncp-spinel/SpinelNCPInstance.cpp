@@ -3119,6 +3119,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		boost::bind(&SpinelNCPInstance::get_prop_CommissionerPanIdConflictResult, this, _1));
 	register_get_handler_capability(
+		kWPANTUNDProperty_ThreadMlrResponse,
+		SPINEL_CAP_NET_THREAD_1_2,
+		boost::bind(&SpinelNCPInstance::get_prop_MulticastListenerRegistrationResponse, this, _1));
+	register_get_handler_capability(
 		kWPANTUNDProperty_ThreadNeighborTableErrorRates,
 		SPINEL_CAP_ERROR_RATE_TRACKING,
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRates, this, _1));
@@ -3230,6 +3234,12 @@ SpinelNCPInstance::get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb)
 	} else {
 		cb(kWPANTUNDStatus_Ok, boost::any(in6_addr_to_string(mNCPLinkLocalAddress)));
 	}
+}
+
+void
+SpinelNCPInstance::get_prop_MulticastListenerRegistrationResponse(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mMulticastListenerRegistrationResponse));
 }
 
 void
@@ -5952,6 +5962,53 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		} else {
 			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
 		}
+	} else if (key == SPINEL_PROP_THREAD_MLR_RESPONSE) {
+
+		mMulticastListenerRegistrationResponse.clear();
+
+		spinel_ssize_t len;
+		uint8_t status;
+		uint8_t mlr_status;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			&status,
+			&mlr_status
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_Status] = status;
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus] = mlr_status;
+
+		std::list<std::string> addrList;
+		// Unpack array of addresses that failed to be updated (if any)
+		while (value_data_len != 0) {
+			const in6_addr * failed_addr;
+			len = spinel_datatype_unpack(value_data_ptr, value_data_len,
+				SPINEL_DATATYPE_IPv6ADDR_S,
+				&failed_addr
+			);
+			require(len >= 0, bail);
+			require(len <= value_data_len, bail);
+
+			value_data_ptr += len;
+			value_data_len -= len;
+
+			addrList.push_back(in6_addr_to_string(*failed_addr));
+		}
+
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_Addresses] = addrList;
+
+		syslog(LOG_DEBUG, "Received Multicast Listener Registration Response status=%u mlr_status=%u",
+			(unsigned)status, (unsigned)mlr_status);
 	}
 
 bail:

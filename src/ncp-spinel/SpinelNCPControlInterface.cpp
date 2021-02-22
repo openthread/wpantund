@@ -929,6 +929,9 @@ SpinelNCPControlInterface::mlr_request(
 	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_NET_THREAD_1_2)) {
 		cb(kWPANTUNDStatus_FeatureNotSupported);
 	} else {
+
+		mNCPInstance->mMulticastListenerRegistrationResponse.clear();
+
 		Data serializedAddresses;
 
 		for (auto it = addresses.begin(); it != addresses.end(); ++it) {

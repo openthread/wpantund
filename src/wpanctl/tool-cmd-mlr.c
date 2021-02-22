@@ -89,7 +89,7 @@ int tool_cmd_mlr_reg(int argc, char* argv[])
 	struct in6_addr addr[MLR_REG_MAXADDR];
 	dbus_bool_t mlr_timeout_present = FALSE;
 	uint32_t mlr_timeout;
-	uint32_t timeout = 1000;
+	uint32_t timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
 
 	// Parse addr from input argv
 	do {
@@ -184,7 +184,7 @@ int tool_cmd_mlr_reg(int argc, char* argv[])
 	reply = dbus_connection_send_with_reply_and_block(connection, message, timeout, &error);
 
 	if (!reply) {
-		fprintf(stderr, "%s: error: %s\n", argv[0], error.message);
+		fprintf(stderr, "mlr-reg: error: %s\n", error.message);
 		ret = ERRORCODE_TIMEOUT;
 		goto bail;
 	}
@@ -195,7 +195,11 @@ int tool_cmd_mlr_reg(int argc, char* argv[])
 	);
 
 	if (ret) {
-		fprintf(stderr, "%s failed with error %d. %s\n", argv[0], ret, wpantund_status_to_cstr(ret));
+		fprintf(stderr, "mlr-reg: failed with error %d. %s\n", ret, wpantund_status_to_cstr(ret));
+	}
+	else {
+		fprintf(stdout, "mlr-reg: Request sent successfully. You can check the result using the %s property",
+			kWPANTUNDProperty_ThreadMlrResponse);
 	}
 
 bail:

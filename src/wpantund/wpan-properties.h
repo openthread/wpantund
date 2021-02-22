@@ -355,6 +355,8 @@
 #define kWPANTUNDProperty_ThreadCslTimeout                      "Thread:Csl:Timeout"
 #define kWPANTUNDProperty_ThreadCslChannel                      "Thread:Csl:Channel"
 
+#define kWPANTUNDProperty_ThreadMlrResponse                     "Thread:Mlr:Response"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
@@ -443,6 +445,10 @@
 
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask     "ChannelMask"
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_PanId           "PanId"
+
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_Status           "Status"
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus        "MlrStatus"
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_Addresses        "Addresses"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"
