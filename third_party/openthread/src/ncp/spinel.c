@@ -1831,6 +1831,10 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "THREAD_DOMAIN_NAME";
         break;
 
+    case SPINEL_PROP_THREAD_DUA_ID:
+        ret = "THREAD_DUA_ID";
+        break;
+
     case SPINEL_PROP_MESHCOP_JOINER_STATE:
         ret = "MESHCOP_JOINER_STATE";
         break;
@@ -2689,6 +2693,10 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
 
     case SPINEL_CAP_MULTI_RADIO:
         ret = "MULTI_RADIO";
+        break;
+
+    case SPINEL_CAP_DUA:
+        ret = "DUA";
         break;
 
     case SPINEL_CAP_ERROR_RATE_TRACKING:
