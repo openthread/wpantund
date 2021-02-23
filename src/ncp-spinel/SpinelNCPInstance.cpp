@@ -523,6 +523,10 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo);
 	}
 
+	if (mCapabilities.count(SPINEL_CAP_DUA)) {
+		properties.insert(kWPANTUNDProperty_ThreadDUAInterfaceIdentifier);
+	}
+
 	if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
 		properties.insert(kWPANTUNDProperty_CommissionerState);
 		properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
@@ -1955,6 +1959,33 @@ unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_
 }
 
 static int
+unpack_mcu_dua_interface_identifier(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	std::string buff;
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (data_len == 0)
+	{
+		// When data_len == 0 an empty string will be returned.
+		value = buff;
+	}
+	else if (data_len == 8)
+	{
+		buff = std::string(data_len*2,0);
+		buff.resize(2 * data_len + 1);
+
+		encode_data_into_string(data_in, data_len, &buff[0], buff.capacity(), 0);
+		value = buff;
+	}
+	else
+	{
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+
+	return ret;
+}
+
+static int
 unpack_meshcop_joiner_state(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
 {
 	spinel_ssize_t len;
@@ -2944,6 +2975,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo,
 		SPINEL_CAP_MULTI_RADIO,
 		SPINEL_PROP_NEIGHBOR_TABLE_MULTI_RADIO_INFO, boost::bind(unpack_neighbor_table_multi_radio_info, _1, _2, _3));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadDUAInterfaceIdentifier,
+		SPINEL_CAP_DUA,
+		SPINEL_PROP_THREAD_DUA_ID, unpack_mcu_dua_interface_identifier);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -3824,6 +3859,11 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		SPINEL_CAP_COUNTERS,
 		SPINEL_PROP_CNTR_ALL_IP_COUNTERS, SPINEL_DATATYPE_UINT8_C,
 		&SpinelNCPInstance::convert_value_counter_reset);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadDUAInterfaceIdentifier,
+		SPINEL_CAP_DUA,
+		SPINEL_PROP_THREAD_DUA_ID, SPINEL_DATATYPE_DATA_C,
+		&SpinelNCPInstance::convert_value_dua_interface_identifier);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and persistence (saving in settings),
@@ -4071,6 +4111,31 @@ SpinelNCPInstance::convert_value_CommissionerState(const boost::any &value, boos
 		ret = kWPANTUNDStatus_InvalidArgument;
 	}
 
+	return ret;
+}
+
+int
+SpinelNCPInstance::convert_value_dua_interface_identifier(const boost::any &value, boost::any &value_out)
+{
+	std::string state_str = any_to_string(value);
+	Data data;
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (state_str.length() == 16)
+	{
+		data.resize(8);
+		parse_string_into_data(data.data(), data.size(), state_str.c_str());
+	}
+	else if (state_str.length() != 0)
+	{
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+	else
+	{
+		// Intentionally leave empty data when state_str.length() == 0
+	}
+
+	value_out = data;
 	return ret;
 }
 
