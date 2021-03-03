@@ -6251,7 +6251,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		value_data_len -= len;
 
 		source_str = in6_addr_to_string(*source);
-		spinel_link_metrics_status_to_cstr(status);
+		status_str = spinel_link_metrics_status_to_cstr(status);
 
 		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
 		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;

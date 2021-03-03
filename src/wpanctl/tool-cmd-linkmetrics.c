@@ -370,7 +370,7 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 		dbus_message_append_args(
 			*message,
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_ptr, sizeof(dest),
-			DBUS_TYPE_BYTE, enh_ack_flags,
+			DBUS_TYPE_BYTE, &enh_ack_flags,
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics_ptr, metrics_len,
 			DBUS_TYPE_INVALID
 		);
