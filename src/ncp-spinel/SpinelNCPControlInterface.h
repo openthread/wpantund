@@ -247,6 +247,35 @@ public:
 
 	virtual NCPInstance& get_ncp_instance(void);
 
+	virtual void link_metrics_query(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_probe(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		uint8_t length,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_mgmt_forward(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const Data &frame_types_data,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_mgmt_enh_ack(
+		const struct in6_addr &address,
+		uint8_t flags,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void mlr_request(
 		const std::vector<struct in6_addr> &addresses,
 		bool mlr_timeout_present,

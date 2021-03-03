@@ -1831,6 +1831,34 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "THREAD_DOMAIN_NAME";
         break;
 
+    case SPINEL_PROP_THREAD_LINK_METRICS_QUERY:
+        ret = "THREAD_LINK_METRICS_QUERY";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_QUERY_RESULT:
+        ret = "THREAD_LINK_METRICS_QUERY_RESULT";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_PROBE:
+        ret = "LINK_METRICS_PROBE";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK:
+        ret = "THREAD_LINK_METRICS_MGMT_ENH_ACK";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK_IE:
+        ret = "THREAD_LINK_METRICS_MGMT_ENH_ACK_IE";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD:
+        ret = "SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE:
+        ret = "SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE";
+        break;
+
     case SPINEL_PROP_THREAD_MLR_REQUEST:
         ret = "THREAD_MLR_REQUEST";
         break;
@@ -2466,6 +2494,14 @@ const char *spinel_status_to_cstr(spinel_status_t status)
         ret = "INVALID_COMMAND_FOR_PROP";
         break;
 
+    case SPINEL_STATUS_UNKNOWN_NEIGHBOR:
+        ret = "UNKNOWN_NEIGHBOR";
+        break;
+
+    case SPINEL_STATUS_NOT_CAPABLE:
+        ret = "NOT_CAPABLE";
+        break;
+
     case SPINEL_STATUS_RESPONSE_TIMEOUT:
         ret = "RESPONSE_TIMEOUT";
         break;
@@ -2763,6 +2799,10 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "THREAD_CSL_RECEIVER";
         break;
 
+    case SPINEL_CAP_THREAD_LINK_METRICS:
+        ret = "THREAD_LINK_METRICS";
+        break;
+
     case SPINEL_CAP_THREAD_BACKBONE_ROUTER:
         ret = "THREAD_BACKBONE_ROUTER";
         break;
@@ -2801,6 +2841,35 @@ const char *spinel_radio_link_to_cstr(uint32_t radio)
         break;
 
     default:
+        break;
+    }
+
+    return ret;
+}
+
+const char *spinel_link_metrics_status_to_cstr(uint8_t status)
+{
+    const char* ret = "UNKNOWN";
+
+    switch(status)
+    {
+    case SPINEL_LINK_METRICS_STATUS_SUCCESS:
+        ret = "SUCCESS";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_CANNOT_SUPPORT_NEW_SERIES:
+        ret = "CANNOT_SUPPORT_NEW_SERIES";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_SERIESID_ALREADY_REGISTERED:
+        ret = "SERIESID_ALREADY_REGISTERED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_SERIESID_NOT_RECOGNIZED:
+        ret = "SERIESID_NOT_RECOGNIZED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_NO_MATCHING_FRAMES_RECEIVED:
+        ret = "NO_MATCHING_FRAMES_RECEIVED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_OTHER_ERROR:
+        ret = "OTHER_ERROR";
         break;
     }
 

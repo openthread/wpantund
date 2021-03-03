@@ -304,6 +304,39 @@ public:
 
 public:
 	// ========================================================================
+	// Thread 1.2 related Member Functions
+
+	virtual void link_metrics_query(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void link_metrics_probe(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		uint8_t length,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void link_metrics_mgmt_forward(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const Data &frame_types_data,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+	virtual void link_metrics_mgmt_enh_ack(
+		const struct in6_addr &address,
+		uint8_t flags,
+		const Data &metrics_data,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
+public:
+	// ========================================================================
 	// Packet Capture (pcap) Member Functions
 
 	virtual void pcap_to_fd(
