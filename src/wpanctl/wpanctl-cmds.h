@@ -53,6 +53,7 @@
 #include "tool-cmd-dataset.h"
 #include "tool-cmd-add-service.h"
 #include "tool-cmd-remove-service.h"
+#include "tool-cmd-mlr.h"
 
 #include "wpanctl-utils.h"
 
@@ -145,6 +146,11 @@
 	{ "commr", "", &tool_cmd_commr , 1 }, \
 	{ "o-commissioner", "", &tool_cmd_commissioner , 1 }, /* old commissioner command */ \
 	{ "o-commr", "", &tool_cmd_commissioner , 1 }, \
+	{ \
+		"mlr-reg", \
+		"Multicast Listener Registration commands", \
+		&tool_cmd_mlr_reg \
+	}, \
 	{ \
 		"list", \
 		"List available interfaces.", \

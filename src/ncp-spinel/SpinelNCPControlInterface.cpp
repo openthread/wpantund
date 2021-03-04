@@ -919,6 +919,52 @@ SpinelNCPControlInterface::mfg(
 	);
 }
 
+void
+SpinelNCPControlInterface::mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_NET_THREAD_1_2)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		Data serializedAddresses;
+
+		for (auto it = addresses.begin(); it != addresses.end(); ++it) {
+			serializedAddresses.append(SpinelPackData(SPINEL_DATATYPE_IPv6ADDR_S, &(*it)));
+		}
+
+		Data serializedOptionals;
+
+		if (mlr_timeout_present) {
+			serializedOptionals.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT32_S
+				),
+				(uint8_t)SPINEL_THREAD_MLR_PARAMID_TIMEOUT,
+				mlr_timeout
+			));
+		}
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_DATA_S)
+					SPINEL_DATATYPE_DATA_S
+				), SPINEL_PROP_THREAD_MLR_REQUEST,
+				serializedAddresses.data(),
+				serializedAddresses.size(),
+				serializedOptionals.data(),
+				serializedOptionals.size()
+				))
+				.finish()
+		);
+	}
+}
+
 const WPAN::NetworkInstance&
 SpinelNCPControlInterface::get_current_network_instance()const
 {

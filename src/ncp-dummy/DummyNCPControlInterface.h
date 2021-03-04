@@ -245,6 +245,13 @@ public:
 
 	virtual NCPInstance& get_ncp_instance(void);
 
+	virtual void mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void pcap_to_fd(int fd,
 		CallbackWithStatus cb = NilReturn()
 	);

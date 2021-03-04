@@ -288,6 +288,13 @@ public:
 		CallbackWithStatusArg1 cb = NilReturn()
 	) = 0;
 
+	virtual void mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 public:
 	// ========================================================================
 	// Packet Capture (pcap) Member Functions

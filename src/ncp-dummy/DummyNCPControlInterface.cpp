@@ -397,6 +397,16 @@ DummyNCPControlInterface::property_remove_value(
 }
 
 void
+DummyNCPControlInterface::mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::peek(uint32_t address, uint16_t count, CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_FeatureNotImplemented, std::string("No peeking!"));

@@ -1831,8 +1831,16 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "THREAD_DOMAIN_NAME";
         break;
 
+    case SPINEL_PROP_THREAD_MLR_RESPONSE:
+        ret = "THREAD_MLR_RESPONSE";
+        break;
+
     case SPINEL_PROP_THREAD_DUA_ID:
         ret = "THREAD_DUA_ID";
+        break;
+
+    case SPINEL_PROP_THREAD_MLR_REQUEST:
+        ret = "THREAD_MLR_REQUEST";
         break;
 
     case SPINEL_PROP_MESHCOP_JOINER_STATE:
@@ -2436,6 +2444,10 @@ const char *spinel_status_to_cstr(spinel_status_t status)
 
     case SPINEL_STATUS_INVALID_COMMAND_FOR_PROP:
         ret = "INVALID_COMMAND_FOR_PROP";
+        break;
+
+    case SPINEL_STATUS_RESPONSE_TIMEOUT:
+        ret = "RESPONSE_TIMEOUT";
         break;
 
     case SPINEL_STATUS_JOIN_FAILURE:
