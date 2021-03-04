@@ -254,6 +254,13 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
+	virtual void backbone_router_config(
+		const uint16_t delay,
+		const uint32_t timeout,
+		const uint8_t seqno,
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void pcap_to_fd(int fd,
 		CallbackWithStatus cb = NilReturn()
 	);

@@ -286,6 +286,11 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_backbone_router_config_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 private:
 	typedef DBusHandlerResult (interface_handler_cb)(
 		NCPControlInterface*,

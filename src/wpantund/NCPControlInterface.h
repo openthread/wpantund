@@ -295,6 +295,13 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	) = 0;
 
+	virtual void backbone_router_config(
+		const uint16_t delay,
+		const uint32_t timeout,
+		const uint8_t seqno,
+		CallbackWithStatus cb = NilReturn()
+	) = 0;
+
 public:
 	// ========================================================================
 	// Packet Capture (pcap) Member Functions

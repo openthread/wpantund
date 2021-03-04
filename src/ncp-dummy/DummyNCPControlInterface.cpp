@@ -407,6 +407,16 @@ DummyNCPControlInterface::mlr_request(
 }
 
 void
+DummyNCPControlInterface::backbone_router_config(
+		const uint16_t delay,
+		const uint32_t timeout,
+		const uint8_t seqno,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::peek(uint32_t address, uint16_t count, CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_FeatureNotImplemented, std::string("No peeking!"));

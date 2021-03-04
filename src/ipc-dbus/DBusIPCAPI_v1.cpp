@@ -120,6 +120,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MLR_REQUEST, interface_mlr_request_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_BACKBONE_ROUTER_CONFIG, interface_backbone_router_config_handler);
 }
 
 static void
@@ -2158,6 +2160,41 @@ DBusIPCAPI_v1::interface_mlr_request_handler(
 		addresses,
 		mlr_timeout_present,
 		mlr_timeout,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_backbone_router_config_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed = true;
+	uint16_t delay = 0;
+	uint32_t timeout = 0;
+	uint8_t seqno = 0;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT16, &delay,
+		DBUS_TYPE_UINT32, &timeout,
+		DBUS_TYPE_BYTE, &seqno,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	dbus_message_ref(message);
+
+	interface->backbone_router_config(
+		delay,
+		timeout,
+		seqno,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
