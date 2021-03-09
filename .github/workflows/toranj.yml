@@ -66,7 +66,7 @@ jobs:
         sudo make -j2
         sudo make install
 
-        git clone --depth=1 --branch=master https://github.com/openthread/openthread.git
+        git clone --depth=1 --branch=main https://github.com/openthread/openthread.git
         cd openthread
         ./tests/toranj/start.sh
 
