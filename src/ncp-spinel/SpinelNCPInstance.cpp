@@ -4877,6 +4877,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 		uint8_t prefix_len = 0;
 		bool stable = false;
 		uint8_t flags = 0;
+		uint8_t flags_extended = 0;
 		bool is_local = false;
 		uint16_t rloc16 = 0;
 
@@ -4890,13 +4891,15 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 				SPINEL_DATATYPE_UINT8_S    // flags
 				SPINEL_DATATYPE_BOOL_S     // is_local
 				SPINEL_DATATYPE_UINT16_S   // RLOC16
+				SPINEL_DATATYPE_UINT8_S    // flags extended
 			),
 			&prefix_addr,
 			&prefix_len,
 			&stable,
 			&flags,
 			&is_local,
-			&rloc16
+			&rloc16,
+			&flags_extended
 		);
 
 		if (len <= 0) {
@@ -4911,7 +4914,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			prefix_len,
 			stable ? "yes" : "no",
 			is_local ? "yes" : "no",
-			on_mesh_prefix_flags_to_string(flags).c_str(),
+			on_mesh_prefix_flags_to_string((uint16_t)((flags_extended << 8) | flags)).c_str(),
 			rloc16
 		);
 
@@ -6385,7 +6388,7 @@ SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data&
 }
 
 void
-SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint16_t flags,
 	bool stable, CallbackWithStatus cb)
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
@@ -6401,12 +6404,18 @@ SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint
 			SPINEL_DATATYPE_UINT8_S
 			SPINEL_DATATYPE_BOOL_S
 			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT8_S
 		),
 		SPINEL_PROP_THREAD_ON_MESH_NETS,
 		&prefix,
 		prefix_len,
 		stable,
-		flags
+		flags & 0xff,
+		false,
+		0,
+		(flags >> 8) & 0xff
 	));
 
 	start_new_task(factory.finish());

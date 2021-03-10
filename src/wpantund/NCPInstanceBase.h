@@ -164,7 +164,7 @@ public:
 	int join_multicast_group(const std::string &group_name);
 
 	void on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
-			uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
+			uint16_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
 	void on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
 			uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
@@ -183,7 +183,7 @@ public:
 	void service_was_removed(Origin origin, uint32_t enterprise_number, const Data &service_data,
 					CallbackWithStatus cb = NilReturn());
 
-	static std::string on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed = false);
+	static std::string on_mesh_prefix_flags_to_string(uint16_t flags, bool detailed = false);
 
 protected:
 	void refresh_address_route_prefix_entries(void);
@@ -212,7 +212,7 @@ protected:
 
 	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb) = 0;
 
-	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags, bool stable,
 					CallbackWithStatus cb) = 0;
 
 	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
@@ -525,12 +525,20 @@ protected:
 			kPreferenceLow           = (3 << kPreferenceOffset),
 		};
 
-		OnMeshPrefixEntry(Origin origin = kOriginThreadNCP, uint8_t flags = 0, bool stable = true, uint16_t rloc16 = 0)
+		enum {
+			//Additional flags keep in extended byte.
+			kExtendedByteOffset      = 8,
+
+			kFlagExtDP               = (1 << (kExtendedByteOffset + 6)),
+			kFlagExtNdDns            = (1 << (kExtendedByteOffset + 7)),
+		};
+
+		OnMeshPrefixEntry(Origin origin = kOriginThreadNCP, uint16_t flags = 0, bool stable = true, uint16_t rloc16 = 0)
 			: EntryBase(origin), mFlags(flags), mStable(stable), mRloc(rloc16) { }
 
 		uint8_t is_stable(void) const { return mStable; }
 
-		uint8_t get_flags(void) const { return mFlags; }
+		uint16_t get_flags(void) const { return mFlags; }
 		void set_flags(uint8_t flags) { mFlags = flags; }
 
 		bool is_on_mesh(void) const { return (mFlags & kFlagOnMesh) == kFlagOnMesh; }
@@ -542,13 +550,13 @@ protected:
 
 		std::string get_description(const IPv6Prefix &prefix, bool align = false) const;
 
-		static uint8_t encode_flag_set(
+		static uint16_t encode_flag_set(
 			NCPControlInterface::OnMeshPrefixFlags prefix_flags,
 			NCPControlInterface::OnMeshPrefixPriority priority
 		);
 
 	private:
-		uint8_t mFlags;
+		uint16_t mFlags;
 		bool mStable;
 		uint16_t mRloc;
 	};

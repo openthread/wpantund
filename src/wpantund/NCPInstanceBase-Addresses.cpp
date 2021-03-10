@@ -153,7 +153,7 @@ NCPInstanceBase::MulticastAddressEntry::get_description(const struct in6_addr &a
 }
 
 std::string
-NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
+NCPInstanceBase::on_mesh_prefix_flags_to_string(uint16_t flags, bool detailed)
 {
 	char c_string[300];
 
@@ -175,7 +175,7 @@ NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
 			break;
 		}
 
-		snprintf(c_string, sizeof(c_string), "flags:0x%02x [on-mesh:%s def-route:%s config:%s dhcp:%s slaac:%s pref:%s prio:%s]",
+		snprintf(c_string, sizeof(c_string), "flags:0x%02x [on-mesh:%s def-route:%s config:%s dhcp:%s slaac:%s pref:%s nd-dns:%s dp:%s prio:%s]",
 			flags,
 			(flags & OnMeshPrefixEntry::kFlagOnMesh) ? "1" : "0",
 			(flags & OnMeshPrefixEntry::kFlagDefaultRoute) ? "1" : "0",
@@ -183,6 +183,8 @@ NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
 			(flags & OnMeshPrefixEntry::kFlagDHCP) ? "1" : "0",
 			(flags & OnMeshPrefixEntry::kFlagSLAAC) ? "1" : "0",
 			(flags & OnMeshPrefixEntry::kFlagPreferred) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagExtNdDns) ? "1" : "0",
+			(flags & OnMeshPrefixEntry::kFlagExtDP) ? "1" : "0",
 			prio
 		);
 	} else {
@@ -192,12 +194,12 @@ NCPInstanceBase::on_mesh_prefix_flags_to_string(uint8_t flags, bool detailed)
 	return c_string;
 }
 
-uint8_t
+uint16_t
 NCPInstanceBase::OnMeshPrefixEntry::encode_flag_set(
 	NCPControlInterface::OnMeshPrefixFlags prefix_flag_set,
 	NCPControlInterface::OnMeshPrefixPriority priority
 ) {
-	uint8_t flags = 0;
+	uint16_t flags = 0;
 
 	switch (priority) {
 	case NCPControlInterface::PREFIX_HIGH_PREFERENCE:
@@ -235,6 +237,14 @@ NCPInstanceBase::OnMeshPrefixEntry::encode_flag_set(
 
 	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_PREFERRED)) {
 		flags |= kFlagPreferred;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_DOMAIN_PREFIX)) {
+		flags |= kFlagExtDP;
+	}
+
+	if (prefix_flag_set.count(NCPControlInterface::PREFIX_FLAG_ND_DNS)) {
+		flags |= kFlagExtNdDns;
 	}
 
 	return flags;
@@ -705,7 +715,7 @@ NCPInstanceBase::add_address_on_ncp_and_update_prefixes(const in6_addr &address,
 	   && (!buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix)) || (0 != memcmp(mNCPV6Prefix, &address, sizeof(mNCPV6Prefix))))
 	) {
 		struct in6_addr prefix = address;
-		uint8_t flags = OnMeshPrefixEntry::kFlagOnMesh
+		uint16_t flags = OnMeshPrefixEntry::kFlagOnMesh
 		              | OnMeshPrefixEntry::kFlagPreferred;
 
 		if (mSetDefaultRouteForAutoAddedPrefix) {
@@ -910,7 +920,7 @@ NCPInstanceBase::find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixE
 
 void
 NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
-	uint8_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
+	uint16_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
 {
 	IPv6Prefix prefix(prefix_address, prefix_len);
 	OnMeshPrefixEntry entry(origin, flags, stable, rloc16);

@@ -92,6 +92,8 @@ public:
 		PREFIX_FLAG_CONFIGURE,
 		PREFIX_FLAG_DEFAULT_ROUTE,
 		PREFIX_FLAG_ON_MESH,
+		PREFIX_FLAG_DOMAIN_PREFIX,
+		PREFIX_FLAG_ND_DNS,
 	};
 
 	typedef std::set<PrefixFlag> OnMeshPrefixFlags;
