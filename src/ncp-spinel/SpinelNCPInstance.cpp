@@ -519,7 +519,6 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_THREAD_BACKBONE_ROUTER)) {
 		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalState);
 		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalConfig);
-		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalRegister);
 		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalJitter);
 	}
 
