@@ -4878,6 +4878,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 		bool stable = false;
 		uint8_t flags = 0;
 		uint8_t flags_extended = 0;
+		uint16_t mesh_nets_flags = 0;
 		bool is_local = false;
 		uint16_t rloc16 = 0;
 
@@ -4906,6 +4907,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			break;
 		}
 
+		mesh_nets_flags = (flags_extended << 8) | flags;
+
 		syslog(
 			LOG_INFO,
 			"[-NCP-]: On-mesh net [%d] \"%s/%d\" stable:%s local:%s flags:%s, rloc16:0x%04x",
@@ -4914,7 +4917,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			prefix_len,
 			stable ? "yes" : "no",
 			is_local ? "yes" : "no",
-			on_mesh_prefix_flags_to_string((uint16_t)((flags_extended << 8) | flags)).c_str(),
+			on_mesh_prefix_flags_to_string(mesh_nets_flags).c_str(),
 			rloc16
 		);
 
@@ -4926,7 +4929,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			// and check if this entry is already on the list, if so remove it.
 
 			IPv6Prefix prefix(*prefix_addr, prefix_len);
-			OnMeshPrefixEntry entry(kOriginThreadNCP, flags, stable, rloc16);
+			OnMeshPrefixEntry entry(kOriginThreadNCP, mesh_nets_flags, stable, rloc16);
 
 			iter = on_mesh_prefixes.lower_bound(prefix);
 
@@ -4941,7 +4944,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 				}
 			}
 
-			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix_addr, prefix_len, flags, stable, rloc16);
+			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix_addr, prefix_len, mesh_nets_flags, stable, rloc16);
 		}
 
 		value_data_ptr += len;
@@ -6422,7 +6425,7 @@ SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint
 }
 
 void
-SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint16_t flags,
 	bool stable, CallbackWithStatus cb)
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
@@ -6443,7 +6446,7 @@ SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, u
 		&prefix,
 		prefix_len,
 		stable,
-		flags
+		flags & 0xff
 	));
 
 	start_new_task(factory.finish());

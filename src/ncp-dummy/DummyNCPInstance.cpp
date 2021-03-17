@@ -136,7 +136,7 @@ DummyNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t
 }
 
 void
-DummyNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+DummyNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags,
 	bool stable, CallbackWithStatus cb)
 {
 	return;
