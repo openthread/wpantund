@@ -2876,7 +2876,7 @@ enum
     SPINEL_PROP_THREAD_MLR_REQUEST = SPINEL_PROP_THREAD_EXT__BEGIN + 52,
 
     /// Multicast Listeners Register Response
-    /** Format `CCA(6)` - Unsolicited notifications only
+    /** Format `CCt(A(6))` - Unsolicited notifications only
      * Required capability: `SPINEL_CAP_NET_THREAD_1_2`
      *
      * `C`: Status

@@ -5969,6 +5969,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_ssize_t len;
 		uint8_t status;
 		uint8_t mlr_status;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
 
 		len = spinel_datatype_unpack(
 			value_data_ptr,
@@ -5989,18 +5991,34 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus] = mlr_status;
 
 		std::list<std::string> addrList;
-		// Unpack array of addresses that failed to be updated (if any)
-		while (value_data_len != 0) {
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		while (struct_len != 0)
+		{
 			const in6_addr * failed_addr;
-			len = spinel_datatype_unpack(value_data_ptr, value_data_len,
+
+			len = spinel_datatype_unpack(
+				struct_in,
+				struct_len,
 				SPINEL_DATATYPE_IPv6ADDR_S,
 				&failed_addr
 			);
-			require(len >= 0, bail);
-			require(len <= value_data_len, bail);
 
-			value_data_ptr += len;
-			value_data_len -= len;
+			require(len > 0, bail);
+
+			struct_in  += len;
+			struct_len -= len;
 
 			addrList.push_back(in6_addr_to_string(*failed_addr));
 		}
