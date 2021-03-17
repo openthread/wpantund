@@ -742,7 +742,7 @@ NCPInstanceBase::remove_address_on_ncp_and_update_prefixes(const in6_addr &addre
 	   && (!buffer_is_nonzero(mNCPV6Prefix, sizeof(mNCPV6Prefix)) || (0 != memcmp(mNCPV6Prefix, &address, sizeof(mNCPV6Prefix))))
 	) {
 		struct in6_addr prefix = address;
-		uint8_t flags = OnMeshPrefixEntry::kFlagOnMesh | OnMeshPrefixEntry::kFlagPreferred;
+		uint16_t flags = OnMeshPrefixEntry::kFlagOnMesh | OnMeshPrefixEntry::kFlagPreferred;
 
 		if (mSetDefaultRouteForAutoAddedPrefix) {
 			flags |= OnMeshPrefixEntry::kFlagDefaultRoute;
@@ -961,7 +961,7 @@ NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &
 
 void
 NCPInstanceBase::on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
-	uint8_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
+	uint16_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
 {
 	IPv6Prefix prefix(prefix_address, prefix_len);
 	OnMeshPrefixEntry entry(origin, flags, stable, rloc16);
