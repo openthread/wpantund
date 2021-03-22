@@ -205,6 +205,10 @@ SpinelNCPControlInterface::add_on_mesh_prefix(
 ) {
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
+	if (flags.count(NCPControlInterface::PREFIX_FLAG_DOMAIN_PREFIX)) {
+		require_action(!mNCPInstance->is_domain_prefix_configured(), bail, cb(kWPANTUNDStatus_Already));
+	}
+
 	mNCPInstance->on_mesh_prefix_was_added(
 		SpinelNCPInstance::kOriginUser,
 		prefix,
