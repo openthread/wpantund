@@ -169,6 +169,8 @@ public:
 	void on_mesh_prefix_was_removed(Origin origin, const struct in6_addr &prefix, uint8_t prefix_len = 64,
 			uint16_t flags = 0, bool stable = true, uint16_t rloc16 = 0, CallbackWithStatus cb = NilReturn());
 
+	bool is_domain_prefix_configured();
+
 	void route_was_added(Origin origin, const struct in6_addr &route, uint8_t prefix_len = 64,
 			RoutePreference preference = NCPControlInterface::ROUTE_MEDIUM_PREFERENCE,  bool stable = true,
 			uint16_t rloc16 = 0, bool next_hop_is_host = true, CallbackWithStatus cb = NilReturn());

@@ -281,7 +281,8 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 			domain_prefix ? '1' : '0',
 			priority > 0 ? "high" : (priority < 0 ? "low" : "med")
 		);
-
+	} else if ((ret == kWPANTUNDStatus_Already) && domain_prefix) {
+		fprintf(stderr, "On Mesh domain prefix already configured.\n");
 	} else {
 		fprintf(stderr, "%s failed with error %d. %s\n", argv[0], ret, wpantund_status_to_cstr(ret));
 		print_error_diagnosis(ret);

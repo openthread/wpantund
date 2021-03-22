@@ -918,6 +918,23 @@ NCPInstanceBase::find_prefix_entry(const IPv6Prefix &prefix, const OnMeshPrefixE
 	return iter;
 }
 
+bool NCPInstanceBase::is_domain_prefix_configured()
+{
+	std::multimap<IPv6Prefix, OnMeshPrefixEntry>::iterator iter;
+	bool ret = false;
+
+	iter = mOnMeshPrefixes.begin();
+
+	for (; iter != mOnMeshPrefixes.end(); ++iter) {
+		if ((iter->second.get_flags()) & OnMeshPrefixEntry::kFlagExtDP) {
+			ret = true;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 void
 NCPInstanceBase::on_mesh_prefix_was_added(Origin origin, const struct in6_addr &prefix_address, uint8_t prefix_len,
 	uint16_t flags, bool stable, uint16_t rloc16, CallbackWithStatus cb)
