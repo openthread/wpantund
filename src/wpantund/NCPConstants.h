@@ -37,4 +37,13 @@
 
 #define NCP_DEBUG_LINE_LENGTH_MAX               400
 
+#if HAVE_LIBUDEV
+#define NCP_RESET_TIMEOUT                       10 // seconds
+#else
+#define NCP_RESET_TIMEOUT                       0  // seconds
+#endif
+
+#define NCP_DEFAULT_RESET_RESPONSE_TIMEOUT                                                         \
+	NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT + NCP_RESET_TIMEOUT // seconds
+
 #endif

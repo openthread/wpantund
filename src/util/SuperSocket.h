@@ -32,7 +32,10 @@ class SuperSocket : public UnixSocket {
 protected:
 	SuperSocket(const std::string& path);
 
-public:
+    private:
+	void waitForDevice();
+
+    public:
 	virtual ~SuperSocket();
 
 	static boost::shared_ptr<SocketWrapper> create(const std::string& path);

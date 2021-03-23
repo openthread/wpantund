@@ -394,7 +394,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 			mDriverState = INITIALIZING_WAITING_FOR_RESET;
 
 			EH_REQUIRE_WITHIN(
-				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+				NCP_DEFAULT_RESET_RESPONSE_TIMEOUT,
 				event == EVENT_NCP_RESET,
 				on_error
 			);
