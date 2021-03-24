@@ -2135,15 +2135,14 @@ DBusIPCAPI_v1::interface_link_metrics_query_handler(
 	int dest_addr_len;
 	struct in6_addr dest;
 	uint8_t series;
-	uint8_t *metrics = NULL;
-	int metrics_len = 0;
+	uint8_t metrics = 0;
 	bool did_succeed = false;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
 		DBUS_TYPE_BYTE, &series,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics, &metrics_len,
+		DBUS_TYPE_BYTE, &metrics,
 		DBUS_TYPE_INVALID
 	);
 
@@ -2157,7 +2156,7 @@ DBusIPCAPI_v1::interface_link_metrics_query_handler(
 	interface->link_metrics_query(
 		dest,
 		series,
-		Data(metrics, metrics_len),
+		metrics,
 	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
@@ -2217,19 +2216,17 @@ DBusIPCAPI_v1::interface_link_metrics_mgmt_forward_handler(
 	const uint8_t *dest_addr = NULL;
 	int dest_addr_len;
 	struct in6_addr dest;
-	uint8_t series;
-	uint8_t *metrics = NULL;
-	uint8_t *frame_types = NULL;
-	int frame_types_len;
-	int metrics_len = 0;
+	uint8_t series_id = 0;
+	uint8_t metrics = 0;
+	uint8_t frame_types = 0;
 	bool did_succeed = false;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
-		DBUS_TYPE_BYTE, &series,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &frame_types, &frame_types_len,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics, &metrics_len,
+		DBUS_TYPE_BYTE, &series_id,
+		DBUS_TYPE_BYTE, &frame_types,
+		DBUS_TYPE_BYTE, &metrics,
 		DBUS_TYPE_INVALID
 	);
 
@@ -2242,9 +2239,9 @@ DBusIPCAPI_v1::interface_link_metrics_mgmt_forward_handler(
 
 	interface->link_metrics_mgmt_forward(
 		dest,
-		series,
-		Data(frame_types, frame_types_len),
-		Data(metrics, metrics_len),
+		series_id,
+		frame_types,
+		metrics,
 	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
@@ -2263,8 +2260,7 @@ DBusIPCAPI_v1::interface_link_metrics_mgmt_enh_ack_handler(
 	const uint8_t *dest_addr = NULL;
 	int dest_addr_len;
 	struct in6_addr dest;
-	uint8_t *metrics = NULL;
-	int metrics_len = 0;
+	uint8_t metrics = 0;
 	uint8_t flags = 0;
 	bool did_succeed = false;
 
@@ -2272,7 +2268,7 @@ DBusIPCAPI_v1::interface_link_metrics_mgmt_enh_ack_handler(
 		message, NULL,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
 		DBUS_TYPE_BYTE, &flags,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics, &metrics_len,
+		DBUS_TYPE_BYTE, &metrics,
 		DBUS_TYPE_INVALID
 	);
 
@@ -2286,7 +2282,7 @@ DBusIPCAPI_v1::interface_link_metrics_mgmt_enh_ack_handler(
 	interface->link_metrics_mgmt_enh_ack(
 		dest,
 		flags,
-		Data(metrics, metrics_len),
+		metrics,
 	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 

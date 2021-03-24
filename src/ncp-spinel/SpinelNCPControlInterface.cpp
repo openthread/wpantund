@@ -923,7 +923,7 @@ void
 SpinelNCPControlInterface::link_metrics_query(
 	const struct in6_addr &address,
 	uint8_t seriesId,
-	const Data &metrics_data,
+	const uint8_t metrics,
 	CallbackWithStatus cb
 ) {
 	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
@@ -937,12 +937,11 @@ SpinelNCPControlInterface::link_metrics_query(
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
 					SPINEL_DATATYPE_IPv6ADDR_S
 					SPINEL_DATATYPE_UINT8_S
-					SPINEL_DATATYPE_DATA_WLEN_S
+					SPINEL_DATATYPE_UINT8_S
 				), SPINEL_PROP_THREAD_LINK_METRICS_QUERY,
 				&address,
 				seriesId,
-				metrics_data.data(),
-				metrics_data.size()
+				metrics
 				))
 				.finish()
 		);
@@ -980,8 +979,8 @@ void
 SpinelNCPControlInterface::link_metrics_mgmt_forward(
 	const struct in6_addr &address,
 	uint8_t seriesId,
-	const Data &frame_types_data,
-	const Data &metrics_data,
+	const uint8_t frame_types,
+	const uint8_t metrics,
 	CallbackWithStatus cb
 ) {
 	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
@@ -995,15 +994,13 @@ SpinelNCPControlInterface::link_metrics_mgmt_forward(
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
 					SPINEL_DATATYPE_IPv6ADDR_S
 					SPINEL_DATATYPE_UINT8_S
-					SPINEL_DATATYPE_DATA_WLEN_S
-					SPINEL_DATATYPE_DATA_WLEN_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
 				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD,
 				&address,
 				seriesId,
-				frame_types_data.data(),
-				frame_types_data.size(),
-				metrics_data.data(),
-				metrics_data.size()
+				frame_types,
+				metrics
 				))
 				.finish()
 		);
@@ -1090,7 +1087,7 @@ void
 SpinelNCPControlInterface::link_metrics_mgmt_enh_ack(
 	const struct in6_addr &address,
 	uint8_t flags,
-	const Data &metrics_data,
+	const uint8_t metrics,
 	CallbackWithStatus cb
 ) {
 	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
@@ -1104,12 +1101,11 @@ SpinelNCPControlInterface::link_metrics_mgmt_enh_ack(
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
 					SPINEL_DATATYPE_IPv6ADDR_S
 					SPINEL_DATATYPE_UINT8_S
-					SPINEL_DATATYPE_DATA_WLEN_S
+					SPINEL_DATATYPE_UINT8_S
 				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK,
 				&address,
 				flags,
-				metrics_data.data(),
-				metrics_data.size()
+				metrics
 				))
 				.finish()
 		);

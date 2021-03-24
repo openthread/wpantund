@@ -250,7 +250,7 @@ public:
 	virtual void link_metrics_query(
 		const struct in6_addr &address,
 		uint8_t seriesId,
-		const Data &metrics_data,
+		const uint8_t metrics,
 		CallbackWithStatus cb = NilReturn()
 	);
 
@@ -264,15 +264,15 @@ public:
 	virtual void link_metrics_mgmt_forward(
 		const struct in6_addr &address,
 		uint8_t seriesId,
-		const Data &frame_types_data,
-		const Data &metrics_data,
+		const uint8_t frame_types,
+		const uint8_t metrics,
 		CallbackWithStatus cb = NilReturn()
 	);
 
 	virtual void link_metrics_mgmt_enh_ack(
 		const struct in6_addr &address,
 		uint8_t flags,
-		const Data &metrics_data,
+		const uint8_t metrics,
 		CallbackWithStatus cb = NilReturn()
 	);
 

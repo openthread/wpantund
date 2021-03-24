@@ -58,7 +58,7 @@
 #define OUTPUT_MSG_SIZE			512
 
 static const char metric_aliases[] = { 'p', /* PDU count (0)*/
-							           'q', /* LQI (1) */ 
+							           'q', /* LQI (1) */
 							           'm', /* Link margin (2) */
 							           'r'  /* RSSI (3) */ };
 
@@ -72,7 +72,7 @@ static size_t output_str_len = 0;
 
 typedef int (*command_handler_t)(int argc, char* argv[], DBusMessage **message);
 
-struct linkmetrics_command_t 
+struct linkmetrics_command_t
 {
 	const char *command;
 	command_handler_t handler;
@@ -90,7 +90,7 @@ static void output_message_append(const char *format, ...)
 	va_end(args);
 }
 
-static bool str_to_ids(const char *ids, size_t max, const char* str, char exclude, uint8_t *out, uint8_t *out_len)
+static bool str_to_ids(const char *ids, size_t max, const char* str, char exclude, uint8_t *out)
 {
 	uint8_t id;
 	bool result = true;
@@ -104,8 +104,7 @@ static bool str_to_ids(const char *ids, size_t max, const char* str, char exclud
 			if (*str == ids[id] && *str != exclude)
 			{
 				found = true;
-				out[*out_len] = id;
-				*out_len += 1;
+				*out |= (1 << id);
 				break;
 			}
 		}
@@ -121,15 +120,15 @@ static bool str_to_ids(const char *ids, size_t max, const char* str, char exclud
 }
 
 // Map link metric aliases ('p', 'q', 'm', 'r') to the corresponding numeric values
-static bool metrics_from_cstr(const char* str, char excluded, uint8_t *metrics, uint8_t *metrics_len)
+static bool metrics_from_cstr(const char* str, char excluded, uint8_t *metrics)
 {
-	return str_to_ids(metric_aliases, MAX_METRICS_LEN, str, excluded, metrics, metrics_len);
+	return str_to_ids(metric_aliases, MAX_METRICS_LEN, str, excluded, metrics);
 }
 
 // Map link metric frame types ('l', 'd', 'r', 'a') to the corresponding numeric values
-static bool frame_types_from_cstr(const char* str, uint8_t *types, uint8_t *types_len)
+static bool frame_types_from_cstr(const char* str, uint8_t *types)
 {
-	return str_to_ids(frame_type_aliases, MAX_FRAME_TYPES_LEN, str, '\0', types, types_len);
+	return str_to_ids(frame_type_aliases, MAX_FRAME_TYPES_LEN, str, '\0', types);
 }
 
 static int handle_query(int argc, char* argv[], DBusMessage **message)
@@ -137,14 +136,12 @@ static int handle_query(int argc, char* argv[], DBusMessage **message)
 	int ret = 0;
 	long num = 0;
 	uint8_t series = 0;
-	uint8_t metrics[MAX_METRICS_LEN];
-	uint8_t metrics_len = 0;
+	uint8_t metrics;
 	const char *dest_str = argv[0];
 	const char *subcommand_str = argv[1];
 	const char *subcommand_arg_str = argv[2];
 	struct in6_addr dest;
 	const uint8_t *dest_ptr = (uint8_t *)&dest;
-	const uint8_t *metrics_ptr = (uint8_t *)&metrics;
 	char *end_ptr;
 
 	const char cmd_single[] = "single";
@@ -170,7 +167,7 @@ static int handle_query(int argc, char* argv[], DBusMessage **message)
 	// Process subcommand
 	if (strncmp(subcommand_str, cmd_single, sizeof(cmd_single)) == 0) {
 		if (strnlen(subcommand_arg_str, MAX_METRICS_LEN + 1) > MAX_METRICS_LEN ||
-			!metrics_from_cstr(subcommand_arg_str, '\0', metrics, &metrics_len)
+			!metrics_from_cstr(subcommand_arg_str, '\0', &metrics)
 		) {
 			fprintf(stderr, "linkmetrics query: error: Wrong metrics string \"%s\"\n", subcommand_arg_str);
 			ret = ERRORCODE_BADARG;
@@ -210,7 +207,7 @@ static int handle_query(int argc, char* argv[], DBusMessage **message)
 		*message,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_ptr, sizeof(dest),
 		DBUS_TYPE_BYTE, &series,
-		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics_ptr, metrics_len,
+		DBUS_TYPE_BYTE, &metrics,
 		DBUS_TYPE_INVALID
 	);
 
@@ -297,16 +294,12 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 	char *end_ptr;
 	struct in6_addr dest;
 	uint8_t enh_ack_flags;
-	uint8_t metrics[MAX_METRICS_LEN];
-	uint8_t frame_types[MAX_FRAME_TYPES_LEN];
-	uint8_t metrics_len = 0;
-	uint8_t frame_types_len = 0;
+	uint8_t metrics = 0;
+	uint8_t frame_types = 0;
 
-	// Due to D-Bus requirements we have to provide additional pointers
-	const uint8_t *metrics_ptr = metrics;
-	const uint8_t *frame_types_ptr = metrics;
+	// Due to D-Bus requirements we have to provide additional pointer
 	const uint8_t *dest_ptr = (uint8_t *)&dest;
- 
+
 	const char *dest_str = argv[0];
 	const char *subcommand_str = argv[1];
 	char **subcommand_args = &argv[2];
@@ -335,8 +328,6 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 
 	if (strncmp(subcommand_str, cmd_enh_ack, sizeof(cmd_enh_ack)) == 0) {
 		if (strncmp(subcommand_args[0], cmd_clear, sizeof(cmd_clear)) == 0) {
-			memset(metrics, 0, MAX_METRICS_LEN);
-			metrics_len = 0;
 			enh_ack_flags = 0;
 		} else if (strncmp(subcommand_args[0], cmd_register, sizeof(cmd_register)) == 0) {
 			enh_ack_flags = 1;
@@ -350,9 +341,9 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 				ret = ERRORCODE_BADARG;
 				goto bail;
 			}
-			
+
 			if (strnlen(subcommand_args[1], MAX_METRICS_LEN + 1) > MAX_METRICS_LEN ||
-				!metrics_from_cstr(subcommand_args[1], 'p', metrics, &metrics_len)
+				!metrics_from_cstr(subcommand_args[1], 'p', &metrics)
 			) {
 				fprintf(stderr, "linkmetrics mgmt: error: Wrong metrics string \"%s\"\n", subcommand_args[1]);
 				ret = ERRORCODE_BADARG;
@@ -371,7 +362,7 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 			*message,
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_ptr, sizeof(dest),
 			DBUS_TYPE_BYTE, &enh_ack_flags,
-			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics_ptr, metrics_len,
+			DBUS_TYPE_BYTE, &metrics,
 			DBUS_TYPE_INVALID
 		);
 
@@ -387,12 +378,12 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 			fprintf(
 				stderr,
 				"linkmetrics mgmt forward: error: Wrong number of arguments: \"%u\", minimum required: \"%u\"\n",
-				argc - 2, CMD_MGMT_PARAMS_MIN - 2 
+				argc - 2, CMD_MGMT_PARAMS_MIN - 2
 			);
 			ret = ERRORCODE_BADARG;
 			goto bail;
 		}
-		
+
 		errno = 0;
 		num = strtoul(subcommand_args[0], &end_ptr, 10);
 
@@ -405,10 +396,9 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 		series = (uint8_t)num;
 
 		if (strnlen(subcommand_args[1], MAX_FRAME_TYPES_LEN + 1) == 1 && subcommand_args[1][0] == 'X') {
-			memset(frame_types, 0, MAX_FRAME_TYPES_LEN);
-			frame_types_len = 0;
+			frame_types = 0;
 		} else if (strnlen(subcommand_args[1], MAX_FRAME_TYPES_LEN + 1) > MAX_FRAME_TYPES_LEN ||
-			!frame_types_from_cstr(subcommand_args[1], frame_types, &frame_types_len)
+			!frame_types_from_cstr(subcommand_args[1], &frame_types)
 		) {
 			fprintf(stderr, "linkmetrics mgmt: error: Wrong frame types string \"%s\"\n", subcommand_args[1]);
 			ret = ERRORCODE_BADARG;
@@ -418,7 +408,7 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 		if (argc == CMD_MGMT_FORWARD_PARAMS_FULL)
 		{
 			if (strnlen(subcommand_args[2], MAX_METRICS_LEN + 1) > MAX_METRICS_LEN ||
-				!metrics_from_cstr(subcommand_args[2], '\0', metrics, &metrics_len)
+				!metrics_from_cstr(subcommand_args[2], '\0', &metrics)
 			) {
 				fprintf(stderr, "linkmetrics mgmt: error: Wrong metrics string \"%s\"\n", subcommand_args[2]);
 				ret = ERRORCODE_BADARG;
@@ -433,8 +423,8 @@ static int handle_mgmt(int argc, char* argv[], DBusMessage **message)
 			*message,
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_ptr, sizeof(dest),
 			DBUS_TYPE_BYTE, &series,
-			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &frame_types_ptr, frame_types_len,
-			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &metrics_ptr, metrics_len,
+			DBUS_TYPE_BYTE, &frame_types,
+			DBUS_TYPE_BYTE, &metrics,
 			DBUS_TYPE_INVALID
 		);
 
@@ -543,14 +533,14 @@ static void print_help(int argc, char *argv[])
 			fprintf(stdout, "%s\n", entry->usage);
 		}
 	}
-} 
+}
 
 int tool_cmd_linkmetrics(int argc, char* argv[])
 {
 	int ret = 0;
 	int timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
 	const struct linkmetrics_command_t *entry = NULL;
-	
+
 	memset(output_str, 0, OUTPUT_MSG_SIZE);
 	output_str_len = 0;
 

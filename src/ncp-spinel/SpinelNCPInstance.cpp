@@ -2200,16 +2200,16 @@ unpack_link_metrics_as_val_map(const uint8_t *data_in, spinel_size_t data_len, V
 		data_len -= len;
 
 		switch (metric_type) {
-		case THREAD_LINK_METRIC_PDU_COUNT:
+		case SPINEL_THREAD_LINK_METRIC_PDU_COUNT:
 			val_map[kWPANTUNDValueMapKey_LinkMetrics_PDUCount] = *reinterpret_cast<uint32_t*>(metric_ptr);
 			break;
-		case THREAD_LINK_METRIC_LQI:
+		case SPINEL_THREAD_LINK_METRIC_LQI:
 			val_map[kWPANTUNDValueMapKey_LinkMetrics_LQI] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
 			break;
-		case THREAD_LINK_METRIC_LINK_MARGIN:
+		case SPINEL_THREAD_LINK_METRIC_LINK_MARGIN:
 			val_map[kWPANTUNDValueMapKey_LinkMetrics_LinkMargin] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
 			break;
-		case THREAD_LINK_METRIC_RSSI:
+		case SPINEL_THREAD_LINK_METRIC_RSSI:
 			val_map[kWPANTUNDValueMapKey_LinkMetrics_RSSI] = *reinterpret_cast<int8_t*>(metric_ptr);
 			break;
 		default:
