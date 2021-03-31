@@ -6231,6 +6231,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		std::string source_str;
 		uint8_t status;
 		std::string status_str;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
 
 		mLinkMetricsQueryResult.clear();
 
@@ -6241,9 +6243,12 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			(
 				SPINEL_DATATYPE_IPv6ADDR_S
 				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_DATA_WLEN_S
 			),
 			&source,
-			&status
+			&status,
+			&struct_in,
+			&struct_len
 		);
 
 		require(len >= 0, bail);
@@ -6256,7 +6261,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
 		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;
 
-		unpack_link_metrics_as_val_map(value_data_ptr, value_data_len, mLinkMetricsQueryResult);
+		unpack_link_metrics_as_val_map(struct_in, struct_len, mLinkMetricsQueryResult);
 
 	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE) {
 		spinel_ssize_t len;
@@ -6293,9 +6298,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		spinel_ssize_t len;
 		uint16_t short_addr = 0;
 		const spinel_eui64_t *eui64 = NULL;
-		uint8_t metric_type;
-		uint8_t *metric_ptr = NULL;
-		uint16_t metric_len = 0;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
 
 		mLinkMetricsLastEnhAckIe.clear();
 
@@ -6305,9 +6309,12 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			(
 				SPINEL_DATATYPE_UINT16_S
 				SPINEL_DATATYPE_EUI64_S
+				SPINEL_DATATYPE_DATA_WLEN_S
 			),
 			&short_addr,
-			&eui64
+			&eui64,
+			&struct_in,
+			&struct_len
 		);
 
 		require(len >= 0, bail);
