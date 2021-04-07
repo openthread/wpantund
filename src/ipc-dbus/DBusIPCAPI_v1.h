@@ -281,6 +281,11 @@ private:
 		DBusMessage *        message
 	);
 
+	DBusHandlerResult interface_mlr_request_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+
 private:
 	typedef DBusHandlerResult (interface_handler_cb)(
 		NCPControlInterface*,

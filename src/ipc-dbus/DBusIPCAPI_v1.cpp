@@ -119,6 +119,7 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MLR_REQUEST, interface_mlr_request_handler);
 }
 
 static void
@@ -2109,6 +2110,55 @@ DBusIPCAPI_v1::interface_poke_handler(
 			_1,
 			message
 		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_mlr_request_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed = true;
+	std::vector<struct in6_addr> addresses;
+	dbus_bool_t mlr_timeout_present;
+	uint32_t mlr_timeout;
+
+	DBusMessageIter iter;
+	did_succeed = dbus_message_iter_init(message, &iter);
+	require(did_succeed, bail);
+
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY);
+	require(did_succeed, bail);
+	DBusMessageIter sub_iter;
+	dbus_message_iter_recurse(&iter, &sub_iter);
+	do {
+		addresses.push_back(any_to_ipv6(any_from_dbus_iter(&sub_iter)));
+	} while (dbus_message_iter_next(&sub_iter));
+
+	dbus_message_iter_next(&iter);
+
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_BOOLEAN);
+	require(did_succeed, bail);
+	dbus_message_iter_get_basic(&iter, &mlr_timeout_present);
+
+	dbus_message_iter_next(&iter);
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_UINT32);
+	require(did_succeed, bail);
+	dbus_message_iter_get_basic(&iter, &mlr_timeout);
+
+	dbus_message_ref(message);
+
+	interface->mlr_request(
+		addresses,
+		mlr_timeout_present,
+		mlr_timeout,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;

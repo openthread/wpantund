@@ -99,6 +99,8 @@
 
 #define WPANTUND_IF_SIGNAL_NETWORK_TIME_UPDATE "NetworkTimeUpdate"
 
+#define WPANTUND_IF_CMD_MLR_REQUEST           "MlrRequest"
+
 // ============================================================================
 // NestLabs Internal API Interface
 
