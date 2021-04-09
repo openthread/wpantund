@@ -47,6 +47,7 @@ wpanctl_SOURCES = \
 	tool-cmd-leave.c \
 	tool-cmd-permit-join.c \
 	tool-cmd-mlr.c \
+	tool-cmd-bbr.c \
 	tool-cmd-list.c \
 	tool-cmd-status.c \
 	tool-cmd-resume.c \
@@ -75,6 +76,7 @@ wpanctl_SOURCES = \
 	tool-cmd-mfg.h \
 	tool-cmd-permit-join.h \
 	tool-cmd-mlr.h \
+	tool-cmd-bbr.h \
 	tool-cmd-list.h \
 	tool-cmd-status.h \
 	tool-cmd-resume.h \

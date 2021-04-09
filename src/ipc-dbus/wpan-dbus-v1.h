@@ -99,7 +99,9 @@
 
 #define WPANTUND_IF_SIGNAL_NETWORK_TIME_UPDATE "NetworkTimeUpdate"
 
-#define WPANTUND_IF_CMD_MLR_REQUEST           "MlrRequest"
+#define WPANTUND_IF_CMD_MLR_REQUEST            "MlrRequest"
+
+#define WPANTUND_IF_CMD_BACKBONE_ROUTER_CONFIG "BackboneRouterConfig"
 
 // ============================================================================
 // NestLabs Internal API Interface

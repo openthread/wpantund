@@ -54,6 +54,7 @@
 #include "tool-cmd-add-service.h"
 #include "tool-cmd-remove-service.h"
 #include "tool-cmd-mlr.h"
+#include "tool-cmd-bbr.h"
 
 #include "wpanctl-utils.h"
 
@@ -150,6 +151,11 @@
 		"mlr-reg", \
 		"Multicast Listener Registration commands", \
 		&tool_cmd_mlr_reg \
+	}, \
+	{ \
+		"bbr", \
+		"Backbone router commands", \
+		&tool_cmd_bbr \
 	}, \
 	{ \
 		"list", \

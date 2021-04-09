@@ -968,6 +968,34 @@ SpinelNCPControlInterface::mlr_request(
 	}
 }
 
+void
+SpinelNCPControlInterface::backbone_router_config(
+	const uint16_t delay,
+	const uint32_t timeout,
+	const uint8_t seqno,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_BACKBONE_ROUTER)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+
+					SPINEL_DATATYPE_UINT16_S
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_CONFIG,
+				delay,
+				timeout,
+				seqno
+				))
+				.finish()
+		);
+	}
+}
+
 const WPAN::NetworkInstance&
 SpinelNCPControlInterface::get_current_network_instance()const
 {

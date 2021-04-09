@@ -305,6 +305,8 @@ private:
 	static int convert_value_counter_reset(const boost::any &value, boost::any &value_out);
 	static int convert_value_CommissionerState(const boost::any &value, boost::any &value_out);
 	static int convert_value_dua_interface_identifier(const boost::any &value, boost::any &value_out);
+	static int convert_value_BackboneRouterState(const boost::any &value, boost::any &value_out);
+	static int convert_value_BackboneRouterRegister(const boost::any &value, boost::any &value_out);
 
 	void set_prop_NetworkKey(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_InterfaceUp(const boost::any &value, CallbackWithStatus cb);
