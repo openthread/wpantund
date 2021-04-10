@@ -2172,6 +2172,58 @@ unpack_thread_network_time_as_any(const uint8_t *data_in, spinel_size_t data_len
 }
 
 static int
+unpack_link_metrics_as_val_map(const uint8_t *data_in, spinel_size_t data_len, ValueMap &val_map)
+{
+	spinel_ssize_t len;
+	uint8_t metric_type;
+	uint8_t *metric_ptr = NULL;
+	uint16_t metric_len = 0;
+	int ret = kWPANTUNDStatus_Failure;
+
+	while (data_len > 0) {
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_DATA_S
+				)
+			),
+			&metric_type,
+			&metric_ptr,
+			&metric_len
+		);
+
+		require(len >= 0, bail);
+		data_in += len;
+		data_len -= len;
+
+		switch (metric_type) {
+		case SPINEL_THREAD_LINK_METRIC_PDU_COUNT:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_PDUCount] = *reinterpret_cast<uint32_t*>(metric_ptr);
+			break;
+		case SPINEL_THREAD_LINK_METRIC_LQI:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_LQI] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
+			break;
+		case SPINEL_THREAD_LINK_METRIC_LINK_MARGIN:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_LinkMargin] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
+			break;
+		case SPINEL_THREAD_LINK_METRIC_RSSI:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_RSSI] = *reinterpret_cast<int8_t*>(metric_ptr);
+			break;
+		default:
+			goto bail;
+		}
+	}
+
+	ret = kWPANTUNDStatus_Ok;
+
+bail:
+	return ret;
+}
+
+static int
 unpack_backbone_router_primary(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
 {
 	spinel_ssize_t len;
@@ -3250,6 +3302,18 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		boost::bind(&SpinelNCPInstance::get_prop_CommissionerPanIdConflictResult, this, _1));
 	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsQueryResult,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsQueryResult, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsMgmtResponse,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsMgmtResponse, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsLastEnhAckIe,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsLastEnhAckIe, this, _1));
+	register_get_handler_capability(
 		kWPANTUNDProperty_ThreadMlrResponse,
 		SPINEL_CAP_NET_THREAD_1_2,
 		boost::bind(&SpinelNCPInstance::get_prop_MulticastListenerRegistrationResponse, this, _1));
@@ -3365,6 +3429,24 @@ SpinelNCPInstance::get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb)
 	} else {
 		cb(kWPANTUNDStatus_Ok, boost::any(in6_addr_to_string(mNCPLinkLocalAddress)));
 	}
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsQueryResult(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsQueryResult));
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsMgmtResponse(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsMgmtResponse));
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsLastEnhAckIe(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsLastEnhAckIe));
 }
 
 void
@@ -6142,6 +6224,107 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		} else {
 			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
 		}
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_QUERY_RESULT) {
+		spinel_ssize_t len;
+		struct in6_addr *source = NULL;
+		std::string source_str;
+		uint8_t status;
+		std::string status_str;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+
+		mLinkMetricsQueryResult.clear();
+
+		// Decode source and status
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_DATA_WLEN_S
+			),
+			&source,
+			&status,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		source_str = in6_addr_to_string(*source);
+		status_str = spinel_link_metrics_status_to_cstr(status);
+
+		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
+		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;
+
+		unpack_link_metrics_as_val_map(struct_in, struct_len, mLinkMetricsQueryResult);
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE) {
+		spinel_ssize_t len;
+		struct in6_addr *source = NULL;
+		std::string source_str;
+		uint8_t status;
+		std::string status_str;
+
+		// Decode source and status
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			&source,
+			&status
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		source_str = in6_addr_to_string(*source);
+		status_str = spinel_link_metrics_status_to_cstr(status);
+
+		mLinkMetricsMgmtResponse[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
+		mLinkMetricsMgmtResponse[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;
+
+		syslog(LOG_INFO, "Link Metrics Mqmt Response: %s (src: %s)", status_str.c_str(), source_str.c_str());
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK_IE) {
+		spinel_ssize_t len;
+		uint16_t short_addr = 0;
+		const spinel_eui64_t *eui64 = NULL;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+
+		mLinkMetricsLastEnhAckIe.clear();
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT16_S
+				SPINEL_DATATYPE_EUI64_S
+				SPINEL_DATATYPE_DATA_WLEN_S
+			),
+			&short_addr,
+			&eui64,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		syslog(LOG_DEBUG, "Received Link Metrics Enh-ACK IE from 0x%02x", short_addr);
+
+		unpack_link_metrics_as_val_map(value_data_ptr, value_data_len, mLinkMetricsLastEnhAckIe);
+
 	} else if (key == SPINEL_PROP_THREAD_MLR_RESPONSE) {
 
 		mMulticastListenerRegistrationResponse.clear();

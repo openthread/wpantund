@@ -920,6 +920,94 @@ SpinelNCPControlInterface::mfg(
 }
 
 void
+SpinelNCPControlInterface::link_metrics_query(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsQueryResult.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_QUERY,
+				&address,
+				seriesId,
+				metrics
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_probe(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	uint8_t length,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_PROBE,
+				&address,
+				seriesId,
+				length
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_mgmt_forward(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t frame_types,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsMgmtResponse.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD,
+				&address,
+				seriesId,
+				frame_types,
+				metrics
+				))
+				.finish()
+		);
+	}
+}
+
+void
 SpinelNCPControlInterface::mlr_request(
 		const std::vector<struct in6_addr> &addresses,
 		bool mlr_timeout_present,
@@ -982,7 +1070,6 @@ SpinelNCPControlInterface::backbone_router_config(
 			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
 				.set_callback(cb)
 				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
-
 					SPINEL_DATATYPE_UINT16_S
 					SPINEL_DATATYPE_UINT32_S
 					SPINEL_DATATYPE_UINT8_S
@@ -990,6 +1077,35 @@ SpinelNCPControlInterface::backbone_router_config(
 				delay,
 				timeout,
 				seqno
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_mgmt_enh_ack(
+	const struct in6_addr &address,
+	uint8_t flags,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsMgmtResponse.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK,
+				&address,
+				flags,
+				metrics
 				))
 				.finish()
 		);

@@ -119,6 +119,11 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_QUERY, interface_link_metrics_query_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_PROBE, interface_link_metrics_probe_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_MGMT_FORWARD, interface_link_metrics_mgmt_forward_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_MGMT_ENH_ACK, interface_link_metrics_mgmt_enh_ack_handler);
+
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MLR_REQUEST, interface_mlr_request_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_BACKBONE_ROUTER_CONFIG, interface_backbone_router_config_handler);
@@ -2112,6 +2117,173 @@ DBusIPCAPI_v1::interface_poke_handler(
 			_1,
 			message
 		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_query_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series;
+	uint8_t metrics = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_query(
+		dest,
+		series,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_probe_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series;
+	uint8_t length;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series,
+		DBUS_TYPE_BYTE, &length,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_probe(
+		dest,
+		series,
+		length,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_mgmt_forward_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series_id = 0;
+	uint8_t metrics = 0;
+	uint8_t frame_types = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series_id,
+		DBUS_TYPE_BYTE, &frame_types,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_mgmt_forward(
+		dest,
+		series_id,
+		frame_types,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_mgmt_enh_ack_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t metrics = 0;
+	uint8_t flags = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &flags,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_mgmt_enh_ack(
+		dest,
+		flags,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;

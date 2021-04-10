@@ -397,6 +397,47 @@ DummyNCPControlInterface::property_remove_value(
 }
 
 void
+DummyNCPControlInterface::link_metrics_query(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_probe(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	uint8_t length,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_mgmt_forward(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t frame_types,
+		const uint8_t metrics,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_mgmt_enh_ack(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t metrics,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::mlr_request(
 		const std::vector<struct in6_addr> &addresses,
 		bool mlr_timeout_present,

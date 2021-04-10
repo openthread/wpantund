@@ -257,6 +257,10 @@
 #define kWPANTUNDCommissionerState_Petition                     "petition"
 #define kWPANTUNDCommissionerState_Active                       "active"
 
+#define kWPANTUNDCommissionerLinkMetricsQueryResult             "LinkMetrics:QueryResult"
+#define kWPANTUNDCommissionerLinkMetricsMgmtResponse            "LinkMetrics:MgmtResponse"
+#define kWPANTUNDCommissionerLinkMetricsLastEnhAckIe            "LinkMetrics:LastEnhAckIE"
+
 #define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
 #define kWPANTUNDProperty_NCPCoexEnable                         "NCP:Coex:Enable"
@@ -454,6 +458,13 @@
 
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask     "ChannelMask"
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_PanId           "PanId"
+
+#define kWPANTUNDValueMapKey_LinkMetrics_Source                 "Source"
+#define kWPANTUNDValueMapKey_LinkMetrics_Status                 "Status"
+#define kWPANTUNDValueMapKey_LinkMetrics_PDUCount               "PDU count"
+#define kWPANTUNDValueMapKey_LinkMetrics_LQI                    "LQI"
+#define kWPANTUNDValueMapKey_LinkMetrics_LinkMargin             "Link margin"
+#define kWPANTUNDValueMapKey_LinkMetrics_RSSI                   "RSSI"
 
 #define kWPANTUNDValueMapKey_ThreadMlrResponse_Status           "Status"
 #define kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus        "MlrStatus"

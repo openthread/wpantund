@@ -25,6 +25,7 @@
 #include "tool-cmd-form.h"
 #include "tool-cmd-leave.h"
 #include "tool-cmd-permit-join.h"
+#include "tool-cmd-linkmetrics.h"
 #include "tool-cmd-list.h"
 #include "tool-cmd-status.h"
 #include "tool-cmd-mfg.h"
@@ -147,6 +148,11 @@
 	{ "commr", "", &tool_cmd_commr , 1 }, \
 	{ "o-commissioner", "", &tool_cmd_commissioner , 1 }, /* old commissioner command */ \
 	{ "o-commr", "", &tool_cmd_commissioner , 1 }, \
+	{ \
+		"linkmetrics", \
+		"Link metrics commands", \
+		&tool_cmd_linkmetrics \
+	}, \
 	{ \
 		"mlr-reg", \
 		"Multicast Listener Registration commands", \

@@ -46,6 +46,7 @@ wpanctl_SOURCES = \
 	tool-cmd-mfg.c \
 	tool-cmd-leave.c \
 	tool-cmd-permit-join.c \
+	tool-cmd-linkmetrics.c \
 	tool-cmd-mlr.c \
 	tool-cmd-bbr.c \
 	tool-cmd-list.c \
@@ -75,6 +76,7 @@ wpanctl_SOURCES = \
 	tool-cmd-leave.h \
 	tool-cmd-mfg.h \
 	tool-cmd-permit-join.h \
+	tool-cmd-linkmetrics.h \
 	tool-cmd-mlr.h \
 	tool-cmd-bbr.h \
 	tool-cmd-list.h \
