@@ -538,6 +538,16 @@ SpinelNCPInstance::driver_to_ncp_pump()
 		mOutboundBufferSent += pt->byte_count;
 #endif
 
+#if HAVE_LIBUDEV
+		uint8_t header = 0;
+		unsigned int command = 0;
+		(void)spinel_datatype_unpack(mOutboundBuffer, mOutboundBufferLen, "CiD", &header,
+					     &command, NULL, 0);
+		if (command == SPINEL_CMD_RESET) {
+			hard_reset_ncp();
+		}
+#endif
+
 		mOutboundBufferLen = 0;
 
 		require(pt->last_errno == 0, on_error);

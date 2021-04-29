@@ -514,3 +514,16 @@ append-network-time-received-timestamp,
 )
 AM_CONDITIONAL([APPEND_NETWORK_TIME_RECEIVED_MONOTONIC_TIMESTAMP],[(case "${enable_append_network_time_received_timestamp}" in yes) true ;; *) false ;; esac)])
 ])
+
+AC_DEFUN([NL_CHECK_UDEV], [
+	AC_ARG_WITH([udev],
+		AS_HELP_STRING([--with-udev], [Use udev library for monitoring tty events. It's used for handling the connection after hard reset of NCP(USB CDC ACM)]))
+
+	AS_IF([test "x$with_udev" = "xyes"], [
+		AC_CHECK_LIB([udev], [udev_new])
+		AC_CHECK_HEADER([libudev.h])
+	])
+
+	AS_IF([test "x$ac_cv_lib_udev_udev_new" == "xno" || test "x$ac_cv_header_libudev_h" == "xno"],
+		[AC_MSG_ERROR([--with-udev was given, but test for udev failed])])
+])
