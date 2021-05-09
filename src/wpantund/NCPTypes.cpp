@@ -104,7 +104,7 @@ nl::wpantund::ncp_state_is_commissioned(NCPState x)
 }
 
 bool
-nl::wpantund::ncp_state_is_initializing(NCPState x)
+nl::wpantund::ncp_state_is_initializing_or_upgrading(NCPState x)
 {
 	switch(x) {
 	case UNINITIALIZED:

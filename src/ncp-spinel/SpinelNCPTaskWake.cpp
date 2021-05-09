@@ -84,7 +84,7 @@ nl::wpantund::SpinelNCPTaskWake::vprocess_event(int event, va_list args)
 		EH_REQUIRE_WITHIN(
 			NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
 			!ncp_state_is_sleeping(mInstance->get_ncp_state())
-			  && (!ncp_state_is_initializing(mInstance->get_ncp_state())),
+			  && (!ncp_state_is_initializing_or_upgrading(mInstance->get_ncp_state())),
 			on_error
 		);
 

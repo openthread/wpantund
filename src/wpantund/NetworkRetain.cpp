@@ -65,7 +65,7 @@ NetworkRetain::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_ncp_
 	}
 
 	// Initializing --> Offline
-	else if (ncp_state_is_initializing(old_ncp_state) && (new_ncp_state == OFFLINE)) {
+	else if (ncp_state_is_initializing_or_upgrading(old_ncp_state) && (new_ncp_state == OFFLINE)) {
 		recall_network_info();
 	}
 

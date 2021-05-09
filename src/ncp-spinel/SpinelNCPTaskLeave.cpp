@@ -60,7 +60,7 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	// Wait for a bit to see if the NCP will enter the right state.
 	EH_REQUIRE_WITHIN(
 		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		!ncp_state_is_initializing(mInstance->get_ncp_state()) && !mInstance->is_initializing_ncp(),
+		!ncp_state_is_initializing_or_upgrading(mInstance->get_ncp_state()) && !mInstance->is_initializing_ncp(),
 		on_error
 	);
 
@@ -111,14 +111,14 @@ nl::wpantund::SpinelNCPTaskLeave::vprocess_event(int event, va_list args)
 	// Wait for re-initialization of NCP to start.
 	EH_REQUIRE_WITHIN(
 		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		ncp_state_is_initializing(mInstance->get_ncp_state()),
+		ncp_state_is_initializing_or_upgrading(mInstance->get_ncp_state()),
 		on_error
 	);
 
 	// Wait for re-initialization to complete.
 	EH_REQUIRE_WITHIN(
 		NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
-		!ncp_state_is_initializing(mInstance->get_ncp_state()) &&
+		!ncp_state_is_initializing_or_upgrading(mInstance->get_ncp_state()) &&
 		(mInstance->mDriverState == SpinelNCPInstance::NORMAL_OPERATION),
 		on_error
 	);

@@ -131,7 +131,7 @@ SpinelNCPControlInterface::attach(CallbackWithStatus cb)
 
 static bool check_ncp_finished_initalization(SpinelNCPInstance *instance)
 {
-	return !ncp_state_is_initializing(instance->get_ncp_state()) && !instance->is_initializing_ncp();
+	return !ncp_state_is_initializing_or_upgrading(instance->get_ncp_state()) && !instance->is_initializing_ncp();
 }
 
 void
