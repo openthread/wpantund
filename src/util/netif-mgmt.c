@@ -69,7 +69,9 @@
 #define IFEF_NOAUTOIPV6LL   0x2000  /* Interface IPv6 LinkLocal address not provided by kernel */
 #endif
 
+#ifdef MISSING_STRLCPY
 #include "missing/strlcpy/strlcpy.h"
+#endif
 
 #ifndef SIOCSIFLLADDR
 #define SIOCSIFLLADDR SIOCSIFHWADDR
