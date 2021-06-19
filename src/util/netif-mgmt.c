@@ -210,6 +210,12 @@ netif_mgmt_get_ifindex(int reqfd, const char* if_name) {
 	if (ret >= 0) {
 		ret = ifr.ifr_ifindex;
 	}
+#else
+	ret = if_nametoindex(if_name);
+	// if_nametoindex returns 0 on error and sets errno
+	if (ret == 0) {
+		ret = -1;
+	}
 #endif
 
 	return ret;
