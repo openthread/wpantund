@@ -189,14 +189,14 @@ public:
 	);
 
 	virtual void commissioner_add_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		const char *psk,
 		CallbackWithStatus cb = NilReturn()
 	);
 
 	virtual void commissioner_remove_joiner(
-		const uint8_t *eui64,
+		const JoinerInfo &joiner,
 		uint32_t timeout,
 		CallbackWithStatus cb = NilReturn()
 	);
@@ -246,6 +246,49 @@ public:
 	virtual std::string get_name(void);
 
 	virtual NCPInstance& get_ncp_instance(void);
+
+	virtual void link_metrics_query(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t metrics,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_probe(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		uint8_t length,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_mgmt_forward(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t frame_types,
+		const uint8_t metrics,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void link_metrics_mgmt_enh_ack(
+		const struct in6_addr &address,
+		uint8_t flags,
+		const uint8_t metrics,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void backbone_router_config(
+		const uint16_t delay,
+		const uint32_t timeout,
+		const uint8_t seqno,
+		CallbackWithStatus cb = NilReturn()
+	);
 
 	virtual void pcap_to_fd(int fd,
 		CallbackWithStatus cb = NilReturn()

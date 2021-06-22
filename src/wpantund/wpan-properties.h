@@ -138,6 +138,17 @@
 #define kWPANTUNDProperty_ThreadAddressCacheTableAsValMap       "Thread:AddressCacheTable:AsValMap"
 #define kWPANTUNDProperty_ThreadParent                          "Thread:Parent"
 #define kWPANTUNDProperty_ThreadParentAsValMap                  "Thread:Parent:AsValMap"
+#define kWPANTUNDProperty_ThreadDomainName                      "Thread:DomainName"
+#define kWPANTUNDProperty_ThreadDUAInterfaceIdentifier          "Thread:DUA:InterfaceIdentifier"
+#define kWPANTUNDProperty_ThreadBackboneRouterPrimary           "Thread:BackboneRouter:Primary"
+#define kWPANTUNDProperty_ThreadBackboneRouterLocalState        "Thread:BackboneRouter:State"
+#define kWPANTUNDProperty_ThreadBackboneRouterLocalConfig       "Thread:BackboneRouter:Config"
+#define kWPANTUNDProperty_ThreadBackboneRouterLocalRegister     "Thread:BackboneRouter:Register"
+#define kWPANTUNDProperty_ThreadBackboneRouterLocalJitter       "Thread:BackboneRouter:Jitter"
+
+#define kWPANTUNDThreadBackboneRouterState_Disabled             "disabled"
+#define kWPANTUNDThreadBackboneRouterState_Secondary            "secondary"
+#define kWPANTUNDThreadBackboneRouterState_Primary              "primary"
 
 #define kWPANTUNDProperty_DatasetActiveTimestamp                "Dataset:ActiveTimestamp"
 #define kWPANTUNDProperty_DatasetPendingTimestamp               "Dataset:PendingTimestamp"
@@ -173,6 +184,8 @@
 #define kWPANTUNDProperty_POSIXAppRCPVersion                    "POSIXApp:RCPVersion"
 #define kWPANTUNDProperty_POSIXAppRCPVersionCached              "POSIXApp:RCPVersion:Cached"
 
+#define kWPANTUNDProperty_OpenThreadSupportedRadioLinks         "OpenThread:SupportedRadioLinks"
+#define kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo "OpenThread:NeighborTable::MultiRadioInfo"
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadLogTimestampBase            "OpenThread:LogTimestampBase"
 #define kWPANTUNDProperty_OpenThreadSLAACEnabled                "OpenThread:SLAAC:Enabled"
@@ -182,16 +195,17 @@
 #define kWPANTUNDProperty_OpenThreadMsgBufferCountersAsString   "OpenThread:MsgBufferCounters:AsString"
 #define kWPANTUNDProperty_OpenThreadDebugTestAssert             "OpenThread:Debug:TestAssert"
 #define kWPANTUNDProperty_OpenThreadDebugTestWatchdog           "OpenThread:Debug:TestWatchdog"
+#define kWPANTUNDProperty_OpenThreadTrelTestModeEnable          "OpenThread:Trel:TestMode:Enable"
 
 #define kWPANTUNDProperty_DebugIPv6GlobalIPAddressList          "Debug:IPv6:GlobalIPAddressList"
 
-#define kWPANTUNDProperty_MACWhitelistEnabled                   "MAC:Whitelist:Enabled"
-#define kWPANTUNDProperty_MACWhitelistEntries                   "MAC:Whitelist:Entries"
-#define kWPANTUNDProperty_MACWhitelistEntriesAsValMap           "MAC:Whitelist:Entries:AsValMap"
+#define kWPANTUNDProperty_MACAllowlistEnabled                   "MAC:Allowlist:Enabled"
+#define kWPANTUNDProperty_MACAllowlistEntries                   "MAC:Allowlist:Entries"
+#define kWPANTUNDProperty_MACAllowlistEntriesAsValMap           "MAC:Allowlist:Entries:AsValMap"
 
-#define kWPANTUNDProperty_MACBlacklistEnabled                   "MAC:Blacklist:Enabled"
-#define kWPANTUNDProperty_MACBlacklistEntries                   "MAC:Blacklist:Entries"
-#define kWPANTUNDProperty_MACBlacklistEntriesAsValMap           "MAC:Blacklist:Entries:AsValMap"
+#define kWPANTUNDProperty_MACDenylistEnabled                   "MAC:Denylist:Enabled"
+#define kWPANTUNDProperty_MACDenylistEntries                   "MAC:Denylist:Entries"
+#define kWPANTUNDProperty_MACDenylistEntriesAsValMap           "MAC:Denylist:Entries:AsValMap"
 
 #define kWPANTUNDProperty_MACFilterFixedRssi                    "MAC:Filter:FixedRssi"
 #define kWPANTUNDProperty_MACFilterEntries                      "MAC:Filter:Entries"
@@ -226,7 +240,12 @@
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 #define kWPANTUNDProperty_UdpForwardStream                      "UdpForward:Stream"
 
+#define kWPANTUNDProperty_JoinerState                           "Joiner:State"
+#define kWPANTUNDProperty_JoinerDiscernerValue                  "Joiner:Discerner:Value"
+#define kWPANTUNDProperty_JoinerDiscernerBitLength              "Joiner:Discerner:BitLength"
+
 #define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
+#define kWPANTUNDProperty_CommissionerJoiners                   "Commissioner:Joiners"
 #define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
 #define kWPANTUNDProperty_CommissionerSessionId                 "Commissioner:SessionId"
 #define kWPANTUNDProperty_CommissionerEnergyScanResult          "Commissioner:EnergyScanResult"
@@ -238,7 +257,9 @@
 #define kWPANTUNDCommissionerState_Petition                     "petition"
 #define kWPANTUNDCommissionerState_Active                       "active"
 
-#define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
+#define kWPANTUNDCommissionerLinkMetricsQueryResult             "LinkMetrics:QueryResult"
+#define kWPANTUNDCommissionerLinkMetricsMgmtResponse            "LinkMetrics:MgmtResponse"
+#define kWPANTUNDCommissionerLinkMetricsLastEnhAckIe            "LinkMetrics:LastEnhAckIE"
 
 #define kWPANTUNDProperty_NCPCoexMetrics                        "NCP:CoexMetrics"
 #define kWPANTUNDProperty_NCPCoexMetricsAsValMap                "NCP:CoexMetrics:AsValMap"
@@ -305,7 +326,7 @@
 #define kWPANTUNDProperty_NestLabs_LegacyEnabled                "com.nestlabs.internal:Legacy:Enabled"
 #define kWPANTUNDProperty_NestLabs_NetworkWakeData              "com.nestlabs.internal:NetworkWake:Data"
 #define kWPANTUNDProperty_NestLabs_NetworkWakeRemaining         "com.nestlabs.internal:NetworkWake:Remaining"
-#define kWPANTUNDProperty_NestLabs_NetworkWakeBlacklist         "com.nestlabs.internal:NetworkWake:Blacklist"
+#define kWPANTUNDProperty_NestLabs_NetworkWakeDenylist         "com.nestlabs.internal:NetworkWake:Denylist"
 #define kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower   "com.nestlabs.internal:Hack:UseDeepSleepOnLowPower"
 #define kWPANTUNDProperty_NestLabs_HackAlwaysResetToWake        "com.nestlabs.internal:Hack:AlwaysResetToWake"
 
@@ -342,6 +363,12 @@
 #define kWPANTUNDProperty_ThreadServicesAsValMap                "Thread:Services:AsValMap"
 #define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
 #define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
+
+#define kWPANTUNDProperty_ThreadCslPeriod                       "Thread:Csl:Period"
+#define kWPANTUNDProperty_ThreadCslTimeout                      "Thread:Csl:Timeout"
+#define kWPANTUNDProperty_ThreadCslChannel                      "Thread:Csl:Channel"
+
+#define kWPANTUNDProperty_ThreadMlrResponse                     "Thread:Mlr:Response"
 
 // ----------------------------------------------------------------------------
 
@@ -381,7 +408,7 @@
 
 // ----------------------------------------------------------------------------
 
-// Values of the property kWPANTUNDProperty_ThreadJoinerState
+// Values of the property kWPANTUNDProperty_JoinerState
 
 #define kWPANTUNDThreadJoinerState_Idle                         "idle"
 #define kWPANTUNDThreadJoinerState_Discover                     "discover"
@@ -410,8 +437,8 @@
 
 // Values for value map keys
 
-#define kWPANTUNDValueMapKey_Whitelist_ExtAddress               "ExtAddress"
-#define kWPANTUNDValueMapKey_Whitelist_Rssi                     "FixedRssi"
+#define kWPANTUNDValueMapKey_Allowlist_ExtAddress               "ExtAddress"
+#define kWPANTUNDValueMapKey_Allowlist_Rssi                     "FixedRssi"
 
 #define kWPANTUNDValueMapKey_ChannelMonitor_Channel             "Channel"
 #define kWPANTUNDValueMapKey_ChannelMonitor_Quality             "Quality"
@@ -431,6 +458,17 @@
 
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask     "ChannelMask"
 #define kWPANTUNDValueMapKey_CommrPanIdConflict_PanId           "PanId"
+
+#define kWPANTUNDValueMapKey_LinkMetrics_Source                 "Source"
+#define kWPANTUNDValueMapKey_LinkMetrics_Status                 "Status"
+#define kWPANTUNDValueMapKey_LinkMetrics_PDUCount               "PDU count"
+#define kWPANTUNDValueMapKey_LinkMetrics_LQI                    "LQI"
+#define kWPANTUNDValueMapKey_LinkMetrics_LinkMargin             "Link margin"
+#define kWPANTUNDValueMapKey_LinkMetrics_RSSI                   "RSSI"
+
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_Status           "Status"
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus        "MlrStatus"
+#define kWPANTUNDValueMapKey_ThreadMlrResponse_Addresses        "Addresses"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"
@@ -464,6 +502,8 @@
 #define kWPANTUNDValueMapKey_Joiner_VendorModel                 "Joiner:Vendor:Model"
 #define kWPANTUNDValueMapKey_Joiner_VendorSwVersion             "Joiner:Vendor:SwVersion"
 #define kWPANTUNDValueMapKey_Joiner_VendorData                  "Joiner:Vendor:Data"
+#define kWPANTUNDValueMapKey_Joiner_DiscernerValue              "Joiner:Discerner:Value"
+#define kWPANTUNDValueMapKey_Joiner_DiscernerBitLength          "Joiner:Discerner:BitLength"
 
 #define kWPANTUNDValueMapKey_Counter_TxTotal                    "TxTotal"              // Number of transmissions
 #define kWPANTUNDValueMapKey_Counter_TxUnicast                  "TxUnicast"            // Number of unicast transmissions
@@ -488,7 +528,7 @@
 #define kWPANTUNDValueMapKey_Counter_RxBeacon                   "RxBeacon"             // Number of received beacon
 #define kWPANTUNDValueMapKey_Counter_RxBeaconRequest            "RxBeaconRequest"      // Number of received beacon request
 #define kWPANTUNDValueMapKey_Counter_RxOther                    "RxOther"              // Number of received other types of frames
-#define kWPANTUNDValueMapKey_Counter_RxAddressFiltered          "RxAddressFiltered"    // Number of received packets filtered by address filter (whitelist or blacklist)
+#define kWPANTUNDValueMapKey_Counter_RxAddressFiltered          "RxAddressFiltered"    // Number of received packets filtered by address filter (allowlist or denylist)
 #define kWPANTUNDValueMapKey_Counter_RxDestAddrFiltered         "RxDestAddrFiltered"   // Number of received packets filtered by destination check
 #define kWPANTUNDValueMapKey_Counter_RxDuplicated               "RxDuplicated"         // Number of received duplicated packets
 #define kWPANTUNDValueMapKey_Counter_RxErrNoFrame               "RxErrNoFrame"         // Number of received packets that do not contain contents

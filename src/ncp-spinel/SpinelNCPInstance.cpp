@@ -43,7 +43,7 @@
 #include "spinel-extra.h"
 #include "IPv6Helpers.h"
 
-#define kWPANTUND_Whitelist_RssiOverrideDisabled    127
+#define kWPANTUND_Allowlist_RssiOverrideDisabled    127
 #define kWPANTUND_SpinelPropValueDumpLen            8
 
 using namespace nl;
@@ -394,6 +394,7 @@ SpinelNCPInstance::SpinelNCPInstance(const Settings& settings) :
 	mMacFilterFixedRssi = -100;
 	mSupportedChannelMask = 0;
 	mPreferredChannelMask = 0;
+	mJoinerDiscernerBitLength = 0;
 	mCommissionerEnergyScanResult.clear();
 	mCommissionerPanIdConflictResult.clear();
 
@@ -508,22 +509,45 @@ SpinelNCPInstance::get_supported_property_keys()const
 	properties.insert(kWPANTUNDProperty_ThreadActiveDataset);
 	properties.insert(kWPANTUNDProperty_ThreadPendingDataset);
 	properties.insert(kWPANTUNDProperty_ThreadAddressCacheTable);
+	properties.insert(kWPANTUNDProperty_OpenThreadSupportedRadioLinks);
+
+	if (mCapabilities.count(SPINEL_CAP_NET_THREAD_1_2)) {
+		properties.insert(kWPANTUNDProperty_ThreadDomainName);
+		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterPrimary);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_THREAD_BACKBONE_ROUTER)) {
+		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalState);
+		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalConfig);
+		properties.insert(kWPANTUNDProperty_ThreadBackboneRouterLocalJitter);
+	}
 
 	if (mCapabilities.count(SPINEL_CAP_ERROR_RATE_TRACKING)) {
 		properties.insert(kWPANTUNDProperty_ThreadNeighborTableErrorRates);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_MULTI_RADIO)) {
+		properties.insert(kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_DUA)) {
+		properties.insert(kWPANTUNDProperty_ThreadDUAInterfaceIdentifier);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_THREAD_COMMISSIONER)) {
 		properties.insert(kWPANTUNDProperty_CommissionerState);
 		properties.insert(kWPANTUNDProperty_CommissionerProvisioningUrl);
 		properties.insert(kWPANTUNDProperty_CommissionerSessionId);
+		properties.insert(kWPANTUNDProperty_CommissionerJoiners);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
-		properties.insert(kWPANTUNDProperty_ThreadJoinerState);
+		properties.insert(kWPANTUNDProperty_JoinerState);
+		properties.insert(kWPANTUNDProperty_JoinerDiscernerValue);
+		properties.insert(kWPANTUNDProperty_JoinerDiscernerBitLength);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_POSIX_APP)) {
+	if (mCapabilities.count(SPINEL_CAP_POSIX)) {
 		properties.insert(kWPANTUNDProperty_POSIXAppRCPVersion);
 	}
 
@@ -542,11 +566,11 @@ SpinelNCPInstance::get_supported_property_keys()const
 		properties.insert(kWPANTUNDProperty_NCPCounterAllIPv6);
 	}
 
-	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
-		properties.insert(kWPANTUNDProperty_MACWhitelistEnabled);
-		properties.insert(kWPANTUNDProperty_MACWhitelistEntries);
-		properties.insert(kWPANTUNDProperty_MACBlacklistEnabled);
-		properties.insert(kWPANTUNDProperty_MACBlacklistEntries);
+	if (mCapabilities.count(SPINEL_CAP_MAC_ALLOWLIST)) {
+		properties.insert(kWPANTUNDProperty_MACAllowlistEnabled);
+		properties.insert(kWPANTUNDProperty_MACAllowlistEntries);
+		properties.insert(kWPANTUNDProperty_MACDenylistEnabled);
+		properties.insert(kWPANTUNDProperty_MACDenylistEntries);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_JAM_DETECT)) {
@@ -592,6 +616,12 @@ SpinelNCPInstance::get_supported_property_keys()const
 	if (mCapabilities.count(SPINEL_CAP_THREAD_SERVICE)) {
 		properties.insert(kWPANTUNDProperty_ThreadServices);
 		properties.insert(kWPANTUNDProperty_ThreadLeaderServices);
+	}
+
+	if (mCapabilities.count(SPINEL_CAP_THREAD_CSL_RECEIVER)) {
+		properties.insert(kWPANTUNDProperty_ThreadCslPeriod);
+		properties.insert(kWPANTUNDProperty_ThreadCslTimeout);
+		properties.insert(kWPANTUNDProperty_ThreadCslChannel);
 	}
 
 	if (mCapabilities.count(SPINEL_CAP_RADIO_COEX)) {
@@ -694,6 +724,91 @@ unpack_commissioner_state(const uint8_t *data_in, spinel_size_t data_len, boost:
 }
 
 static int
+unpack_commissioner_joiners(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	spinel_ssize_t len;
+	std::list<std::string> result;
+	char c_string[300];
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0) {
+		const uint8_t *joiner_info_in;
+		spinel_size_t joiner_info_len;
+		uint32_t joiner_timeout;
+		const char *joiner_pskd;
+		const spinel_eui64_t *joiner_eui64 = NULL;
+		uint8_t discerner_bit_len;
+		uint64_t discerner_value;
+		bool any_joiner = false;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_STRUCT_S(
+				SPINEL_DATATYPE_DATA_WLEN_S // Joiner Info struct (empty or EUI64 or Discerner)
+				SPINEL_DATATYPE_UINT32_S
+				SPINEL_DATATYPE_UTF8_S
+			),
+			&joiner_info_in, &joiner_info_len,
+			&joiner_timeout,
+			&joiner_pskd
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		switch (joiner_info_len)
+		{
+		case 0:
+			any_joiner = true;
+			break;
+
+		case sizeof(spinel_eui64_t):
+			joiner_eui64 = (const spinel_eui64_t *)joiner_info_in;
+			break;
+
+		default:
+			len = spinel_datatype_unpack(
+				joiner_info_in,
+				joiner_info_len,
+				(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT64_S
+				),
+				&discerner_bit_len,
+				&discerner_value
+			);
+			joiner_eui64 = NULL;
+			break;
+		}
+
+		if (any_joiner) {
+			 snprintf(c_string, sizeof(c_string), "any joiner, psk:%s, timeout:%.2f", joiner_pskd, joiner_timeout/1000.0);
+
+		} else if (joiner_eui64 != NULL) {
+			snprintf(c_string, sizeof(c_string), "eui64:%02X%02X%02X%02X%02X%02X%02X%02X, psk:%s, timeout:%.2f",
+				joiner_eui64->bytes[0], joiner_eui64->bytes[1], joiner_eui64->bytes[2], joiner_eui64->bytes[3],
+				joiner_eui64->bytes[4], joiner_eui64->bytes[5], joiner_eui64->bytes[6], joiner_eui64->bytes[7],
+				joiner_pskd, joiner_timeout/1000.0);
+
+		} else {
+			snprintf(c_string, sizeof(c_string), "discerner:%" PRIu64 ", bit-len:%d, psk:%s, timeout:%.2f",
+					 discerner_value, discerner_bit_len, joiner_pskd, joiner_timeout/1000.0);
+		}
+
+		result.push_back(std::string(c_string));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+
+
+static int
 unpack_channel_mask(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
 {
 	spinel_ssize_t len;
@@ -729,7 +844,7 @@ unpack_channel_mask(const uint8_t *data_in, spinel_size_t data_len, boost::any& 
 }
 
 static int
-unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+unpack_mac_allowlist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
 	spinel_ssize_t len;
 	ValueMap entry;
@@ -757,10 +872,10 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 
 		if (as_val_map) {
 			entry.clear();
-			entry[kWPANTUNDValueMapKey_Whitelist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
+			entry[kWPANTUNDValueMapKey_Allowlist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
 
-			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
-				entry[kWPANTUNDValueMapKey_Whitelist_Rssi] = rssi;
+			if (rssi != kWPANTUND_Allowlist_RssiOverrideDisabled) {
+				entry[kWPANTUNDValueMapKey_Allowlist_Rssi] = rssi;
 			}
 
 			result_as_val_map.push_back(entry);
@@ -773,7 +888,7 @@ unpack_mac_whitelist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 							 eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
 							 eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7]);
 
-			if (rssi != kWPANTUND_Whitelist_RssiOverrideDisabled) {
+			if (rssi != kWPANTUND_Allowlist_RssiOverrideDisabled) {
 				if (index >= 0 && index < sizeof(c_string)) {
 					snprintf(c_string + index, sizeof(c_string) - index, "   fixed-rssi:%d", rssi);
 				}
@@ -797,7 +912,7 @@ bail:
 }
 
 static int
-unpack_mac_blacklist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
+unpack_mac_denylist_entries(const uint8_t *data_in, spinel_size_t data_len, boost::any& value, bool as_val_map)
 {
 	spinel_ssize_t len;
 	ValueMap entry;
@@ -826,7 +941,7 @@ unpack_mac_blacklist_entries(const uint8_t *data_in, spinel_size_t data_len, boo
 
 		if (as_val_map) {
 			entry.clear();
-			entry[kWPANTUNDValueMapKey_Whitelist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
+			entry[kWPANTUNDValueMapKey_Allowlist_ExtAddress] = Data(eui64->bytes, sizeof(spinel_eui64_t));
 			result_as_val_map.push_back(entry);
 
 		} else {
@@ -1579,6 +1694,150 @@ bail:
 }
 
 static int
+unpack_supported_radio_links(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	std::list<std::string> result;
+	int ret = kWPANTUNDStatus_Ok;
+
+	while (data_len > 0) {
+		spinel_ssize_t len;
+		unsigned int value;
+
+		len = spinel_packed_uint_decode(data_in, data_len, &value);
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		result.push_back(std::string(spinel_radio_link_to_cstr(value)));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+static int
+unpack_neighbor_table_multi_radio_info(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	std::list<std::string> result;
+	char c_string[200];
+	int  index;
+
+	while (data_len > 0) {
+		spinel_ssize_t len = 0;
+		const uint8_t *entry_data;
+		spinel_size_t entry_len;
+		const spinel_eui64_t *eui64 = NULL;
+		uint16_t rloc16;
+		bool first_radio;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&entry_data,
+			&entry_len
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		data_in += len;
+		data_len -= len;
+
+		// Parse the entry_data (which contains info about a neighbor)
+
+		len = spinel_datatype_unpack(
+			entry_data,
+			entry_len,
+			(
+				SPINEL_DATATYPE_EUI64_S         // EUI64 Address
+				SPINEL_DATATYPE_UINT16_S        // Rloc16
+			),
+			&eui64,
+			&rloc16
+		);
+
+		require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+		index = 0;
+
+		index += snprintf(c_string + index, sizeof(c_string) - index,
+			"%02X%02X%02X%02X%02X%02X%02X%02X, RLOC16:%04x, Radios:[",
+			eui64->bytes[0], eui64->bytes[1], eui64->bytes[2], eui64->bytes[3],
+			eui64->bytes[4], eui64->bytes[5], eui64->bytes[6], eui64->bytes[7],
+			rloc16
+		);
+
+		require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+
+		entry_data += len;
+		entry_len -= len;
+
+		first_radio = true;
+
+		while (entry_len > 0) {
+			const uint8_t *struct_data;
+			spinel_size_t struct_len;
+			unsigned int radio;
+			uint8_t preference;
+
+			len = spinel_datatype_unpack(
+				entry_data,
+				entry_len,
+				SPINEL_DATATYPE_DATA_WLEN_S,
+				&struct_data,
+				&struct_len
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			entry_data += len;
+			entry_len -= len;
+
+			// Parse struct_data (contains info about a supported radio link type)
+
+			len = spinel_datatype_unpack(
+				struct_data,
+				struct_len,
+				(
+					SPINEL_DATATYPE_UINT_PACKED_S   // Radio link
+					SPINEL_DATATYPE_UINT8_S         // Preference
+				),
+				&radio,
+				&preference
+			);
+
+			require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+			struct_data += len;
+			struct_len -= len;
+
+			index += snprintf(c_string + index, sizeof(c_string) - index,
+				"%s%s(%d)",
+				first_radio ? "" : ", ",
+				spinel_radio_link_to_cstr(radio),
+				preference
+			);
+
+			require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+			first_radio = false;
+		}
+
+		index += snprintf(c_string + index, sizeof(c_string) - index, "]");
+		require_action(index < sizeof(c_string), bail, ret = kWPANTUNDStatus_Failure);
+
+		result.push_back(std::string(c_string));
+	}
+
+	value = result;
+
+bail:
+	return ret;
+}
+
+static int
 unpack_mesh_local_prefix(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
 {
 	spinel_ssize_t len;
@@ -1707,6 +1966,33 @@ unpack_server_leader_services_as_any(const uint8_t *data_in, spinel_size_t data_
 }
 
 static int
+unpack_mcu_dua_interface_identifier(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	std::string buff;
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (data_len == 0)
+	{
+		// When data_len == 0 an empty string will be returned.
+		value = buff;
+	}
+	else if (data_len == 8)
+	{
+		buff = std::string(data_len*2,0);
+		buff.resize(2 * data_len + 1);
+
+		encode_data_into_string(data_in, data_len, &buff[0], buff.capacity(), 0);
+		value = buff;
+	}
+	else
+	{
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+
+	return ret;
+}
+
+static int
 unpack_meshcop_joiner_state(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
 {
 	spinel_ssize_t len;
@@ -1751,6 +2037,41 @@ unpack_meshcop_joiner_state(const uint8_t *data_in, spinel_size_t data_len, boos
 		value = std::string("unknown");
 		break;
 	}
+
+bail:
+	return ret;
+}
+
+static int
+unpack_meshcop_joiner_discerner_value(const uint8_t *data_in, spinel_size_t data_len, boost::any &value)
+{
+	spinel_ssize_t len;
+	uint8_t discerner_len;
+	uint64_t discerner_value = 0;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&discerner_len
+	);
+
+	require_action(len > 0, bail, ret = kWPANTUNDStatus_Failure);
+
+	if (discerner_len != 0) {
+		data_in += len;
+		data_len -= len;
+
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			SPINEL_DATATYPE_UINT64_S,
+			&discerner_value
+		);
+	}
+
+	value = discerner_value;
 
 bail:
 	return ret;
@@ -1845,6 +2166,167 @@ unpack_thread_network_time_as_any(const uint8_t *data_in, spinel_size_t data_len
 			result_as_string_list.push_back(result_as_string);
 			value = result_as_string_list;
 		}
+	}
+
+	return ret;
+}
+
+static int
+unpack_link_metrics_as_val_map(const uint8_t *data_in, spinel_size_t data_len, ValueMap &val_map)
+{
+	spinel_ssize_t len;
+	uint8_t metric_type;
+	uint8_t *metric_ptr = NULL;
+	uint16_t metric_len = 0;
+	int ret = kWPANTUNDStatus_Failure;
+
+	while (data_len > 0) {
+		len = spinel_datatype_unpack(
+			data_in,
+			data_len,
+			(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_DATA_S
+				)
+			),
+			&metric_type,
+			&metric_ptr,
+			&metric_len
+		);
+
+		require(len >= 0, bail);
+		data_in += len;
+		data_len -= len;
+
+		switch (metric_type) {
+		case SPINEL_THREAD_LINK_METRIC_PDU_COUNT:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_PDUCount] = *reinterpret_cast<uint32_t*>(metric_ptr);
+			break;
+		case SPINEL_THREAD_LINK_METRIC_LQI:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_LQI] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
+			break;
+		case SPINEL_THREAD_LINK_METRIC_LINK_MARGIN:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_LinkMargin] = static_cast<uint32_t>(*reinterpret_cast<uint8_t*>(metric_ptr));
+			break;
+		case SPINEL_THREAD_LINK_METRIC_RSSI:
+			val_map[kWPANTUNDValueMapKey_LinkMetrics_RSSI] = *reinterpret_cast<int8_t*>(metric_ptr);
+			break;
+		default:
+			goto bail;
+		}
+	}
+
+	ret = kWPANTUNDStatus_Ok;
+
+bail:
+	return ret;
+}
+
+static int
+unpack_backbone_router_primary(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	char c_string[300];
+	int ret = kWPANTUNDStatus_Ok;
+	uint16_t server = 0;
+	uint16_t delay = 0;
+	uint32_t timeout = 0;
+	uint8_t seqno = 0;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT32_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		&server,
+		&delay,
+		&timeout,
+		&seqno
+	);
+
+	if (len > 0) {
+		snprintf(c_string, sizeof(c_string), "server16 = 0x%04X, seqno = %hu, delay = %hu secs, timeout = %u secs",
+			server, (uint16_t)seqno, delay, timeout);
+
+		value = std::string(c_string);
+	} else {
+		ret = kWPANTUNDStatus_Failure;
+	}
+
+	return ret;
+}
+
+static int
+unpack_backbone_router_config(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	char c_string[300];
+	int ret = kWPANTUNDStatus_Ok;
+	uint16_t delay = 0;
+	uint32_t timeout = 0;
+	uint8_t seqno = 0;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		(
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT32_S
+			SPINEL_DATATYPE_UINT8_S
+		),
+		&delay,
+		&timeout,
+		&seqno
+	);
+
+	if (len > 0) {
+		snprintf(c_string, sizeof(c_string), "seqno = %hu, delay = %hu secs, timeout = %u secs",
+			(uint16_t)seqno, delay, timeout);
+
+		value = std::string(c_string);
+	} else {
+		ret = kWPANTUNDStatus_Failure;
+	}
+
+	return ret;
+}
+
+static int
+unpack_backbone_router_state(const uint8_t *data_in, spinel_size_t data_len, boost::any& value)
+{
+	spinel_ssize_t len;
+	uint8_t state;
+	int ret = kWPANTUNDStatus_Ok;
+
+	len = spinel_datatype_unpack(
+		data_in,
+		data_len,
+		SPINEL_DATATYPE_UINT8_S,
+		&state
+	);
+
+	if (len > 0) {
+		switch (state) {
+		case SPINEL_THREAD_BACKBONE_ROUTER_STATE_DISABLED:
+			value = std::string(kWPANTUNDThreadBackboneRouterState_Disabled);
+			break;
+		case SPINEL_THREAD_BACKBONE_ROUTER_STATE_SECONDARY:
+			value = std::string(kWPANTUNDThreadBackboneRouterState_Secondary);
+			break;
+		case SPINEL_THREAD_BACKBONE_ROUTER_STATE_PRIMARY:
+			value = std::string(kWPANTUNDThreadBackboneRouterState_Primary);
+			break;
+		default:
+			ret = kWPANTUNDStatus_Failure;
+			break;
+		}
+	} else {
+		ret = kWPANTUNDStatus_Failure;
 	}
 
 	return ret;
@@ -2192,6 +2674,9 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	register_get_handler_spinel_simple(
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_S);
+	register_get_handler_spinel_simple(
+		kWPANTUNDProperty_OpenThreadTrelTestModeEnable,
+		SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE, SPINEL_DATATYPE_BOOL_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -2210,13 +2695,13 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_SESSION_ID, SPINEL_DATATYPE_UINT16_S);
 	register_get_handler_capability_spinel_simple(
-		kWPANTUNDProperty_MACWhitelistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		kWPANTUNDProperty_MACAllowlistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
 	register_get_handler_capability_spinel_simple(
-		kWPANTUNDProperty_MACBlacklistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
+		kWPANTUNDProperty_MACDenylistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST_ENABLED, SPINEL_DATATYPE_BOOL_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_JamDetectionStatus,
 		SPINEL_CAP_JAM_DETECT,
@@ -2471,7 +2956,7 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_PROP_CNTR_IP_RX_FAILURE, SPINEL_DATATYPE_UINT32_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_POSIXAppRCPVersion,
-		SPINEL_CAP_POSIX_APP,
+		SPINEL_CAP_POSIX,
 		SPINEL_PROP_RCP_VERSION, SPINEL_DATATYPE_UTF8_S);
 	register_get_handler_capability_spinel_simple(
 		kWPANTUNDProperty_OpenThreadSLAACEnabled,
@@ -2481,6 +2966,27 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCoexEnable,
 		SPINEL_CAP_RADIO_COEX,
 		SPINEL_PROP_RADIO_COEX_ENABLE, SPINEL_DATATYPE_BOOL_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadDomainName,
+		SPINEL_CAP_NET_THREAD_1_2,
+		SPINEL_PROP_THREAD_DOMAIN_NAME, SPINEL_DATATYPE_UTF8_S);
+
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslPeriod,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_PERIOD, SPINEL_DATATYPE_UINT16_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslTimeout,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_TIMEOUT, SPINEL_DATATYPE_UINT32_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadCslChannel,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_CHANNEL, SPINEL_DATATYPE_UINT8_S);
+	register_get_handler_capability_spinel_simple(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalJitter,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_REGISTRATION_JITTER, SPINEL_DATATYPE_UINT8_S);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties associated with a spinel property using an unpacker
@@ -2519,6 +3025,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_ThreadAddressCacheTableAsValMap,
 		SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE,
 		boost::bind(unpack_address_cache_table, _1, _2, _3, /* as_val_map */ true));
+	register_get_handler_spinel_unpacker(
+		kWPANTUNDProperty_OpenThreadSupportedRadioLinks,
+		SPINEL_PROP_SUPPORTED_RADIO_LINKS,
+		unpack_supported_radio_links);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and associated with a spinel property
@@ -2529,37 +3039,45 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		SPINEL_CAP_MCU_POWER_STATE,
 		SPINEL_PROP_MCU_POWER_STATE, unpack_mcu_power_state);
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_ThreadJoinerState,
+		kWPANTUNDProperty_JoinerState,
 		SPINEL_CAP_THREAD_JOINER,
 		SPINEL_PROP_MESHCOP_JOINER_STATE, unpack_meshcop_joiner_state);
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_JoinerDiscernerValue,
+		SPINEL_CAP_THREAD_JOINER,
+		SPINEL_PROP_MESHCOP_JOINER_DISCERNER, unpack_meshcop_joiner_discerner_value);
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_CommissionerState,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		SPINEL_PROP_MESHCOP_COMMISSIONER_STATE, unpack_commissioner_state);
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false));
+		kWPANTUNDProperty_CommissionerJoiners,
+		SPINEL_CAP_THREAD_COMMISSIONER,
+		SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS, unpack_commissioner_joiners);
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACWhitelistEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST, boost::bind(unpack_mac_blacklist_entries, _1, _2, _3, false));
+		kWPANTUNDProperty_MACAllowlistEntriesAsValMap,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
-		kWPANTUNDProperty_MACBlacklistEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST, boost::bind(unpack_mac_blacklist_entries, _1, _2, _3, true));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST, boost::bind(unpack_mac_denylist_entries, _1, _2, _3, false));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_MACDenylistEntriesAsValMap,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST, boost::bind(unpack_mac_denylist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, false));
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, false));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_MACFilterEntriesAsValMap,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_whitelist_entries, _1, _2, _3, true));
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_FIXED_RSS, boost::bind(unpack_mac_allowlist_entries, _1, _2, _3, true));
 	register_get_handler_capability_spinel_unpacker(
 		kWPANTUNDProperty_ChannelMonitorChannelQuality,
 		SPINEL_CAP_CHANNEL_MONITOR,
@@ -2624,6 +3142,26 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_NCPCoexMetricsAsValMap,
 		SPINEL_CAP_RADIO_COEX,
 		SPINEL_PROP_RADIO_COEX_METRICS, boost::bind(unpack_coex_metrics, _1, _2, _3, true));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_OpenThreadNeighborTableMultiRadioInfo,
+		SPINEL_CAP_MULTI_RADIO,
+		SPINEL_PROP_NEIGHBOR_TABLE_MULTI_RADIO_INFO, boost::bind(unpack_neighbor_table_multi_radio_info, _1, _2, _3));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadDUAInterfaceIdentifier,
+		SPINEL_CAP_DUA,
+		SPINEL_PROP_THREAD_DUA_ID, unpack_mcu_dua_interface_identifier);
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadBackboneRouterPrimary,
+		SPINEL_CAP_NET_THREAD_1_2,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_PRIMARY, boost::bind(unpack_backbone_router_primary, _1, _2, _3));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalState,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_STATE, boost::bind(unpack_backbone_router_state, _1, _2, _3));
+	register_get_handler_capability_spinel_unpacker(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalConfig,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_CONFIG, boost::bind(unpack_backbone_router_config, _1, _2, _3));
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties with a dedicated handler method
@@ -2752,6 +3290,10 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 	// Properties requiring capability check with a dedicated handler method
 
 	register_get_handler_capability(
+		kWPANTUNDProperty_JoinerDiscernerBitLength,
+		SPINEL_CAP_THREAD_JOINER,
+		boost::bind(&SpinelNCPInstance::get_prop_JoinerDiscernerBitLength, this, _1));
+	register_get_handler_capability(
 		kWPANTUNDProperty_CommissionerEnergyScanResult,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		boost::bind(&SpinelNCPInstance::get_prop_CommissionerEnergyScanResult, this, _1));
@@ -2759,6 +3301,22 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		kWPANTUNDProperty_CommissionerPanIdConflictResult,
 		SPINEL_CAP_THREAD_COMMISSIONER,
 		boost::bind(&SpinelNCPInstance::get_prop_CommissionerPanIdConflictResult, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsQueryResult,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsQueryResult, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsMgmtResponse,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsMgmtResponse, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDCommissionerLinkMetricsLastEnhAckIe,
+		SPINEL_CAP_THREAD_LINK_METRICS,
+		boost::bind(&SpinelNCPInstance::get_prop_LinkMetricsLastEnhAckIe, this, _1));
+	register_get_handler_capability(
+		kWPANTUNDProperty_ThreadMlrResponse,
+		SPINEL_CAP_NET_THREAD_1_2,
+		boost::bind(&SpinelNCPInstance::get_prop_MulticastListenerRegistrationResponse, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_ThreadNeighborTableErrorRates,
 		SPINEL_CAP_ERROR_RATE_TRACKING,
@@ -2769,11 +3327,11 @@ SpinelNCPInstance::regsiter_all_get_handlers(void)
 		boost::bind(&SpinelNCPInstance::get_prop_ThreadNeighborTableErrorRatesAsValMap, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_POSIXAppRCPVersionCached,
-		SPINEL_CAP_POSIX_APP,
+		SPINEL_CAP_POSIX,
 		boost::bind(&SpinelNCPInstance::get_prop_POSIXAppRCPVersionCached, this, _1));
 	register_get_handler_capability(
 		kWPANTUNDProperty_MACFilterFixedRssi,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::get_prop_MACFilterFixedRssi, this, _1));
 }
 
@@ -2824,6 +3382,12 @@ SpinelNCPInstance::get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusAr
 }
 
 void
+SpinelNCPInstance::get_prop_JoinerDiscernerBitLength(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mJoinerDiscernerBitLength));
+}
+
+void
 SpinelNCPInstance::get_prop_CommissionerEnergyScanResult(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mCommissionerEnergyScanResult));
@@ -2865,6 +3429,30 @@ SpinelNCPInstance::get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb)
 	} else {
 		cb(kWPANTUNDStatus_Ok, boost::any(in6_addr_to_string(mNCPLinkLocalAddress)));
 	}
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsQueryResult(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsQueryResult));
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsMgmtResponse(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsMgmtResponse));
+}
+
+void
+SpinelNCPInstance::get_prop_LinkMetricsLastEnhAckIe(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mLinkMetricsLastEnhAckIe));
+}
+
+void
+SpinelNCPInstance::get_prop_MulticastListenerRegistrationResponse(CallbackWithStatusArg1 cb)
+{
+	cb(kWPANTUNDStatus_Ok, boost::any(mMulticastListenerRegistrationResponse));
 }
 
 void
@@ -3380,6 +3968,9 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler_spinel(
 		kWPANTUNDProperty_ThreadRouterDowngradeThreshold,
 		SPINEL_PROP_THREAD_ROUTER_DOWNGRADE_THRESHOLD, SPINEL_DATATYPE_UINT8_C);
+	register_set_handler_spinel(
+		kWPANTUNDProperty_OpenThreadTrelTestModeEnable,
+		SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE, SPINEL_DATATYPE_BOOL_C);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring persistence (saving in settings) and associated with a
@@ -3411,13 +4002,13 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	// Properties requiring capability check and associated with a spinel property
 
 	register_set_handler_capability_spinel(
-		kWPANTUNDProperty_MACWhitelistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_WHITELIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
+		kWPANTUNDProperty_MACAllowlistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_ALLOWLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
 	register_set_handler_capability_spinel(
-		kWPANTUNDProperty_MACBlacklistEnabled,
-		SPINEL_CAP_MAC_WHITELIST,
-		SPINEL_PROP_MAC_BLACKLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
+		kWPANTUNDProperty_MACDenylistEnabled,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		SPINEL_PROP_MAC_DENYLIST_ENABLED, SPINEL_DATATYPE_BOOL_C);
 	register_set_handler_capability_spinel(
 		kWPANTUNDProperty_CommissionerProvisioningUrl,
 		SPINEL_CAP_THREAD_COMMISSIONER,
@@ -3446,6 +4037,28 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		kWPANTUNDProperty_OpenThreadLogTimestampBase,
 		SPINEL_CAP_OPENTHREAD_LOG_METADATA,
 		SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE, SPINEL_DATATYPE_UINT64_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadDomainName,
+		SPINEL_CAP_NET_THREAD_1_2,
+		SPINEL_PROP_THREAD_DOMAIN_NAME,
+		SPINEL_DATATYPE_UTF8_C);
+
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslPeriod,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_PERIOD, SPINEL_DATATYPE_UINT16_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslTimeout,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_TIMEOUT, SPINEL_DATATYPE_UINT32_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadCslChannel,
+		SPINEL_CAP_THREAD_CSL_RECEIVER,
+		SPINEL_PROP_THREAD_CSL_CHANNEL, SPINEL_DATATYPE_UINT8_C);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalJitter,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_REGISTRATION_JITTER, SPINEL_DATATYPE_UINT8_C);
 
 	// Properties with a `ValueConverter`
 	register_set_handler_capability_spinel(
@@ -3473,6 +4086,21 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 		SPINEL_CAP_COUNTERS,
 		SPINEL_PROP_CNTR_ALL_IP_COUNTERS, SPINEL_DATATYPE_UINT8_C,
 		&SpinelNCPInstance::convert_value_counter_reset);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadDUAInterfaceIdentifier,
+		SPINEL_CAP_DUA,
+		SPINEL_PROP_THREAD_DUA_ID, SPINEL_DATATYPE_DATA_C,
+		&SpinelNCPInstance::convert_value_dua_interface_identifier);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalState,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_STATE, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_BackboneRouterState);
+	register_set_handler_capability_spinel(
+		kWPANTUNDProperty_ThreadBackboneRouterLocalRegister,
+		SPINEL_CAP_THREAD_BACKBONE_ROUTER,
+		SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_REGISTER, SPINEL_DATATYPE_UINT8_C,
+		&SpinelNCPInstance::convert_value_BackboneRouterRegister);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Properties requiring capability check and persistence (saving in settings),
@@ -3643,6 +4271,12 @@ SpinelNCPInstance::regsiter_all_set_handlers(void)
 	register_set_handler(
 		kWPANTUNDProperty_MACFilterFixedRssi,
 		boost::bind(&SpinelNCPInstance::set_prop_MACFilterFixedRssi, this, _1, _2));
+	register_set_handler(
+		kWPANTUNDProperty_JoinerDiscernerBitLength,
+		boost::bind(&SpinelNCPInstance::set_prop_JoinerDiscernerBitLength, this, _1, _2));
+	register_set_handler(
+		kWPANTUNDProperty_JoinerDiscernerValue,
+		boost::bind(&SpinelNCPInstance::set_prop_JoinerDiscernerValue, this, _1, _2));
 }
 
 int
@@ -3715,6 +4349,66 @@ SpinelNCPInstance::convert_value_CommissionerState(const boost::any &value, boos
 	}
 
 	return ret;
+}
+
+int
+SpinelNCPInstance::convert_value_dua_interface_identifier(const boost::any &value, boost::any &value_out)
+{
+	std::string state_str = any_to_string(value);
+	Data data;
+	int ret = kWPANTUNDStatus_Ok;
+
+	if (state_str.length() == 16)
+	{
+		data.resize(8);
+		parse_string_into_data(data.data(), data.size(), state_str.c_str());
+	}
+	else if (state_str.length() != 0)
+	{
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+	else
+	{
+		// Intentionally leave empty data when state_str.length() == 0
+	}
+
+	value_out = data;
+	return ret;
+}
+
+int
+SpinelNCPInstance::convert_value_BackboneRouterState(const boost::any &value, boost::any &value_out)
+{
+	int ret = kWPANTUNDStatus_Ok;
+	std::string state_str = any_to_string(value);
+	const char *str = state_str.c_str();
+
+	if (strcaseequal(str, kWPANTUNDThreadBackboneRouterState_Disabled) || strcaseequal(str, "stop") || strcaseequal(str, "off")
+		|| strcaseequal(str, "0") || strcaseequal(str, "false") || strcaseequal(str, "disable")
+	) {
+		value_out = static_cast<uint8_t>(SPINEL_THREAD_BACKBONE_ROUTER_STATE_DISABLED);
+
+	} else if (strcaseequal(str, kWPANTUNDThreadBackboneRouterState_Primary) || strcaseequal(str, "start") ||
+		strcaseequal(str, "on") || strcaseequal(str, "1") || strcaseequal(str, "true") || strcaseequal(str, "enable")
+	) {
+		value_out = static_cast<uint8_t>(SPINEL_THREAD_BACKBONE_ROUTER_STATE_PRIMARY);
+
+	} else {
+		ret = kWPANTUNDStatus_InvalidArgument;
+	}
+
+	return ret;
+}
+
+int
+SpinelNCPInstance::convert_value_BackboneRouterRegister(const boost::any &value, boost::any &value_out)
+{
+	// The value written to related spinel property does not matter,
+	// so we just write value `1`.
+
+	(void)value;
+	value_out = 1;
+	return kWPANTUNDStatus_Ok;
 }
 
 void
@@ -4061,9 +4755,62 @@ SpinelNCPInstance::set_prop_DaemonTickleOnHostDidWake(const boost::any &value, C
 void
 SpinelNCPInstance::set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb)
 {
-	if (mCapabilities.count(SPINEL_CAP_MAC_WHITELIST)) {
+	if (mCapabilities.count(SPINEL_CAP_MAC_ALLOWLIST)) {
 		mMacFilterFixedRssi = static_cast<int8_t>(any_to_int(value));
 		cb(kWPANTUNDStatus_Ok);
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
+SpinelNCPInstance::set_prop_JoinerDiscernerBitLength(const boost::any &value, CallbackWithStatus cb)
+{
+	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+		mJoinerDiscernerBitLength = static_cast<uint8_t>(any_to_int(value));
+
+		// Setting Discerner length to zero is to clear any previous set Discerner value
+		if (mJoinerDiscernerBitLength == 0) {
+
+			start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+				.set_callback(cb)
+				.add_command(SpinelPackData(
+					SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+					SPINEL_PROP_MESHCOP_JOINER_DISCERNER,
+					mJoinerDiscernerBitLength
+				))
+				.finish()
+			);
+
+		} else {
+			cb(kWPANTUNDStatus_Ok);
+		}
+
+	} else {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	}
+}
+
+void
+SpinelNCPInstance::set_prop_JoinerDiscernerValue(const boost::any &value, CallbackWithStatus cb)
+{
+	if (mCapabilities.count(SPINEL_CAP_THREAD_JOINER)) {
+		uint64_t discerner_value = any_to_uint64(value);
+
+		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
+			.set_callback(cb)
+			.add_command(SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT64_S
+				),
+				SPINEL_PROP_MESHCOP_JOINER_DISCERNER,
+				mJoinerDiscernerBitLength,
+				discerner_value
+			))
+			.finish()
+		);
+
 	} else {
 		cb(kWPANTUNDStatus_FeatureNotSupported);
 	}
@@ -4138,24 +4885,24 @@ void
 SpinelNCPInstance::regsiter_all_insert_handlers(void)
 {
 	register_insert_handler_capability(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::insert_prop_MACWhitelistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::insert_prop_MACAllowlistEntries, this, _1, _2));
 	register_insert_handler_capability(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::insert_prop_MACBlacklistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::insert_prop_MACDenylistEntries, this, _1, _2));
 	register_insert_handler_capability(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::insert_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
-SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::insert_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
-	int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
+	int8_t rssi = kWPANTUND_Allowlist_RssiOverrideDisabled;
 
 	if (ext_address.size() == sizeof(spinel_eui64_t)) {
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -4163,7 +4910,7 @@ SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
-					SPINEL_PROP_MAC_WHITELIST,
+					SPINEL_PROP_MAC_ALLOWLIST,
 					ext_address.data(),
 					rssi
 				)
@@ -4176,10 +4923,10 @@ SpinelNCPInstance::insert_prop_MACWhitelistEntries(const boost::any &value, Call
 }
 
 void
-SpinelNCPInstance::insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::insert_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
-	int8_t rssi = kWPANTUND_Whitelist_RssiOverrideDisabled;
+	int8_t rssi = kWPANTUND_Allowlist_RssiOverrideDisabled;
 
 	if (ext_address.size() == sizeof(spinel_eui64_t)) {
 		start_new_task(SpinelNCPTaskSendCommand::Factory(this)
@@ -4187,7 +4934,7 @@ SpinelNCPInstance::insert_prop_MACBlacklistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(SPINEL_DATATYPE_EUI64_S SPINEL_DATATYPE_INT8_S),
-					SPINEL_PROP_MAC_BLACKLIST,
+					SPINEL_PROP_MAC_DENYLIST,
 					ext_address.data(),
 					rssi
 				)
@@ -4274,21 +5021,21 @@ void
 SpinelNCPInstance::regsiter_all_remove_handlers(void)
 {
 	register_remove_handler_capability(
-		kWPANTUNDProperty_MACWhitelistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::remove_prop_MACWhitelistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACAllowlistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::remove_prop_MACAllowlistEntries, this, _1, _2));
 	register_remove_handler_capability(
-		kWPANTUNDProperty_MACBlacklistEntries,
-		SPINEL_CAP_MAC_WHITELIST,
-		boost::bind(&SpinelNCPInstance::remove_prop_MACBlacklistEntries, this, _1, _2));
+		kWPANTUNDProperty_MACDenylistEntries,
+		SPINEL_CAP_MAC_ALLOWLIST,
+		boost::bind(&SpinelNCPInstance::remove_prop_MACDenylistEntries, this, _1, _2));
 	register_remove_handler_capability(
 		kWPANTUNDProperty_MACFilterEntries,
-		SPINEL_CAP_MAC_WHITELIST,
+		SPINEL_CAP_MAC_ALLOWLIST,
 		boost::bind(&SpinelNCPInstance::remove_prop_MACFilterEntries, this, _1, _2));
 }
 
 void
-SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::remove_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
 
@@ -4298,7 +5045,7 @@ SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
-					SPINEL_PROP_MAC_WHITELIST,
+					SPINEL_PROP_MAC_ALLOWLIST,
 					ext_address.data()
 				)
 			)
@@ -4310,7 +5057,7 @@ SpinelNCPInstance::remove_prop_MACWhitelistEntries(const boost::any &value, Call
 }
 
 void
-SpinelNCPInstance::remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb)
+SpinelNCPInstance::remove_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb)
 {
 	Data ext_address = any_to_data(value);
 
@@ -4320,7 +5067,7 @@ SpinelNCPInstance::remove_prop_MACBlacklistEntries(const boost::any &value, Call
 			.add_command(
 				SpinelPackData(
 					SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(SPINEL_DATATYPE_EUI64_S),
-					SPINEL_PROP_MAC_BLACKLIST,
+					SPINEL_PROP_MAC_DENYLIST,
 					ext_address.data()
 				)
 			)
@@ -4402,6 +5149,8 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 		uint8_t prefix_len = 0;
 		bool stable = false;
 		uint8_t flags = 0;
+		uint8_t flags_extended = 0;
+		uint16_t mesh_nets_flags = 0;
 		bool is_local = false;
 		uint16_t rloc16 = 0;
 
@@ -4415,18 +5164,22 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 				SPINEL_DATATYPE_UINT8_S    // flags
 				SPINEL_DATATYPE_BOOL_S     // is_local
 				SPINEL_DATATYPE_UINT16_S   // RLOC16
+				SPINEL_DATATYPE_UINT8_S    // flags extended
 			),
 			&prefix_addr,
 			&prefix_len,
 			&stable,
 			&flags,
 			&is_local,
-			&rloc16
+			&rloc16,
+			&flags_extended
 		);
 
 		if (len <= 0) {
 			break;
 		}
+
+		mesh_nets_flags = (flags_extended << 8) | flags;
 
 		syslog(
 			LOG_INFO,
@@ -4436,7 +5189,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			prefix_len,
 			stable ? "yes" : "no",
 			is_local ? "yes" : "no",
-			on_mesh_prefix_flags_to_string(flags).c_str(),
+			on_mesh_prefix_flags_to_string(mesh_nets_flags).c_str(),
 			rloc16
 		);
 
@@ -4448,7 +5201,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 			// and check if this entry is already on the list, if so remove it.
 
 			IPv6Prefix prefix(*prefix_addr, prefix_len);
-			OnMeshPrefixEntry entry(kOriginThreadNCP, flags, stable, rloc16);
+			OnMeshPrefixEntry entry(kOriginThreadNCP, mesh_nets_flags, stable, rloc16);
 
 			iter = on_mesh_prefixes.lower_bound(prefix);
 
@@ -4463,7 +5216,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is_ON_MESH_NETS(const uint8_t *value_
 				}
 			}
 
-			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix_addr, prefix_len, flags, stable, rloc16);
+			on_mesh_prefix_was_added(kOriginThreadNCP, *prefix_addr, prefix_len, mesh_nets_flags, stable, rloc16);
 		}
 
 		value_data_ptr += len;
@@ -5471,6 +6224,172 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		} else {
 			syslog(LOG_WARNING, "[-NCP-]: Failed to unpack network time update");
 		}
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_QUERY_RESULT) {
+		spinel_ssize_t len;
+		struct in6_addr *source = NULL;
+		std::string source_str;
+		uint8_t status;
+		std::string status_str;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+
+		mLinkMetricsQueryResult.clear();
+
+		// Decode source and status
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_DATA_WLEN_S
+			),
+			&source,
+			&status,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		source_str = in6_addr_to_string(*source);
+		status_str = spinel_link_metrics_status_to_cstr(status);
+
+		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
+		mLinkMetricsQueryResult[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;
+
+		unpack_link_metrics_as_val_map(struct_in, struct_len, mLinkMetricsQueryResult);
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE) {
+		spinel_ssize_t len;
+		struct in6_addr *source = NULL;
+		std::string source_str;
+		uint8_t status;
+		std::string status_str;
+
+		// Decode source and status
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_IPv6ADDR_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			&source,
+			&status
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		source_str = in6_addr_to_string(*source);
+		status_str = spinel_link_metrics_status_to_cstr(status);
+
+		mLinkMetricsMgmtResponse[kWPANTUNDValueMapKey_LinkMetrics_Source] = source_str;
+		mLinkMetricsMgmtResponse[kWPANTUNDValueMapKey_LinkMetrics_Status] = status_str;
+
+		syslog(LOG_INFO, "Link Metrics Mqmt Response: %s (src: %s)", status_str.c_str(), source_str.c_str());
+
+	} else if (key == SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK_IE) {
+		spinel_ssize_t len;
+		uint16_t short_addr = 0;
+		const spinel_eui64_t *eui64 = NULL;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+
+		mLinkMetricsLastEnhAckIe.clear();
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT16_S
+				SPINEL_DATATYPE_EUI64_S
+				SPINEL_DATATYPE_DATA_WLEN_S
+			),
+			&short_addr,
+			&eui64,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		syslog(LOG_DEBUG, "Received Link Metrics Enh-ACK IE from 0x%02x", short_addr);
+
+		unpack_link_metrics_as_val_map(value_data_ptr, value_data_len, mLinkMetricsLastEnhAckIe);
+
+	} else if (key == SPINEL_PROP_THREAD_MLR_RESPONSE) {
+
+		mMulticastListenerRegistrationResponse.clear();
+
+		spinel_ssize_t len;
+		uint8_t status;
+		uint8_t mlr_status;
+		const uint8_t *struct_in = NULL;
+		unsigned int struct_len = 0;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			(
+				SPINEL_DATATYPE_UINT8_S
+				SPINEL_DATATYPE_UINT8_S
+			),
+			&status,
+			&mlr_status
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_Status] = status;
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_MlrStatus] = mlr_status;
+
+		std::list<std::string> addrList;
+
+		len = spinel_datatype_unpack(
+			value_data_ptr,
+			value_data_len,
+			SPINEL_DATATYPE_DATA_WLEN_S,
+			&struct_in,
+			&struct_len
+		);
+
+		require(len >= 0, bail);
+		value_data_ptr += len;
+		value_data_len -= len;
+
+		while (struct_len != 0)
+		{
+			const in6_addr * failed_addr;
+
+			len = spinel_datatype_unpack(
+				struct_in,
+				struct_len,
+				SPINEL_DATATYPE_IPv6ADDR_S,
+				&failed_addr
+			);
+
+			require(len > 0, bail);
+
+			struct_in  += len;
+			struct_len -= len;
+
+			addrList.push_back(in6_addr_to_string(*failed_addr));
+		}
+
+		mMulticastListenerRegistrationResponse[kWPANTUNDValueMapKey_ThreadMlrResponse_Addresses] = addrList;
+
+		syslog(LOG_DEBUG, "Received Multicast Listener Registration Response status=%u mlr_status=%u",
+			(unsigned)status, (unsigned)mlr_status);
 	}
 
 bail:
@@ -5910,7 +6829,7 @@ SpinelNCPInstance::remove_service_on_ncp(uint32_t enterprise_number, const Data&
 }
 
 void
-SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint16_t flags,
 	bool stable, CallbackWithStatus cb)
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
@@ -5926,19 +6845,25 @@ SpinelNCPInstance::add_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint
 			SPINEL_DATATYPE_UINT8_S
 			SPINEL_DATATYPE_BOOL_S
 			SPINEL_DATATYPE_UINT8_S
+			SPINEL_DATATYPE_BOOL_S
+			SPINEL_DATATYPE_UINT16_S
+			SPINEL_DATATYPE_UINT8_S
 		),
 		SPINEL_PROP_THREAD_ON_MESH_NETS,
 		&prefix,
 		prefix_len,
 		stable,
-		flags
+		flags & 0xff,
+		false,
+		0,
+		(flags >> 8) & 0xff
 	));
 
 	start_new_task(factory.finish());
 }
 
 void
-SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint8_t flags,
+SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, uint8_t prefix_len, uint16_t flags,
 	bool stable, CallbackWithStatus cb)
 {
 	SpinelNCPTaskSendCommand::Factory factory(this);
@@ -5959,7 +6884,7 @@ SpinelNCPInstance::remove_on_mesh_prefix_on_ncp(const struct in6_addr &prefix, u
 		&prefix,
 		prefix_len,
 		stable,
-		flags
+		flags & 0xff
 	));
 
 	start_new_task(factory.finish());

@@ -66,9 +66,9 @@ protected:
 
 	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data &service_data, CallbackWithStatus cb);
 
-	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags, bool stable,
 					CallbackWithStatus cb);
-	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags, bool stable,
 					CallbackWithStatus cb);
 
 	virtual void add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,

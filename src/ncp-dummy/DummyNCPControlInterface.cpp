@@ -212,7 +212,7 @@ DummyNCPControlInterface::joiner_commissioning(
 
 void
 DummyNCPControlInterface::commissioner_add_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	const char *psk,
 	CallbackWithStatus cb
@@ -222,7 +222,7 @@ DummyNCPControlInterface::commissioner_add_joiner(
 
 void
 DummyNCPControlInterface::commissioner_remove_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	CallbackWithStatus cb
 ) {
@@ -394,6 +394,67 @@ DummyNCPControlInterface::property_remove_value(
 ) {
 	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
 	mNCPInstance->property_remove_value(key, value, cb);
+}
+
+void
+DummyNCPControlInterface::link_metrics_query(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_probe(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	uint8_t length,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_mgmt_forward(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t frame_types,
+		const uint8_t metrics,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::link_metrics_mgmt_enh_ack(
+		const struct in6_addr &address,
+		uint8_t seriesId,
+		const uint8_t metrics,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
+DummyNCPControlInterface::backbone_router_config(
+		const uint16_t delay,
+		const uint32_t timeout,
+		const uint8_t seqno,
+		CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
 
 void

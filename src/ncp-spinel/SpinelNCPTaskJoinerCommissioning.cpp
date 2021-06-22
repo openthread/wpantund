@@ -24,6 +24,8 @@
 #include "assert-macros.h"
 #include <syslog.h>
 #include <errno.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include "SpinelNCPTaskJoinerCommissioning.h"
 #include "SpinelNCPInstance.h"
 #include "any-to.h"
@@ -92,6 +94,8 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 {
 	int ret = kWPANTUNDStatus_Failure;
 	int last_status = peek_ncp_callback_status(event, args);
+	uint64_t discerner_value;
+	uint8_t discerner_len;
 
 	EH_BEGIN();
 
@@ -175,6 +179,14 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 			mOptions[kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart] = boost::any(false);
 		}
 
+		if (mOptions.count(kWPANTUNDValueMapKey_Joiner_DiscernerValue)
+		   && !mOptions.count(kWPANTUNDValueMapKey_Joiner_DiscernerBitLength)) {
+
+			syslog(LOG_ERR, "Starting Joiner Commissioning failed. Discerner value provided without length");
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
 		mInstance->change_ncp_state(ASSOCIATING);
 
 		// Turn off promiscuous mode, if it happens to be on
@@ -195,7 +207,7 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 		);
 		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
 		ret = mNextCommandRet;
-		require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
+		require((ret == kWPANTUNDStatus_Ok), on_error);
 
 		syslog(LOG_INFO,
 			"Starting Joiner Commissioning, PSKd(hidden), ProvisioningURL:\"%s\", "
@@ -206,6 +218,27 @@ nl::wpantund::SpinelNCPTaskJoinerCommissioning::vprocess_event(int event, va_lis
 			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorSwVersion]).c_str(),
 			any_to_string(mOptions[kWPANTUNDValueMapKey_Joiner_VendorData]).c_str()
 		);
+
+		if (mOptions.count(kWPANTUNDValueMapKey_Joiner_DiscernerValue)) {
+			discerner_value = any_to_uint64(mOptions[kWPANTUNDValueMapKey_Joiner_DiscernerValue]);
+			discerner_len = static_cast<uint8_t>(any_to_int(mOptions[kWPANTUNDValueMapKey_Joiner_DiscernerBitLength]));
+
+			syslog(LOG_INFO, "with Joiner Discerner %" PRIu64 " (bit-len:%d)", discerner_value, discerner_len);
+
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_INT64_S
+				),
+				SPINEL_PROP_MESHCOP_JOINER_DISCERNER,
+				discerner_len,
+				discerner_value
+			);
+
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+			ret = mNextCommandRet;
+			require((ret == kWPANTUNDStatus_Ok) || (ret == kWPANTUNDStatus_Already), on_error);
+		}
 
 		mNextCommand = SpinelPackData(
 			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(

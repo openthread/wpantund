@@ -1495,12 +1495,12 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "MAC_DATA_POLL_PERIOD";
         break;
 
-    case SPINEL_PROP_MAC_WHITELIST:
-        ret = "MAC_WHITELIST";
+    case SPINEL_PROP_MAC_ALLOWLIST:
+        ret = "MAC_ALLOWLIST";
         break;
 
-    case SPINEL_PROP_MAC_WHITELIST_ENABLED:
-        ret = "MAC_WHITELIST_ENABLED";
+    case SPINEL_PROP_MAC_ALLOWLIST_ENABLED:
+        ret = "MAC_ALLOWLIST_ENABLED";
         break;
 
     case SPINEL_PROP_MAC_EXTENDED_ADDR:
@@ -1519,12 +1519,12 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "MAC_SRC_MATCH_EXTENDED_ADDRESSES";
         break;
 
-    case SPINEL_PROP_MAC_BLACKLIST:
-        ret = "MAC_BLACKLIST";
+    case SPINEL_PROP_MAC_DENYLIST:
+        ret = "MAC_DENYLIST";
         break;
 
-    case SPINEL_PROP_MAC_BLACKLIST_ENABLED:
-        ret = "MAC_BLACKLIST_ENABLED";
+    case SPINEL_PROP_MAC_DENYLIST_ENABLED:
+        ret = "MAC_DENYLIST_ENABLED";
         break;
 
     case SPINEL_PROP_MAC_FIXED_RSS:
@@ -1815,6 +1815,82 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "THREAD_NEW_DATASET";
         break;
 
+    case SPINEL_PROP_THREAD_CSL_PERIOD:
+        ret = "SPINEL_PROP_THREAD_CSL_PERIOD";
+        break;
+
+    case SPINEL_PROP_THREAD_CSL_TIMEOUT:
+        ret = "SPINEL_PROP_THREAD_CSL_TIMEOUT";
+        break;
+
+    case SPINEL_PROP_THREAD_CSL_CHANNEL:
+        ret = "SPINEL_PROP_THREAD_CSL_CHANNEL";
+        break;
+
+    case SPINEL_PROP_THREAD_DOMAIN_NAME:
+        ret = "THREAD_DOMAIN_NAME";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_QUERY:
+        ret = "THREAD_LINK_METRICS_QUERY";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_QUERY_RESULT:
+        ret = "THREAD_LINK_METRICS_QUERY_RESULT";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_PROBE:
+        ret = "LINK_METRICS_PROBE";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK:
+        ret = "THREAD_LINK_METRICS_MGMT_ENH_ACK";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK_IE:
+        ret = "THREAD_LINK_METRICS_MGMT_ENH_ACK_IE";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD:
+        ret = "SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD";
+        break;
+
+    case SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE:
+        ret = "SPINEL_PROP_THREAD_LINK_METRICS_MGMT_RESPONSE";
+        break;
+
+    case SPINEL_PROP_THREAD_MLR_REQUEST:
+        ret = "THREAD_MLR_REQUEST";
+        break;
+
+    case SPINEL_PROP_THREAD_MLR_RESPONSE:
+        ret = "THREAD_MLR_RESPONSE";
+        break;
+
+    case SPINEL_PROP_THREAD_DUA_ID:
+        ret = "THREAD_DUA_ID";
+        break;
+
+    case SPINEL_PROP_THREAD_BACKBONE_ROUTER_PRIMARY:
+        ret = "THREAD_BACKBONE_ROUTER_PRIMARY";
+        break;
+
+    case SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_STATE:
+        ret = "THREAD_BACKBONE_ROUTER_LOCAL_STATE";
+        break;
+
+    case SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_CONFIG:
+        ret = "THREAD_BACKBONE_ROUTER_LOCAL_CONFIG";
+        break;
+
+    case SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_REGISTER:
+        ret = "THREAD_BACKBONE_ROUTER_REGISTER";
+        break;
+
+    case SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_REGISTRATION_JITTER:
+        ret = "THREAD_BACKBONE_ROUTER_REGISTRATION_JITTER";
+        break;
+
     case SPINEL_PROP_MESHCOP_JOINER_STATE:
         ret = "MESHCOP_JOINER_STATE";
         break;
@@ -1889,6 +1965,10 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_MESHCOP_COMMISSIONER_SESSION_ID:
         ret = "MESHCOP_COMMISSIONER_SESSION_ID";
+        break;
+
+    case SPINEL_PROP_MESHCOP_JOINER_DISCERNER:
+        ret = "MESHCOP_JOINER_DISCERNER";
         break;
 
     case SPINEL_PROP_MESHCOP_COMMISSIONER_ANNOUNCE_BEGIN:
@@ -1981,6 +2061,14 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
     case SPINEL_PROP_SLAAC_ENABLED:
         ret = "SLAAC_ENABLED";
+        break;
+
+    case SPINEL_PROP_SUPPORTED_RADIO_LINKS:
+        ret = "SUPPORTED_RADIO_LINKS";
+        break;
+
+    case SPINEL_PROP_NEIGHBOR_TABLE_MULTI_RADIO_INFO:
+        ret = "NEIGHBOR_TABLE_MULTI_RADIO_INFO";
         break;
 
     case SPINEL_PROP_SERVER_ALLOW_LOCAL_DATA_CHANGE:
@@ -2243,6 +2331,14 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
         ret = "DEBUG_TEST_WATCHDOG";
         break;
 
+    case SPINEL_PROP_DEBUG_LOG_TIMESTAMP_BASE:
+        ret = "DEBUG_LOG_TIMESTAMP_BASE";
+        break;
+
+    case SPINEL_PROP_DEBUG_TREL_TEST_MODE_ENABLE:
+        ret = "DEBUG_TREL_TEST_MODE_ENABLE";
+        break;
+
     default:
         break;
     }
@@ -2252,7 +2348,7 @@ const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key)
 
 const char *spinel_net_role_to_cstr(uint8_t net_role)
 {
-    const char *ret = "NET_ROLE_UNKNONW";
+    const char *ret = "NET_ROLE_UNKNOWN";
 
     switch (net_role)
     {
@@ -2396,6 +2492,18 @@ const char *spinel_status_to_cstr(spinel_status_t status)
 
     case SPINEL_STATUS_INVALID_COMMAND_FOR_PROP:
         ret = "INVALID_COMMAND_FOR_PROP";
+        break;
+
+    case SPINEL_STATUS_UNKNOWN_NEIGHBOR:
+        ret = "UNKNOWN_NEIGHBOR";
+        break;
+
+    case SPINEL_STATUS_NOT_CAPABLE:
+        ret = "NOT_CAPABLE";
+        break;
+
+    case SPINEL_STATUS_RESPONSE_TIMEOUT:
+        ret = "RESPONSE_TIMEOUT";
         break;
 
     case SPINEL_STATUS_JOIN_FAILURE:
@@ -2599,8 +2707,12 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "NET_THREAD_1_1";
         break;
 
-    case SPINEL_CAP_MAC_WHITELIST:
-        ret = "MAC_WHITELIST";
+    case SPINEL_CAP_NET_THREAD_1_2:
+        ret = "NET_THREAD_1_2";
+        break;
+
+    case SPINEL_CAP_MAC_ALLOWLIST:
+        ret = "MAC_ALLOWLIST";
         break;
 
     case SPINEL_CAP_MAC_RAW:
@@ -2631,8 +2743,8 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "CHILD_SUPERVISION";
         break;
 
-    case SPINEL_CAP_POSIX_APP:
-        ret = "POSIX_APP";
+    case SPINEL_CAP_POSIX:
+        ret = "POSIX";
         break;
 
     case SPINEL_CAP_SLAAC:
@@ -2645,6 +2757,14 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
 
     case SPINEL_CAP_MAC_RETRY_HISTOGRAM:
         ret = "MAC_RETRY_HISTOGRAM";
+        break;
+
+    case SPINEL_CAP_MULTI_RADIO:
+        ret = "MULTI_RADIO";
+        break;
+
+    case SPINEL_CAP_DUA:
+        ret = "DUA";
         break;
 
     case SPINEL_CAP_ERROR_RATE_TRACKING:
@@ -2675,6 +2795,18 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         ret = "THREAD_SERVICE";
         break;
 
+    case SPINEL_CAP_THREAD_CSL_RECEIVER:
+        ret = "THREAD_CSL_RECEIVER";
+        break;
+
+    case SPINEL_CAP_THREAD_LINK_METRICS:
+        ret = "THREAD_LINK_METRICS";
+        break;
+
+    case SPINEL_CAP_THREAD_BACKBONE_ROUTER:
+        ret = "THREAD_BACKBONE_ROUTER";
+        break;
+
     case SPINEL_CAP_NEST_LEGACY_INTERFACE:
         ret = "NEST_LEGACY_INTERFACE";
         break;
@@ -2688,6 +2820,56 @@ const char *spinel_capability_to_cstr(spinel_capability_t capability)
         break;
 
     default:
+        break;
+    }
+
+    return ret;
+}
+
+const char *spinel_radio_link_to_cstr(uint32_t radio)
+{
+    const char *ret = "UNKNOWN";
+
+    switch (radio)
+    {
+    case SPINEL_RADIO_LINK_IEEE_802_15_4:
+        ret = "IEEE_802_15_4";
+        break;
+
+    case SPINEL_RADIO_LINK_TREL_UDP6:
+        ret = "TREL_UDP6";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
+
+const char *spinel_link_metrics_status_to_cstr(uint8_t status)
+{
+    const char* ret = "UNKNOWN";
+
+    switch(status)
+    {
+    case SPINEL_LINK_METRICS_STATUS_SUCCESS:
+        ret = "SUCCESS";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_CANNOT_SUPPORT_NEW_SERIES:
+        ret = "CANNOT_SUPPORT_NEW_SERIES";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_SERIESID_ALREADY_REGISTERED:
+        ret = "SERIESID_ALREADY_REGISTERED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_SERIESID_NOT_RECOGNIZED:
+        ret = "SERIESID_NOT_RECOGNIZED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_NO_MATCHING_FRAMES_RECEIVED:
+        ret = "NO_MATCHING_FRAMES_RECEIVED";
+        break;
+    case SPINEL_LINK_METRICS_STATUS_OTHER_ERROR:
+        ret = "OTHER_ERROR";
         break;
     }
 

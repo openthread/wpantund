@@ -394,7 +394,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 			mDriverState = INITIALIZING_WAITING_FOR_RESET;
 
 			EH_REQUIRE_WITHIN(
-				NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT,
+				NCP_DEFAULT_RESET_RESPONSE_TIMEOUT,
 				event == EVENT_NCP_RESET,
 				on_error
 			);
@@ -470,7 +470,7 @@ SpinelNCPInstance::vprocess_init(int event, va_list args)
 				{ SPINEL_PROP_NET_STACK_UP, 0 },
 				{ SPINEL_PROP_NET_ROLE, 0 },
 				{ SPINEL_PROP_SLAAC_ENABLED, SPINEL_CAP_SLAAC },
-				{ SPINEL_PROP_RCP_VERSION , SPINEL_CAP_POSIX_APP },
+				{ SPINEL_PROP_RCP_VERSION , SPINEL_CAP_POSIX },
 				{ SPINEL_PROP_SERVER_SERVICES, SPINEL_CAP_THREAD_SERVICE },
 			};
 

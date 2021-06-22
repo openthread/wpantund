@@ -46,6 +46,8 @@ static const arg_list_item_t add_prefix_option_list[] = {
 	{'c', "configure", NULL, "Set the prefix flag \"configure\""},
 	{'r', "default-route", NULL, "Set the prefix flag \"default-route\""},
 	{'o', "on-mesh", NULL, "Set the prefix flag \"on-mesh\""},
+	{'n', "nd-dns", NULL, "Set the prefix flag \"nd-dns\""},
+	{'D', "domain-prefix", NULL, "Set the prefix flag \"domain-prefix\""},
 	{0}
 };
 
@@ -69,6 +71,8 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 	dbus_bool_t configure = FALSE;
 	dbus_bool_t default_route = FALSE;
 	dbus_bool_t on_mesh = FALSE;
+	dbus_bool_t nd_dns = FALSE;
+	dbus_bool_t domain_prefix = FALSE;
 	uint8_t prefix_bytes[16] = {};
 	uint8_t *addr = prefix_bytes;
 	uint32_t preferred_lifetime = 0xFFFFFFFF;
@@ -89,13 +93,15 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 			{"configure", no_argument, 0, 'c'},
 			{"default-route", no_argument, 0, 'r'},
 			{"on-mesh", no_argument, 0, 'o'},
+			{"nd-dns", no_argument, 0, 'n'},
+			{"domain-prefix", no_argument, 0, 'D'},
 			{0, 0, 0, 0}
 		};
 
 		int c;
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "ht:P:l:sfadcro", long_options, &option_index);
+		c = getopt_long(argc, argv, "ht:P:l:sfadcronD", long_options, &option_index);
 
 		if (c == -1) {
 			break;
@@ -145,6 +151,14 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 
 		case 'o':
 			on_mesh = TRUE;
+			break;
+
+		case 'n':
+			nd_dns = TRUE;
+			break;
+
+		case 'D':
+			domain_prefix = TRUE;
 			break;
 		}
 	}
@@ -229,6 +243,8 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 		DBUS_TYPE_BOOLEAN, &configure,
 		DBUS_TYPE_BOOLEAN, &stable,
 		DBUS_TYPE_UINT16, &prefix_len_in_bits,
+		DBUS_TYPE_BOOLEAN, &nd_dns,
+		DBUS_TYPE_BOOLEAN, &domain_prefix,
 		DBUS_TYPE_INVALID
 	);
 
@@ -251,7 +267,7 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 		inet_ntop(AF_INET6, (const void *)&prefix_bytes, address_string, sizeof(address_string));
 		fprintf(
 			stderr,
-			"Successfully added prefix \"%s\" len:%d stable:%c [on-mesh:%c def-route:%c config:%c dhcp:%c slaac:%c pref:%c prio:%s]\n",
+			"Successfully added prefix \"%s\" len:%d stable:%c [on-mesh:%c def-route:%c config:%c dhcp:%c slaac:%c pref:%c nd-dns:%c dp:%c prio:%s]\n",
 			address_string,
 			prefix_len_in_bits,
 			stable ? '1' : '0',
@@ -261,9 +277,12 @@ int tool_cmd_add_prefix(int argc, char* argv[])
 			dhcp ? '1' : '0',
 			slaac ? '1' : '0',
 			preferred ? '1' : '0',
+			nd_dns ? '1' : '0',
+			domain_prefix ? '1' : '0',
 			priority > 0 ? "high" : (priority < 0 ? "low" : "med")
 		);
-
+	} else if ((ret == kWPANTUNDStatus_Already) && domain_prefix) {
+		fprintf(stderr, "On Mesh domain prefix already configured.\n");
 	} else {
 		fprintf(stderr, "%s failed with error %d. %s\n", argv[0], ret, wpantund_status_to_cstr(ret));
 		print_error_diagnosis(ret);

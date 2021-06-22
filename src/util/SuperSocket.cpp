@@ -36,6 +36,11 @@
 #include <unistd.h>
 #include <termios.h>
 #include <sys/file.h>
+#include "../wpantund/NCPConstants.h"
+
+#if HAVE_LIBUDEV
+#include <libudev.h>
+#endif
 
 using namespace nl;
 
@@ -100,12 +105,77 @@ SuperSocket::hibernate(void)
 	return 0;
 }
 
+void SuperSocket::waitForDevice()
+{
+#if HAVE_LIBUDEV
+	int fd;
+	cms_t end;
+	cms_t now;
+	struct udev_monitor *mon;
+
+	struct udev *udev = udev_new();
+	if (!udev) {
+		syslog(LOG_ERR, "Can't create udev");
+		return;
+	}
+
+	mon = udev_monitor_new_from_netlink(udev, "udev");
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "tty", NULL);
+	udev_monitor_enable_receiving(mon);
+	fd = udev_monitor_get_fd(mon);
+
+	end = time_ms() + (cms_t)(NCP_RESET_TIMEOUT * MSEC_PER_SEC);
+
+	do {
+		int ret;
+		fd_set fds;
+		struct timeval tv;
+
+		tv.tv_sec = 0;
+		tv.tv_usec = 100 * USEC_PER_MSEC;
+
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+
+		ret = select(fd + 1, &fds, NULL, NULL, &tv);
+		if (ret > 0 && FD_ISSET(fd, &fds)) {
+			struct udev_device *dev = udev_monitor_receive_device(mon);
+			if (dev) {
+				struct udev_list_entry *entry;
+				const char *action = udev_device_get_action(dev);
+
+				if (strncmp(action, "add", strlen("add")) == 0) {
+					udev_list_entry_foreach(
+						entry, udev_device_get_devlinks_list_entry(dev))
+					{
+						const char *name = udev_list_entry_get_name(entry);
+						if (strncmp(name, mPath.c_str(), mPath.length()) ==
+						    0) {
+							udev_device_unref(dev);
+							goto exit;
+						}
+					}
+				}
+				udev_device_unref(dev);
+			}
+		}
+		now = time_ms();
+	} while (end > now);
+
+	syslog(LOG_WARNING, "The USB CDC ACM device has not been added in desired time");
+
+exit:
+	udev_unref(udev);
+#endif
+}
+
 void
 SuperSocket::reset()
 {
 	syslog(LOG_DEBUG, "SuperSocket::reset()");
 
 #if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	SuperSocket::waitForDevice();
 	SuperSocket::hibernate();
 
 	// Sleep for 200ms to wait for things to settle down.

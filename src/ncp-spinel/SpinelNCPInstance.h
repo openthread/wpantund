@@ -170,9 +170,9 @@ protected:
 
 	virtual void remove_service_on_ncp(uint32_t enterprise_number, const Data& service_data, CallbackWithStatus cb);
 
-	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags, bool stable,
+	virtual void add_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags, bool stable,
 					CallbackWithStatus cb);
-	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint8_t flags,
+	virtual void remove_on_mesh_prefix_on_ncp(const struct in6_addr &addr, uint8_t prefix_len, uint16_t flags,
 					bool stable, CallbackWithStatus cb);
 
 	virtual void add_route_on_ncp(const struct in6_addr &route, uint8_t prefix_len, RoutePreference preference,
@@ -236,11 +236,16 @@ private:
 	void get_prop_ThreadRouterID(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadConfigFilterRLOCAddresses(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadConfigFilterALOCAddresses(CallbackWithStatusArg1 cb);
+	void get_prop_JoinerDiscernerBitLength(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerEnergyScanResult(CallbackWithStatusArg1 cb);
 	void get_prop_CommissionerPanIdConflictResult(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalPrefix(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6MeshLocalAddress(CallbackWithStatusArg1 cb);
 	void get_prop_IPv6LinkLocalAddress(CallbackWithStatusArg1 cb);
+	void get_prop_LinkMetricsQueryResult(CallbackWithStatusArg1 cb);
+	void get_prop_LinkMetricsMgmtResponse(CallbackWithStatusArg1 cb);
+	void get_prop_LinkMetricsLastEnhAckIe(CallbackWithStatusArg1 cb);
+	void get_prop_MulticastListenerRegistrationResponse(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTable(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTableAsValMap(CallbackWithStatusArg1 cb);
 	void get_prop_ThreadChildTableAddresses(CallbackWithStatusArg1 cb);
@@ -302,6 +307,9 @@ private:
 	static int convert_value_channel_mask(const boost::any &value, boost::any &value_out);
 	static int convert_value_counter_reset(const boost::any &value, boost::any &value_out);
 	static int convert_value_CommissionerState(const boost::any &value, boost::any &value_out);
+	static int convert_value_dua_interface_identifier(const boost::any &value, boost::any &value_out);
+	static int convert_value_BackboneRouterState(const boost::any &value, boost::any &value_out);
+	static int convert_value_BackboneRouterRegister(const boost::any &value, boost::any &value_out);
 
 	void set_prop_NetworkKey(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_InterfaceUp(const boost::any &value, CallbackWithStatus cb);
@@ -331,6 +339,8 @@ private:
 	void set_prop_DatasetCommand(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_DaemonTickleOnHostDidWake(const boost::any &value, CallbackWithStatus cb);
 	void set_prop_MACFilterFixedRssi(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_JoinerDiscernerBitLength(const boost::any &value, CallbackWithStatus cb);
+	void set_prop_JoinerDiscernerValue(const boost::any &value, CallbackWithStatus cb);
 
 private:
 	void check_capability_prop_update(const boost::any &value, CallbackWithStatus cb, const std::string &prop_name,
@@ -341,8 +351,8 @@ private:
 
 	void regsiter_all_insert_handlers(void);
 
-	void insert_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
-	void insert_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb);
+	void insert_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb);
 	void insert_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 private:
@@ -351,8 +361,8 @@ private:
 
 	void regsiter_all_remove_handlers(void);
 
-	void remove_prop_MACWhitelistEntries(const boost::any &value, CallbackWithStatus cb);
-	void remove_prop_MACBlacklistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACAllowlistEntries(const boost::any &value, CallbackWithStatus cb);
+	void remove_prop_MACDenylistEntries(const boost::any &value, CallbackWithStatus cb);
 	void remove_prop_MACFilterEntries(const boost::any &value, CallbackWithStatus cb);
 
 public:
@@ -470,8 +480,15 @@ private:
 	uint8_t mChannelManagerNewChannel;
 	int8_t mMacFilterFixedRssi;
 
+	uint8_t mJoinerDiscernerBitLength;
 	std::list<ValueMap> mCommissionerEnergyScanResult;
 	std::list<ValueMap> mCommissionerPanIdConflictResult;
+
+	ValueMap mLinkMetricsQueryResult;
+	ValueMap mLinkMetricsMgmtResponse;
+	ValueMap mLinkMetricsLastEnhAckIe;
+
+	ValueMap mMulticastListenerRegistrationResponse;
 
 	bool mResetIsExpected;
 

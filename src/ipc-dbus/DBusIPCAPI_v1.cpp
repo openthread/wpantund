@@ -119,6 +119,14 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PEEK, interface_peek_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_POKE, interface_poke_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_QUERY, interface_link_metrics_query_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_PROBE, interface_link_metrics_probe_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_MGMT_FORWARD, interface_link_metrics_mgmt_forward_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_LINK_METRICS_MGMT_ENH_ACK, interface_link_metrics_mgmt_enh_ack_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MLR_REQUEST, interface_mlr_request_handler);
+
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_BACKBONE_ROUTER_CONFIG, interface_backbone_router_config_handler);
 }
 
 static void
@@ -1241,6 +1249,8 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 	dbus_bool_t dhcp = FALSE;
 	dbus_bool_t configure = FALSE;
 	dbus_bool_t stable = TRUE;
+	dbus_bool_t nd_dns = FALSE;
+	dbus_bool_t domain_prefix = FALSE;
 	uint32_t preferred_lifetime = 0;
 	uint32_t valid_lifetime = 0;
 	uint8_t *prefix(NULL);
@@ -1267,8 +1277,29 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		DBUS_TYPE_BOOLEAN, &configure,
 		DBUS_TYPE_BOOLEAN, &stable,
 		DBUS_TYPE_UINT16, &prefix_len_in_bits,
+		DBUS_TYPE_BOOLEAN, &nd_dns,
+		DBUS_TYPE_BOOLEAN, &domain_prefix,
 		DBUS_TYPE_INVALID
 	);
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_BOOLEAN, &default_route,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT32, &preferred_lifetime,
+			DBUS_TYPE_UINT32, &valid_lifetime,
+			DBUS_TYPE_BOOLEAN, &preferred,
+			DBUS_TYPE_BOOLEAN, &slaac,
+			DBUS_TYPE_BOOLEAN, &on_mesh,
+			DBUS_TYPE_INT16, &priority_raw,
+			DBUS_TYPE_BOOLEAN, &dhcp,
+			DBUS_TYPE_BOOLEAN, &configure,
+			DBUS_TYPE_BOOLEAN, &stable,
+			DBUS_TYPE_UINT16, &prefix_len_in_bits,
+			DBUS_TYPE_INVALID
+		);
+	}
 
 	if (!did_succeed) {
 		did_succeed = dbus_message_get_args(
@@ -1346,6 +1377,14 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 
 	if (configure) {
 		flags.insert(NCPControlInterface::PREFIX_FLAG_CONFIGURE);
+	}
+
+	if (nd_dns) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_ND_DNS);
+	}
+
+	if (domain_prefix) {
+		flags.insert(NCPControlInterface::PREFIX_FLAG_DOMAIN_PREFIX);
 	}
 
 	dbus_message_ref(message);
@@ -1702,20 +1741,43 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	NCPControlInterface::JoinerInfo joiner;
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	const char* psk = NULL;
 	uint32_t timeout = 0;
+	uint8_t discerner_len = 0;
+	uint64_t discerner_value = 0;
 	bool did_succeed = false;
-	const int ext_addr_size = 8;
+
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_STRING, &psk,
 		DBUS_TYPE_UINT32, &timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_BYTE, &joiner.mDiscerner.mBitLength,
+		DBUS_TYPE_UINT64, &joiner.mDiscerner.mValue,
 		DBUS_TYPE_INVALID
 	);
+
+	joiner.mType = NCPControlInterface::JoinerInfo::kDiscerner;
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_UINT32, &timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+			DBUS_TYPE_INVALID
+		);
+
+		if (did_succeed) {
+			joiner.mType = NCPControlInterface::JoinerInfo::kEui64;
+			require(ext_addr_len == NCP_EUI64_SIZE, bail);
+			memcpy(&joiner.mEui64, ext_addr, NCP_EUI64_SIZE);
+		}
+	}
 
 	if (!did_succeed) {
 		// No extended address specified
@@ -1726,17 +1788,16 @@ DBusIPCAPI_v1::interface_joiner_add_handler(
 			DBUS_TYPE_INVALID
 		);
 
-		ext_addr = NULL;
+		joiner.mType = NCPControlInterface::JoinerInfo::kAny;
 	}
 
 	require(did_succeed, bail);
 	require(psk != NULL, bail);
-	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
 
 	dbus_message_ref(message);
 
 	interface->commissioner_add_joiner(
-		ext_addr,
+		joiner,
 		timeout,
 		psk,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
@@ -1754,18 +1815,37 @@ DBusIPCAPI_v1::interface_joiner_remove_handler(
    DBusMessage *        message
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	NCPControlInterface::JoinerInfo joiner;
 	const uint8_t* ext_addr = NULL;
 	int ext_addr_len = 0;
 	uint32_t joiner_timeout = 0;
 	bool did_succeed = false;
-	const int ext_addr_size = 8;
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
 		DBUS_TYPE_UINT32, &joiner_timeout,
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_BYTE, &joiner.mDiscerner.mBitLength,
+		DBUS_TYPE_UINT64, &joiner.mDiscerner.mValue,
 		DBUS_TYPE_INVALID
 	);
+
+	joiner.mType = NCPControlInterface::JoinerInfo::kDiscerner;
+
+	if (!did_succeed) {
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+			DBUS_TYPE_INVALID
+		);
+
+		if (did_succeed) {
+			joiner.mType = NCPControlInterface::JoinerInfo::kEui64;
+			require(ext_addr_len == NCP_EUI64_SIZE, bail);
+			memcpy(&joiner.mEui64, ext_addr, NCP_EUI64_SIZE);
+		}
+	}
 
 	if (!did_succeed) {
 		// No extended address specified
@@ -1775,16 +1855,15 @@ DBusIPCAPI_v1::interface_joiner_remove_handler(
 			DBUS_TYPE_INVALID
 		);
 
-		ext_addr = NULL;
+		joiner.mType = NCPControlInterface::JoinerInfo::kAny;
 	}
 
 	require(did_succeed, bail);
-	require(ext_addr == NULL || ext_addr_len == ext_addr_size, bail);
 
 	dbus_message_ref(message);
 
 	interface->commissioner_remove_joiner(
-		ext_addr,
+		joiner,
 		joiner_timeout,
 		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
@@ -2038,6 +2117,257 @@ DBusIPCAPI_v1::interface_poke_handler(
 			_1,
 			message
 		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_query_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series;
+	uint8_t metrics = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_query(
+		dest,
+		series,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_probe_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series;
+	uint8_t length;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series,
+		DBUS_TYPE_BYTE, &length,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_probe(
+		dest,
+		series,
+		length,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_mgmt_forward_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t series_id = 0;
+	uint8_t metrics = 0;
+	uint8_t frame_types = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &series_id,
+		DBUS_TYPE_BYTE, &frame_types,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_mgmt_forward(
+		dest,
+		series_id,
+		frame_types,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_link_metrics_mgmt_enh_ack_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	const uint8_t *dest_addr = NULL;
+	int dest_addr_len;
+	struct in6_addr dest;
+	uint8_t metrics = 0;
+	uint8_t flags = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &dest_addr, &dest_addr_len,
+		DBUS_TYPE_BYTE, &flags,
+		DBUS_TYPE_BYTE, &metrics,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	require(dest_addr_len == sizeof(dest), bail);
+
+	dbus_message_ref(message);
+
+	memcpy(dest.s6_addr, dest_addr, sizeof(dest));
+
+	interface->link_metrics_mgmt_enh_ack(
+		dest,
+		flags,
+		metrics,
+	 	boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_mlr_request_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed = true;
+	std::vector<struct in6_addr> addresses;
+	dbus_bool_t mlr_timeout_present;
+	uint32_t mlr_timeout;
+
+	DBusMessageIter iter;
+	did_succeed = dbus_message_iter_init(message, &iter);
+	require(did_succeed, bail);
+
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY);
+	require(did_succeed, bail);
+	DBusMessageIter sub_iter;
+	dbus_message_iter_recurse(&iter, &sub_iter);
+	do {
+		addresses.push_back(any_to_ipv6(any_from_dbus_iter(&sub_iter)));
+	} while (dbus_message_iter_next(&sub_iter));
+
+	dbus_message_iter_next(&iter);
+
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_BOOLEAN);
+	require(did_succeed, bail);
+	dbus_message_iter_get_basic(&iter, &mlr_timeout_present);
+
+	dbus_message_iter_next(&iter);
+	did_succeed = (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_UINT32);
+	require(did_succeed, bail);
+	dbus_message_iter_get_basic(&iter, &mlr_timeout);
+
+	dbus_message_ref(message);
+
+	interface->mlr_request(
+		addresses,
+		mlr_timeout_present,
+		mlr_timeout,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_backbone_router_config_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	bool did_succeed = true;
+	uint16_t delay = 0;
+	uint32_t timeout = 0;
+	uint8_t seqno = 0;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT16, &delay,
+		DBUS_TYPE_UINT32, &timeout,
+		DBUS_TYPE_BYTE, &seqno,
+		DBUS_TYPE_INVALID
+	);
+
+	require(did_succeed, bail);
+	dbus_message_ref(message);
+
+	interface->backbone_router_config(
+		delay,
+		timeout,
+		seqno,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
 	);
 
 	ret = DBUS_HANDLER_RESULT_HANDLED;

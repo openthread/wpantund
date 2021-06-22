@@ -205,6 +205,10 @@ SpinelNCPControlInterface::add_on_mesh_prefix(
 ) {
 	require_action(mNCPInstance->mEnabled, bail, cb(kWPANTUNDStatus_InvalidWhenDisabled));
 
+	if (flags.count(NCPControlInterface::PREFIX_FLAG_DOMAIN_PREFIX)) {
+		require_action(!mNCPInstance->is_domain_prefix_configured(), bail, cb(kWPANTUNDStatus_Already));
+	}
+
 	mNCPInstance->on_mesh_prefix_was_added(
 		SpinelNCPInstance::kOriginUser,
 		prefix,
@@ -407,7 +411,7 @@ bail:
 
 void
 SpinelNCPControlInterface::commissioner_add_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	const char *psk,
 	CallbackWithStatus cb
@@ -420,19 +424,9 @@ SpinelNCPControlInterface::commissioner_add_joiner(
 	} else {
 		Data command;
 
-		if (eui64 != NULL) {
-			command = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
-					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
-					SPINEL_DATATYPE_UINT32_S
-					SPINEL_DATATYPE_UTF8_S
-				),
-				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
-				eui64,
-				timeout,
-				psk
-			);
-		} else {
+		switch (joiner.mType)
+		{
+		case JoinerInfo::kAny:
 			command = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
 					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_NULL_S)
@@ -443,6 +437,39 @@ SpinelNCPControlInterface::commissioner_add_joiner(
 				timeout,
 				psk
 			);
+			break;
+
+		case JoinerInfo::kEui64:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UTF8_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				&joiner.mEui64,
+				timeout,
+				psk
+			);
+			break;
+
+		case JoinerInfo::kDiscerner:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_INSERT(
+					SPINEL_DATATYPE_STRUCT_S(
+						SPINEL_DATATYPE_UINT8_S
+						SPINEL_DATATYPE_UINT64_S
+					)
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UTF8_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				joiner.mDiscerner.mBitLength,
+				joiner.mDiscerner.mValue,
+				timeout,
+				psk
+			);
+			break;
 		}
 
 		mNCPInstance->start_new_task(
@@ -459,7 +486,7 @@ bail:
 
 void
 SpinelNCPControlInterface::commissioner_remove_joiner(
-	const uint8_t *eui64,
+	const JoinerInfo &joiner,
 	uint32_t timeout,
 	CallbackWithStatus cb
 ) {
@@ -470,17 +497,9 @@ SpinelNCPControlInterface::commissioner_remove_joiner(
 	} else {
 		Data command;
 
-		if (eui64 != NULL) {
-			command = SpinelPackData(
-				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
-					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
-					SPINEL_DATATYPE_UINT32_S
-				),
-				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
-				eui64,
-				timeout
-			);
-		} else {
+		switch (joiner.mType)
+		{
+		case JoinerInfo::kAny:
 			command = SpinelPackData(
 				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
 					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_NULL_S)
@@ -489,6 +508,35 @@ SpinelNCPControlInterface::commissioner_remove_joiner(
 				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
 				timeout
 			);
+			break;
+
+		case JoinerInfo::kEui64:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_EUI64_S)
+					SPINEL_DATATYPE_UINT32_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				&joiner.mEui64,
+				timeout
+			);
+			break;
+
+		case JoinerInfo::kDiscerner:
+			command = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_REMOVE(
+					SPINEL_DATATYPE_STRUCT_S(
+						SPINEL_DATATYPE_UINT8_S
+						SPINEL_DATATYPE_UINT64_S
+					)
+					SPINEL_DATATYPE_UINT32_S
+				),
+				SPINEL_PROP_MESHCOP_COMMISSIONER_JOINERS,
+				joiner.mDiscerner.mBitLength,
+				joiner.mDiscerner.mValue,
+				timeout
+			);
+			break;
 		}
 
 		mNCPInstance->start_new_task(
@@ -869,6 +917,199 @@ SpinelNCPControlInterface::mfg(
 			.set_reply_format(SPINEL_DATATYPE_UTF8_S)
 			.finish()
 	);
+}
+
+void
+SpinelNCPControlInterface::link_metrics_query(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsQueryResult.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_QUERY,
+				&address,
+				seriesId,
+				metrics
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_probe(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	uint8_t length,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_PROBE,
+				&address,
+				seriesId,
+				length
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_mgmt_forward(
+	const struct in6_addr &address,
+	uint8_t seriesId,
+	const uint8_t frame_types,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsMgmtResponse.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_FORWARD,
+				&address,
+				seriesId,
+				frame_types,
+				metrics
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::mlr_request(
+		const std::vector<struct in6_addr> &addresses,
+		bool mlr_timeout_present,
+		uint32_t mlr_timeout,
+		CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_NET_THREAD_1_2)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+
+		mNCPInstance->mMulticastListenerRegistrationResponse.clear();
+
+		Data serializedAddresses;
+
+		for (auto it = addresses.begin(); it != addresses.end(); ++it) {
+			serializedAddresses.append(SpinelPackData(SPINEL_DATATYPE_IPv6ADDR_S, &(*it)));
+		}
+
+		Data serializedOptionals;
+
+		if (mlr_timeout_present) {
+			serializedOptionals.append(SpinelPackData(
+				SPINEL_DATATYPE_STRUCT_S(
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT32_S
+				),
+				(uint8_t)SPINEL_THREAD_MLR_PARAMID_TIMEOUT,
+				mlr_timeout
+			));
+		}
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_STRUCT_S(SPINEL_DATATYPE_DATA_S)
+					SPINEL_DATATYPE_DATA_S
+				), SPINEL_PROP_THREAD_MLR_REQUEST,
+				serializedAddresses.data(),
+				serializedAddresses.size(),
+				serializedOptionals.data(),
+				serializedOptionals.size()
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::backbone_router_config(
+	const uint16_t delay,
+	const uint32_t timeout,
+	const uint8_t seqno,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_BACKBONE_ROUTER)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_UINT16_S
+					SPINEL_DATATYPE_UINT32_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_BACKBONE_ROUTER_LOCAL_CONFIG,
+				delay,
+				timeout,
+				seqno
+				))
+				.finish()
+		);
+	}
+}
+
+void
+SpinelNCPControlInterface::link_metrics_mgmt_enh_ack(
+	const struct in6_addr &address,
+	uint8_t flags,
+	const uint8_t metrics,
+	CallbackWithStatus cb
+) {
+	if (!mNCPInstance->mCapabilities.count(SPINEL_CAP_THREAD_LINK_METRICS)) {
+		cb(kWPANTUNDStatus_FeatureNotSupported);
+	} else {
+		mNCPInstance->mLinkMetricsMgmtResponse.clear();
+
+		mNCPInstance->start_new_task(
+			SpinelNCPTaskSendCommand::Factory(mNCPInstance)
+				.set_callback(cb)
+				.add_command(SpinelPackData(SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(
+					SPINEL_DATATYPE_IPv6ADDR_S
+					SPINEL_DATATYPE_UINT8_S
+					SPINEL_DATATYPE_UINT8_S
+				), SPINEL_PROP_THREAD_LINK_METRICS_MGMT_ENH_ACK,
+				&address,
+				flags,
+				metrics
+				))
+				.finish()
+		);
+	}
 }
 
 const WPAN::NetworkInstance&

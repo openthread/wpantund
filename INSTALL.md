@@ -30,29 +30,18 @@ Open up a terminal and perform the following commands:
 
 ### 2. Configure and build the project ###
 
-If the `configure` script is not already present in the root directory
-of your `wpantund` sources (which it should be if you got these
-sources from a tarball), you will need to either grab one of the `full/*`
-tags from the official git repository or run the bootstrap script.
+#### 2.1. Running the bootstrap script  ####
 
-#### 2.1. Grabbing a full tag from Git ####
+Make sure that your repository is at `origin/master`.
 
-The most likely thing you want to build is the latest stable release.
-In that case, all you need to do is checkout the tag `full/latest-release`:
+    git checkout origin/master 
 
-    git checkout full/latest-release
-
-And you should then be ready to build configure. Jump to section 2.3.
-
-#### 2.2. Running the bootstrap script  ####
-
-Alternatively, you can *bootstrap* the project directly by doing the
-following:
+Then *bootstrap* the project by doing the following:
 
     sudo apt-get install libtool autoconf autoconf-archive
     ./bootstrap.sh
 
-#### 2.3. Running the configure script  ####
+#### 2.2. Running the configure script  ####
 
 If the `configure` script is present, run it and then start the make
 process:
@@ -77,8 +66,10 @@ Once the build above is complete, execute the following command:
 
 This will install `wpantund` onto your computer.
 
-Installing `wpantund` on OS X
+Installing `wpantund` on OS X 
 -----------------------------
+
+**`wpantund` support on OS X is experimenatl.**
 
 Installing `wpantund` on OS X is largely similar to the process above,
 except things are complicated by the fact that we depend on D-Bus—and

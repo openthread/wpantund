@@ -257,6 +257,7 @@ NL_CHECK_BOOST_SIGNALS2([],AC_MSG_ERROR([Unable to find a usable implementation 
 NL_CHECK_BOOST_CHRONO([],AC_MSG_ERROR([Unable to find a usable implementation of boost::chrono (not even our internal copy)]))
 NL_CHECK_READLINE
 NL_CHECK_PTS
+NL_CHECK_UDEV
 
 AC_DEFINE_UNQUOTED([__STDC_LIMIT_MACROS], [1], [Needed by C++])
 AC_DEFINE_UNQUOTED([__STDC_CONSTANT_MACROS], [1], [Needed by C++])
@@ -357,6 +358,7 @@ echo "NCP plugins to build ........... ${building_ncp_plugins-none}"
 echo "Default NCP Plugin ............. ${default_ncp_plugin}"
 echo "Static link NCP plugin ......... ${enable_static_link_ncp_plugin-no}"
 echo "Fuzzing Targets ................ ${enable_fuzz_targets-no}"
+echo "Using udev.......................${with_udev-no}"
 echo ""
 
 if test "x${with_readline}" != "xyes"
