@@ -2177,7 +2177,7 @@ unpack_link_metrics_as_val_map(const uint8_t *data_in, spinel_size_t data_len, V
 	spinel_ssize_t len;
 	uint8_t metric_type;
 	uint8_t *metric_ptr = NULL;
-	uint16_t metric_len = 0;
+	uint32_t metric_len = 0;
 	int ret = kWPANTUNDStatus_Failure;
 
 	while (data_len > 0) {
