@@ -489,9 +489,6 @@ parse_network_info_from_iter(
 			dbus_message_iter_get_basic(&value_iter, &network_info->pan_id);
 		} else if ((strcmp(key, kWPANTUNDProperty_NetworkXPANID) == 0) || strcmp(key, "XPanId") == 0) {
 			dbus_message_iter_get_basic(&value_iter, &network_info->xpanid);
-		} else if ((strcmp(key, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin) == 0) || strcmp(key, "AllowingJoin") == 0) {
-			dbus_message_iter_get_basic(&value_iter,
-			                            &network_info->allowing_join);
 		} else if ((strcmp(key, kWPANTUNDProperty_NCPHardwareAddress) == 0) || strcmp(key, "BeaconHWAddr") == 0) {
 			DBusMessageIter array_iter;
 			dbus_message_iter_recurse(&value_iter, &array_iter);

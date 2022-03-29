@@ -177,7 +177,6 @@ struct SetPropertyHelper {
 #define kWPANTUNDPropertyNetworkKey                "NetworkKey"          // [RW]
 #define kWPANTUNDPropertyNetworkKeyIndex           "NetworkKeyIndex"     // [RW]
 #define kWPANTUNDPropertyMeshLocalPrefix           "MeshLocalPrefix"     // [RO]
-#define kWPANTUNDPropertyAllowingJoin              "AllowingJoin"        // [RO]
 #define kWPANTUNDPropertyIsAssociated              "IsAssociated"        // [RO]
 
 // Power Management Properties
@@ -301,7 +300,6 @@ NCPControlInterface::translate_deprecated_property(std::string& key, boost::any&
 		prop_map[to_upper(kWPANTUNDPropertyNetworkKey)]             = kWPANTUNDProperty_NetworkKey;
 		prop_map[to_upper(kWPANTUNDPropertyNetworkKeyIndex)]        = kWPANTUNDProperty_NetworkKeyIndex;
 		prop_map[to_upper(kWPANTUNDPropertyMeshLocalPrefix)]        = kWPANTUNDProperty_IPv6MeshLocalPrefix;
-		prop_map[to_upper(kWPANTUNDPropertyAllowingJoin)]           = kWPANTUNDProperty_NestLabs_NetworkAllowingJoin;
 		prop_map[to_upper(kWPANTUNDPropertyIsAssociated)]           = kWPANTUNDProperty_NetworkIsCommissioned;
 		prop_map[to_upper(kWPANTUNDPropertyIsOKToSleep)]            = kWPANTUNDProperty_DaemonReadyForHostSleep;
 		prop_map[to_upper(kWPANTUNDPropertyUseDeepSleepOnLowPower)] = kWPANTUNDProperty_NestLabs_HackUseDeepSleepOnLowPower;

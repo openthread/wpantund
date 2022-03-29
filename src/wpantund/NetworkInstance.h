@@ -99,7 +99,6 @@ struct NetworkId {
 struct NetworkInstance : public NetworkId {
 	uint16_t panid;
 	uint8_t channel;
-	bool joinable;
 	int8_t rssi;
 	uint8_t lqi;
 	uint8_t type;
@@ -111,13 +110,11 @@ public:
 	NetworkInstance(
 	    const std::string& _name = "",
 	    const uint8_t _xpanid[8] = NULL,
-	    uint16_t _panid = 0xFFFF, int _channel = 0,
-	    bool _joinable = false
+	    uint16_t _panid = 0xFFFF, int _channel = 0
 	    ) :
 		NetworkId(_name, _xpanid),
 		panid(_panid),
 		channel(_channel),
-		joinable(_joinable),
 		rssi(-128),
 		type(0),
 		hwaddr(),
@@ -127,13 +124,11 @@ public:
 	NetworkInstance(
 	    const std::string& _name,
 	    const uint64_t _xpanid,
-	    uint16_t _panid = 0xFFFF, int _channel = 0,
-	    bool _joinable = false
+	    uint16_t _panid = 0xFFFF, int _channel = 0
 	    ) :
 		NetworkId(_name, _xpanid),
 		panid(_panid),
 		channel(_channel),
-		joinable(_joinable),
 		rssi(-128),
 		type(0),
 		hwaddr(),
