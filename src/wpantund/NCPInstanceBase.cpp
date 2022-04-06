@@ -309,8 +309,6 @@ NCPInstanceBase::get_supported_property_keys(void) const
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
 	properties.insert(kWPANTUNDProperty_DaemonSetDefRouteForAutoAddedPrefix);
 
-	properties.insert(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
-
 	properties.insert(kWPANTUNDProperty_DaemonVersion);
 	properties.insert(kWPANTUNDProperty_DaemonTerminateOnFault);
 
@@ -374,7 +372,6 @@ NCPInstanceBase::regsiter_all_get_handlers(void)
 	REGISTER_GET_HANDLER(NetworkName);
 	REGISTER_GET_HANDLER(NetworkIsCommissioned);
 	REGISTER_GET_HANDLER(NestLabs_LegacyEnabled);
-	REGISTER_GET_HANDLER(NestLabs_NetworkAllowingJoin);
 	REGISTER_GET_HANDLER(NetworkPANID);
 	REGISTER_GET_HANDLER(NetworkXPANID);
 	REGISTER_GET_HANDLER(NCPChannel);
@@ -497,12 +494,6 @@ void
 NCPInstanceBase::get_prop_NestLabs_LegacyEnabled(CallbackWithStatusArg1 cb)
 {
 	cb(kWPANTUNDStatus_Ok, boost::any(mLegacyInterfaceEnabled));
-}
-
-void
-NCPInstanceBase::get_prop_NestLabs_NetworkAllowingJoin(CallbackWithStatusArg1 cb)
-{
-	cb(kWPANTUNDStatus_Ok, boost::any(get_current_network_instance().joinable));
 }
 
 void
@@ -1410,7 +1401,6 @@ NCPInstanceBase::handle_ncp_state_change(NCPState new_ncp_state, NCPState old_nc
 		// Take the interface offline.
 		syslog(LOG_NOTICE, "Taking interface(s) down. . .");
 
-		mCurrentNetworkInstance.joinable = false;
 		set_commissioniner(0, 0, 0);
 		set_online(false);
 	}

@@ -317,7 +317,6 @@
 #define kWPANTUNDProperty_NCPCounter_IP_TX_FAILURE              "NCP:Counter:IP_TX_FAILURE"
 #define kWPANTUNDProperty_NCPCounter_IP_RX_FAILURE              "NCP:Counter:IP_RX_FAILURE"
 
-#define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin          "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort          "com.nestlabs.internal:Network:PassthruPort"
 #define kWPANTUNDProperty_NestLabs_NCPTransmitHookActive        "com.nestlabs.internal:NCP:TransmitHookActive"
 #define kWPANTUNDProperty_NestLabs_LegacyPreferInterface        "com.nestlabs.internal:Legacy:PreferInterface"

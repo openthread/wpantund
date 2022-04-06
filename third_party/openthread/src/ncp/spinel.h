@@ -4500,14 +4500,6 @@ typedef uint32_t spinel_prop_key_t;
 
 #define SPINEL_GET_NEXT_TID(x) (spinel_tid_t)((x) >= 0xF ? 1 : (x) + 1)
 
-#define SPINEL_BEACON_THREAD_FLAG_VERSION_SHIFT 4
-
-#define SPINEL_BEACON_THREAD_FLAG_VERSION_MASK (0xf << SPINEL_BEACON_THREAD_FLAG_VERSION_SHIFT)
-
-#define SPINEL_BEACON_THREAD_FLAG_JOINABLE (1 << 0)
-
-#define SPINEL_BEACON_THREAD_FLAG_NATIVE (1 << 3)
-
 // ----------------------------------------------------------------------------
 
 enum

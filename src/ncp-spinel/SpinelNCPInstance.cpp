@@ -5898,11 +5898,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 		bool is_assisting = (value_data_len != 0);
 		uint16_t assisting_port(0);
 
-		if (is_assisting != get_current_network_instance().joinable) {
-			mCurrentNetworkInstance.joinable = is_assisting;
-			signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
-		}
-
 		if (is_assisting) {
 			int i;
 			syslog(LOG_NOTICE, "Network is joinable");

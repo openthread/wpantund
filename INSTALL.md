@@ -34,7 +34,7 @@ Open up a terminal and perform the following commands:
 
 Make sure that your repository is at `origin/master`.
 
-    git checkout origin/master 
+    git checkout origin/master
 
 Then *bootstrap* the project by doing the following:
 
@@ -66,7 +66,7 @@ Once the build above is complete, execute the following command:
 
 This will install `wpantund` onto your computer.
 
-Installing `wpantund` on OS X 
+Installing `wpantund` on OS X
 -----------------------------
 
 **`wpantund` support on OS X is experimenatl.**
@@ -230,7 +230,6 @@ running as root, you *must* use `sudo`)
         "XPanId" => 0xD6D8A04025AB3B0C
         "PanId" => 0xE3C3
         "Channel" => 26
-        "AllowingJoin" => true
         "Prefix" => [FDD6D8A040250000]
         "NCPVersion" => "OpenThread/1.0d26-25-gb684c7f; DEBUG; May 9 2016 18:22:04"
         "HWAddr" => [18B430000003F202]

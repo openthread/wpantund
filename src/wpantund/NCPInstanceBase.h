@@ -331,7 +331,6 @@ private:
 	void get_prop_NetworkName(CallbackWithStatusArg1 cb);
 	void get_prop_NetworkIsCommissioned(CallbackWithStatusArg1 cb);
 	void get_prop_NestLabs_LegacyEnabled(CallbackWithStatusArg1 cb);
-	void get_prop_NestLabs_NetworkAllowingJoin(CallbackWithStatusArg1 cb);
 	void get_prop_NetworkPANID(CallbackWithStatusArg1 cb);
 	void get_prop_NetworkXPANID(CallbackWithStatusArg1 cb);
 	void get_prop_NCPChannel(CallbackWithStatusArg1 cb);
