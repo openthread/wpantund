@@ -244,8 +244,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 				networkid,
 				xpanid,
 				panid,
-				chan,
-				(flags & SPINEL_BEACON_THREAD_FLAG_JOINABLE)
+				chan
 			);
 			network.rssi = rssi;
 			network.type = proto;

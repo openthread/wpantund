@@ -216,9 +216,6 @@ int parse_network_info_from_iter(struct wpan_network_info_s *network_info, DBusM
 			dbus_message_iter_get_basic(&value_iter, &network_info->channel);
 		} else if (strcmp(key, kWPANTUNDProperty_NetworkPANID) == 0) {
 			dbus_message_iter_get_basic(&value_iter, &network_info->pan_id);
-		} else if (strcmp(key, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin) == 0) {
-			dbus_message_iter_get_basic(&value_iter,
-			                            &network_info->allowing_join);
 		} else if (strcmp(key, "RSSI") == 0) {
 			dbus_message_iter_get_basic(&value_iter, &network_info->rssi);
 		} else if (strcmp(key, kWPANTUNDProperty_NetworkXPANID) == 0) {

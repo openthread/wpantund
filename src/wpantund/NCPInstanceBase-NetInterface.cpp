@@ -149,8 +149,6 @@ NCPInstanceBase::reset_interface(void)
 {
 	syslog(LOG_NOTICE, "Resetting interface(s). . .");
 
-	mCurrentNetworkInstance.joinable = false;
-
 	set_commissioniner(0, 0, 0);
 
 	mPrimaryInterface->reset();

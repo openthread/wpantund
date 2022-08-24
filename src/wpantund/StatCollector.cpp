@@ -1711,7 +1711,6 @@ StatCollector::did_rx_net_scan_beacon(const WPAN::NetworkInstance& network)
 	    "Name:%-17s, "
 		"PanId:0x%04X, "
 		"Ch:%2d, "
-		"Joinable:%-3s, "
 		"XPanId:0x%02X%02X%02X%02X%02X%02X%02X%02X, "
 		"HwAddr:0x%02X%02X%02X%02X%02X%02X%02X%02X, "
 		"RSSI:%-4d, "
@@ -1723,7 +1722,6 @@ StatCollector::did_rx_net_scan_beacon(const WPAN::NetworkInstance& network)
 		network.name.c_str(),
 		network.panid,
 		network.channel,
-		network.joinable? "YES" : "NO",
 		network.xpanid[0], network.xpanid[1], network.xpanid[2], network.xpanid[3],
 		network.xpanid[4], network.xpanid[5], network.xpanid[6], network.xpanid[7],
 		network.hwaddr[0], network.hwaddr[1], network.hwaddr[2], network.hwaddr[3],

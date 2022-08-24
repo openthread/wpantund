@@ -6,7 +6,7 @@ project.
 
 ## Online Resources ##
 
- *  Github: <https://github.com/openthread/wpantund/>
+ *  GitHub: <https://github.com/openthread/wpantund/>
      *  Public Wiki: <https://github.com/openthread/wpantund/wiki>
  *  Front-end URL: <http://wpantund.org>
      *  Will initially redirect to

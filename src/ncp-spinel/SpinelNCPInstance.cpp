@@ -2177,7 +2177,7 @@ unpack_link_metrics_as_val_map(const uint8_t *data_in, spinel_size_t data_len, V
 	spinel_ssize_t len;
 	uint8_t metric_type;
 	uint8_t *metric_ptr = NULL;
-	uint16_t metric_len = 0;
+	uint32_t metric_len = 0;
 	int ret = kWPANTUNDStatus_Failure;
 
 	while (data_len > 0) {
@@ -5897,11 +5897,6 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 	} else if (key == SPINEL_PROP_THREAD_ASSISTING_PORTS) {
 		bool is_assisting = (value_data_len != 0);
 		uint16_t assisting_port(0);
-
-		if (is_assisting != get_current_network_instance().joinable) {
-			mCurrentNetworkInstance.joinable = is_assisting;
-			signal_property_changed(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, is_assisting);
-		}
 
 		if (is_assisting) {
 			int i;

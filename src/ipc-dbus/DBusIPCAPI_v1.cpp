@@ -282,14 +282,6 @@ ipc_append_network_properties(
 			int8_t rssi = network.rssi;
 			append_dict_entry(iter, "RSSI", DBUS_TYPE_BYTE, &rssi);
 		}
-
-		dbus_bool_t allowing_join = network.joinable;
-		append_dict_entry(
-			iter,
-			kWPANTUNDProperty_NestLabs_NetworkAllowingJoin,
-			DBUS_TYPE_BOOLEAN,
-			&allowing_join
-		);
 	}
 
 	if (network.get_hwaddr_as_uint64() != 0) {
@@ -576,11 +568,6 @@ DBusIPCAPI_v1::status_response_helper(
 			value = interface->property_get_value(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix, value);
-			}
-
-			value = interface->property_get_value(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
-			if (!value.empty()) {
-				append_dict_entry(&dict, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, value);
 			}
 		}
 

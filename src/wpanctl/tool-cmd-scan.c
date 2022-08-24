@@ -55,12 +55,9 @@ print_scan_header(void)
 	if (sEnergyScan) {
 		printf("    Ch | RSSI\n");
 		printf("   ----+-------\n");
-	} else if (sMleDiscoverScan) {
+	} else {
 		printf(	"   | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
 		printf(	"---+--------------------+--------+----+------------------+------------------+------\n");
-	} else {
-		printf(	"   | Joinable | NetworkName        | PAN ID | Ch | XPanID           | HWAddr           | RSSI\n");
-		printf(	"---+----------+--------------------+--------+----+------------------+------------------+------\n");
 	}
 }
 
@@ -93,10 +90,6 @@ dbus_beacon_handler(
 		}
 	} else {
 		printf("  ");
-	}
-
-	if (!sMleDiscoverScan) {
-		printf(" | %s", network_info.allowing_join ? "     YES" : "      NO");
 	}
 
 	if (network_info.network_name[0]) {
