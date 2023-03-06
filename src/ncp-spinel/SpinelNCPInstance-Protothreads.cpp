@@ -81,7 +81,7 @@ SpinelNCPInstance::vprocess_disabled(int event, va_list args)
 
 		// If we didn't enter deep sleep then we need to bail early.
 		if ((get_ncp_state() != DEEP_SLEEP) && (get_ncp_state() != FAULT)) {
-			if (!ncp_state_is_initializing(get_ncp_state())) {
+			if (!ncp_state_is_initializing_or_upgrading(get_ncp_state())) {
 				get_control_interface().reset();
 			}
 			EH_EXIT();
@@ -593,7 +593,7 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 
 	// If we are commissioned and autoResume is enabled
 	if (mAutoResume && mEnabled && mIsCommissioned
-	    && !ncp_state_is_joining_or_joined(get_ncp_state()) && !ncp_state_is_initializing(get_ncp_state())
+	    && !ncp_state_is_joining_or_joined(get_ncp_state()) && !ncp_state_is_initializing_or_upgrading(get_ncp_state())
 	) {
 		syslog(LOG_NOTICE, "AutoResume is enabled. Trying to resume.");
 		EH_SPAWN(&mSubPT, vprocess_resume(event, args));
@@ -604,7 +604,7 @@ SpinelNCPInstance::vprocess_event(int event, va_list args)
 		// us from entering any endless loops.
 		EH_SLEEP_FOR(0);
 
-		if (ncp_state_is_initializing(get_ncp_state())) {
+		if (ncp_state_is_initializing_or_upgrading(get_ncp_state())) {
 			EH_RESTART();
 
 		} else if (!mEnabled) {

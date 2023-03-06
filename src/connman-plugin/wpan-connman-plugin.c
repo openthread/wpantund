@@ -115,7 +115,7 @@ struct lowpan_network_s {
 
 
 static bool
-ncp_state_is_initializing(ncp_state_t ncp_state)
+ncp_state_is_initializing_or_upgrading(ncp_state_t ncp_state)
 {
 	switch (ncp_state) {
 	case NCP_STATE_UNINITIALIZED:
@@ -1555,7 +1555,7 @@ lowpan_device_handle_state_change(
 	lowpan_device_set_network(device, network);
 	network = device_info->current_network;
 
-	if (ncp_state_is_initializing(new_state)) {
+	if (ncp_state_is_initializing_or_upgrading(new_state)) {
 		return 0;
 	}
 
@@ -1715,7 +1715,7 @@ lowpan_device_signal_handler(
 			goto bail;
 		}
 
-		if (ncp_state_is_initializing(device_info->ncp_state)) {
+		if (ncp_state_is_initializing_or_upgrading(device_info->ncp_state)) {
 			// Make sure that we start up in a powered state.
 			should_change_device_power_state = true;
 			new_device_power_state = true;
@@ -1782,7 +1782,7 @@ lowpan_device_signal_handler(
 
 				DBG("NCP IS %s",enabled?"ENABLED":"DISABLED");
 				if (enabled != device_power_state) {
-					if (ncp_state_is_initializing(device_info->ncp_state)) {
+					if (ncp_state_is_initializing_or_upgrading(device_info->ncp_state)) {
 						// If this connman_device is uninitialized/initializing, then we need to make
 						// sure that the NCP is in our current power state.
 						enabled = !enabled;
@@ -1906,7 +1906,7 @@ status_finished_callback(
 		iter = outer_iter;
 	}
 
-	if (ncp_state_is_initializing(device_info->ncp_state)) {
+	if (ncp_state_is_initializing_or_upgrading(device_info->ncp_state)) {
 		// Make sure that we start up in a powered state.
 		should_change_device_power_state = true;
 		new_device_power_state = true;
@@ -1993,7 +1993,7 @@ status_finished_callback(
 
 			DBG("NCP IS %s",enabled?"ENABLED":"DISABLED");
 			if (enabled != device_power_state) {
-				if (ncp_state_is_initializing(device_info->ncp_state)) {
+				if (ncp_state_is_initializing_or_upgrading(device_info->ncp_state)) {
 					// If this connman_device is UNinitialized, then we need to make
 					// sure that the NCP is in our current power state.
 					enabled = !enabled;
@@ -2226,7 +2226,7 @@ lowpan_device_scan(enum connman_service_type type,
 
 	require_action(device_info->ncp_state != NCP_STATE_ASSOCIATING, bail, status = -EBUSY);
 	require_action(device_info->ncp_state != NCP_STATE_COMMISSIONED, bail, status = -EBUSY);
-	require_action(!ncp_state_is_initializing(device_info->ncp_state), bail, status = -EBUSY);
+	require_action(!ncp_state_is_initializing_or_upgrading(device_info->ncp_state), bail, status = -EBUSY);
 
 	asprintf(&dbus_path,
 	         "%s/%s",

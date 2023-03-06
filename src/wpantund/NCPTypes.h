@@ -89,7 +89,7 @@ bool ncp_state_is_interface_up(NCPState x);
 
 bool ncp_state_is_detached_from_ncp(NCPState x);
 
-bool ncp_state_is_initializing(NCPState x);
+bool ncp_state_is_initializing_or_upgrading(NCPState x);
 
 bool ncp_state_is_associated(NCPState x);
 
