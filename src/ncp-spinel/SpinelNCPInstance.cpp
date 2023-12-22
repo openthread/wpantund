@@ -5767,6 +5767,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 
 			if (ncp_state_is_joining_or_joined(get_ncp_state())
 			  && (value != SPINEL_NET_ROLE_DETACHED)
+                          && (value != SPINEL_NET_ROLE_DISABLED)
 			) {
 				change_ncp_state(ASSOCIATED);
 			}
@@ -5784,7 +5785,7 @@ SpinelNCPInstance::handle_ncp_spinel_value_is(spinel_prop_key_t key, const uint8
 			} else if (value == SPINEL_NET_ROLE_LEADER) {
 				update_node_type(LEADER);
 
-			} else if (value == SPINEL_NET_ROLE_DETACHED) {
+                        } else if (value == SPINEL_NET_ROLE_DETACHED || value == SPINEL_NET_ROLE_DISABLED) {
 				update_node_type(UNKNOWN);
 				if (ncp_state_is_associated(get_ncp_state())) {
 					change_ncp_state(ISOLATED);
