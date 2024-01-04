@@ -41,7 +41,7 @@ jobs:
       if: "github.ref != 'refs/heads/master'"
 
   toranj-ncp:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       TORANJ_RADIO : 15.4
     steps:
@@ -53,11 +53,12 @@ jobs:
         sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
         sudo apt-get --no-install-recommends install -y dbus libdbus-1-dev
         sudo apt-get --no-install-recommends install -y autoconf-archive
-        sudo apt-get --no-install-recommends install -y bsdtar
+        sudo apt-get --no-install-recommends install -y libarchive-tools
         sudo apt-get --no-install-recommends install -y libtool
         sudo apt-get --no-install-recommends install -y libglib2.0-dev
-        sudo apt-get --no-install-recommends install -y libboost-dev libboost-signals-dev
+        sudo apt-get --no-install-recommends install -y libboost-dev
         sudo apt-get --no-install-recommends install -y lcov
+        sudo apt-get --no-install-recommends install -y ninja-build
 
     - name: Build & Run
       run: |
@@ -68,5 +69,6 @@ jobs:
 
         git clone --depth=1 --branch=main https://github.com/openthread/openthread.git
         cd openthread
+        export top_builddir=$(pwd -P)
         ./tests/toranj/start.sh
 
