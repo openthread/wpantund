@@ -504,6 +504,7 @@ typedef enum
     SPINEL_NET_ROLE_CHILD    = 1,
     SPINEL_NET_ROLE_ROUTER   = 2,
     SPINEL_NET_ROLE_LEADER   = 3,
+    SPINEL_NET_ROLE_DISABLED = 4,
 } spinel_net_role_t;
 
 typedef enum
@@ -2090,6 +2091,7 @@ enum
      *  SPINEL_NET_ROLE_CHILD    = 1,
      *  SPINEL_NET_ROLE_ROUTER   = 2,
      *  SPINEL_NET_ROLE_LEADER   = 3,
+     *  SPINEL_NET_ROLE_DISABLED = 4,
      *
      */
     SPINEL_PROP_NET_ROLE = SPINEL_PROP_NET__BEGIN + 3,
